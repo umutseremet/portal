@@ -1,0 +1,624 @@
+/* ==========================================================================
+   Basit Admin Panel CSS - Acara Teması
+   ========================================================================== */
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #f5f7fa;
+  margin: 0;
+  padding: 0;
+}
+
+/* Login ekranı */
+.login-container {
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+.login-bg {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  color: white;
+}
+
+.login-form-container {
+  max-width: 400px;
+  padding: 2rem;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  border: none;
+  color: white;
+  font-weight: 500;
+  padding: 12px 24px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #FF5252, #FF7043);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px 16px;
+  transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: #FF6B6B;
+  box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.25);
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -280px;
+  width: 280px;
+  height: 100vh;
+  background: white;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1040;
+  transition: left 0.3s ease;
+  overflow-y: auto;
+}
+
+.sidebar.show {
+  left: 0;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1035;
+  display: none;
+}
+
+.sidebar-overlay.show {
+  display: block;
+}
+
+/* Main content */
+.main-content {
+  margin-left: 0;
+  padding-top: 80px;
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+.main-content.with-sidebar {
+  margin-left: 280px;
+}
+
+@media (max-width: 991.98px) {
+  .main-content.with-sidebar {
+    margin-left: 0;
+  }
+}
+
+/* Sidebar styling */
+.sidebar-header {
+  padding: 2rem 1.5rem 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.logo-text {
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.sidebar-content {
+  padding: 1.5rem;
+}
+
+.sidebar-nav .nav-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  color: #6c757d;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-nav .nav-link:hover,
+.sidebar-nav .nav-link.active {
+  background-color: rgba(255, 107, 107, 0.1);
+  color: #FF6B6B;
+}
+
+/* Stats cards */
+.stats-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  background: white;
+}
+
+.card-title {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1.25rem;
+}
+
+.card-category {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.stats-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+/* Table */
+.table th {
+  border-top: none;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.875rem;
+  padding: 1rem 0.75rem;
+  border-bottom: 2px solid #f1f3f4;
+  background-color: #f8f9fa;
+}
+
+.table td {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f3f4;
+  font-size: 0.875rem;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(255, 107, 107, 0.05);
+}
+
+/* Badge */
+.badge {
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+/* Dropdown */
+.dropdown-menu {
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  padding: 8px 0;
+}
+
+.dropdown-item {
+  padding: 8px 16px;
+  transition: all 0.15s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255, 107, 107, 0.1);
+  color: #FF6B6B;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1rem;
+  }
+  
+  .stats-card {
+    margin-bottom: 1rem;
+  }
+}
+
+/* ==========================================================================
+   LAYOUT CSS UPDATES - Hamburger Menu & Dynamic Sidebar
+   ========================================================================== */
+
+/* Header Layout */
+.navbar {
+  height: 80px;
+  z-index: 1030;
+  background: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.navbar .container-fluid {
+  height: 100%;
+  align-items: center;
+}
+
+/* HAMBURGER MENU - Tüm Ekranlarda Görünür */
+.hamburger-menu-btn {
+  border: 2px solid #FF6B6B !important;
+  background: white !important;
+  color: #FF6B6B !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.hamburger-menu-btn:hover {
+  background-color: #FF6B6B !important;
+  color: white !important;
+  transform: translateY(-1px);
+}
+
+.hamburger-menu-btn:focus {
+  outline: 2px solid #FF6B6B !important;
+  outline-offset: 2px !important;
+}
+
+/* Sidebar - Dynamic Toggle için güncellenmiş */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -280px; /* Varsayılan: kapalı */
+  width: 280px;
+  height: 100vh;
+  background: white;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1040;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+
+.sidebar.show {
+  left: 0; /* Açık durumda */
+}
+
+/* Sidebar Overlay */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1035;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.sidebar-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Desktop'ta overlay gizle */
+@media (min-width: 992px) {
+  .sidebar-overlay {
+    display: none !important;
+  }
+}
+
+/* Main Content - Dynamic Layout */
+.main-content {
+  margin-left: 0; /* Varsayılan: sidebar kapalı */
+  padding-top: 80px;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sidebar açıkken content margin - Tüm ekranlarda */
+.main-content.with-sidebar {
+  margin-left: 280px;
+}
+
+.main-content.without-sidebar {
+  margin-left: 0;
+}
+
+/* Mobile'da sidebar açık olsa bile margin verme */
+@media (max-width: 991.98px) {
+  .main-content.with-sidebar {
+    margin-left: 0 !important;
+  }
+}
+
+.content-wrapper {
+  flex: 1;
+  padding: 2rem;
+}
+
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 1rem;
+  }
+}
+
+/* Page Title Responsive */
+.page-title-desktop {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .page-title-desktop {
+    display: block;
+  }
+}
+
+.mobile-brand {
+  display: block;
+}
+
+@media (min-width: 992px) {
+  .mobile-brand {
+    display: none;
+  }
+}
+
+/* Search Bar */
+.search-container {
+  max-width: 400px;
+}
+
+@media (max-width: 767.98px) {
+  .search-container {
+    display: none;
+  }
+}
+
+/* Header Actions */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-actions .btn-link {
+  color: #6c757d;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-actions .btn-link:hover {
+  background-color: rgba(255, 107, 107, 0.1);
+  color: #FF6B6B;
+}
+
+/* User Dropdown */
+.user-dropdown .dropdown-menu {
+  border: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  min-width: 200px;
+  margin-top: 8px;
+}
+
+.user-dropdown .dropdown-item {
+  padding: 8px 16px;
+  transition: all 0.15s ease;
+  font-size: 0.875rem;
+}
+
+.user-dropdown .dropdown-item:hover {
+  background-color: rgba(255, 107, 107, 0.1);
+  color: #FF6B6B;
+}
+
+/* Footer */
+.footer {
+  margin-top: auto;
+  background: white;
+  border-top: 1px solid #e9ecef;
+  padding: 1rem 0;
+}
+
+/* Animation for smooth transitions */
+.sidebar,
+.main-content {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Debug Info - Geçici (istenirse silinebilir) */
+.debug-info {
+  position: fixed;
+  top: 90px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+  z-index: 9999;
+}
+
+
+/* ==========================================================================
+   SIDEBAR ADDITIONAL STYLES - App.css'in en sonuna ekleyin
+   ========================================================================== */
+
+/* Sidebar Footer Styles */
+.sidebar-footer-menus {
+  margin-top: auto;
+  border-top: 1px solid #f1f3f4;
+  padding-top: 1.5rem;
+}
+
+.menu-section {
+  margin-bottom: 1.5rem;
+}
+
+.menu-section-header {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  color: #6c757d;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+}
+
+.menu-section-header:hover {
+  color: #FF6B6B;
+  background-color: rgba(255, 107, 107, 0.1);
+}
+
+.menu-items {
+  margin-left: 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  color: #6c757d;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  margin-bottom: 2px;
+}
+
+.menu-item:hover {
+  color: #FF6B6B;
+  background-color: rgba(255, 107, 107, 0.1);
+  transform: translateX(4px);
+}
+
+/* Nav Section Title */
+.nav-section-title {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  color: #6c757d;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+
+/* Navigation Indicator */
+.nav-indicator {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: #FF6B6B;
+  border-radius: 2px;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #f1f3f4;
+  background-color: white;
+}
+
+.upgrade-card {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  padding: 1.5rem;
+  border-radius: 12px;
+  color: white;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.upgrade-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Scrollbar Styling */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: #f1f3f4;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #e9ecef;
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #6c757d;
+}
