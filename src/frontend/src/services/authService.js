@@ -4,40 +4,30 @@ class AuthService {
   // Login user
   async login(credentials) {
     try {
-      // For demo purposes, we'll simulate an API call
-      // In a real app, this would make an actual API request
-      if (credentials.email === 'admin@admin.com' && credentials.password === 'admin123') {
-        const userData = {
-          id: 1,
-          name: 'Admin User',
-          email: credentials.email,
-          role: 'admin',
-          avatar: 'https://ui-avatars.com/api/?name=Admin%20User&size=40&background=FF6B6B&color=ffffff&bold=true',
-          permissions: ['read', 'write', 'delete'],
-          lastLogin: new Date().toISOString()
-        };
-        
-        const token = 'jwt-token-' + Date.now();
-        
+      // Make API call to your backend
+      const response = await apiService.login(credentials);
+      
+      if (response.token && response.user) {
         // Store auth data
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('authToken', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
         
         return {
           success: true,
-          user: userData,
-          token: token
+          user: response.user,
+          token: response.token
         };
       } else {
         return {
           success: false,
-          error: 'Geçersiz email veya şifre'
+          error: 'Giriş bilgileri doğrulanamadı'
         };
       }
     } catch (error) {
+      console.error('Login error:', error);
       return {
         success: false,
-        error: 'Giriş sırasında bir hata oluştu'
+        error: error.message || 'Giriş sırasında bir hata oluştu'
       };
     }
   }
@@ -45,13 +35,23 @@ class AuthService {
   // Register user
   async register(userData) {
     try {
-      // Simulate API call
-      const response = await apiService.post('/auth/register', userData);
-      return {
-        success: true,
-        user: response.user,
-        token: response.token
-      };
+      const response = await apiService.register(userData);
+      
+      if (response.token && response.user) {
+        localStorage.setItem('authToken', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        
+        return {
+          success: true,
+          user: response.user,
+          token: response.token
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Kayıt işlemi tamamlanamadı'
+        };
+      }
     } catch (error) {
       return {
         success: false,
@@ -63,17 +63,22 @@ class AuthService {
   // Logout user
   async logout() {
     try {
+      // Call API to logout (optional - invalidate token on server)
+      try {
+        await apiService.logout();
+      } catch (apiError) {
+        // Continue with logout even if API call fails
+        console.warn('API logout failed:', apiError);
+      }
+      
       // Clear local storage
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       
-      // Optionally call API to invalidate token
-      // await apiService.post('/auth/logout');
-      
       return { success: true };
     } catch (error) {
       console.error('Logout error:', error);
-      // Still clear local storage even if API call fails
+      // Still clear local storage even if there's an error
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       return { success: true };
@@ -83,7 +88,7 @@ class AuthService {
   // Refresh auth token
   async refreshToken() {
     try {
-      const response = await apiService.post('/auth/refresh');
+      const response = await apiService.refreshToken();
       
       if (response.token) {
         localStorage.setItem('authToken', response.token);
@@ -105,7 +110,7 @@ class AuthService {
   // Forgot password
   async forgotPassword(email) {
     try {
-      await apiService.post('/auth/forgot-password', { email });
+      await apiService.post('/Auth/forgot-password', { email });
       return {
         success: true,
         message: 'Şifre sıfırlama bağlantısı email adresinize gönderildi'
@@ -121,7 +126,7 @@ class AuthService {
   // Reset password
   async resetPassword(token, newPassword) {
     try {
-      await apiService.post('/auth/reset-password', {
+      await apiService.post('/Auth/reset-password', {
         token,
         password: newPassword
       });
@@ -140,7 +145,7 @@ class AuthService {
   // Change password
   async changePassword(currentPassword, newPassword) {
     try {
-      await apiService.put('/auth/change-password', {
+      await apiService.put('/Auth/change-password', {
         currentPassword,
         newPassword
       });
@@ -164,7 +169,7 @@ class AuthService {
         return { success: false, error: 'Token bulunamadı' };
       }
 
-      const response = await apiService.post('/auth/verify');
+      const response = await apiService.post('/Auth/verify');
       return {
         success: true,
         user: response.user
@@ -198,6 +203,23 @@ class AuthService {
   // Get auth token
   getToken() {
     return localStorage.getItem('authToken');
+  }
+
+  // Check if token is expired (basic check)
+  isTokenExpired() {
+    try {
+      const token = this.getToken();
+      if (!token) return true;
+
+      // Basic JWT token expiry check
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      
+      return payload.exp < currentTime;
+    } catch (error) {
+      console.error('Error checking token expiry:', error);
+      return true;
+    }
   }
 }
 

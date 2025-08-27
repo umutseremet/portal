@@ -4,9 +4,9 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login, isAuthenticated } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const { login, isAuthenticated, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
@@ -14,20 +14,29 @@ const Login = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
+  // Clear error when component mounts or credentials change
+  // useEffect(() => {
+  //   if (clearError) {
+  //     clearError();
+  //   }
+  // }, [credentials, clearError]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
+
+    if (!credentials.email || !credentials.password) {
+      return;
+    }
 
     const result = await login(credentials);
-    
+
+    console.log(credentials);
+
+    console.log(result);
     if (result.success) {
       navigate('/dashboard');
-    } else {
-      setError(result.error);
     }
-    
-    setIsLoading(false);
+    // Error handling is done in the AuthContext
   };
 
   const handleInputChange = (e) => {
@@ -36,6 +45,22 @@ const Login = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleRememberMeChange = (e) => {
+    setRememberMe(e.target.checked);
+  };
+
+  // Test credentials for development
+  const handleTestLogin = () => {
+    setCredentials({
+      email: 'test',
+      password: 'vervo1234'
+    });
   };
 
   return (
@@ -48,8 +73,8 @@ const Login = () => {
               <div className="mb-4">
                 <i className="bi bi-calendar-event-fill display-1"></i>
               </div>
-              <h1 className="display-4 fw-bold mb-4">Vervo Portal</h1>
-              <p className="lead mb-0">Vervo Portal İş Yönetim Sistemi</p>
+              <h1 className="display-4 fw-bold mb-0">VERVO PORTAL</h1>
+              <p className="lead mb-0">Vervo İş Yönetim Sistemi</p>
             </div>
           </div>
 
@@ -70,29 +95,40 @@ const Login = () => {
               {error && (
                 <div className="alert alert-danger d-flex align-items-center" role="alert">
                   <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                  {error}
+                  <div className="flex-grow-1">
+                    {error}
+                  </div>
+                  {clearError && (
+                    <button
+                      type="button"
+                      className="btn-close"
+                      onClick={clearError}
+                      aria-label="Close"
+                    ></button>
+                  )}
                 </div>
               )}
 
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label htmlFor="email" className="form-label fw-semibold">
-                    Email Adresi
+                    Kullanıcı Adı
                   </label>
                   <div className="input-group">
                     <span className="input-group-text bg-light border-end-0">
-                      <i className="bi bi-envelope text-muted"></i>
+                      <i className="bi bi-person text-muted"></i>
                     </span>
                     <input
-                      type="email"
-                      className="form-control form-control-lg border-start-0"
+                      type="text"
+                      className={`form-control form-control-lg border-start-0 ${error ? 'is-invalid' : ''}`}
                       id="email"
                       name="email"
                       value={credentials.email}
                       onChange={handleInputChange}
-                      placeholder="admin@admin.com"
+                      placeholder="admin"
                       required
-                      disabled={isLoading}
+                      disabled={loading}
+                      autoComplete="username"
                     />
                   </div>
                 </div>
@@ -106,39 +142,59 @@ const Login = () => {
                       <i className="bi bi-lock text-muted"></i>
                     </span>
                     <input
-                      type="password"
-                      className="form-control form-control-lg border-start-0"
+                      type={showPassword ? "text" : "password"}
+                      className={`form-control form-control-lg border-start-0 border-end-0 ${error ? 'is-invalid' : ''}`}
                       id="password"
                       name="password"
                       value={credentials.password}
                       onChange={handleInputChange}
-                      placeholder="admin123"
+                      placeholder="password123"
                       required
-                      disabled={isLoading}
+                      disabled={loading}
+                      autoComplete="current-password"
                     />
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary border-start-0"
+                      onClick={togglePasswordVisibility}
+                      disabled={loading}
+                    >
+                      <i className={`bi bi-eye${showPassword ? '-slash' : ''}`}></i>
+                    </button>
                   </div>
                 </div>
 
                 <div className="d-flex justify-content-between align-items-center mb-4">
                   <div className="form-check">
-                    <input className="form-check-input" type="checkbox" id="rememberMe" />
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id="rememberMe"
+                      checked={rememberMe}
+                      onChange={handleRememberMeChange}
+                      disabled={loading}
+                    />
                     <label className="form-check-label text-muted" htmlFor="rememberMe">
                       Beni hatırla
                     </label>
                   </div>
-                  <a href="#" className="text-decoration-none text-danger small">
+                  <button
+                    type="button"
+                    className="btn btn-link text-decoration-none text-danger small p-0"
+                    disabled={loading}
+                  >
                     Şifremi unuttum?
-                  </a>
+                  </button>
                 </div>
 
-                <button 
-                  type="submit" 
-                  className="btn btn-danger btn-lg w-100 mb-4"
-                  disabled={isLoading}
+                <button
+                  type="submit"
+                  className="btn btn-danger btn-lg w-100 mb-3"
+                  disabled={loading || !credentials.email || !credentials.password}
                 >
-                  {isLoading ? (
+                  {loading ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                       Giriş yapılıyor...
                     </>
                   ) : (
@@ -149,13 +205,37 @@ const Login = () => {
                   )}
                 </button>
 
+                {/* Development Helper */}
+                {process.env.NODE_ENV === 'development' && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm w-100 mb-3"
+                    onClick={handleTestLogin}
+                    disabled={loading}
+                  >
+                    <i className="bi bi-gear me-1"></i>
+                    Test Kullanıcısı ile Giriş
+                  </button>
+                )}
+
                 <div className="text-center">
-                  <div className="bg-warning bg-opacity-25 border border-warning rounded p-3">
+                  <div className="bg-info bg-opacity-10 border border-info rounded p-3">
                     <small className="text-dark">
                       <i className="bi bi-info-circle me-1"></i>
-                      <strong>Demo Hesabı:</strong><br />
-                      Email: admin@admin.com<br />
-                      Şifre: admin123
+                      <strong>API Test Bilgileri:</strong><br />
+                      Kullanıcı Adı: test<br />
+                      Şifre: vervo1234
+                    </small>
+                  </div>
+                </div>
+
+                {/* API Status */}
+                <div className="mt-3">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <small className="text-muted">API Durumu:</small>
+                    <small className="text-success">
+                      <i className="bi bi-circle-fill me-1" style={{ fontSize: '0.5rem' }}></i>
+                      Bağlı (localhost:5154)
                     </small>
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import authService from '../services/authService';
 
 const AuthContext = createContext();
 
@@ -14,62 +15,190 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem('authToken');
-    const savedUser = localStorage.getItem('user');
-    
-    if (token && savedUser) {
-      setIsAuthenticated(true);
-      setUser(JSON.parse(savedUser));
-    }
-    
-    setLoading(false);
+    initializeAuth();
   }, []);
+
+  const initializeAuth = async () => {
+    try {
+      setLoading(true);
+      
+      // Check if user data exists in localStorage
+      const token = localStorage.getItem('authToken');
+      const savedUser = localStorage.getItem('user');
+      
+      if (token && savedUser) {
+        // Check if token is expired
+        if (authService.isTokenExpired()) {
+          console.log('Token expired, attempting refresh...');
+          const refreshResult = await authService.refreshToken();
+          
+          if (refreshResult.success) {
+            setIsAuthenticated(true);
+            setUser(JSON.parse(savedUser));
+          } else {
+            // Token refresh failed, clear auth data
+            await logout();
+          }
+        } else {
+          // Token is valid
+          setIsAuthenticated(true);
+          setUser(JSON.parse(savedUser));
+        }
+      }
+    } catch (error) {
+      console.error('Auth initialization error:', error);
+      // Clear potentially corrupted auth data
+      await logout();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const login = async (credentials) => {
     try {
-      // Simulate API call
-      if (credentials.email === 'admin@admin.com' && credentials.password === 'admin123') {
-       const userData = {
-  id: 1,
-  name: 'Admin User',
-  email: credentials.email,
-  role: 'admin',
-  avatar: 'https://ui-avatars.com/api/?name=Admin%20User&size=40&background=FF6B6B&color=ffffff&bold=true'
-};
-        
-        const token = 'jwt-token-' + Date.now();
-        
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔐 Attempting login with API...', { 
+        email: credentials.email, 
+        apiUrl: process.env.REACT_APP_API_BASE_URL 
+      });
+      
+      // Call the real API through authService
+      const result = await authService.login(credentials);
+      
+      console.log('🔐 API Login result:', result);
+      
+      if (result.success) {
         setIsAuthenticated(true);
-        setUser(userData);
-        
-        return { success: true, user: userData };
+        setUser(result.user);
+        console.log('✅ Login successful:', result.user);
+        return { success: true, user: result.user };
       } else {
-        return { success: false, error: 'Geçersiz email veya şifre' };
+        console.log('❌ Login failed:', result.error);
+        setError(result.error);
+        return { success: false, error: result.error };
       }
     } catch (error) {
-      return { success: false, error: 'Giriş sırasında bir hata oluştu' };
+      console.error('🚨 Login error:', error);
+      const errorMessage = 'Giriş sırasında beklenmeyen bir hata oluştu. API bağlantısını kontrol edin.';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    setIsAuthenticated(false);
-    setUser(null);
+  const register = async (userData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('📝 Attempting registration with API...', userData);
+      
+      const result = await authService.register(userData);
+      
+      console.log('📝 API Registration result:', result);
+      
+      if (result.success) {
+        setIsAuthenticated(true);
+        setUser(result.user);
+        console.log('✅ Registration successful:', result.user);
+        return { success: true, user: result.user };
+      } else {
+        console.log('❌ Registration failed:', result.error);
+        setError(result.error);
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error('🚨 Registration error:', error);
+      const errorMessage = 'Kayıt sırasında beklenmeyen bir hata oluştu. API bağlantısını kontrol edin.';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const logout = async () => {
+    try {
+      setLoading(true);
+      console.log('👋 Logging out...');
+      
+      await authService.logout();
+      console.log('✅ Logout successful');
+    } catch (error) {
+      console.error('🚨 Logout error:', error);
+    } finally {
+      setIsAuthenticated(false);
+      setUser(null);
+      setError(null);
+      setLoading(false);
+    }
+  };
+
+  const refreshToken = async () => {
+    try {
+      console.log('🔄 Refreshing token...');
+      const result = await authService.refreshToken();
+      
+      if (result.success) {
+        console.log('✅ Token refresh successful');
+        return true;
+      } else {
+        console.log('❌ Token refresh failed:', result.error);
+        await logout();
+        return false;
+      }
+    } catch (error) {
+      console.error('🚨 Token refresh error:', error);
+      await logout();
+      return false;
+    }
+  };
+
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    console.log('👤 User updated:', updatedUser);
+  };
+
+  const clearError = () => {
+    setError(null);
+  };
+
+  // Debug info for development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 Auth Context Debug:', {
+      isAuthenticated,
+      user: user?.username || user?.email || 'No user',
+      loading,
+      error,
+      apiUrl: process.env.REACT_APP_API_BASE_URL
+    });
+  }
+
   const value = {
+    // State
     isAuthenticated,
     user,
     loading,
+    error,
+    
+    // Actions
     login,
-    logout
+    register,
+    logout,
+    refreshToken,
+    updateUser,
+    clearError,
+    
+    // Helpers
+    isTokenExpired: authService.isTokenExpired,
+    getToken: authService.getToken
   };
 
   return (

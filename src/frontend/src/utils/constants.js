@@ -4,7 +4,7 @@ export const APP_VERSION = '1.0.0';
 export const APP_DESCRIPTION = 'Modern Admin Panel with React & Bootstrap';
 
 // API Constants
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
 export const API_TIMEOUT = 10000; // 10 seconds
 
 // Auth Constants
@@ -28,6 +28,32 @@ export const STORAGE_KEYS = {
   THEME: 'theme',
   SIDEBAR_STATE: 'sidebarState',
   LANGUAGE: 'language'
+};
+
+// API Endpoints
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: '/Auth/login',
+    REGISTER: '/Auth/register',
+    LOGOUT: '/Auth/logout',
+    REFRESH_TOKEN: '/Auth/refresh-token',
+    VERIFY_TOKEN: '/Auth/verify',
+    FORGOT_PASSWORD: '/Auth/forgot-password',
+    RESET_PASSWORD: '/Auth/reset-password',
+    CHANGE_PASSWORD: '/Auth/change-password'
+  },
+  USER: {
+    PROFILE: '/user/profile',
+    UPDATE_PROFILE: '/user/profile'
+  },
+  DASHBOARD: {
+    STATS: '/dashboard/stats',
+    EVENTS: '/dashboard/events'
+  },
+  PRODUCTION: {
+    ORDERS: '/production/orders',
+    ORDER_BY_ID: '/production/orders'
+  }
 };
 
 // Theme Colors (Acara Theme)
@@ -127,6 +153,18 @@ export const ANIMATION_DURATION = {
   SLOW: 500
 };
 
+// HTTP Status Codes
+export const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+  SERVICE_UNAVAILABLE: 503
+};
+
 // Default Messages
 export const MESSAGES = {
   LOADING: 'Yükleniyor...',
@@ -136,5 +174,25 @@ export const MESSAGES = {
   SUCCESS_DELETE: 'Başarıyla silindi',
   SUCCESS_UPDATE: 'Başarıyla güncellendi',
   CONFIRM_DELETE: 'Bu işlemi silmek istediğinizden emin misiniz?',
-  NETWORK_ERROR: 'Ağ bağlantısı hatası'
+  NETWORK_ERROR: 'Ağ bağlantısı hatası',
+  AUTH_ERROR: 'Kimlik doğrulama hatası',
+  TOKEN_EXPIRED: 'Oturum süreniz dolmuş, lütfen tekrar giriş yapın',
+  LOGIN_SUCCESS: 'Başarıyla giriş yapıldı',
+  LOGOUT_SUCCESS: 'Başarıyla çıkış yapıldı'
+};
+
+// Environment Variables
+export const ENV = {
+  DEVELOPMENT: 'development',
+  PRODUCTION: 'production',
+  TEST: 'test'
+};
+
+// API Request Types
+export const REQUEST_TYPES = {
+  GET: 'GET',
+  POST: 'POST',
+  PUT: 'PUT',
+  DELETE: 'DELETE',
+  PATCH: 'PATCH'
 };

@@ -1,16 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Header = ({ toggleSidebar, sidebarOpen }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force navigation even if logout fails
+      navigate('/login');
+    }
   };
 
   const handleMenuToggle = () => {
@@ -32,6 +38,53 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
     }
   };
 
+  const toggleDropdown = () => {
+    setDropdownOpen(!dropdownOpen);
+  };
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownOpen && !event.target.closest('.user-dropdown')) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [dropdownOpen]);
+
+  const getUserDisplayName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user?.fullName) {
+      return user.fullName;
+    }
+    if (user?.username) {
+      return user.username;
+    }
+    return 'Admin User';
+  };
+
+  const getUserEmail = () => {
+    return user?.email || 'admin@acara.com';
+  };
+
+  const getUserInitials = () => {
+    const displayName = getUserDisplayName();
+    return displayName
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
+  const getUserRole = () => {
+    return user?.admin ? 'admin' : (user?.role || 'user');
+  };
+
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
       <div className="container-fluid">
@@ -41,6 +94,7 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
           onClick={handleMenuToggle}
           aria-label="Toggle sidebar"
           type="button"
+          disabled={loading}
         >
           <i className="bi bi-list fs-4"></i>
         </button>
@@ -56,8 +110,7 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
             <i className="bi bi-calendar-event-fill me-2"></i>
             acara
           </span>
-        </div>
- 
+        </div> 
 
         {/* Right Side Actions */}
         <div className="d-flex align-items-center gap-2">
@@ -83,68 +136,68 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
           </button>
 
           {/* User Dropdown */}
-          <div className="dropdown">
+          <div className="dropdown user-dropdown">
             <button
               className="btn btn-link text-decoration-none d-flex align-items-center p-2"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
+              onClick={toggleDropdown}
+              aria-expanded={dropdownOpen}
+              disabled={loading}
             >
-              <img
-                src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Admin User')}&size=40&background=FF6B6B&color=ffffff&bold=true`}
-                alt="User Avatar"
-                className="rounded-circle me-2"
-                width="40"
-                height="40"
-                onError={(e) => {
-                  // Fallback eğer link çalışmazsa
-                  e.target.src = 'https://ui-avatars.com/api/?name=AU&size=40&background=FF6B6B&color=ffffff&bold=true';
-                }}
-              />
-              <div className="d-none d-lg-block text-start">
-                <div className="fw-semibold text-dark small">{user?.name || 'Admin User'}</div>
-                <div className="text-muted small">{user?.role || 'admin'}</div>
+              {/* User Avatar */}
+              <div className="d-flex align-items-center justify-content-center rounded-circle bg-danger text-white me-2" 
+                   style={{ width: '40px', height: '40px', fontSize: '0.875rem', fontWeight: '600' }}>
+                {getUserInitials()}
               </div>
-              <i className="bi bi-chevron-down ms-2 text-muted small d-none d-lg-inline"></i>
+              
+              <div className="d-none d-lg-block text-start">
+                <div className="fw-semibold text-dark small">{getUserDisplayName()}</div>
+                <div className="text-muted small">{getUserRole()}</div>
+              </div>
+              <i className={`bi bi-chevron-${dropdownOpen ? 'up' : 'down'} ms-2 text-muted small d-none d-lg-inline`}></i>
             </button>
 
-            <ul className="dropdown-menu dropdown-menu-end shadow border-0">
-              <li>
-                <div className="dropdown-header">
-                  <div className="fw-semibold">{user?.name || 'Admin User'}</div>
-                  <div className="text-muted small">{user?.email || 'admin@admin.com'}</div>
-                </div>
-              </li>
-              <li><hr className="dropdown-divider" /></li>
-              <li>
-                <button className="dropdown-item d-flex align-items-center" type="button">
-                  <i className="bi bi-person-circle me-2"></i>
-                  Profil
-                </button>
-              </li>
-              <li>
-                <button className="dropdown-item d-flex align-items-center" type="button">
-                  <i className="bi bi-gear me-2"></i>
-                  Ayarlar
-                </button>
-              </li>
-              <li>
-                <button className="dropdown-item d-flex align-items-center" type="button">
-                  <i className="bi bi-question-circle me-2"></i>
-                  Yardım
-                </button>
-              </li>
-              <li><hr className="dropdown-divider" /></li>
-              <li>
-                <button
-                  className="dropdown-item text-danger d-flex align-items-center"
-                  onClick={handleLogout}
-                  type="button"
-                >
-                  <i className="bi bi-box-arrow-right me-2"></i>
-                  Çıkış Yap
-                </button>
-              </li>
-            </ul>
+            {dropdownOpen && (
+              <ul className="dropdown-menu dropdown-menu-end show shadow border-0">
+                <li>
+                  <div className="dropdown-header">
+                    <div className="fw-semibold">{getUserDisplayName()}</div>
+                    <div className="text-muted small">{getUserEmail()}</div>
+                    {user?.id && (
+                      <div className="text-muted small">ID: {user.id}</div>
+                    )}
+                  </div>
+                </li> 
+                 
+                <li>
+                  <button className="dropdown-item d-flex align-items-center" type="button">
+                    <i className="bi bi-question-circle me-2"></i>
+                    Yardım
+                  </button>
+                </li> 
+                 
+                <li><hr className="dropdown-divider" /></li>
+                <li>
+                  <button
+                    className="dropdown-item text-danger d-flex align-items-center"
+                    onClick={handleLogout}
+                    type="button"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2"></span>
+                        Çıkış yapılıyor...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-box-arrow-right me-2"></i>
+                        Çıkış Yap
+                      </>
+                    )}
+                  </button>
+                </li>
+              </ul>
+            )}
           </div>
         </div>
       </div>

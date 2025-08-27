@@ -1,5 +1,5 @@
 // API Base Configuration
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
 
 class ApiService {
   constructor() {
@@ -74,6 +74,26 @@ class ApiService {
     return this.request(endpoint, {
       method: 'DELETE'
     });
+  }
+
+  // Auth related endpoints
+  async login(credentials) {
+    return this.post('/Auth/login', {
+      username: credentials.email, // API expects username field
+      password: credentials.password
+    });
+  }
+
+  async register(userData) {
+    return this.post('/Auth/register', userData);
+  }
+
+  async refreshToken() {
+    return this.post('/Auth/refresh-token');
+  }
+
+  async logout() {
+    return this.post('/Auth/logout');
   }
 
   // Dashboard related endpoints
