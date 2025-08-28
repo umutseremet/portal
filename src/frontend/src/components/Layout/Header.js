@@ -127,13 +127,7 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
             </span>
           </button>
 
-          {/* Messages */}
-          <button className="btn btn-link text-dark position-relative p-2">
-            <i className="bi bi-chat-dots fs-5"></i>
-            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-              5
-            </span>
-          </button>
+           
 
           {/* User Dropdown */}
           <div className="dropdown user-dropdown">

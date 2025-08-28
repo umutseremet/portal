@@ -17,6 +17,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       label: 'Üretim Planlama',
       icon: 'bi-gear-fill',
       path: '/production'
+    },
+    {
+      id: 'visitors',
+      label: 'Ziyaretçiler',
+      icon: 'bi-people-fill',
+      path: '/visitors'
     }
   ];
 
@@ -105,9 +111,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 >
                   <i className={`bi ${item.icon} me-3`}></i>
                   <span className="nav-text">{item.label}</span>
-                  {isActive(item.path) && (
+                  {/* {isActive(item.path) && (
                     <div className="nav-indicator"></div>
-                  )}
+                  )} */}
                 </button>
               ))}
             </div>

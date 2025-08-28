@@ -9,10 +9,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add HttpClient for Redmine
+// Add HttpClient for Redmine - MEVCUT
 builder.Services.AddHttpClient<RedmineService>();
 
-// Add JWT Authentication
+// Add JWT Authentication - MEVCUT
 var jwtKey = builder.Configuration["JwtSettings:Secret"] ?? "YourSecretKeyThatIsAtLeast32CharactersLong123456789";
 var key = Encoding.ASCII.GetBytes(jwtKey);
 
@@ -30,7 +30,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Add CORS
+// Add CORS - MEVCUT
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -44,7 +44,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure pipeline
+// Configure pipeline - MEVCUT
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
