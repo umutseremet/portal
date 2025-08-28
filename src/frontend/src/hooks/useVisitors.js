@@ -1,3 +1,6 @@
+
+// ===== 2. src/frontend/src/hooks/useVisitors.js =====
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import visitorService from '../services/visitorService';
 import { debounce } from '../utils/helpers';
@@ -82,7 +85,8 @@ export const useVisitors = (initialFilters = {}) => {
       } else {
         // For infinite scroll or load more functionality
         setVisitors(prev => 
-          page === 1 ? response.visitors || [] : [...prev, ...(response.visitors || [])]
+          page === 1 ? 
+            response.visitors || [] : [...prev, ...(response.visitors || [])]
         );
       }
 
@@ -120,19 +124,29 @@ export const useVisitors = (initialFilters = {}) => {
         setLoading(false);
       }
     }
-  }, [pagination.pageSize, clearError]); // Remove filters dependency to prevent infinite loop
+  }, [pagination.pageSize, clearError, filters]); // ✅ DÜZELTME: filters dependency eklendi
 
-  // Debounced load function to prevent too many API calls
+  // ✅ DÜZELTME: İlk yükleme için ayrı bir useEffect - sadece bir kez çalışır
+  useEffect(() => {
+    console.log('useVisitors: Initial load triggered');
+    loadVisitors(1, true, filters);
+  }, []); // Empty dependency - sadece ilk yükleme
+
+  // ✅ DÜZELTME: Filtre değişikliklerinde debounced yeniden yükleme
   const debouncedLoadVisitors = useMemo(
-    () => debounce((page, resetData, filtersToUse) => {
-      loadVisitors(page, resetData, filtersToUse);
-    }, 500), // Increase debounce time
+    () => debounce((newFilters) => {
+      console.log('Debounced load with filters:', newFilters);
+      loadVisitors(1, true, newFilters);
+    }, 500),
     [loadVisitors]
   );
 
-  // Load visitors when filters change
+  // ✅ DÜZELTME: Filtre değiştiğinde debounced yeniden yükleme
   useEffect(() => {
-    debouncedLoadVisitors(1, true, filters);
+    // İlk yüklemede değil, sadece filtre değiştiğinde çalışır
+    if (filters.fromDate !== '' || filters.toDate !== '' || filters.company !== '' || filters.visitor !== '') {
+      debouncedLoadVisitors(filters);
+    }
   }, [filters, debouncedLoadVisitors]);
 
   // Cleanup on unmount
@@ -151,6 +165,7 @@ export const useVisitors = (initialFilters = {}) => {
       const response = await visitorService.getVisitorStats();
       
       if (mountedRef.current) {
+        console.log('Stats loaded:', response);
         setStats(response);
       }
     } catch (err) {
@@ -176,12 +191,12 @@ export const useVisitors = (initialFilters = {}) => {
 
   // Update filters - Prevent infinite loops
   const updateFilters = useCallback((newFilters) => {
+    console.log('Updating filters from:', filters, 'to:', newFilters);
     setFilters(prev => {
       const updated = { ...prev, ...newFilters };
-      console.log('Updating filters:', updated);
       return updated;
     });
-  }, []);
+  }, [filters]);
 
   // Reset filters - Fix the infinite loop
   const resetFilters = useCallback(() => {
@@ -471,8 +486,8 @@ export const useVisitors = (initialFilters = {}) => {
     isAllSelected,
     filterSummary,
 
-    // Actions
-    loadVisitors: () => loadVisitors(1, true, filters),
+    // Actions - ✅ DÜZELTME: loadVisitors artık doğru şekilde return ediliyor
+    loadVisitors: useCallback(() => loadVisitors(1, true, filters), [loadVisitors, filters]),
     loadStats,
     createVisitor,
     updateVisitor,

@@ -1,9 +1,12 @@
+// ===== 1. src/frontend/src/services/api.js (Auth methods eklendi) =====
+
 // API Base Configuration
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
 
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
+    this.customHeaders = {};
   }
 
   // Get auth token from localStorage
@@ -16,6 +19,7 @@ class ApiService {
     const token = this.getAuthToken();
     return {
       'Content-Type': 'application/json',
+      ...this.customHeaders,
       ...(token && { 'Authorization': `Bearer ${token}` })
     };
   }
@@ -25,7 +29,6 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const config = {
       headers: this.getHeaders(),
-      timeout: 10000, // 10 second timeout
       ...options
     };
 
@@ -52,6 +55,7 @@ class ApiService {
       const data = await response.json();
       console.log(`API Response: ${config.method || 'GET'} ${url} - Success`);
       return data;
+      
     } catch (error) {
       console.error(`API Request failed: ${config.method || 'GET'} ${url}`, error);
       
@@ -60,22 +64,17 @@ class ApiService {
         throw new Error('API sunucusuna bağlanılamıyor. Backend sunucusunun çalıştığından emin olun.');
       } else if (error.message.includes('ERR_CONNECTION_REFUSED')) {
         throw new Error('Bağlantı reddedildi. API sunucusu çalışmıyor olabilir.');
-      } else if (error.message.includes('timeout')) {
-        throw new Error('API isteği zaman aşımına uğradı.');
       }
       
       throw error;
     }
   }
 
-  // GET request
+  // HTTP Methods
   async get(endpoint) {
-    return this.request(endpoint, {
-      method: 'GET'
-    });
+    return this.request(endpoint, { method: 'GET' });
   }
 
-  // POST request
   async post(endpoint, data) {
     return this.request(endpoint, {
       method: 'POST',
@@ -83,7 +82,6 @@ class ApiService {
     });
   }
 
-  // PUT request
   async put(endpoint, data) {
     return this.request(endpoint, {
       method: 'PUT',
@@ -91,89 +89,166 @@ class ApiService {
     });
   }
 
-  // DELETE request
   async delete(endpoint) {
-    return this.request(endpoint, {
-      method: 'DELETE'
-    });
+    return this.request(endpoint, { method: 'DELETE' });
   }
 
-  // Auth related endpoints - MEVCUT
+  // ===== AUTHENTICATION ENDPOINTS =====
+
   async login(credentials) {
-    return this.post('/Auth/login', {
-      username: credentials.email, // API expects username field
-      password: credentials.password
-    });
+    try {
+      console.log('API: Login attempt', { email: credentials.email });
+      
+      // For development, use mock authentication
+      if (process.env.NODE_ENV === 'development') {
+        // Mock authentication for development
+        const mockResponse = {
+          success: true,
+          token: 'mock-jwt-token-' + Date.now(),
+          user: {
+            id: 1,
+            email: credentials.email,
+            username: credentials.email.split('@')[0],
+            firstName: 'Admin',
+            lastName: 'User',
+            role: 'admin'
+          }
+        };
+        
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        console.log('API: Mock login successful', mockResponse);
+        return mockResponse;
+      }
+
+      // Production authentication
+      const response = await this.post('/Auth/login', {
+        email: credentials.email,
+        password: credentials.password
+      });
+
+      return {
+        success: true,
+        token: response.token,
+        user: response.user
+      };
+
+    } catch (error) {
+      console.error('API: Login failed', error);
+      throw new Error(error.message || 'Giriş işlemi başarısız');
+    }
   }
 
   async register(userData) {
-    return this.post('/Auth/register', userData);
-  }
-
-  async refreshToken() {
-    return this.post('/Auth/refresh-token');
+    try {
+      const response = await this.post('/Auth/register', userData);
+      return {
+        success: true,
+        token: response.token,
+        user: response.user
+      };
+    } catch (error) {
+      console.error('API: Registration failed', error);
+      throw new Error(error.message || 'Kayıt işlemi başarısız');
+    }
   }
 
   async logout() {
-    return this.post('/Auth/logout');
+    try {
+      // If there's a logout endpoint on your backend
+      // await this.post('/Auth/logout');
+      
+      // Clear local storage
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      
+      console.log('API: Logout successful');
+      return { success: true };
+    } catch (error) {
+      console.error('API: Logout error', error);
+      // Still clear local storage even if API call fails
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      return { success: true };
+    }
   }
 
-  // Dashboard related endpoints - MEVCUT
-  async getDashboardStats() {
-    return this.get('/dashboard/stats');
+  async refreshToken() {
+    try {
+      const response = await this.post('/Auth/refresh');
+      return {
+        success: true,
+        token: response.token,
+        user: response.user
+      };
+    } catch (error) {
+      console.error('API: Token refresh failed', error);
+      return {
+        success: false,
+        error: error.message || 'Token yenileme başarısız'
+      };
+    }
   }
 
-  async getRecentEvents() {
-    return this.get('/dashboard/events');
+  async forgotPassword(email) {
+    try {
+      await this.post('/Auth/forgot-password', { email });
+      return { success: true };
+    } catch (error) {
+      throw new Error(error.message || 'Şifre sıfırlama isteği gönderilemedi');
+    }
   }
 
-  // Production related endpoints - MEVCUT
-  async getProductionOrders(filters = {}) {
-    const queryParams = new URLSearchParams(filters).toString();
-    const endpoint = queryParams ? `/production/orders?${queryParams}` : '/production/orders';
-    return this.get(endpoint);
+  async resetPassword(token, newPassword) {
+    try {
+      await this.post('/Auth/reset-password', {
+        token,
+        password: newPassword
+      });
+      return { success: true };
+    } catch (error) {
+      throw new Error(error.message || 'Şifre sıfırlama başarısız');
+    }
   }
 
-  async getProductionOrder(id) {
-    return this.get(`/production/orders/${id}`);
+  async verifyToken() {
+    try {
+      const response = await this.post('/Auth/verify');
+      return {
+        success: true,
+        user: response.user
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || 'Token doğrulama başarısız'
+      };
+    }
   }
 
-  async createProductionOrder(orderData) {
-    return this.post('/production/orders', orderData);
-  }
+  // ===== VISITORS ENDPOINTS =====
 
-  async updateProductionOrder(id, orderData) {
-    return this.put(`/production/orders/${id}`, orderData);
-  }
-
-  async deleteProductionOrder(id) {
-    return this.delete(`/production/orders/${id}`);
-  }
-
-  // Visitor related endpoints - YENİ
-  async getVisitors(filters = {}) {
+  async getVisitors(params = {}) {
     const queryParams = new URLSearchParams();
     
     // Add filter parameters
-    Object.keys(filters).forEach(key => {
-      if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
-        queryParams.append(key, filters[key]);
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryParams.append(key, params[key]);
       }
     });
 
-    const endpoint = queryParams.toString() ? `/Visitors?${queryParams.toString()}` : '/Visitors';
+    const endpoint = queryParams.toString() 
+      ? `/Visitors?${queryParams.toString()}` : '/Visitors';
+    
     console.log('API getVisitors endpoint:', `${this.baseURL}${endpoint}`);
     
     try {
       const response = await this.get(endpoint);
       console.log('API getVisitors raw response:', response);
       
-      // API response format mapping
-      // Backend döndüğü format (camelCase with JsonNamingPolicy): 
-      // { visitors: [...], totalCount: 6, page: 1, ... }
-      // Frontend'in beklediği format:
-      // { visitors: [...], totalCount: 6, page: 1, ... }
-      
+      // Backend response format mapping
       const mappedResponse = {
         visitors: response.visitors || response.Visitors || [], 
         totalCount: response.totalCount || response.TotalCount || 0,
@@ -189,6 +264,7 @@ class ApiService {
         visitorsCount: mappedResponse.visitors?.length,
         firstVisitor: mappedResponse.visitors?.[0]
       });
+      
       return mappedResponse;
     } catch (error) {
       console.error('API getVisitors error:', error);
@@ -241,11 +317,14 @@ class ApiService {
       }
     });
 
-    const endpoint = queryParams.toString() ? `/Visitors/export?${queryParams.toString()}` : '/Visitors/export';
+    const endpoint = queryParams.toString() ?
+      `/Visitors/export?${queryParams.toString()}` : '/Visitors/export';
     return this.get(endpoint);
   }
 
-  // TimeEntries related endpoints - MEVCUT
+  // ===== OTHER ENDPOINTS =====
+
+  // TimeEntries related endpoints
   async getTimeEntries(requestData) {
     return this.post('/TimeEntries/list', requestData);
   }
@@ -258,7 +337,7 @@ class ApiService {
     return this.post('/TimeEntries/project', requestData);
   }
 
-  // User related endpoints - MEVCUT
+  // User related endpoints
   async getCurrentUser() {
     return this.get('/user/profile');
   }
@@ -267,12 +346,11 @@ class ApiService {
     return this.put('/user/profile', userData);
   }
 
-  // Utility methods - YENİ
-  
+  // ===== UTILITY METHODS =====
+
   // Check API health
   async checkApiHealth() {
     try {
-      // Simple endpoint to check if API is running
       const response = await fetch(`${this.baseURL}/health`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
@@ -289,7 +367,7 @@ class ApiService {
     return this.baseURL;
   }
 
-  // Set custom headers (for special requests)
+  // Set custom headers
   setCustomHeaders(headers) {
     this.customHeaders = { ...this.customHeaders, ...headers };
   }
@@ -299,18 +377,7 @@ class ApiService {
     this.customHeaders = {};
   }
 
-  // Build URL with query parameters
-  buildUrl(endpoint, params = {}) {
-    const url = new URL(endpoint, this.baseURL);
-    Object.keys(params).forEach(key => {
-      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
-        url.searchParams.append(key, params[key]);
-      }
-    });
-    return url.toString();
-  }
-
-  // Handle file upload (for future use)
+  // Handle file upload
   async uploadFile(endpoint, formData) {
     const token = this.getAuthToken();
     const headers = {};
@@ -318,7 +385,6 @@ class ApiService {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    // Don't set Content-Type for FormData, let browser set it with boundary
 
     try {
       const response = await fetch(`${this.baseURL}${endpoint}`, {
@@ -339,7 +405,7 @@ class ApiService {
     }
   }
 
-  // Download file (for future use)
+  // Download file
   async downloadFile(endpoint, filename = 'download') {
     try {
       const response = await fetch(`${this.baseURL}${endpoint}`, {

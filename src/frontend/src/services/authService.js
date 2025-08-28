@@ -1,16 +1,22 @@
+// ===== 2. src/frontend/src/services/authService.js (Temizlenmiş) =====
+
 import apiService from './api';
 
 class AuthService {
   // Login user
   async login(credentials) {
     try {
-      // Make API call to your backend
+      console.log('AuthService: Login attempt', { email: credentials.email });
+      
+      // Make API call through apiService
       const response = await apiService.login(credentials);
       
-      if (response.token && response.user) {
+      if (response.success && response.token && response.user) {
         // Store auth data
         localStorage.setItem('authToken', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
+        
+        console.log('AuthService: Login successful', response.user);
         
         return {
           success: true,
@@ -20,11 +26,11 @@ class AuthService {
       } else {
         return {
           success: false,
-          error: 'Giriş bilgileri doğrulanamadı'
+          error: response.error || 'Giriş bilgileri doğrulanamadı'
         };
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('AuthService: Login error', error);
       return {
         success: false,
         error: error.message || 'Giriş sırasında bir hata oluştu'
@@ -37,7 +43,7 @@ class AuthService {
     try {
       const response = await apiService.register(userData);
       
-      if (response.token && response.user) {
+      if (response.success && response.token && response.user) {
         localStorage.setItem('authToken', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
         
@@ -63,42 +69,29 @@ class AuthService {
   // Logout user
   async logout() {
     try {
-      // Call API to logout (optional - invalidate token on server)
-      try {
-        await apiService.logout();
-      } catch (apiError) {
-        // Continue with logout even if API call fails
-        console.warn('API logout failed:', apiError);
-      }
-      
-      // Clear local storage
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
+      await apiService.logout();
       
       return { success: true };
     } catch (error) {
       console.error('Logout error:', error);
-      // Still clear local storage even if there's an error
+      // Clear local storage even if API call fails
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       return { success: true };
     }
   }
 
-  // Refresh auth token
+  // Refresh token
   async refreshToken() {
     try {
-      const response = await apiService.refreshToken();
+      const result = await apiService.refreshToken();
       
-      if (response.token) {
-        localStorage.setItem('authToken', response.token);
-        return {
-          success: true,
-          token: response.token
-        };
+      if (result.success) {
+        localStorage.setItem('authToken', result.token);
+        localStorage.setItem('user', JSON.stringify(result.user));
       }
       
-      throw new Error('No token received');
+      return result;
     } catch (error) {
       return {
         success: false,
@@ -110,10 +103,10 @@ class AuthService {
   // Forgot password
   async forgotPassword(email) {
     try {
-      await apiService.post('/Auth/forgot-password', { email });
+      await apiService.forgotPassword(email);
       return {
         success: true,
-        message: 'Şifre sıfırlama bağlantısı email adresinize gönderildi'
+        message: 'Şifre sıfırlama e-postası gönderildi'
       };
     } catch (error) {
       return {
@@ -126,10 +119,7 @@ class AuthService {
   // Reset password
   async resetPassword(token, newPassword) {
     try {
-      await apiService.post('/Auth/reset-password', {
-        token,
-        password: newPassword
-      });
+      await apiService.resetPassword(token, newPassword);
       return {
         success: true,
         message: 'Şifreniz başarıyla güncellendi'
@@ -169,11 +159,8 @@ class AuthService {
         return { success: false, error: 'Token bulunamadı' };
       }
 
-      const response = await apiService.post('/Auth/verify');
-      return {
-        success: true,
-        user: response.user
-      };
+      const response = await apiService.verifyToken();
+      return response;
     } catch (error) {
       return {
         success: false,
@@ -211,7 +198,12 @@ class AuthService {
       const token = this.getToken();
       if (!token) return true;
 
-      // Basic JWT token expiry check
+      // For mock tokens, just check if they exist
+      if (token.includes('mock-jwt-token')) {
+        return false; // Mock tokens don't expire for development
+      }
+
+      // Basic JWT token expiry check for real tokens
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Date.now() / 1000;
       

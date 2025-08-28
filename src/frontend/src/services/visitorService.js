@@ -5,27 +5,8 @@ class VisitorService {
   // Get visitors with filtering and pagination
   async getVisitors(params = {}) {
     try {
-      const queryParams = new URLSearchParams();
-      
-      // Filtering parameters
-      if (params.fromDate) queryParams.append('fromDate', params.fromDate);
-      if (params.toDate) queryParams.append('toDate', params.toDate);
-      if (params.company) queryParams.append('company', params.company);
-      if (params.visitor) queryParams.append('visitor', params.visitor);
-      
-      // Pagination parameters
-      if (params.page) queryParams.append('page', params.page.toString());
-      if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-      
-      // Sorting parameters
-      if (params.sortBy) queryParams.append('sortBy', params.sortBy);
-      if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
-
-      const endpoint = queryParams.toString() 
-        ? `/visitors?${queryParams.toString()}` 
-        : '/visitors';
-
-      return await apiService.get(endpoint);
+      // Use the apiService.getVisitors method directly
+      return await apiService.getVisitors(params);
     } catch (error) {
       console.error('Error fetching visitors:', error);
       throw new Error(error.message || 'Ziyaretçiler alınırken hata oluştu');
@@ -39,7 +20,7 @@ class VisitorService {
         throw new Error('Ziyaretçi ID\'si gerekli');
       }
 
-      return await apiService.get(`/visitors/${id}`);
+      return await apiService.getVisitor(id);
     } catch (error) {
       console.error('Error fetching visitor:', error);
       throw new Error(error.message || 'Ziyaretçi alınırken hata oluştu');
@@ -60,7 +41,7 @@ class VisitorService {
         date: this.formatDate(visitorData.date)
       };
 
-      return await apiService.post('/visitors', formattedData);
+      return await apiService.createVisitor(formattedData);
     } catch (error) {
       console.error('Error creating visitor:', error);
       throw new Error(error.message || 'Ziyaretçi oluşturulurken hata oluştu');
@@ -85,7 +66,7 @@ class VisitorService {
         date: this.formatDate(visitorData.date)
       };
 
-      return await apiService.put(`/visitors/${id}`, formattedData);
+      return await apiService.updateVisitor(id, formattedData);
     } catch (error) {
       console.error('Error updating visitor:', error);
       throw new Error(error.message || 'Ziyaretçi güncellenirken hata oluştu');
@@ -99,7 +80,7 @@ class VisitorService {
         throw new Error('Ziyaretçi ID\'si gerekli');
       }
 
-      return await apiService.delete(`/visitors/${id}`);
+      return await apiService.deleteVisitor(id);
     } catch (error) {
       console.error('Error deleting visitor:', error);
       throw new Error(error.message || 'Ziyaretçi silinirken hata oluştu');
@@ -109,7 +90,7 @@ class VisitorService {
   // Get visitor statistics
   async getVisitorStats() {
     try {
-      return await apiService.get('/visitors/stats');
+      return await apiService.getVisitorStats();
     } catch (error) {
       console.error('Error fetching visitor stats:', error);
       throw new Error(error.message || 'Ziyaretçi istatistikleri alınırken hata oluştu');
@@ -119,26 +100,16 @@ class VisitorService {
   // Export visitors data
   async exportVisitors(params = {}) {
     try {
-      const queryParams = new URLSearchParams();
-      
-      // Filtering parameters for export
-      if (params.fromDate) queryParams.append('fromDate', params.fromDate);
-      if (params.toDate) queryParams.append('toDate', params.toDate);
-      if (params.company) queryParams.append('company', params.company);
-      if (params.visitor) queryParams.append('visitor', params.visitor);
-
-      const endpoint = queryParams.toString() 
-        ? `/visitors/export?${queryParams.toString()}` 
-        : '/visitors/export';
-
-      return await apiService.get(endpoint);
+      return await apiService.exportVisitors(params);
     } catch (error) {
       console.error('Error exporting visitors:', error);
       throw new Error(error.message || 'Veriler dışa aktarılırken hata oluştu');
     }
   }
 
-  // Utility: Format date to YYYY-MM-DD format
+  // ===== UTILITY METHODS =====
+
+  // Format date to YYYY-MM-DD format
   formatDate(date) {
     if (!date) return null;
     
@@ -157,7 +128,7 @@ class VisitorService {
     return null;
   }
 
-  // Utility: Format date for display (DD.MM.YYYY)
+  // Format date for display (DD.MM.YYYY)
   formatDateForDisplay(date) {
     if (!date) return '';
     
@@ -171,12 +142,12 @@ class VisitorService {
     return `${day}.${month}.${year}`;
   }
 
-  // Utility: Get today's date in YYYY-MM-DD format
+  // Get today's date in YYYY-MM-DD format
   getTodayDate() {
     return this.formatDate(new Date());
   }
 
-  // Utility: Get date range (last N days)
+  // Get date range (last N days)
   getDateRange(days) {
     const toDate = new Date();
     const fromDate = new Date();
@@ -188,63 +159,27 @@ class VisitorService {
     };
   }
 
-  // Utility: Validate visitor data
-  validateVisitorData(data) {
-    const errors = {};
-
-    if (!data.date) {
-      errors.date = 'Ziyaret tarihi zorunludur';
-    }
-
-    if (!data.company || data.company.trim().length === 0) {
-      errors.company = 'Şirket adı zorunludur';
-    } else if (data.company.length > 100) {
-      errors.company = 'Şirket adı en fazla 100 karakter olabilir';
-    }
-
-    if (!data.visitor || data.visitor.trim().length === 0) {
-      errors.visitor = 'Ziyaretçi adı zorunludur';
-    } else if (data.visitor.length > 255) {
-      errors.visitor = 'Ziyaretçi adı en fazla 255 karakter olabilir';
-    }
-
-    if (data.description && data.description.length > 500) {
-      errors.description = 'Açıklama en fazla 500 karakter olabilir';
-    }
-
-    return {
-      isValid: Object.keys(errors).length === 0,
-      errors
-    };
-  }
-
-  // Utility: Create CSV content from visitors data
+  // Create CSV content from visitors array
   createCSVContent(visitors) {
-    if (!Array.isArray(visitors) || visitors.length === 0) {
-      return '';
-    }
+    if (!visitors || visitors.length === 0) return null;
 
-    // CSV headers
-    const headers = ['ID', 'Tarih', 'Şirket', 'Ziyaretçi', 'Açıklama'];
-    
-    // CSV rows
-    const rows = visitors.map(visitor => [
-      visitor.id,
-      this.formatDateForDisplay(visitor.date),
-      visitor.company || '',
-      visitor.visitor || '',
-      visitor.description || ''
-    ]);
+    const headers = ['Tarih', 'Şirket', 'Ziyaretçi', 'Açıklama'];
+    const csvRows = [headers.join(';')];
 
-    // Combine headers and rows
-    const csvContent = [headers, ...rows]
-      .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
+    visitors.forEach(visitor => {
+      const row = [
+        this.formatDateForDisplay(visitor.date) || '',
+        visitor.company || '',
+        visitor.visitor || '',
+        visitor.description ? `"${visitor.description.replace(/"/g, '""')}"` : ''
+      ];
+      csvRows.push(row.join(';'));
+    });
 
-    return csvContent;
+    return csvRows.join('\n');
   }
 
-  // Utility: Download CSV file
+  // Download CSV file
   downloadCSV(visitors, filename = 'ziyaretciler.csv') {
     const csvContent = this.createCSVContent(visitors);
     if (!csvContent) {
@@ -269,7 +204,7 @@ class VisitorService {
     }
   }
 
-  // Utility: Get filter summary text
+  // Get filter summary text
   getFilterSummary(filters) {
     const parts = [];
 
@@ -292,7 +227,7 @@ class VisitorService {
     return parts.length > 0 ? parts.join(' • ') : 'Tüm kayıtlar';
   }
 
-  // Utility: Get quick date filters
+  // Get quick date filters
   getQuickDateFilters() {
     const today = new Date();
     const filters = [];

@@ -1,3 +1,5 @@
+// ===== 2. src/frontend/src/components/Visitors/VisitorsList.js (DÜZELTME) =====
+
 import React, { useState } from 'react';
 import { formatDate } from '../../utils/helpers';
 
@@ -47,7 +49,6 @@ const VisitorsList = ({
         await onDelete?.(deleteModal.visitor.id);
         setDeleteModal({ show: false, visitor: null });
       } catch (error) {
-        // Error will be handled by parent component
         console.error('Delete failed:', error);
       }
     }
@@ -63,10 +64,10 @@ const VisitorsList = ({
     const diffTime = today - visitDate;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) return 'text-success'; // Today
-    if (diffDays <= 7) return 'text-info';     // This week
-    if (diffDays <= 30) return 'text-warning'; // This month
-    return 'text-muted';                        // Older
+    if (diffDays === 0) return 'text-success';
+    if (diffDays <= 7) return 'text-info';
+    if (diffDays <= 30) return 'text-warning';
+    return 'text-muted';
   };
 
   const getRelativeDate = (date) => {
@@ -83,7 +84,20 @@ const VisitorsList = ({
     return `${Math.ceil(diffDays / 365)} yıl önce`;
   };
 
-  if (loading && visitors.length === 0) {
+  const formatDateForDisplay = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    if (isNaN(d)) return '';
+    
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    
+    return `${day}.${month}.${year}`;
+  };
+
+  // ⚡ DÜZELTME: Loading state sadece visitors boşken gösterilsin
+  if (loading && (!visitors || visitors.length === 0)) {
     return (
       <div className="d-flex justify-content-center align-items-center py-5">
         <div className="text-center">
@@ -96,7 +110,8 @@ const VisitorsList = ({
     );
   }
 
-  if (!loading && visitors.length === 0) {
+  // ⚡ DÜZELTME: Empty state sadece loading false iken gösterilsin
+  if (!loading && (!visitors || visitors.length === 0)) {
     return (
       <div className="text-center py-5">
         <div className="mb-4">
@@ -108,6 +123,7 @@ const VisitorsList = ({
     );
   }
 
+  // ⚡ VISITOR LIST - Ana içerik
   return (
     <>
       {/* Table Header */}
@@ -152,44 +168,38 @@ const VisitorsList = ({
                     className="form-check-input"
                     type="checkbox"
                     checked={isAllSelected}
-                    onChange={onSelectAll}
+                    onChange={() => onSelectAll?.()}
                   />
                 </div>
               </th>
-              <th>
-                <button 
-                  className="btn btn-link p-0 text-decoration-none fw-semibold text-dark"
-                  onClick={() => handleSort('date')}
-                >
-                  Tarih
-                  <i className={`bi ${getSortIcon('date')} ms-1 small`}></i>
-                </button>
+              <th 
+                style={{ cursor: 'pointer' }}
+                onClick={() => handleSort('date')}
+              >
+                Tarih
+                <i className={`bi ${getSortIcon('date')} ms-1`}></i>
               </th>
-              <th>
-                <button 
-                  className="btn btn-link p-0 text-decoration-none fw-semibold text-dark"
-                  onClick={() => handleSort('company')}
-                >
-                  Şirket
-                  <i className={`bi ${getSortIcon('company')} ms-1 small`}></i>
-                </button>
+              <th 
+                style={{ cursor: 'pointer' }}
+                onClick={() => handleSort('company')}
+              >
+                Şirket
+                <i className={`bi ${getSortIcon('company')} ms-1`}></i>
               </th>
-              <th>
-                <button 
-                  className="btn btn-link p-0 text-decoration-none fw-semibold text-dark"
-                  onClick={() => handleSort('visitor')}
-                >
-                  Ziyaretçi
-                  <i className={`bi ${getSortIcon('visitor')} ms-1 small`}></i>
-                </button>
+              <th 
+                style={{ cursor: 'pointer' }}
+                onClick={() => handleSort('visitor')}
+              >
+                Ziyaretçi
+                <i className={`bi ${getSortIcon('visitor')} ms-1`}></i>
               </th>
               <th>Açıklama</th>
-              <th style={{ width: '120px' }}>İşlemler</th>
+              <th style={{ width: '100px' }}>İşlemler</th>
             </tr>
           </thead>
           <tbody>
-            {visitors.map((visitor) => (
-              <tr key={visitor.id}>
+            {visitors.map((visitor, index) => (
+              <tr key={visitor.id || index}>
                 <td>
                   <div className="form-check">
                     <input
@@ -202,8 +212,8 @@ const VisitorsList = ({
                 </td>
                 <td>
                   <div>
-                    <div className={`fw-semibold ${getStatusColor(visitor.date)}`}>
-                      {formatDate(visitor.date, 'DD/MM/YYYY')}
+                    <div className={`fw-medium ${getStatusColor(visitor.date)}`}>
+                      {formatDateForDisplay(visitor.date)}
                     </div>
                     <small className="text-muted">
                       {getRelativeDate(visitor.date)}
@@ -211,52 +221,32 @@ const VisitorsList = ({
                   </div>
                 </td>
                 <td>
-                  <div className="d-flex align-items-center">
-                    <div className="me-2">
-                      <div className="bg-primary text-white rounded d-flex align-items-center justify-content-center" 
-                           style={{ width: '32px', height: '32px', fontSize: '0.75rem' }}>
-                        {visitor.company?.charAt(0)?.toUpperCase() || 'N/A'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="fw-semibold">{visitor.company || 'Belirtilmemiş'}</div>
-                      <small className="text-muted">Şirket</small>
+                  <span className="fw-medium text-primary">
+                    {visitor.company || 'N/A'}
+                  </span>
+                </td>
+                <td>
+                  <div>
+                    <div className="fw-medium">
+                      {visitor.visitor || 'N/A'}
                     </div>
                   </div>
                 </td>
                 <td>
-                  <div className="fw-semibold">{visitor.visitor || 'Belirtilmemiş'}</div>
-                  <small className="text-muted">Ziyaretçi</small>
-                </td>
-                <td>
-                  <div className="description-cell">
-                    {visitor.description ? (
-                      <>
-                        <div className="description-text">
-                          {visitor.description.length > 100 
-                            ? `${visitor.description.substring(0, 100)}...` 
-                            : visitor.description
-                          }
-                        </div>
-                        {visitor.description.length > 100 && (
-                          <small className="text-muted">
-                            <i className="bi bi-three-dots"></i>
-                          </small>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-muted">-</span>
-                    )}
+                  <div style={{ maxWidth: '200px' }}>
+                    <div className="text-truncate" title={visitor.description}>
+                      {visitor.description || 'Açıklama yok'}
+                    </div>
                   </div>
                 </td>
                 <td>
                   <div className="dropdown">
-                    <button 
-                      className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                    <button
+                      className="btn btn-outline-secondary btn-sm dropdown-toggle"
+                      type="button"
                       data-bs-toggle="dropdown"
-                      aria-expanded="false"
                     >
-                      <i className="bi bi-three-dots-vertical"></i>
+                      <i className="bi bi-three-dots"></i>
                     </button>
                     <ul className="dropdown-menu">
                       <li>
@@ -293,7 +283,7 @@ const VisitorsList = ({
         </table>
       </div>
 
-      {/* Loading overlay */}
+      {/* Loading overlay for additional data */}
       {loading && visitors.length > 0 && (
         <div className="position-relative">
           <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light bg-opacity-75">
@@ -308,7 +298,7 @@ const VisitorsList = ({
       {pagination.totalPages > 1 && (
         <div className="d-flex justify-content-between align-items-center mt-4">
           <div className="text-muted small">
-            {pagination.page * pagination.pageSize - pagination.pageSize + 1}-
+            {((pagination.page - 1) * pagination.pageSize) + 1}-
             {Math.min(pagination.page * pagination.pageSize, pagination.totalCount)} of{' '}
             {pagination.totalCount} entries
           </div>
@@ -326,8 +316,8 @@ const VisitorsList = ({
               
               {/* Page numbers */}
               {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                const pageNum = pagination.page - 2 + i;
-                if (pageNum < 1 || pageNum > pagination.totalPages) return null;
+                const pageNum = Math.max(1, pagination.page - 2) + i;
+                if (pageNum > pagination.totalPages) return null;
                 
                 return (
                   <li key={pageNum} className={`page-item ${pagination.page === pageNum ? 'active' : ''}`}>
@@ -339,7 +329,7 @@ const VisitorsList = ({
                     </button>
                   </li>
                 );
-              }).filter(Boolean)}
+              })}
               
               <li className={`page-item ${!pagination.hasNextPage ? 'disabled' : ''}`}>
                 <button 
@@ -369,24 +359,10 @@ const VisitorsList = ({
                 ></button>
               </div>
               <div className="modal-body">
-                <div className="d-flex align-items-center mb-3">
-                  <div className="me-3">
-                    <i className="bi bi-exclamation-triangle-fill text-warning display-6"></i>
-                  </div>
-                  <div>
-                    <h6 className="mb-1">Bu ziyaretçi kaydını silmek istediğinizden emin misiniz?</h6>
-                    <p className="text-muted mb-0">
-                      <strong>{deleteModal.visitor?.visitor}</strong> ({deleteModal.visitor?.company})
-                    </p>
-                    <small className="text-muted">
-                      Tarih: {formatDate(deleteModal.visitor?.date, 'DD/MM/YYYY')}
-                    </small>
-                  </div>
-                </div>
-                <div className="alert alert-warning small mb-0">
-                  <i className="bi bi-info-circle me-2"></i>
-                  Bu işlem geri alınamaz. Ziyaretçi kaydı kalıcı olarak silinecektir.
-                </div>
+                <p>
+                  <strong>{deleteModal.visitor?.visitor}</strong> adlı ziyaretçiyi silmek istediğinizden emin misiniz?
+                </p>
+                <p className="text-muted small mb-0">Bu işlem geri alınamaz.</p>
               </div>
               <div className="modal-footer">
                 <button 
@@ -409,32 +385,6 @@ const VisitorsList = ({
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        .description-cell {
-          max-width: 200px;
-        }
-        .description-text {
-          word-wrap: break-word;
-          white-space: normal;
-        }
-        .table td {
-          vertical-align: middle;
-        }
-        .dropdown-menu {
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          border: none;
-          border-radius: 8px;
-        }
-        .dropdown-item:hover {
-          background-color: rgba(255, 107, 107, 0.1);
-          color: #FF6B6B;
-        }
-        .dropdown-item.text-danger:hover {
-          background-color: rgba(220, 53, 69, 0.1);
-          color: #dc3545;
-        }
-      `}</style>
     </>
   );
 };
