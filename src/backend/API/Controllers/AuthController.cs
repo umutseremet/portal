@@ -31,6 +31,17 @@ public class AuthController : ControllerBase
 
             _logger.LogInformation("Login attempt for username: {Username}", request.Username);
 
+            // Configuration durumunu kontrol et
+            var configStatus = _redmineService.GetConfigurationStatus();
+            _logger.LogInformation("Redmine configuration status: BaseUrl={BaseUrl}, Valid={Valid}",
+                configStatus.BaseUrl, configStatus.ConfigurationValid);
+
+            if (!configStatus.ConfigurationValid)
+            {
+                _logger.LogError("Redmine configuration is invalid");
+                return StatusCode(500, new ErrorResponse { Message = "Sunucu konfigürasyon hatası" });
+            }
+
             // Redmine ile kimlik doğrulama
             var user = await _redmineService.AuthenticateUserAsync(request.Username, request.Password);
 
@@ -57,6 +68,45 @@ public class AuthController : ControllerBase
         {
             _logger.LogError(ex, "Login error for username: {Username}", request.Username);
             return StatusCode(500, new ErrorResponse { Message = "Sunucu hatası oluştu" });
+        }
+    }
+
+    /// <summary>
+    /// Configuration ve bağlantı durumunu test eden endpoint
+    /// </summary>
+    [HttpGet("test")]
+    public async Task<IActionResult> TestConfiguration()
+    {
+        try
+        {
+            var configStatus = _redmineService.GetConfigurationStatus();
+
+            // Test kullanıcısı ile bağlantı testi (opsiyonel)
+            User? testUser = null;
+            try
+            {
+                testUser = await _redmineService.AuthenticateUserAsync("test", "wrongpassword");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug("Test connection failed (expected): {Error}", ex.Message);
+            }
+
+            return Ok(new
+            {
+                RedmineConfiguration = configStatus,
+                TestConnectionAttempted = true,
+                TestUserFound = testUser != null,
+                DatabaseConnectionString = !string.IsNullOrEmpty(_configuration.GetConnectionString("DefaultConnection")) ? "Configured" : "Not configured",
+                JwtConfiguration = !string.IsNullOrEmpty(_configuration["JwtSettings:Secret"]) ? "Configured" : "Not configured",
+                Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                Timestamp = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in test configuration");
+            return StatusCode(500, new ErrorResponse { Message = ex.Message });
         }
     }
 

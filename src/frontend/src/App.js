@@ -6,6 +6,7 @@ import Login from './components/Auth/Login';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import DashboardPage from './pages/DashboardPage';
 import ProductionPage from './pages/ProductionPage';
+import VisitorsPage from './pages/VisitorsPage';
 import './App.css';
 
 function App() {
@@ -30,6 +31,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <ProductionPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/visitors"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <VisitorsPage />
                 </Layout>
               </ProtectedRoute>
             }

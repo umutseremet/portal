@@ -80,7 +80,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             <div className="logo-icon">
               <i className="bi bi-calendar-event-fill"></i>
             </div>
-            <h4 className="logo-text mb-0 ms-3">acara</h4>
+            <h4 className="logo-text mb-0 ms-3">vervo</h4>
           </div>
           {/* Close button - sadece mobile'da göster */}
           {isMobile && (
@@ -112,7 +112,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                   <i className={`bi ${item.icon} me-3`}></i>
                   <span className="nav-text">{item.label}</span>
                   {/* {isActive(item.path) && (
-                    <div className="nav-indicator"></div>
+                    <div className="position-absolute end-0 top-50 translate-middle-y">
+                      <div className="bg-danger rounded-circle" style={{ width: '6px', height: '6px' }}></div>
+                    </div>
                   )} */}
                 </button>
               ))}
@@ -121,7 +123,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
           {/* Additional Menu Sections */}
           <div className="sidebar-footer-menus">
-
             <div className="menu-section">
               <div className="menu-section-header">
                 <i className="bi bi-bar-chart me-2"></i>
@@ -130,9 +131,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               <div className="menu-items">
                 <button className="menu-item" type="button">
                   <i className="bi bi-graph-up me-2"></i>
-                  <span>Satış Raporu</span>
+                  <span>Ziyaretçi Raporu</span>
                 </button>
-
+                <button className="menu-item" type="button">
+                  <i className="bi bi-calendar-range me-2"></i>
+                  <span>Aylık Özet</span>
+                </button>
               </div>
             </div>
 
@@ -145,6 +149,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 <button className="menu-item" type="button">
                   <i className="bi bi-people me-2"></i>
                   <span>Kullanıcılar</span>
+                </button>
+                <button className="menu-item" type="button">
+                  <i className="bi bi-sliders me-2"></i>
+                  <span>Ayarlar</span>
                 </button>
               </div>
             </div>

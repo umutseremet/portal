@@ -126,8 +126,7 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
               3
             </span>
           </button>
-
-           
+          
 
           {/* User Dropdown */}
           <div className="dropdown user-dropdown">
