@@ -1,4 +1,4 @@
-// ===== 1. src/frontend/src/pages/VisitorsPage.js (MUTLAKA GÜNCELLEYIN) =====
+// ===== src/frontend/src/pages/VisitorsPage.js - GÜNCEL HALİ =====
 
 import React, { useState, useEffect } from 'react';
 import { useVisitors } from '../hooks/useVisitors';
@@ -20,7 +20,7 @@ const VisitorsPage = () => {
     selectedCount,
     isAllSelected,
     filterSummary,
-    loadVisitors,
+    loadVisitors, 
     loadStats,
     createVisitor,
     updateVisitor,
@@ -42,12 +42,12 @@ const VisitorsPage = () => {
   const [editingVisitor, setEditingVisitor] = useState(null);
   const [viewingVisitor, setViewingVisitor] = useState(null);
 
-  // ⭐ KRITIK: İlk yüklemede hem stats hem de visitors'ı yükle
+  // ✅ DÜZELTME: Sadece stats yükle, visitors hook tarafından otomatik yükleniyor
   useEffect(() => {
-    console.log('VisitorsPage: Loading initial data');
-    loadStats();
-    loadVisitors(); // ⚡ BU EKSİKTİ!
-  }, [loadStats, loadVisitors]);
+    console.log('VisitorsPage: Loading stats only');
+    loadStats(); // Sadece stats yükle
+    // loadVisitors(); // ❌ KALDIR: Hook içinde zaten yükleniyor
+  }, [loadStats]); // ✅ loadVisitors'ı kaldır
 
   // Debug visitors data
   useEffect(() => {
@@ -142,226 +142,189 @@ const VisitorsPage = () => {
     }
   };
 
-  return (
-    <div className="container-fluid py-4">
-      {/* Page Header */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h2 className="mb-1">Ziyaretçiler</h2>
-              <p className="text-muted mb-0">
-                {filterSummary}
-              </p>
-            </div>
-            <div className="d-flex gap-2">
-              {hasFilters && (
-                <button 
-                  className="btn btn-outline-secondary"
-                  onClick={handleResetFilters}
-                >
-                  <i className="bi bi-x-circle me-1"></i>
-                  Filtreleri Temizle
-                </button>
-              )}
-              <button 
-                className="btn btn-outline-secondary"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <i className="bi bi-funnel me-1"></i>
-                Filtrele
-              </button>
-              <button 
-                className="btn btn-outline-secondary"
-                onClick={handleExport}
-                disabled={isEmpty}
-              >
-                <i className="bi bi-download me-1"></i>
-                Excel
-              </button>
-              <button 
-                className="btn btn-danger"
-                onClick={handleNewVisitor}
-              >
-                <i className="bi bi-plus-lg me-1"></i>
-                Yeni Ziyaretçi
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+  // Handle save visitor (create or update)
+  const handleSaveVisitor = async (visitorData) => {
+    try {
+      if (editingVisitor) {
+        await updateVisitor(editingVisitor.id, visitorData);
+        console.log('Visitor updated successfully');
+      } else {
+        await createVisitor(visitorData);
+        console.log('Visitor created successfully');
+      }
+      handleCloseModal();
+    } catch (error) {
+      console.error('Failed to save visitor:', error);
+      // Error is handled in the hook
+    }
+  };
 
-      {/* Error Alert */}
-      {error && (
+  // Handle delete visitor
+  const handleDeleteVisitor = async (visitor) => {
+    if (window.confirm(`${visitor.visitor} ziyaretçisini silmek istediğinizden emin misiniz?`)) {
+      try {
+        await deleteVisitor(visitor.id);
+        console.log('Visitor deleted successfully');
+      } catch (error) {
+        console.error('Failed to delete visitor:', error);
+        // Error is handled in the hook
+      }
+    }
+  };
+
+  return (
+    <div className="dashboard-page">
+      <div className="container-fluid">
+        {/* ✅ DÜZELTME: Dashboard sayfası ile aynı header styling */}
         <div className="row mb-4">
           <div className="col-12">
-            <div className="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
-              <i className="bi bi-exclamation-triangle-fill me-2"></i>
-              <div className="flex-grow-1">
-                <strong>Hata!</strong> {error}
-              </div>
-              <button 
-                type="button" 
-                className="btn-close" 
-                onClick={clearError}
-                aria-label="Close"
-              ></button>
+            <div className="page-header">
+              <h2 className="page-title mb-2">Ziyaretçiler</h2>
+              <p className="page-subtitle text-muted">
+                Tüm ziyaretçi kayıtlarını görüntüleyin ve yönetin
+              </p>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Statistics Cards */}
-      {stats && (
-        <div className="row mb-4">
-          <div className="col-xl-3 col-md-6 mb-3">
+        {/* Error Display */}
+        {error && (
+          <div className="row mb-4">
+            <div className="col-12">
+              <div className="alert alert-danger alert-dismissible fade show">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                {error}
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={clearError}
+                  aria-label="Close"
+                ></button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ✅ DÜZELTME: Dashboard ile aynı Stats Cards Layout */}
+        {stats && (
+          <div className="row g-4 mb-4">
             <StatsCard 
               title="Toplam Ziyaretçi"
               value={stats.totalVisitors || 0}
-              icon="people"
-              color="primary"
-              loading={statsLoading}
-            />
-          </div>
-          <div className="col-xl-3 col-md-6 mb-3">
-            <StatsCard 
-              title="Bugün"
-              value={stats.todayVisitors || 0}
-              icon="calendar-check"
+              icon="bi-people-fill"
               color="success"
               loading={statsLoading}
             />
-          </div>
-          <div className="col-xl-3 col-md-6 mb-3">
+            <StatsCard 
+              title="Bugün"
+              value={stats.todayVisitors || 0}
+              icon="bi-calendar-event"
+              color="danger"
+              loading={statsLoading}
+            />
             <StatsCard 
               title="Bu Hafta"
               value={stats.thisWeekVisitors || 0}
-              icon="calendar-week"
+              icon="bi-graph-up"
               color="info"
               loading={statsLoading}
             />
-          </div>
-          <div className="col-xl-3 col-md-6 mb-3">
             <StatsCard 
               title="Bu Ay"
               value={stats.thisMonthVisitors || 0}
-              icon="calendar-month"
+              icon="bi-trending-up"
               color="warning"
               loading={statsLoading}
             />
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Quick Date Filters */}
-      <div className="row mb-3">
-        <div className="col-12">
-          <div className="d-flex gap-2 flex-wrap">
-            <span className="text-muted small align-self-center me-2">Hızlı filtreler:</span>
-            {['Bugün', 'Bu Hafta', 'Bu Ay', 'Son 7 Gün', 'Son 30 Gün'].map(filterType => (
-              <button
-                key={filterType}
-                className="btn btn-sm btn-outline-secondary"
-                onClick={() => handleQuickDateFilter(filterType)}
-              >
-                {filterType}
-              </button>
-            ))}
+        {/* Bulk Actions */}
+        {selectedCount > 0 && (
+          <div className="row mb-4">
+            <div className="col-12">
+              <div className="alert alert-info d-flex justify-content-between align-items-center">
+                <span>
+                  <i className="bi bi-info-circle-fill me-2"></i>
+                  {selectedCount} ziyaretçi seçili
+                </span>
+                <div className="d-flex gap-2">
+                  <button 
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={clearSelection}
+                  >
+                    <i className="bi bi-x-circle me-1"></i>
+                    Seçimi Temizle
+                  </button>
+                  <button 
+                    className="btn btn-sm btn-outline-danger"
+                    onClick={handleBulkDelete}
+                  >
+                    <i className="bi bi-trash me-1"></i>
+                    Seçilenleri Sil
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Bulk Actions */}
-      {selectedCount > 0 && (
-        <div className="row mb-3">
+        {/* Main Content - VisitorsList Component */}
+        <div className="row g-4 mb-4">
           <div className="col-12">
-            <div className="alert alert-info d-flex align-items-center justify-content-between">
-              <div>
-                <i className="bi bi-check2-square me-2"></i>
-                <strong>{selectedCount}</strong> ziyaretçi seçildi
-              </div>
-              <div className="d-flex gap-2">
-                <button
-                  className="btn btn-sm btn-outline-danger"
-                  onClick={handleBulkDelete}
-                >
-                  <i className="bi bi-trash me-1"></i>
-                  Seçilenleri Sil
-                </button>
-                <button
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={clearSelection}
-                >
-                  <i className="bi bi-x me-1"></i>
-                  Seçimi Temizle
-                </button>
+            <div className="card h-100">
+              <div className="card-body">
+                {/* ✅ DÜZELTME: Tüm prop'ları doğru şekilde geç */}
+                <VisitorsList
+                  visitors={visitors}
+                  loading={loading}
+                  error={error}
+                  isEmpty={isEmpty}
+                  hasFilters={hasFilters}
+                  filters={filters}
+                  pagination={pagination}
+                  selectedVisitors={selectedVisitors}
+                  selectedCount={selectedCount}
+                  isAllSelected={isAllSelected}
+                  filterSummary={filterSummary}
+                  
+                  // Actions
+                  onSort={handleSort}
+                  onPageChange={handlePageChange}
+                  onFilterChange={handleFilterChange}
+                  onResetFilters={handleResetFilters}
+                  onQuickDateFilter={handleQuickDateFilter}
+                  onNewVisitor={handleNewVisitor}
+                  onEditVisitor={handleEditVisitor}
+                  onViewVisitor={handleViewVisitor}
+                  onDeleteVisitor={handleDeleteVisitor}
+                  onExport={handleExport}
+                  onBulkDelete={handleBulkDelete}
+                  onSelectVisitor={selectVisitor}
+                  onSelectAll={selectAllVisitors}
+                  onClearSelection={clearSelection}
+                  onClearError={clearError}
+                />
               </div>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Visitors List */}
-      <div className="row">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-body">
-              <VisitorsList
-                visitors={visitors}
-                loading={loading}
-                onEdit={handleEditVisitor}
-                onDelete={deleteVisitor}
-                onView={handleViewVisitor}
-                pagination={pagination}
-                onPageChange={handlePageChange}
-                onSort={handleSort}
-                sortBy={filters.sortBy}
-                sortOrder={filters.sortOrder}
-                selectedVisitors={selectedVisitors}
-                onSelectVisitor={selectVisitor}
-                onSelectAll={selectAllVisitors}
-                isAllSelected={isAllSelected}
-              />
-            </div>
+        {/* Modals would go here */}
+        {showNewVisitorModal && (
+          <div>
+            {/* New/Edit Visitor Modal */}
+            {/* Implementation depends on your modal component */}
           </div>
-        </div>
+        )}
+
+        {viewingVisitor && (
+          <div>
+            {/* View Visitor Modal */}
+            {/* Implementation depends on your modal component */}
+          </div>
+        )}
       </div>
-
-      {/* Modal placeholder */}
-      {showNewVisitorModal && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  {editingVisitor ? 'Ziyaretçi Düzenle' : 'Yeni Ziyaretçi Ekle'}
-                </h5>
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={handleCloseModal}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>Ziyaretçi formu buraya gelecek...</p>
-                <p>Düzenlenen ziyaretçi: {editingVisitor ? JSON.stringify(editingVisitor, null, 2) : 'Yeni kayıt'}</p>
-              </div>
-              <div className="modal-footer">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  onClick={handleCloseModal}
-                >
-                  İptal
-                </button>
-                <button type="button" className="btn btn-danger">
-                  {editingVisitor ? 'Güncelle' : 'Kaydet'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

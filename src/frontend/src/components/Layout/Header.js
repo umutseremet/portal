@@ -1,3 +1,5 @@
+// ===== DÜZELTME 3: src/frontend/src/components/Layout/Header.js =====
+
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -27,12 +29,15 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
     }
   };
 
+  // ✅ DÜZELTME: Menü adlarını kullan, içerik başlık değil 
   const getPageTitle = () => {
     switch (location.pathname) {
       case '/dashboard':
         return 'Dashboard';
       case '/production':
         return 'Üretim Planlama';
+      case '/visitors':
+        return 'Ziyaretçiler'; // ✅ Menü adı olarak "Ziyaretçiler" kullan
       default:
         return 'Dashboard';
     }
@@ -82,114 +87,161 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
   };
 
   const getUserRole = () => {
-    return user?.admin ? 'admin' : (user?.role || 'user');
+    return user?.role || 'admin';
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+    <nav className="navbar navbar-expand-lg navbar-light header-nav fixed-top">
       <div className="container-fluid">
-        {/* HAMBURGER MENU BUTTON - Tüm Ekranlarda Görünür */}
-        <button
-          className="btn btn-outline-danger me-3 hamburger-menu-btn"
-          onClick={handleMenuToggle}
-          aria-label="Toggle sidebar"
-          type="button"
-          disabled={loading}
-        >
-          <i className="bi bi-list fs-4"></i>
-        </button>
-
-        {/* Page Title - Desktop Only */}
-        <div className="flex-grow-1 mx-4 d-none d-md-block">
-          <h4 className="mb-0 text-dark fw-bold">{getPageTitle()}</h4>
+        {/* Sidebar Toggle + Brand */}
+        <div className="d-flex align-items-center">
+          <button
+            className="btn navbar-toggler d-lg-none me-3"
+            type="button"
+            onClick={handleMenuToggle}
+            style={{
+              border: 'none',
+              background: 'none',
+              fontSize: '1.25rem',
+              color: '#FF6B6B'
+            }}
+          >
+            <i className={`bi ${sidebarOpen ? 'bi-x-lg' : 'bi-list'}`}></i>
+          </button>
+          
+          {/* ✅ DÜZELTME: Dynamic page title */}
+          <span className="navbar-brand mb-0 h1 d-none d-md-block">
+            {getPageTitle()}
+          </span>
         </div>
 
-        {/* Mobile Brand */}
-        <div className="d-lg-none flex-grow-1">
-          <span className="navbar-brand mb-0 h1 text-danger fw-bold">
-            <i className="bi bi-calendar-event-fill me-2"></i>
-            acara
-          </span>
-        </div> 
+        {/* Search Box - Orta */}
+        <div className="flex-grow-1 mx-4 d-none d-lg-block">
+          <div className="position-relative" style={{ maxWidth: '400px', margin: '0 auto' }}>
+            <input
+              className="form-control pe-5"
+              type="search"
+              placeholder="Ara..."
+              style={{
+                backgroundColor: '#f8f9fa',
+                border: '2px solid #e9ecef',
+                borderRadius: '25px',
+                paddingLeft: '1rem',
+                paddingRight: '3rem'
+              }}
+            />
+            <div className="position-absolute" style={{ right: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
+              <i className="bi bi-search text-muted"></i>
+            </div>
+          </div>
+        </div>
 
-        {/* Right Side Actions */}
-        <div className="d-flex align-items-center gap-2">
-          {/* Mobile Search Toggle */}
-          <button className="btn btn-link text-dark d-md-none p-2">
-            <i className="bi bi-search fs-5"></i>
-          </button>
-
+        {/* User Dropdown - Sağ */}
+        <div className="d-flex align-items-center">
           {/* Notifications */}
-          <button className="btn btn-link text-dark position-relative p-2">
-            <i className="bi bi-bell fs-5"></i>
-            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+          <button className="btn btn-link text-decoration-none position-relative me-3 d-none d-md-block">
+            <i className="bi bi-bell fs-5 text-muted"></i>
+            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '0.65rem' }}>
               3
             </span>
           </button>
-          
 
           {/* User Dropdown */}
           <div className="dropdown user-dropdown">
             <button
-              className="btn btn-link text-decoration-none d-flex align-items-center p-2"
+              className="btn btn-link text-decoration-none d-flex align-items-center"
+              type="button"
               onClick={toggleDropdown}
-              aria-expanded={dropdownOpen}
-              disabled={loading}
+              style={{ border: 'none', background: 'none' }}
             >
-              {/* User Avatar */}
-              <div className="d-flex align-items-center justify-content-center rounded-circle bg-danger text-white me-2" 
-                   style={{ width: '40px', height: '40px', fontSize: '0.875rem', fontWeight: '600' }}>
+              <div 
+                className="rounded-circle d-flex align-items-center justify-content-center me-2 text-white fw-bold"
+                style={{
+                  width: '35px',
+                  height: '35px',
+                  background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
+                  fontSize: '0.875rem'
+                }}
+              >
                 {getUserInitials()}
               </div>
-              
-              <div className="d-none d-lg-block text-start">
-                <div className="fw-semibold text-dark small">{getUserDisplayName()}</div>
-                <div className="text-muted small">{getUserRole()}</div>
+              <div className="d-none d-md-block text-start me-2">
+                <div className="fw-medium text-dark" style={{ fontSize: '0.9rem' }}>
+                  {getUserDisplayName()}
+                </div>
+                <div className="text-muted small">
+                  {getUserRole()}
+                </div>
               </div>
-              <i className={`bi bi-chevron-${dropdownOpen ? 'up' : 'down'} ms-2 text-muted small d-none d-lg-inline`}></i>
+              <i className={`bi bi-chevron-${dropdownOpen ? 'up' : 'down'} text-muted`}></i>
             </button>
 
+            {/* Dropdown Menu */}
             {dropdownOpen && (
-              <ul className="dropdown-menu dropdown-menu-end show shadow border-0">
-                <li>
-                  <div className="dropdown-header">
-                    <div className="fw-semibold">{getUserDisplayName()}</div>
-                    <div className="text-muted small">{getUserEmail()}</div>
-                    {user?.id && (
-                      <div className="text-muted small">ID: {user.id}</div>
-                    )}
+              <div 
+                className="dropdown-menu dropdown-menu-end show"
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: '0',
+                  zIndex: 1050,
+                  minWidth: '250px',
+                  marginTop: '0.5rem',
+                  borderRadius: '12px',
+                  border: '1px solid #e9ecef',
+                  boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)'
+                }}
+              >
+                {/* User Info Header */}
+                <div className="px-4 py-3 border-bottom">
+                  <div className="d-flex align-items-center">
+                    <div 
+                      className="rounded-circle d-flex align-items-center justify-content-center me-3 text-white fw-bold"
+                      style={{
+                        width: '45px',
+                        height: '45px',
+                        background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
+                        fontSize: '1rem'
+                      }}
+                    >
+                      {getUserInitials()}
+                    </div>
+                    <div>
+                      <div className="fw-medium text-dark">
+                        {getUserDisplayName()}
+                      </div>
+                      <div className="text-muted small">
+                        {getUserEmail()}
+                      </div>
+                    </div>
                   </div>
-                </li> 
-                 
-                <li>
-                  <button className="dropdown-item d-flex align-items-center" type="button">
-                    <i className="bi bi-question-circle me-2"></i>
+                </div>
+
+                {/* Menu Items */}
+                <div className="py-2">
+                  <button className="dropdown-item d-flex align-items-center py-2 px-4">
+                    <i className="bi bi-person me-3 text-muted"></i>
+                    Profilim
+                  </button>
+                  <button className="dropdown-item d-flex align-items-center py-2 px-4">
+                    <i className="bi bi-gear me-3 text-muted"></i>
+                    Ayarlar
+                  </button>
+                  <button className="dropdown-item d-flex align-items-center py-2 px-4">
+                    <i className="bi bi-question-circle me-3 text-muted"></i>
                     Yardım
                   </button>
-                </li> 
-                 
-                <li><hr className="dropdown-divider" /></li>
-                <li>
-                  <button
-                    className="dropdown-item text-danger d-flex align-items-center"
+                  <hr className="dropdown-divider" />
+                  <button 
+                    className="dropdown-item d-flex align-items-center py-2 px-4 text-danger"
                     onClick={handleLogout}
-                    type="button"
                     disabled={loading}
                   >
-                    {loading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2"></span>
-                        Çıkış yapılıyor...
-                      </>
-                    ) : (
-                      <>
-                        <i className="bi bi-box-arrow-right me-2"></i>
-                        Çıkış Yap
-                      </>
-                    )}
+                    <i className="bi bi-box-arrow-right me-3"></i>
+                    {loading ? 'Çıkış yapılıyor...' : 'Çıkış Yap'}
                   </button>
-                </li>
-              </ul>
+                </div>
+              </div>
             )}
           </div>
         </div>

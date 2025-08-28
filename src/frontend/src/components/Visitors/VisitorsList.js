@@ -1,99 +1,133 @@
-// ===== 2. src/frontend/src/components/Visitors/VisitorsList.js (DÜZELTME) =====
+// ===== DÜZELTME 4: src/frontend/src/components/Visitors/VisitorsList.js =====
 
 import React, { useState } from 'react';
-import { formatDate } from '../../utils/helpers';
 
-const VisitorsList = ({ 
-  visitors = [], 
-  loading = false, 
-  onEdit, 
-  onDelete, 
-  onView,
+const VisitorsList = ({
+  visitors = [],
+  loading = false,
+  error = null,
+  isEmpty = false,
+  hasFilters = false,
+  filters = {},
   pagination = {},
-  onPageChange,
-  onSort,
-  sortBy = 'date',
-  sortOrder = 'desc',
   selectedVisitors = [],
+  selectedCount = 0,
+  isAllSelected = false,
+  filterSummary = '',
+  
+  // Action handlers
+  onSort,
+  onPageChange,
+  onFilterChange,
+  onResetFilters,
+  onQuickDateFilter,
+  onNewVisitor,
+  onEditVisitor,
+  onViewVisitor,
+  onDeleteVisitor,
+  onExport,
+  onBulkDelete,
   onSelectVisitor,
   onSelectAll,
-  isAllSelected = false
+  onClearSelection,
+  onClearError
 }) => {
-  const [deleteModal, setDeleteModal] = useState({ show: false, visitor: null });
-
-  // Debug log
-  console.log('VisitorsList rendered with:', {
-    visitorsCount: visitors?.length || 0,
-    visitors: visitors,
-    loading,
-    pagination
+  const [showFilters, setShowFilters] = useState(false);
+  const [localFilters, setLocalFilters] = useState({
+    fromDate: filters.fromDate || '',
+    toDate: filters.toDate || '',
+    company: filters.company || '',
+    visitor: filters.visitor || '',
+    sortBy: filters.sortBy || 'date',
+    sortOrder: filters.sortOrder || 'desc'
   });
 
-  const handleSort = (column) => {
-    const newOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
-    onSort?.(column, newOrder);
+  // Format date for display (Turkish format)
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return 'N/A';
+    const d = new Date(dateString);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}.${month}.${year}`;
   };
 
-  const getSortIcon = (column) => {
-    if (sortBy !== column) return 'bi-arrow-down-up text-muted';
-    return sortOrder === 'asc' ? 'bi-arrow-up text-primary' : 'bi-arrow-down text-primary';
-  };
-
-  const handleDeleteClick = (visitor) => {
-    setDeleteModal({ show: true, visitor });
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (deleteModal.visitor) {
-      try {
-        await onDelete?.(deleteModal.visitor.id);
-        setDeleteModal({ show: false, visitor: null });
-      } catch (error) {
-        console.error('Delete failed:', error);
-      }
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setDeleteModal({ show: false, visitor: null });
-  };
-
-  const getStatusColor = (date) => {
-    const visitDate = new Date(date);
+  // Get relative date
+  const getRelativeDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
     const today = new Date();
-    const diffTime = today - visitDate;
+    const diffTime = Math.abs(today - date);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Bugün';
+    if (diffDays === 1) return '1 gün önce';
+    if (diffDays < 7) return `${diffDays} gün önce`;
+    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} hafta önce`;
+    return `${Math.ceil(diffDays / 30)} ay önce`;
+  };
 
+  // Get status color based on date
+  const getStatusColor = (dateString) => {
+    if (!dateString) return 'text-muted';
+    const date = new Date(dateString);
+    const today = new Date();
+    const diffTime = Math.abs(today - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
     if (diffDays === 0) return 'text-success';
     if (diffDays <= 7) return 'text-info';
     if (diffDays <= 30) return 'text-warning';
     return 'text-muted';
   };
 
-  const getRelativeDate = (date) => {
-    const visitDate = new Date(date);
-    const today = new Date();
-    const diffTime = today - visitDate;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Bugün';
-    if (diffDays === 1) return 'Dün';
-    if (diffDays <= 7) return `${diffDays} gün önce`;
-    if (diffDays <= 30) return `${Math.ceil(diffDays / 7)} hafta önce`;
-    if (diffDays <= 365) return `${Math.ceil(diffDays / 30)} ay önce`;
-    return `${Math.ceil(diffDays / 365)} yıl önce`;
+  // Handle local filter change
+  const handleLocalFilterChange = (field, value) => {
+    setLocalFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const formatDateForDisplay = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    if (isNaN(d)) return '';
-    
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    
-    return `${day}.${month}.${year}`;
+  // Apply filters
+  const handleApplyFilters = () => {
+    if (onFilterChange) {
+      onFilterChange(localFilters);
+    }
+    setShowFilters(false);
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    const defaultFilters = {
+      fromDate: '',
+      toDate: '',
+      company: '',
+      visitor: '',
+      sortBy: 'date',
+      sortOrder: 'desc'
+    };
+    setLocalFilters(defaultFilters);
+    if (onResetFilters) {
+      onResetFilters();
+    }
+  };
+
+  // Handle delete click
+  const handleDeleteClick = (visitor) => {
+    if (window.confirm(`${visitor.visitor} ziyaretçisini silmek istediğinizden emin misiniz?`)) {
+      if (onDeleteVisitor) {
+        onDeleteVisitor(visitor);
+      }
+    }
+  };
+
+  // Handle sort
+  const handleSort = (column) => {
+    const newOrder = filters.sortBy === column && filters.sortOrder === 'desc' ? 'asc' : 'desc';
+    if (onSort) {
+      onSort(column, newOrder);
+    }
   };
 
   // ⚡ DÜZELTME: Loading state sadece visitors boşken gösterilsin
@@ -117,8 +151,21 @@ const VisitorsList = ({
         <div className="mb-4">
           <i className="bi bi-people display-1 text-muted"></i>
         </div>
-        <h5 className="text-muted mb-3">Henüz ziyaretçi kaydı bulunmuyor</h5>
-        <p className="text-muted">İlk ziyaretçi kaydınızı oluşturmak için "Yeni Ziyaretçi" butonunu kullanın.</p>
+        <h5 className="text-muted mb-3">
+          {hasFilters ? 'Filtrelere uygun ziyaretçi bulunamadı' : 'Henüz ziyaretçi kaydı bulunmuyor'}
+        </h5>
+        <p className="text-muted">
+          {hasFilters 
+            ? 'Filtre kriterlerinizi değiştirmeyi deneyin.' 
+            : 'İlk ziyaretçi kaydınızı oluşturmak için "Yeni Ziyaretçi" butonunu kullanın.'
+          }
+        </p>
+        {hasFilters && (
+          <button className="btn btn-outline-secondary" onClick={handleResetFilters}>
+            <i className="bi bi-arrow-clockwise me-1"></i>
+            Filtreleri Temizle
+          </button>
+        )}
       </div>
     );
   }
@@ -126,6 +173,120 @@ const VisitorsList = ({
   // ⚡ VISITOR LIST - Ana içerik
   return (
     <>
+      {/* Header with Actions */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h5 className="card-title mb-0">Ziyaretçiler</h5>
+          <p className="text-muted mb-0 small">
+            Toplam {pagination.totalCount || 0} ziyaretçi
+            {filterSummary && (
+              <span className="ms-2 text-info">
+                ({filterSummary})
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="d-flex gap-2">
+          <button 
+            className="btn btn-outline-secondary btn-sm"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <i className="bi bi-funnel me-1"></i>
+            Filtrele
+            {hasFilters && <span className="badge bg-danger ms-1 rounded-pill">!</span>}
+          </button>
+          <button 
+            className="btn btn-outline-secondary btn-sm"
+            onClick={onExport}
+          >
+            <i className="bi bi-download me-1"></i>
+            Excel
+          </button>
+          <button 
+            className="btn btn-danger btn-sm"
+            onClick={onNewVisitor}
+          >
+            <i className="bi bi-plus-lg me-1"></i>
+            Yeni Ziyaretçi
+          </button>
+        </div>
+      </div>
+
+      {/* Filters Panel */}
+      {showFilters && (
+        <div className="card mb-4">
+          <div className="card-body">
+            <div className="row g-3">
+              <div className="col-md-3">
+                <label className="form-label small">Başlangıç Tarihi</label>
+                <input
+                  type="date"
+                  className="form-control form-control-sm"
+                  value={localFilters.fromDate}
+                  onChange={(e) => handleLocalFilterChange('fromDate', e.target.value)}
+                />
+              </div>
+              <div className="col-md-3">
+                <label className="form-label small">Bitiş Tarihi</label>
+                <input
+                  type="date"
+                  className="form-control form-control-sm"
+                  value={localFilters.toDate}
+                  onChange={(e) => handleLocalFilterChange('toDate', e.target.value)}
+                />
+              </div>
+              <div className="col-md-3">
+                <label className="form-label small">Şirket</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="Şirket adı ara..."
+                  value={localFilters.company}
+                  onChange={(e) => handleLocalFilterChange('company', e.target.value)}
+                />
+              </div>
+              <div className="col-md-3">
+                <label className="form-label small">Ziyaretçi</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="Ziyaretçi adı ara..."
+                  value={localFilters.visitor}
+                  onChange={(e) => handleLocalFilterChange('visitor', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="row mt-3">
+              <div className="col-12">
+                <div className="d-flex gap-2">
+                  <button 
+                    className="btn btn-primary btn-sm"
+                    onClick={handleApplyFilters}
+                  >
+                    <i className="bi bi-search me-1"></i>
+                    Filtrele
+                  </button>
+                  <button 
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={handleResetFilters}
+                  >
+                    <i className="bi bi-arrow-clockwise me-1"></i>
+                    Temizle
+                  </button>
+                  <button 
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={() => setShowFilters(false)}
+                  >
+                    <i className="bi bi-x me-1"></i>
+                    Kapat
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table Header */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="text-muted small">
@@ -136,25 +297,24 @@ const VisitorsList = ({
             </span>
           )}
         </div>
-        <div className="d-flex gap-2">
-          {selectedVisitors.length > 0 && (
+        {selectedVisitors.length > 0 && (
+          <div className="d-flex gap-2">
+            <button 
+              className="btn btn-sm btn-outline-secondary"
+              onClick={onClearSelection}
+            >
+              <i className="bi bi-x-circle me-1"></i>
+              Seçimi Temizle
+            </button>
             <button 
               className="btn btn-sm btn-outline-danger"
-              onClick={() => {/* Handle bulk delete */}}
+              onClick={onBulkDelete}
             >
               <i className="bi bi-trash me-1"></i>
               Seçilenleri Sil ({selectedVisitors.length})
             </button>
-          )}
-          <button className="btn btn-sm btn-outline-secondary">
-            <i className="bi bi-funnel me-1"></i>
-            Filtrele
-          </button>
-          <button className="btn btn-sm btn-outline-secondary">
-            <i className="bi bi-download me-1"></i>
-            Excel
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Visitors Table */}
@@ -168,38 +328,56 @@ const VisitorsList = ({
                     className="form-check-input"
                     type="checkbox"
                     checked={isAllSelected}
-                    onChange={() => onSelectAll?.()}
+                    onChange={onSelectAll}
                   />
                 </div>
               </th>
-              <th 
-                style={{ cursor: 'pointer' }}
-                onClick={() => handleSort('date')}
-              >
-                Tarih
-                <i className={`bi ${getSortIcon('date')} ms-1`}></i>
+              <th style={{ width: '120px' }}>
+                <button 
+                  className="btn btn-link text-decoration-none p-0 fw-medium text-dark d-flex align-items-center"
+                  onClick={() => handleSort('date')}
+                >
+                  Tarih
+                  <i className={`bi ms-1 ${
+                    filters.sortBy === 'date' 
+                      ? filters.sortOrder === 'desc' ? 'bi-arrow-down' : 'bi-arrow-up'
+                      : 'bi-arrow-down-up'
+                  }`}></i>
+                </button>
               </th>
-              <th 
-                style={{ cursor: 'pointer' }}
-                onClick={() => handleSort('company')}
-              >
-                Şirket
-                <i className={`bi ${getSortIcon('company')} ms-1`}></i>
+              <th>
+                <button 
+                  className="btn btn-link text-decoration-none p-0 fw-medium text-dark d-flex align-items-center"
+                  onClick={() => handleSort('company')}
+                >
+                  Şirket
+                  <i className={`bi ms-1 ${
+                    filters.sortBy === 'company' 
+                      ? filters.sortOrder === 'desc' ? 'bi-arrow-down' : 'bi-arrow-up'
+                      : 'bi-arrow-down-up'
+                  }`}></i>
+                </button>
               </th>
-              <th 
-                style={{ cursor: 'pointer' }}
-                onClick={() => handleSort('visitor')}
-              >
-                Ziyaretçi
-                <i className={`bi ${getSortIcon('visitor')} ms-1`}></i>
+              <th>
+                <button 
+                  className="btn btn-link text-decoration-none p-0 fw-medium text-dark d-flex align-items-center"
+                  onClick={() => handleSort('visitor')}
+                >
+                  Ziyaretçi
+                  <i className={`bi ms-1 ${
+                    filters.sortBy === 'visitor' 
+                      ? filters.sortOrder === 'desc' ? 'bi-arrow-down' : 'bi-arrow-up'
+                      : 'bi-arrow-down-up'
+                  }`}></i>
+                </button>
               </th>
               <th>Açıklama</th>
-              <th style={{ width: '100px' }}>İşlemler</th>
+              <th style={{ width: '120px' }}>İşlemler</th>
             </tr>
           </thead>
           <tbody>
-            {visitors.map((visitor, index) => (
-              <tr key={visitor.id || index}>
+            {visitors.map((visitor) => (
+              <tr key={visitor.id}>
                 <td>
                   <div className="form-check">
                     <input
@@ -252,7 +430,7 @@ const VisitorsList = ({
                       <li>
                         <button 
                           className="dropdown-item"
-                          onClick={() => onView?.(visitor)}
+                          onClick={() => onViewVisitor?.(visitor)}
                         >
                           <i className="bi bi-eye me-2"></i>Detayları Gör
                         </button>
@@ -260,7 +438,7 @@ const VisitorsList = ({
                       <li>
                         <button 
                           className="dropdown-item"
-                          onClick={() => onEdit?.(visitor)}
+                          onClick={() => onEditVisitor?.(visitor)}
                         >
                           <i className="bi bi-pencil me-2"></i>Düzenle
                         </button>
@@ -299,8 +477,8 @@ const VisitorsList = ({
         <div className="d-flex justify-content-between align-items-center mt-4">
           <div className="text-muted small">
             {((pagination.page - 1) * pagination.pageSize) + 1}-
-            {Math.min(pagination.page * pagination.pageSize, pagination.totalCount)} of{' '}
-            {pagination.totalCount} entries
+            {Math.min(pagination.page * pagination.pageSize, pagination.totalCount)} / {' '}
+            {pagination.totalCount} kayıt
           </div>
           <nav>
             <ul className="pagination pagination-sm mb-0">
@@ -342,47 +520,6 @@ const VisitorsList = ({
               </li>
             </ul>
           </nav>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deleteModal.show && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Ziyaretçi Sil</h5>
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={handleDeleteCancel}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>
-                  <strong>{deleteModal.visitor?.visitor}</strong> adlı ziyaretçiyi silmek istediğinizden emin misiniz?
-                </p>
-                <p className="text-muted small mb-0">Bu işlem geri alınamaz.</p>
-              </div>
-              <div className="modal-footer">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  onClick={handleDeleteCancel}
-                >
-                  İptal
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-danger"
-                  onClick={handleDeleteConfirm}
-                >
-                  <i className="bi bi-trash me-1"></i>
-                  Sil
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </>

@@ -1,5 +1,4 @@
-
-// ===== 2. src/frontend/src/hooks/useVisitors.js =====
+// ===== DÜZELTME 1: src/frontend/src/hooks/useVisitors.js =====
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import visitorService from '../services/visitorService';
@@ -37,16 +36,17 @@ export const useVisitors = (initialFilters = {}) => {
   // Selected visitors for bulk operations
   const [selectedVisitors, setSelectedVisitors] = useState([]);
 
-  // Ref to track if component is mounted
+  // Ref to track if component is mounted and initial load
   const mountedRef = useRef(true);
+  const initialLoadDoneRef = useRef(false); // ✅ EKLEME: İlk yükleme kontrolü
 
   // Clear error
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  // Load visitors with current filters
-  const loadVisitors = useCallback(async (page = 1, resetData = false, filtersToUse = null) => {
+  // ✅ DÜZELTME: loadVisitors fonksiyonunu optimize et
+  const loadVisitors = useCallback(async (page = 1, resetData = true, filtersToUse = null) => {
     if (!mountedRef.current) return;
     
     try {
@@ -85,8 +85,7 @@ export const useVisitors = (initialFilters = {}) => {
       } else {
         // For infinite scroll or load more functionality
         setVisitors(prev => 
-          page === 1 ? 
-            response.visitors || [] : [...prev, ...(response.visitors || [])]
+          page === 1 ? response.visitors || [] : [...prev, ...(response.visitors || [])]
         );
       }
 
@@ -124,30 +123,41 @@ export const useVisitors = (initialFilters = {}) => {
         setLoading(false);
       }
     }
-  }, [pagination.pageSize, clearError, filters]); // ✅ DÜZELTME: filters dependency eklendi
+  }, [pagination.pageSize, clearError]); // ✅ DÜZELTME: filters dependency'yi kaldır
 
-  // ✅ DÜZELTME: İlk yükleme için ayrı bir useEffect - sadece bir kez çalışır
+  // ✅ DÜZELTME: Sadece initial load için useEffect
   useEffect(() => {
-    console.log('useVisitors: Initial load triggered');
-    loadVisitors(1, true, filters);
-  }, []); // Empty dependency - sadece ilk yükleme
+    if (!initialLoadDoneRef.current) {
+      console.log('useVisitors: Initial load triggered');
+      initialLoadDoneRef.current = true;
+      loadVisitors(1, true, filters);
+    }
+  }, []); // ✅ Empty dependency - sadece mount'ta çalışır
 
   // ✅ DÜZELTME: Filtre değişikliklerinde debounced yeniden yükleme
   const debouncedLoadVisitors = useMemo(
     () => debounce((newFilters) => {
-      console.log('Debounced load with filters:', newFilters);
-      loadVisitors(1, true, newFilters);
-    }, 500),
+      if (initialLoadDoneRef.current) { // ✅ Sadece initial load'dan sonra
+        console.log('Debounced load with filters:', newFilters);
+        loadVisitors(1, true, newFilters);
+      }
+    }, 300), // ✅ 300ms debounce
     [loadVisitors]
   );
 
-  // ✅ DÜZELTME: Filtre değiştiğinde debounced yeniden yükleme
+  // ✅ DÜZELTME: Filtre değiştiğinde yeniden yükleme
   useEffect(() => {
-    // İlk yüklemede değil, sadece filtre değiştiğinde çalışır
-    if (filters.fromDate !== '' || filters.toDate !== '' || filters.company !== '' || filters.visitor !== '') {
-      debouncedLoadVisitors(filters);
+    // İlk yüklemeden sonra ve gerçek filtre değişikliğinde çalışır
+    if (initialLoadDoneRef.current) {
+      const hasActiveFilters = filters.fromDate || filters.toDate || filters.company || filters.visitor ||
+                              filters.sortBy !== 'date' || filters.sortOrder !== 'desc';
+      
+      if (hasActiveFilters) {
+        console.log('Filter changed, triggering debounced load:', filters);
+        debouncedLoadVisitors(filters);
+      }
     }
-  }, [filters, debouncedLoadVisitors]);
+  }, [filters.fromDate, filters.toDate, filters.company, filters.visitor, filters.sortBy, filters.sortOrder, debouncedLoadVisitors]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -189,16 +199,13 @@ export const useVisitors = (initialFilters = {}) => {
     }
   }, []);
 
-  // Update filters - Prevent infinite loops
+  // ✅ DÜZELTME: updateFilters sonsuz döngüyü önle
   const updateFilters = useCallback((newFilters) => {
     console.log('Updating filters from:', filters, 'to:', newFilters);
-    setFilters(prev => {
-      const updated = { ...prev, ...newFilters };
-      return updated;
-    });
-  }, [filters]);
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []); // ✅ Empty dependency
 
-  // Reset filters - Fix the infinite loop
+  // ✅ DÜZELTME: resetFilters sonsuz döngüyü önle  
   const resetFilters = useCallback(() => {
     console.log('Resetting filters');
     const defaultFilters = {
@@ -210,7 +217,38 @@ export const useVisitors = (initialFilters = {}) => {
       sortOrder: 'desc'
     };
     setFilters(defaultFilters);
-  }, []);
+  }, []); // ✅ Empty dependency
+
+  // Quick date filters
+  const setQuickDateFilter = useCallback((filterType) => {
+    const today = new Date();
+    let fromDate = '';
+    let toDate = today.toISOString().split('T')[0];
+
+    switch (filterType) {
+      case 'today':
+        fromDate = today.toISOString().split('T')[0];
+        break;
+      case 'week':
+        const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        fromDate = oneWeekAgo.toISOString().split('T')[0];
+        break;
+      case 'month':
+        const oneMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        fromDate = oneMonthAgo.toISOString().split('T')[0];
+        break;
+      default:
+        fromDate = '';
+        toDate = '';
+    }
+
+    updateFilters({ fromDate, toDate });
+  }, [updateFilters]);
+
+  // Page navigation
+  const goToPage = useCallback((page) => {
+    loadVisitors(page, true, filters);
+  }, [loadVisitors, filters]);
 
   // Create visitor
   const createVisitor = useCallback(async (visitorData) => {
@@ -255,7 +293,7 @@ export const useVisitors = (initialFilters = {}) => {
         setVisitors(prev => 
           prev.map(visitor => 
             visitor.id === id 
-              ? { ...visitor, ...response.visitor }
+              ? { ...visitor, ...response }
               : visitor
           )
         );
@@ -285,7 +323,7 @@ export const useVisitors = (initialFilters = {}) => {
       await visitorService.deleteVisitor(id);
       
       if (mountedRef.current) {
-        // Remove the visitor from the current list
+        // Remove visitor from the current list
         setVisitors(prev => prev.filter(visitor => visitor.id !== id));
         
         // Update pagination
@@ -293,12 +331,7 @@ export const useVisitors = (initialFilters = {}) => {
           ...prev,
           totalCount: prev.totalCount - 1
         }));
-
-        // Remove from selected if it was selected
-        setSelectedVisitors(prev => prev.filter(visitorId => visitorId !== id));
       }
-      
-      return true;
     } catch (err) {
       if (mountedRef.current) {
         setError(err.message || 'Ziyaretçi silinirken hata oluştu');
@@ -311,94 +344,7 @@ export const useVisitors = (initialFilters = {}) => {
     }
   }, [clearError]);
 
-  // Get single visitor
-  const getVisitor = useCallback(async (id) => {
-    if (!mountedRef.current) return;
-    
-    try {
-      setLoading(true);
-      clearError();
-
-      const response = await visitorService.getVisitor(id);
-      return response;
-    } catch (err) {
-      if (mountedRef.current) {
-        setError(err.message || 'Ziyaretçi alınırken hata oluştu');
-      }
-      throw err;
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [clearError]);
-
-  // Export visitors
-  const exportVisitors = useCallback(async (exportFilters = null) => {
-    if (!mountedRef.current) return;
-    
-    try {
-      setLoading(true);
-      clearError();
-
-      const params = exportFilters || filters;
-      const response = await visitorService.exportVisitors(params);
-      
-      // Download as CSV
-      visitorService.downloadCSV(response, `ziyaretciler_${new Date().toISOString().split('T')[0]}.csv`);
-      
-      return true;
-    } catch (err) {
-      if (mountedRef.current) {
-        setError(err.message || 'Veriler dışa aktarılırken hata oluştu');
-      }
-      throw err;
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [filters, clearError]);
-
-  // Set quick date filter
-  const setQuickDateFilter = useCallback((filterType) => {
-    const quickFilters = visitorService.getQuickDateFilters();
-    const selectedFilter = quickFilters.find(f => f.label === filterType);
-    
-    if (selectedFilter) {
-      updateFilters({
-        fromDate: selectedFilter.fromDate,
-        toDate: selectedFilter.toDate
-      });
-    }
-  }, [updateFilters]);
-
-  // Pagination handlers
-  const goToPage = useCallback((page) => {
-    if (page >= 1 && page <= pagination.totalPages && mountedRef.current) {
-      loadVisitors(page, true, filters);
-    }
-  }, [loadVisitors, pagination.totalPages, filters]);
-
-  const nextPage = useCallback(() => {
-    if (pagination.hasNextPage) {
-      goToPage(pagination.page + 1);
-    }
-  }, [goToPage, pagination.hasNextPage, pagination.page]);
-
-  const prevPage = useCallback(() => {
-    if (pagination.hasPreviousPage) {
-      goToPage(pagination.page - 1);
-    }
-  }, [goToPage, pagination.hasPreviousPage, pagination.page]);
-
-  // Change page size
-  const changePageSize = useCallback((newPageSize) => {
-    setPagination(prev => ({ ...prev, pageSize: newPageSize }));
-    loadVisitors(1, true, filters);
-  }, [loadVisitors, filters]);
-
-  // Selection handlers
+  // Visitor selection for bulk operations
   const selectVisitor = useCallback((id) => {
     setSelectedVisitors(prev => 
       prev.includes(id) 
@@ -408,37 +354,48 @@ export const useVisitors = (initialFilters = {}) => {
   }, []);
 
   const selectAllVisitors = useCallback(() => {
-    const allIds = visitors.map(visitor => visitor.id);
-    setSelectedVisitors(allIds);
+    setSelectedVisitors(prev => 
+      prev.length === visitors.length 
+        ? [] 
+        : visitors.map(visitor => visitor.id)
+    );
   }, [visitors]);
 
   const clearSelection = useCallback(() => {
     setSelectedVisitors([]);
   }, []);
 
-  // Bulk delete selected visitors
+  // Bulk delete
   const deleteSelectedVisitors = useCallback(async () => {
-    if (!mountedRef.current) return;
+    if (!mountedRef.current || selectedVisitors.length === 0) return;
     
     try {
       setLoading(true);
       clearError();
 
       // Delete all selected visitors
-      await Promise.all(selectedVisitors.map(id => visitorService.deleteVisitor(id)));
+      await Promise.all(
+        selectedVisitors.map(id => visitorService.deleteVisitor(id))
+      );
       
       if (mountedRef.current) {
-        // Reload visitors
-        await loadVisitors(1, true, filters);
+        // Remove deleted visitors from the current list
+        setVisitors(prev => 
+          prev.filter(visitor => !selectedVisitors.includes(visitor.id))
+        );
+        
+        // Update pagination
+        setPagination(prev => ({
+          ...prev,
+          totalCount: prev.totalCount - selectedVisitors.length
+        }));
         
         // Clear selection
-        clearSelection();
+        setSelectedVisitors([]);
       }
-      
-      return true;
     } catch (err) {
       if (mountedRef.current) {
-        setError(err.message || 'Seçili ziyaretçiler silinirken hata oluştu');
+        setError(err.message || 'Ziyaretçiler silinirken hata oluştu');
       }
       throw err;
     } finally {
@@ -446,25 +403,38 @@ export const useVisitors = (initialFilters = {}) => {
         setLoading(false);
       }
     }
-  }, [selectedVisitors, loadVisitors, filters, clearSelection, clearError]);
+  }, [selectedVisitors, clearError]);
+
+  // Export visitors
+  const exportVisitors = useCallback(async () => {
+    try {
+      await visitorService.exportVisitors(filters);
+    } catch (err) {
+      console.error('Export error:', err);
+    }
+  }, [filters]);
 
   // Computed values
-  const isEmpty = useMemo(() => visitors.length === 0, [visitors]);
-  const hasFilters = useMemo(() => 
-    Object.values(filters).some(value => value && value.toString().trim() !== ''),
-    [filters]
-  );
-  const selectedCount = useMemo(() => selectedVisitors.length, [selectedVisitors]);
-  const isAllSelected = useMemo(() => 
-    visitors.length > 0 && selectedCount === visitors.length,
-    [visitors.length, selectedCount]
-  );
+  const isEmpty = !loading && visitors.length === 0;
+  const hasFilters = filters.fromDate || filters.toDate || filters.company || filters.visitor;
+  const selectedCount = selectedVisitors.length;
+  const isAllSelected = visitors.length > 0 && selectedVisitors.length === visitors.length;
 
-  // Get filter summary text
-  const filterSummary = useMemo(() => 
-    visitorService.getFilterSummary(filters),
-    [filters]
-  );
+  const filterSummary = useMemo(() => {
+    const parts = [];
+    if (filters.fromDate && filters.toDate) {
+      parts.push(`${filters.fromDate} - ${filters.toDate}`);
+    } else if (filters.fromDate) {
+      parts.push(`${filters.fromDate} tarihinden sonra`);
+    } else if (filters.toDate) {
+      parts.push(`${filters.toDate} tarihinden önce`);
+    }
+    
+    if (filters.company) parts.push(`Şirket: ${filters.company}`);
+    if (filters.visitor) parts.push(`Ziyaretçi: ${filters.visitor}`);
+    
+    return parts.join(', ');
+  }, [filters]);
 
   return {
     // Data
@@ -473,46 +443,32 @@ export const useVisitors = (initialFilters = {}) => {
     filters,
     pagination,
     selectedVisitors,
-
-    // Loading states
+    
+    // State
     loading,
     statsLoading,
     error,
-
-    // Computed values
     isEmpty,
     hasFilters,
     selectedCount,
     isAllSelected,
     filterSummary,
-
-    // Actions - ✅ DÜZELTME: loadVisitors artık doğru şekilde return ediliyor
-    loadVisitors: useCallback(() => loadVisitors(1, true, filters), [loadVisitors, filters]),
+    
+    // Actions
+    loadVisitors,
     loadStats,
     createVisitor,
     updateVisitor,
     deleteVisitor,
-    getVisitor,
     exportVisitors,
-
-    // Filter actions
     updateFilters,
     resetFilters,
     setQuickDateFilter,
-
-    // Pagination actions
     goToPage,
-    nextPage,
-    prevPage,
-    changePageSize,
-
-    // Selection actions
     selectVisitor,
     selectAllVisitors,
     clearSelection,
     deleteSelectedVisitors,
-
-    // Utility actions
     clearError
   };
 };
