@@ -15,19 +15,17 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
   const handleMenuClick = (path, e) => {
     e.preventDefault();
     navigate(path);
-
-    // Mobile'da menüye tıklayınca sidebar'ı kapat
+    // Mobilde menüden seçim yapınca kapat
     if (isMobile && isOpen) {
-      setTimeout(() => toggleSidebar(), 100);
+      // küçük bir gecikme ile kapat (routing'in state güncellemesiyle çakışmasın)
+      setTimeout(() => toggleSidebar(), 80);
     }
   };
 
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div
-        className={`sidebar ${isOpen ? 'show' : ''}`} 
-      >
+    <div className={`sidebar ${isOpen ? 'show' : ''}`}>
       {/* Sidebar Header */}
       <div
         className="sidebar-header"
@@ -59,17 +57,13 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           <h4 className="logo-text mb-0 ms-3 fw-bold text-dark">vervo</h4>
         </div>
 
-        {/* Close button sadece mobile'da */}
+        {/* Sadece mobilde kapama butonu */}
         {isMobile && (
           <button
             className="btn btn-link text-muted p-1"
-            onClick={toggleSidebar}
-            style={{
-              border: 'none',
-              background: 'none',
-              fontSize: '20px',
-              lineHeight: 1
-            }}
+            onClick={(e) => { e.stopPropagation(); toggleSidebar(); }}
+            style={{ border: 'none', background: 'none', fontSize: '20px', lineHeight: 1 }}
+            aria-label="Menüyü kapat"
           >
             <i className="bi bi-x-lg"></i>
           </button>
@@ -88,7 +82,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
                 padding: '0.5rem 1.5rem',
                 color: '#6c757d',
                 fontSize: '0.75rem',
-                fontWeight: '600',
+                fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
                 marginBottom: '0.5rem'
@@ -114,13 +108,14 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
                   borderRadius: '8px',
                   color: isActive(item.path) ? '#FF6B6B' : '#6c757d',
                   fontSize: '0.95rem',
-                  fontWeight: isActive(item.path) ? '600' : '500',
+                  fontWeight: isActive(item.path) ? 600 : 500,
                   textAlign: 'left',
                   textDecoration: 'none',
                   transition: 'all 0.2s ease',
                   cursor: 'pointer',
                   position: 'relative'
                 }}
+                aria-current={isActive(item.path) ? 'page' : undefined}
               >
                 <i className={`bi ${item.icon} me-3`} style={{ fontSize: '18px' }}></i>
                 <span className="nav-text">{item.label}</span>
