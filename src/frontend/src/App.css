@@ -37,7 +37,6 @@ body {
 
 .btn-danger:hover {
   background: linear-gradient(135deg, #FF5252, #FF7043);
-  color: white;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
 }
@@ -56,52 +55,81 @@ body {
 
 /* Sidebar */
 .sidebar {
-  position: fixed;
-  top: 0;
-  left: -280px;
-  width: 280px;
-  height: 100vh;
-  background: white;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 1040;
-  transition: left 0.3s ease;
-  overflow-y: auto;
+  position: fixed !important;
+  top: 0 !important;
+  left: -280px !important;
+  width: 280px !important;
+  height: 100vh !important;
+  background: white !important;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1) !important;
+  z-index: 1040 !important;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  overflow-y: auto !important;
+  border-right: 1px solid #e9ecef !important;
 }
 
 .sidebar.show {
-  left: 0;
+  left: 0 !important;
 }
 
 .sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1035;
-  display: none;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 1035 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: all 0.3s ease !important;
 }
 
 .sidebar-overlay.show {
-  display: block;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+@media (min-width: 992px) {
+  .sidebar-overlay {
+    display: none !important;
+  }
 }
 
 /* Main content */
 .main-content {
-  margin-left: 0;
-  padding-top: 80px;
-  min-height: 100vh;
-  transition: margin-left 0.3s ease;
+  margin-left: 0 !important;
+  padding-top: 80px !important;
+  min-height: 100vh !important;
+  background-color: #f5f7fa !important;
+  display: flex !important;
+  flex-direction: column !important;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .main-content.with-sidebar {
-  margin-left: 280px;
+  margin-left: 280px !important;
+}
+
+.main-content.without-sidebar {
+  margin-left: 0 !important;
 }
 
 @media (max-width: 991.98px) {
+  .main-content,
   .main-content.with-sidebar {
-    margin-left: 0;
+    margin-left: 0 !important;
+  }
+}
+
+.content-wrapper {
+  flex: 1 !important;
+  padding: 2rem !important;
+}
+
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 1rem !important;
   }
 }
 
@@ -112,20 +140,20 @@ body {
 }
 
 .logo-icon {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   background: linear-gradient(135deg, #FF6B6B, #FF8E53);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.2rem;
+  font-size: 18px;
 }
 
 .logo-text {
   font-weight: 700;
-  color: #2c3e50;
+  color: #212529 !important;
   font-size: 1.5rem;
   margin: 0;
 }
@@ -142,13 +170,13 @@ body {
   border-radius: 8px;
   color: #6c757d;
   text-decoration: none;
-  transition: all 0.3s ease;
   font-weight: 500;
-  border: none;
-  background: none;
   width: 100%;
   text-align: left;
   cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  background: none;
 }
 
 .sidebar-nav .nav-link:hover,
@@ -172,6 +200,7 @@ body {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
+/* Card */
 .card {
   border: none;
   border-radius: 12px;
@@ -254,357 +283,6 @@ body {
   color: #FF6B6B;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .main-content {
-    padding: 1rem;
-  }
-  
-  .stats-card {
-    margin-bottom: 1rem;
-  }
-}
-
-/* ==========================================================================
-   LAYOUT CSS UPDATES - Hamburger Menu & Dynamic Sidebar
-   ========================================================================== */
-
-/* Header Layout */
-.navbar {
-  height: 80px;
-  z-index: 1030;
-  background: white !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-.navbar .container-fluid {
-  height: 100%;
-  align-items: center;
-}
-
-/* HAMBURGER MENU - Tüm Ekranlarda Görünür */
-.hamburger-menu-btn {
-  border: 2px solid #FF6B6B !important;
-  background: white !important;
-  color: #FF6B6B !important;
-  padding: 8px 12px !important;
-  border-radius: 8px !important;
-  min-width: 44px !important;
-  min-height: 44px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-}
-
-.hamburger-menu-btn:hover {
-  background-color: #FF6B6B !important;
-  color: white !important;
-  transform: translateY(-1px);
-}
-
-.hamburger-menu-btn:focus {
-  outline: 2px solid #FF6B6B !important;
-  outline-offset: 2px !important;
-}
-
-/* Sidebar - Dynamic Toggle için güncellenmiş */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: -280px; /* Varsayılan: kapalı */
-  width: 280px;
-  height: 100vh;
-  background: white;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 1040;
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow-y: auto;
-}
-
-.sidebar.show {
-  left: 0; /* Açık durumda */
-}
-
-/* Sidebar Overlay */
-.sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1035;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
-}
-
-.sidebar-overlay.show {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Desktop'ta overlay gizle */
-@media (min-width: 992px) {
-  .sidebar-overlay {
-    display: none !important;
-  }
-}
-
-/* Main Content - Dynamic Layout */
-.main-content {
-  margin-left: 0; /* Varsayılan: sidebar kapalı */
-  padding-top: 80px;
-  min-height: 100vh;
-  background-color: #f5f7fa;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  flex-direction: column;
-}
-
-/* Sidebar açıkken content margin - Tüm ekranlarda */
-.main-content.with-sidebar {
-  margin-left: 280px;
-}
-
-.main-content.without-sidebar {
-  margin-left: 0;
-}
-
-/* Mobile'da sidebar açık olsa bile margin verme */
-@media (max-width: 991.98px) {
-  .main-content.with-sidebar {
-    margin-left: 0 !important;
-  }
-}
-
-.content-wrapper {
-  flex: 1;
-  padding: 2rem;
-}
-
-@media (max-width: 768px) {
-  .content-wrapper {
-    padding: 1rem;
-  }
-}
-
-/* Page Title Responsive */
-.page-title-desktop {
-  display: none;
-}
-
-@media (min-width: 992px) {
-  .page-title-desktop {
-    display: block;
-  }
-}
-
-.mobile-brand {
-  display: block;
-}
-
-@media (min-width: 992px) {
-  .mobile-brand {
-    display: none;
-  }
-}
-
-/* Search Bar */
-.search-container {
-  max-width: 400px;
-}
-
-@media (max-width: 767.98px) {
-  .search-container {
-    display: none;
-  }
-}
-
-/* Header Actions */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.header-actions .btn-link {
-  color: #6c757d;
-  padding: 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  border: none;
-  background: none;
-  min-width: 40px;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.header-actions .btn-link:hover {
-  background-color: rgba(255, 107, 107, 0.1);
-  color: #FF6B6B;
-}
-
-/* User Dropdown */
-.user-dropdown .dropdown-menu {
-  border: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  border-radius: 12px;
-  min-width: 200px;
-  margin-top: 8px;
-}
-
-.user-dropdown .dropdown-item {
-  padding: 8px 16px;
-  transition: all 0.15s ease;
-  font-size: 0.875rem;
-}
-
-.user-dropdown .dropdown-item:hover {
-  background-color: rgba(255, 107, 107, 0.1);
-  color: #FF6B6B;
-}
-
-/* Footer */
-.footer {
-  margin-top: auto;
-  background: white;
-  border-top: 1px solid #e9ecef;
-  padding: 1rem 0;
-}
-
-/* Animation for smooth transitions */
-.sidebar,
-.main-content {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Debug Info - Geçici (istenirse silinebilir) */
-.debug-info {
-  position: fixed;
-  top: 90px;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-family: monospace;
-  z-index: 9999;
-}
-
-
-/* ==========================================================================
-   SIDEBAR ADDITIONAL STYLES - App.css'in en sonuna ekleyin
-   ========================================================================== */
-
-/* Sidebar Footer Styles */
-.sidebar-footer-menus {
-  margin-top: auto;
-  border-top: 1px solid #f1f3f4;
-  padding-top: 1.5rem;
-}
-
-.menu-section {
-  margin-bottom: 1.5rem;
-}
-
-.menu-section-header {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 1rem;
-  color: #6c757d;
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-radius: 6px;
-}
-
-.menu-section-header:hover {
-  color: #FF6B6B;
-  background-color: rgba(255, 107, 107, 0.1);
-}
-
-.menu-items {
-  margin-left: 0;
-}
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 1rem 0.5rem 2.5rem;
-  color: #6c757d;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  font-size: 0.875rem;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  border-radius: 6px;
-  margin-bottom: 2px;
-}
-
-.menu-item:hover {
-  color: #FF6B6B;
-  background-color: rgba(255, 107, 107, 0.1);
-  transform: translateX(4px);
-}
-
-/* Nav Section Title */
-.nav-section-title {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 1rem;
-  color: #6c757d;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 0.5rem;
-}
-
-/* Navigation Indicator */
-.nav-indicator {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 20px;
-  background: #FF6B6B;
-  border-radius: 2px;
-}
-
-/* Sidebar Footer */
-.sidebar-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #f1f3f4;
-  background-color: white;
-}
-
-.upgrade-card {
-  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
-  padding: 1.5rem;
-  border-radius: 12px;
-  color: white;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.upgrade-icon {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-
 /* Scrollbar Styling */
 .sidebar::-webkit-scrollbar {
   width: 6px;
@@ -623,22 +301,31 @@ body {
   background: #6c757d;
 }
 
-
-/* Header & Hamburger Menu CSS Fixes */
-/* Bu CSS'leri App.css'in en sonuna ekleyin */
+/* Debug Info */
+.debug-info {
+  position: fixed;
+  top: 90px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+  z-index: 9999;
+}
 
 /* ==========================================================================
-   HEADER & HAMBURGER MENU FIXES
+   HEADER, HAMBURGER & USER DROPDOWN (orijinal korunmuş)
    ========================================================================== */
 
 /* Header Navbar */
-.header-nav {
+.navbar.header-nav {
+  height: 80px;
+  z-index: 1050 !important;
   background: white !important;
   border-bottom: 1px solid #e9ecef;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  height: 80px;
-  z-index: 1030;
-  padding: 0 !important;
 }
 
 .header-nav .container-fluid {
@@ -648,7 +335,7 @@ body {
   padding: 0 1.5rem;
 }
 
-/* ✅ HAMBURGER MENU BUTTON - Tüm ekranlarda çalışır */
+/* Hamburger Menu */
 .hamburger-menu-btn {
   border: 2px solid #FF6B6B !important;
   background: white !important;
@@ -683,55 +370,14 @@ body {
   transform: translateY(0) !important;
 }
 
-/* Logo & Brand */
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 18px;
-}
-
-.logo-text {
-  color: #212529 !important;
-  font-weight: 700 !important;
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-/* Page Title */
-.page-title-desktop {
-  font-size: 1rem;
-  color: #6c757d;
-  margin: 0;
-}
-
-/* Search Container */
-.search-container .form-control {
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  padding: 8px 12px 8px 40px;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.search-container .form-control:focus {
-  border-color: #FF6B6B;
-  box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.15);
-}
-
-/* Header Actions */
+/* Header Actions & Buttons */
 .header-actions {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.header-btn {
+.header-actions .btn-link {
   color: #6c757d !important;
   padding: 8px !important;
   border-radius: 6px !important;
@@ -743,27 +389,12 @@ body {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  position: relative !important;
   text-decoration: none !important;
 }
 
-.header-btn:hover {
+.header-actions .btn-link:hover {
   background-color: rgba(255, 107, 107, 0.1) !important;
   color: #FF6B6B !important;
-}
-
-/* User Avatar */
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
 }
 
 /* User Dropdown */
@@ -792,138 +423,4 @@ body {
 .user-dropdown .dropdown-header {
   padding: 12px 16px 8px !important;
   font-size: 0.875rem !important;
-}
-
-/* ==========================================================================
-   SIDEBAR FIXES
-   ========================================================================== */
-
-/* ✅ SIDEBAR - Dynamic Toggle */
-.sidebar {
-  position: fixed !important;
-  top: 0 !important;
-  left: -280px !important; /* Varsayılan: kapalı */
-  width: 280px !important;
-  height: 100vh !important;
-  background: white !important;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1) !important;
-  z-index: 1040 !important;
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  overflow-y: auto !important;
-  border-right: 1px solid #e9ecef;
-}
-
-.sidebar.show {
-  left: 0 !important; /* Açık durumda */
-}
-
-/* Sidebar Overlay - Sadece mobile'da */
-.sidebar-overlay {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  background: rgba(0, 0, 0, 0.5) !important;
-  z-index: 1035 !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  transition: all 0.3s ease !important;
-}
-
-.sidebar-overlay.show {
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Desktop'ta overlay gizle */
-@media (min-width: 992px) {
-  .sidebar-overlay {
-    display: none !important;
-  }
-}
-
-/* ==========================================================================
-   MAIN CONTENT FIXES
-   ========================================================================== */
-
-/* Main Content - Dynamic Layout */
-.main-content {
-  margin-left: 0 !important; /* Varsayılan: sidebar kapalı */
-  padding-top: 80px !important;
-  min-height: 100vh !important;
-  background-color: #f5f7fa !important;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-/* Sidebar açıkken - Sadece desktop'ta */
-@media (min-width: 992px) {
-  .main-content.with-sidebar {
-    margin-left: 280px !important;
-  }
-}
-
-/* Mobile'da sidebar açık olsa bile margin verme */
-@media (max-width: 991.98px) {
-  .main-content {
-    margin-left: 0 !important;
-  }
-  
-  .main-content.with-sidebar {
-    margin-left: 0 !important;
-  }
-}
-
-/* Content Wrapper */
-.content-wrapper {
-  flex: 1 !important;
-  padding: 2rem !important;
-}
-
-@media (max-width: 768px) {
-  .content-wrapper {
-    padding: 1rem !important;
-  }
-}
-
-/* ==========================================================================
-   RESPONSIVE ADJUSTMENTS
-   ========================================================================== */
-
-/* Mobile Header Adjustments */
-@media (max-width: 767.98px) {
-  .header-nav .container-fluid {
-    padding: 0 1rem;
-  }
-  
-  .hamburger-menu-btn {
-    min-width: 40px !important;
-    min-height: 40px !important;
-  }
-  
-  .logo-text {
-    font-size: 1.25rem !important;
-  }
-  
-  .header-actions {
-    gap: 8px;
-  }
-  
-  .user-dropdown .dropdown-menu {
-    right: -20px !important;
-    left: auto !important;
-  }
-}
-
-/* Tablet Adjustments */
-@media (max-width: 991.98px) {
-  .page-title-desktop {
-    display: none !important;
-  }
-  
-  .search-container {
-    display: none !important;
-  }
 }

@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="row align-items-center">
           <div className="col-md-6">
             <div className="d-flex align-items-center text-muted small">
-              <span>&copy; {currentYear} Acara Admin Panel. Tüm hakları saklıdır.</span>
+              <span>&copy; {currentYear} Vervo Portal. Tüm hakları saklıdır.</span>
             </div>
           </div>
           <div className="col-md-6">
