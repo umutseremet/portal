@@ -1,5 +1,4 @@
-// ===== DÜZELTME 3: src/frontend/src/components/Layout/Header.js =====
-
+// src/frontend/src/components/Layout/Header.js
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -16,12 +15,16 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
-      // Force navigation even if logout fails
       navigate('/login');
     }
   };
 
-  const handleMenuToggle = () => {
+  // ✅ DÜZELTME: Hamburger menu handler
+  const handleMenuToggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Hamburger clicked! Current sidebar state:', sidebarOpen);
+    
     if (toggleSidebar) {
       toggleSidebar();
     } else {
@@ -29,7 +32,6 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
     }
   };
 
-  // ✅ DÜZELTME: Menü adlarını kullan, içerik başlık değil 
   const getPageTitle = () => {
     switch (location.pathname) {
       case '/dashboard':
@@ -37,7 +39,7 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
       case '/production':
         return 'Üretim Planlama';
       case '/visitors':
-        return 'Ziyaretçiler'; // ✅ Menü adı olarak "Ziyaretçiler" kullan
+        return 'Ziyaretçiler';
       default:
         return 'Dashboard';
     }
@@ -86,163 +88,185 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
       .substring(0, 2);
   };
 
-  const getUserRole = () => {
-    return user?.role || 'admin';
-  };
-
   return (
     <nav className="navbar navbar-expand-lg navbar-light header-nav fixed-top">
       <div className="container-fluid">
-        {/* Sidebar Toggle + Brand */}
+        {/* ✅ DÜZELTME: Hamburger Menu + Brand */}
         <div className="d-flex align-items-center">
+          {/* Hamburger Menu Button - Tüm ekranlarda görünür */}
           <button
-            className="btn navbar-toggler d-lg-none me-3"
+            className="hamburger-menu-btn me-3"
             type="button"
             onClick={handleMenuToggle}
+            aria-label="Toggle navigation"
             style={{
-              border: 'none',
-              background: 'none',
-              fontSize: '1.25rem',
-              color: '#FF6B6B'
+              border: '2px solid #FF6B6B',
+              background: 'white',
+              color: '#FF6B6B',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              minWidth: '44px',
+              minHeight: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#FF6B6B';
+              e.target.style.color = 'white';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'white';
+              e.target.style.color = '#FF6B6B';
             }}
           >
-            <i className={`bi ${sidebarOpen ? 'bi-x-lg' : 'bi-list'}`}></i>
+            <i className={`bi ${sidebarOpen ? 'bi-x' : 'bi-list'} fs-5`}></i>
           </button>
-          
-          {/* ✅ DÜZELTME: Dynamic page title */}
-          <span className="navbar-brand mb-0 h1 d-none d-md-block">
-            {getPageTitle()}
-          </span>
-        </div>
 
-        {/* Search Box - Orta */}
-        <div className="flex-grow-1 mx-4 d-none d-lg-block">
-          <div className="position-relative" style={{ maxWidth: '400px', margin: '0 auto' }}>
-            <input
-              className="form-control pe-5"
-              type="search"
-              placeholder="Ara..."
+          {/* Brand */}
+          <div className="d-flex align-items-center">
+            <div 
+              className="logo-icon me-2"
               style={{
-                backgroundColor: '#f8f9fa',
-                border: '2px solid #e9ecef',
-                borderRadius: '25px',
-                paddingLeft: '1rem',
-                paddingRight: '3rem'
+                width: '32px',
+                height: '32px',
+                background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '18px'
               }}
-            />
-            <div className="position-absolute" style={{ right: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
-              <i className="bi bi-search text-muted"></i>
+            >
+              <i className="bi bi-calendar-event-fill"></i>
             </div>
+            <h4 className="logo-text mb-0 text-dark fw-bold">vervo</h4>
+            
+            {/* Page Title - Desktop only */}
+            <span className="page-title-desktop ms-4 text-muted d-none d-lg-block">
+              / {getPageTitle()}
+            </span>
           </div>
         </div>
 
-        {/* User Dropdown - Sağ */}
-        <div className="d-flex align-items-center">
-          {/* Notifications */}
-          <button className="btn btn-link text-decoration-none position-relative me-3 d-none d-md-block">
-            <i className="bi bi-bell fs-5 text-muted"></i>
-            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '0.65rem' }}>
-              3
-            </span>
-          </button>
-
-          {/* User Dropdown */}
-          <div className="dropdown user-dropdown">
-            <button
-              className="btn btn-link text-decoration-none d-flex align-items-center"
-              type="button"
-              onClick={toggleDropdown}
-              style={{ border: 'none', background: 'none' }}
-            >
-              <div 
-                className="rounded-circle d-flex align-items-center justify-content-center me-2 text-white fw-bold"
+        {/* ✅ DÜZELTME: Right Side Actions */}
+        <div className="d-flex align-items-center gap-3">
+          {/* Search Bar - Desktop only */}
+          <div className="search-container d-none d-md-block">
+            <div className="position-relative">
+              <input
+                type="search"
+                className="form-control form-control-sm"
+                placeholder="Ara..."
+                style={{ paddingLeft: '40px', width: '300px' }}
+              />
+              <i 
+                className="bi bi-search position-absolute" 
                 style={{
-                  width: '35px',
-                  height: '35px',
-                  background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
-                  fontSize: '0.875rem'
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#6c757d'
                 }}
-              >
-                {getUserInitials()}
-              </div>
-              <div className="d-none d-md-block text-start me-2">
-                <div className="fw-medium text-dark" style={{ fontSize: '0.9rem' }}>
-                  {getUserDisplayName()}
-                </div>
-                <div className="text-muted small">
-                  {getUserRole()}
-                </div>
-              </div>
-              <i className={`bi bi-chevron-${dropdownOpen ? 'up' : 'down'} text-muted`}></i>
+              ></i>
+            </div>
+          </div>
+
+          {/* Header Actions */}
+          <div className="header-actions">
+            {/* Notifications */}
+            <button className="btn btn-link header-btn p-0">
+              <i className="bi bi-bell fs-5"></i>
+              <span className="position-absolute translate-middle badge rounded-pill bg-danger" style={{ fontSize: '0.6rem', top: '8px', right: '8px' }}>
+                3
+              </span>
             </button>
 
-            {/* Dropdown Menu */}
-            {dropdownOpen && (
-              <div 
-                className="dropdown-menu dropdown-menu-end show"
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: '0',
-                  zIndex: 1050,
-                  minWidth: '250px',
-                  marginTop: '0.5rem',
-                  borderRadius: '12px',
-                  border: '1px solid #e9ecef',
-                  boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)'
-                }}
+            {/* Settings */}
+            <button className="btn btn-link header-btn p-0">
+              <i className="bi bi-gear fs-5"></i>
+            </button>
+
+            {/* User Dropdown */}
+            <div className="user-dropdown position-relative">
+              <button
+                className="btn btn-link d-flex align-items-center p-0"
+                onClick={toggleDropdown}
+                style={{ textDecoration: 'none' }}
               >
-                {/* User Info Header */}
-                <div className="px-4 py-3 border-bottom">
-                  <div className="d-flex align-items-center">
-                    <div 
-                      className="rounded-circle d-flex align-items-center justify-content-center me-3 text-white fw-bold"
-                      style={{
-                        width: '45px',
-                        height: '45px',
-                        background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
-                        fontSize: '1rem'
-                      }}
-                    >
-                      {getUserInitials()}
+                <div 
+                  className="user-avatar me-2"
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}
+                >
+                  {getUserInitials()}
+                </div>
+                <div className="d-none d-sm-block">
+                  <div className="text-start">
+                    <div className="user-name fw-medium text-dark" style={{ fontSize: '14px' }}>
+                      {getUserDisplayName()}
                     </div>
-                    <div>
-                      <div className="fw-medium text-dark">
-                        {getUserDisplayName()}
-                      </div>
-                      <div className="text-muted small">
-                        {getUserEmail()}
-                      </div>
+                    <div className="user-role text-muted" style={{ fontSize: '12px' }}>
+                      Administrator
                     </div>
                   </div>
                 </div>
+                <i className="bi bi-chevron-down ms-2 text-muted"></i>
+              </button>
 
-                {/* Menu Items */}
-                <div className="py-2">
-                  <button className="dropdown-item d-flex align-items-center py-2 px-4">
-                    <i className="bi bi-person me-3 text-muted"></i>
-                    Profilim
-                  </button>
-                  <button className="dropdown-item d-flex align-items-center py-2 px-4">
-                    <i className="bi bi-gear me-3 text-muted"></i>
+              {/* Dropdown Menu */}
+              {dropdownOpen && (
+                <div 
+                  className="dropdown-menu show position-absolute"
+                  style={{
+                    top: '100%',
+                    right: '0',
+                    marginTop: '8px',
+                    minWidth: '200px',
+                    border: 'none',
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                    zIndex: 9999
+                  }}
+                >
+                  <div className="dropdown-header">
+                    <div className="fw-medium">{getUserDisplayName()}</div>
+                    <div className="text-muted small">{getUserEmail()}</div>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <a className="dropdown-item" href="#" onClick={(e) => e.preventDefault()}>
+                    <i className="bi bi-person me-2"></i>
+                    Profil
+                  </a>
+                  <a className="dropdown-item" href="#" onClick={(e) => e.preventDefault()}>
+                    <i className="bi bi-gear me-2"></i>
                     Ayarlar
-                  </button>
-                  <button className="dropdown-item d-flex align-items-center py-2 px-4">
-                    <i className="bi bi-question-circle me-3 text-muted"></i>
+                  </a>
+                  <a className="dropdown-item" href="#" onClick={(e) => e.preventDefault()}>
+                    <i className="bi bi-question-circle me-2"></i>
                     Yardım
-                  </button>
-                  <hr className="dropdown-divider" />
-                  <button 
-                    className="dropdown-item d-flex align-items-center py-2 px-4 text-danger"
-                    onClick={handleLogout}
-                    disabled={loading}
-                  >
-                    <i className="bi bi-box-arrow-right me-3"></i>
-                    {loading ? 'Çıkış yapılıyor...' : 'Çıkış Yap'}
+                  </a>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item text-danger" onClick={handleLogout}>
+                    <i className="bi bi-box-arrow-right me-2"></i>
+                    Çıkış Yap
                   </button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

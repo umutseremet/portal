@@ -622,3 +622,308 @@ body {
 .sidebar::-webkit-scrollbar-thumb:hover {
   background: #6c757d;
 }
+
+
+/* Header & Hamburger Menu CSS Fixes */
+/* Bu CSS'leri App.css'in en sonuna ekleyin */
+
+/* ==========================================================================
+   HEADER & HAMBURGER MENU FIXES
+   ========================================================================== */
+
+/* Header Navbar */
+.header-nav {
+  background: white !important;
+  border-bottom: 1px solid #e9ecef;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  height: 80px;
+  z-index: 1030;
+  padding: 0 !important;
+}
+
+.header-nav .container-fluid {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+}
+
+/* ✅ HAMBURGER MENU BUTTON - Tüm ekranlarda çalışır */
+.hamburger-menu-btn {
+  border: 2px solid #FF6B6B !important;
+  background: white !important;
+  color: #FF6B6B !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.hamburger-menu-btn:hover {
+  background-color: #FF6B6B !important;
+  color: white !important;
+  border-color: #FF6B6B !important;
+  transform: translateY(-1px) !important;
+}
+
+.hamburger-menu-btn:focus {
+  outline: 2px solid #FF6B6B !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.25) !important;
+}
+
+.hamburger-menu-btn:active {
+  transform: translateY(0) !important;
+}
+
+/* Logo & Brand */
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+}
+
+.logo-text {
+  color: #212529 !important;
+  font-weight: 700 !important;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+/* Page Title */
+.page-title-desktop {
+  font-size: 1rem;
+  color: #6c757d;
+  margin: 0;
+}
+
+/* Search Container */
+.search-container .form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 8px 12px 8px 40px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.search-container .form-control:focus {
+  border-color: #FF6B6B;
+  box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.15);
+}
+
+/* Header Actions */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-btn {
+  color: #6c757d !important;
+  padding: 8px !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+  border: none !important;
+  background: none !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  text-decoration: none !important;
+}
+
+.header-btn:hover {
+  background-color: rgba(255, 107, 107, 0.1) !important;
+  color: #FF6B6B !important;
+}
+
+/* User Avatar */
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* User Dropdown */
+.user-dropdown .dropdown-menu {
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+  min-width: 200px !important;
+  margin-top: 8px !important;
+  z-index: 9999 !important;
+}
+
+.user-dropdown .dropdown-item {
+  padding: 8px 16px !important;
+  transition: all 0.15s ease !important;
+  font-size: 0.875rem !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.user-dropdown .dropdown-item:hover {
+  background-color: rgba(255, 107, 107, 0.1) !important;
+  color: #FF6B6B !important;
+}
+
+.user-dropdown .dropdown-header {
+  padding: 12px 16px 8px !important;
+  font-size: 0.875rem !important;
+}
+
+/* ==========================================================================
+   SIDEBAR FIXES
+   ========================================================================== */
+
+/* ✅ SIDEBAR - Dynamic Toggle */
+.sidebar {
+  position: fixed !important;
+  top: 0 !important;
+  left: -280px !important; /* Varsayılan: kapalı */
+  width: 280px !important;
+  height: 100vh !important;
+  background: white !important;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1) !important;
+  z-index: 1040 !important;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  overflow-y: auto !important;
+  border-right: 1px solid #e9ecef;
+}
+
+.sidebar.show {
+  left: 0 !important; /* Açık durumda */
+}
+
+/* Sidebar Overlay - Sadece mobile'da */
+.sidebar-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 1035 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: all 0.3s ease !important;
+}
+
+.sidebar-overlay.show {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Desktop'ta overlay gizle */
+@media (min-width: 992px) {
+  .sidebar-overlay {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   MAIN CONTENT FIXES
+   ========================================================================== */
+
+/* Main Content - Dynamic Layout */
+.main-content {
+  margin-left: 0 !important; /* Varsayılan: sidebar kapalı */
+  padding-top: 80px !important;
+  min-height: 100vh !important;
+  background-color: #f5f7fa !important;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Sidebar açıkken - Sadece desktop'ta */
+@media (min-width: 992px) {
+  .main-content.with-sidebar {
+    margin-left: 280px !important;
+  }
+}
+
+/* Mobile'da sidebar açık olsa bile margin verme */
+@media (max-width: 991.98px) {
+  .main-content {
+    margin-left: 0 !important;
+  }
+  
+  .main-content.with-sidebar {
+    margin-left: 0 !important;
+  }
+}
+
+/* Content Wrapper */
+.content-wrapper {
+  flex: 1 !important;
+  padding: 2rem !important;
+}
+
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 1rem !important;
+  }
+}
+
+/* ==========================================================================
+   RESPONSIVE ADJUSTMENTS
+   ========================================================================== */
+
+/* Mobile Header Adjustments */
+@media (max-width: 767.98px) {
+  .header-nav .container-fluid {
+    padding: 0 1rem;
+  }
+  
+  .hamburger-menu-btn {
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+  
+  .logo-text {
+    font-size: 1.25rem !important;
+  }
+  
+  .header-actions {
+    gap: 8px;
+  }
+  
+  .user-dropdown .dropdown-menu {
+    right: -20px !important;
+    left: auto !important;
+  }
+}
+
+/* Tablet Adjustments */
+@media (max-width: 991.98px) {
+  .page-title-desktop {
+    display: none !important;
+  }
+  
+  .search-container {
+    display: none !important;
+  }
+}

@@ -1,17 +1,22 @@
-// ===== src/frontend/src/pages/VisitorsPage.js - GÜNCEL HALİ =====
-
-import React, { useState, useEffect } from 'react';
-import { useVisitors } from '../hooks/useVisitors';
+// src/frontend/src/pages/VisitorsPage.js
+import { useState } from 'react';
 import VisitorsList from '../components/Visitors/VisitorsList';
+import VisitorModal from '../components/Visitors/VisitorModal';
+import VisitorDetailModal from '../components/Visitors/VisitorDetailModal';
 import StatsCard from '../components/Dashboard/StatsCard';
+import { useVisitors } from '../hooks/useVisitors';
 
 const VisitorsPage = () => {
+  // Use the visitors hook
   const {
+    // Data
     visitors,
     stats,
     filters,
     pagination,
     selectedVisitors,
+    
+    // State
     loading,
     statsLoading,
     error,
@@ -20,7 +25,9 @@ const VisitorsPage = () => {
     selectedCount,
     isAllSelected,
     filterSummary,
-    loadVisitors, 
+    
+    // Actions
+    loadVisitors,
     loadStats,
     createVisitor,
     updateVisitor,
@@ -37,55 +44,70 @@ const VisitorsPage = () => {
     clearError
   } = useVisitors();
 
+  // Modal states
   const [showNewVisitorModal, setShowNewVisitorModal] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [editingVisitor, setEditingVisitor] = useState(null);
   const [viewingVisitor, setViewingVisitor] = useState(null);
 
-  // ✅ DÜZELTME: Sadece stats yükle, visitors hook tarafından otomatik yükleniyor
-  useEffect(() => {
-    console.log('VisitorsPage: Loading stats only');
-    loadStats(); // Sadece stats yükle
-    // loadVisitors(); // ❌ KALDIR: Hook içinde zaten yükleniyor
-  }, [loadStats]); // ✅ loadVisitors'ı kaldır
-
-  // Debug visitors data
-  useEffect(() => {
-    console.log('VisitorsPage: Visitors data changed:', {
-      visitorsCount: visitors?.length || 0,
-      visitors: visitors,
-      loading,
-      error,
-      isEmpty,
-      pagination
-    });
-  }, [visitors, loading, error, isEmpty, pagination]);
-
   // Handle sort
   const handleSort = (column, order) => {
-    updateFilters({ sortBy: column, sortOrder: order });
+    try {
+      console.log('Sorting by:', column, order);
+      updateFilters({
+        ...filters,
+        sortBy: column,
+        sortOrder: order
+      });
+    } catch (error) {
+      console.error('Error sorting:', error);
+    }
   };
 
   // Handle page change
   const handlePageChange = (page) => {
-    goToPage(page);
+    try {
+      console.log('Changing page to:', page);
+      goToPage(page);
+    } catch (error) {
+      console.error('Error changing page:', error);
+    }
   };
 
-  // Handle filter change
+  // ✅ DÜZELTME: Handle filter change - Sonsuz döngüyü önlemek için
   const handleFilterChange = (newFilters) => {
     try {
       console.log('Handling filter change:', newFilters);
+      // Önce state'i güncelle, sonra load et
       updateFilters(newFilters);
+      
+      // Kısa delay ile filtreli yükleme
+      setTimeout(() => {
+        loadVisitors(1, true, newFilters);
+      }, 100);
     } catch (error) {
       console.error('Error updating filters:', error);
     }
   };
 
-  // Handle reset filters
+  // ✅ DÜZELTME: Handle reset filters - Tüm kayıtları yüklemek için
   const handleResetFilters = () => {
     try {
       console.log('Resetting filters');
+      // İlk önce filtreleri sıfırla
       resetFilters();
+      // Sonra temiz filtrelerle tüm kayıtları yükle
+      const defaultFilters = {
+        fromDate: '',
+        toDate: '',
+        company: '',
+        visitor: '',
+        sortBy: 'date',
+        sortOrder: 'desc'
+      };
+      // Kısa bir delay ile yeni filtrelerle yükle
+      setTimeout(() => {
+        loadVisitors(1, true, defaultFilters);
+      }, 50);
     } catch (error) {
       console.error('Error resetting filters:', error);
     }
@@ -118,10 +140,13 @@ const VisitorsPage = () => {
     setViewingVisitor(visitor);
   };
 
-  // Handle close modal
+  // Handle close modals
   const handleCloseModal = () => {
     setShowNewVisitorModal(false);
     setEditingVisitor(null);
+  };
+
+  const handleCloseDetailModal = () => {
     setViewingVisitor(null);
   };
 
@@ -161,7 +186,7 @@ const VisitorsPage = () => {
 
   // Handle delete visitor
   const handleDeleteVisitor = async (visitor) => {
-    if (window.confirm(`${visitor.visitor} ziyaretçisini silmek istediğinizden emin misiniz?`)) {
+    if (window.confirm(`${visitor.visitorName || visitor.visitor} ziyaretçisini silmek istediğinizden emin misiniz?`)) {
       try {
         await deleteVisitor(visitor.id);
         console.log('Visitor deleted successfully');
@@ -172,10 +197,28 @@ const VisitorsPage = () => {
     }
   };
 
+  // Handle delete from detail modal
+  const handleDeleteFromDetail = async (visitor) => {
+    try {
+      await deleteVisitor(visitor.id);
+      console.log('Visitor deleted successfully from detail modal');
+      handleCloseDetailModal(); // Close detail modal after delete
+    } catch (error) {
+      console.error('Failed to delete visitor from detail modal:', error);
+    }
+  };
+
+  // Handle edit from detail modal
+  const handleEditFromDetail = (visitor) => {
+    setViewingVisitor(null); // Close detail modal
+    setEditingVisitor(visitor);
+    setShowNewVisitorModal(true); // Open edit modal
+  };
+
   return (
     <div className="dashboard-page">
       <div className="container-fluid">
-        {/* ✅ DÜZELTME: Dashboard sayfası ile aynı header styling */}
+        {/* Page Header */}
         <div className="row mb-4">
           <div className="col-12">
             <div className="page-header">
@@ -205,7 +248,41 @@ const VisitorsPage = () => {
           </div>
         )}
 
-        {/* ✅ DÜZELTME: Dashboard ile aynı Stats Cards Layout */}
+        {/* Stats Cards */}
+        {stats && (
+          <div className="row g-4 mb-4">
+            <StatsCard 
+              title="Toplam Ziyaretçi"
+              value={stats.totalVisitors || 0}
+              icon="bi-people-fill"
+              trend={stats.totalVisitorsTrend}
+              loading={statsLoading}
+            />
+            <StatsCard 
+              title="Bu Ay"
+              value={stats.monthlyVisitors || 0}
+              icon="bi-calendar-month"
+              trend={stats.monthlyVisitorsTrend}
+              loading={statsLoading}
+            />
+            <StatsCard 
+              title="Bu Hafta"
+              value={stats.weeklyVisitors || 0}
+              icon="bi-calendar-week"
+              trend={stats.weeklyVisitorsTrend}
+              loading={statsLoading}
+            />
+            <StatsCard 
+              title="Bugün"
+              value={stats.todayVisitors || 0}
+              icon="bi-calendar-day"
+              trend={stats.todayVisitorsTrend}
+              loading={statsLoading}
+            />
+          </div>
+        )}
+
+        {/* Stats Cards - API'den gelen verilerle */}
         {stats && (
           <div className="row g-4 mb-4">
             <StatsCard 
@@ -213,68 +290,47 @@ const VisitorsPage = () => {
               value={stats.totalVisitors || 0}
               icon="bi-people-fill"
               color="success"
-              loading={statsLoading}
-            />
-            <StatsCard 
-              title="Bugün"
-              value={stats.todayVisitors || 0}
-              icon="bi-calendar-event"
-              color="danger"
-              loading={statsLoading}
-            />
-            <StatsCard 
-              title="Bu Hafta"
-              value={stats.thisWeekVisitors || 0}
-              icon="bi-graph-up"
-              color="info"
-              loading={statsLoading}
             />
             <StatsCard 
               title="Bu Ay"
               value={stats.thisMonthVisitors || 0}
-              icon="bi-trending-up"
+              icon="bi-calendar-month"
+              color="danger"
+            />
+            <StatsCard 
+              title="Bu Hafta"
+              value={stats.thisWeekVisitors || 0}
+              icon="bi-calendar-week"
+              color="info"
+            />
+            <StatsCard 
+              title="Bugün"
+              value={stats.todayVisitors || 0}
+              icon="bi-calendar-day"
               color="warning"
-              loading={statsLoading}
             />
           </div>
         )}
-
-        {/* Bulk Actions */}
-        {selectedCount > 0 && (
-          <div className="row mb-4">
+        
+        {/* Stats Loading State */}
+        {statsLoading && (
+          <div className="row g-4 mb-4">
             <div className="col-12">
-              <div className="alert alert-info d-flex justify-content-between align-items-center">
-                <span>
-                  <i className="bi bi-info-circle-fill me-2"></i>
-                  {selectedCount} ziyaretçi seçili
-                </span>
-                <div className="d-flex gap-2">
-                  <button 
-                    className="btn btn-sm btn-outline-secondary"
-                    onClick={clearSelection}
-                  >
-                    <i className="bi bi-x-circle me-1"></i>
-                    Seçimi Temizle
-                  </button>
-                  <button 
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={handleBulkDelete}
-                  >
-                    <i className="bi bi-trash me-1"></i>
-                    Seçilenleri Sil
-                  </button>
+              <div className="text-center py-3">
+                <div className="spinner-border text-danger me-2" role="status">
+                  <span className="visually-hidden">İstatistikler yükleniyor...</span>
                 </div>
+                <span className="text-muted">İstatistikler yükleniyor...</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* Main Content - VisitorsList Component */}
-        <div className="row g-4 mb-4">
+        {/* Visitors List */}
+        <div className="row">
           <div className="col-12">
             <div className="card h-100">
               <div className="card-body">
-                {/* ✅ DÜZELTME: Tüm prop'ları doğru şekilde geç */}
                 <VisitorsList
                   visitors={visitors}
                   loading={loading}
@@ -310,20 +366,23 @@ const VisitorsPage = () => {
           </div>
         </div>
 
-        {/* Modals would go here */}
-        {showNewVisitorModal && (
-          <div>
-            {/* New/Edit Visitor Modal */}
-            {/* Implementation depends on your modal component */}
-          </div>
-        )}
+        {/* New/Edit Visitor Modal */}
+        <VisitorModal
+          show={showNewVisitorModal}
+          onHide={handleCloseModal}
+          onSave={handleSaveVisitor}
+          visitor={editingVisitor}
+          loading={loading}
+        />
 
-        {viewingVisitor && (
-          <div>
-            {/* View Visitor Modal */}
-            {/* Implementation depends on your modal component */}
-          </div>
-        )}
+        {/* View Visitor Detail Modal */}
+        <VisitorDetailModal
+          show={!!viewingVisitor}
+          onHide={handleCloseDetailModal}
+          visitor={viewingVisitor}
+          onEdit={handleEditFromDetail}
+          onDelete={handleDeleteFromDetail}
+        />
       </div>
     </div>
   );

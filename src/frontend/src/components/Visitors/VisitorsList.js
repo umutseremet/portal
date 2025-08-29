@@ -1,21 +1,21 @@
-// ===== DÜZELTME 4: src/frontend/src/components/Visitors/VisitorsList.js =====
+// src/frontend/src/components/Visitors/VisitorsList.js
+// Bu dosyanın handleSort ve tablo başlıkları bölümündeki değişiklikler
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { formatDate, getStatusBadge } from '../../utils/helpers';
 
-const VisitorsList = ({
-  visitors = [],
-  loading = false,
-  error = null,
-  isEmpty = false,
-  hasFilters = false,
-  filters = {},
-  pagination = {},
+const VisitorsList = ({ 
+  visitors, 
+  loading, 
+  error, 
+  isEmpty, 
+  hasFilters, 
+  filters, 
+  pagination,
   selectedVisitors = [],
   selectedCount = 0,
   isAllSelected = false,
   filterSummary = '',
-  
-  // Action handlers
   onSort,
   onPageChange,
   onFilterChange,
@@ -42,43 +42,43 @@ const VisitorsList = ({
     sortOrder: filters.sortOrder || 'desc'
   });
 
-  // Format date for display (Turkish format)
-  const formatDateForDisplay = (dateString) => {
-    if (!dateString) return 'N/A';
-    const d = new Date(dateString);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}.${month}.${year}`;
+  // Update local filters when props change
+  useEffect(() => {
+    setLocalFilters({
+      fromDate: filters.fromDate || '',
+      toDate: filters.toDate || '',
+      company: filters.company || '',
+      visitor: filters.visitor || '',
+      sortBy: filters.sortBy || 'date',
+      sortOrder: filters.sortOrder || 'desc'
+    });
+  }, [filters]);
+
+  // Format date for display
+  const formatDisplayDate = (dateStr) => {
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('tr-TR');
+    } catch (error) {
+      return dateStr;
+    }
   };
 
-  // Get relative date
-  const getRelativeDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const today = new Date();
-    const diffTime = Math.abs(today - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Bugün';
-    if (diffDays === 1) return '1 gün önce';
-    if (diffDays < 7) return `${diffDays} gün önce`;
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} hafta önce`;
-    return `${Math.ceil(diffDays / 30)} ay önce`;
-  };
-
-  // Get status color based on date
-  const getStatusColor = (dateString) => {
-    if (!dateString) return 'text-muted';
-    const date = new Date(dateString);
-    const today = new Date();
-    const diffTime = Math.abs(today - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'text-success';
-    if (diffDays <= 7) return 'text-info';
-    if (diffDays <= 30) return 'text-warning';
-    return 'text-muted';
+  // Get time ago color based on days
+  const getTimeAgoColor = (dateStr) => {
+    try {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffTime = Math.abs(now - date);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays <= 1) return 'text-success';
+      if (diffDays <= 7) return 'text-info';
+      if (diffDays <= 30) return 'text-warning';
+      return 'text-muted';
+    } catch {
+      return 'text-muted';
+    }
   };
 
   // Handle local filter change
@@ -115,22 +115,41 @@ const VisitorsList = ({
 
   // Handle delete click
   const handleDeleteClick = (visitor) => {
-    if (window.confirm(`${visitor.visitor} ziyaretçisini silmek istediğinizden emin misiniz?`)) {
+    if (window.confirm(`${visitor.visitorName || visitor.visitor} ziyaretçisini silmek istediğinizden emin misiniz?`)) {
       if (onDeleteVisitor) {
         onDeleteVisitor(visitor);
       }
     }
   };
 
-  // Handle sort
+  // ✅ DÜZELTME: Handle sort - Aktif olarak çalışacak şekilde
   const handleSort = (column) => {
+    console.log('Sorting by:', column, 'Current sort:', filters.sortBy, filters.sortOrder);
+    
+    // Aynı kolona tıklandığında sıralama yönünü değiştir
     const newOrder = filters.sortBy === column && filters.sortOrder === 'desc' ? 'asc' : 'desc';
+    
     if (onSort) {
       onSort(column, newOrder);
     }
   };
 
-  // ⚡ DÜZELTME: Loading state sadece visitors boşken gösterilsin
+  // ✅ DÜZELTME: Get sort icon helper function
+  const getSortIcon = (column) => {
+    if (filters.sortBy !== column) {
+      return 'bi-arrow-down-up'; // Default icon when column is not sorted
+    }
+    return filters.sortOrder === 'desc' ? 'bi-arrow-down' : 'bi-arrow-up';
+  };
+
+  // ✅ DÜZELTME: Get sort button class helper
+  const getSortButtonClass = (column) => {
+    const baseClass = "btn btn-link text-decoration-none p-0 fw-medium d-flex align-items-center";
+    const activeClass = filters.sortBy === column ? "text-primary" : "text-dark";
+    return `${baseClass} ${activeClass}`;
+  };
+
+  // Loading state
   if (loading && (!visitors || visitors.length === 0)) {
     return (
       <div className="d-flex justify-content-center align-items-center py-5">
@@ -144,7 +163,7 @@ const VisitorsList = ({
     );
   }
 
-  // ⚡ DÜZELTME: Empty state sadece loading false iken gösterilsin
+  // Empty state
   if (!loading && (!visitors || visitors.length === 0)) {
     return (
       <div className="text-center py-5">
@@ -170,7 +189,6 @@ const VisitorsList = ({
     );
   }
 
-  // ⚡ VISITOR LIST - Ana içerik
   return (
     <>
       {/* Header with Actions */}
@@ -212,11 +230,11 @@ const VisitorsList = ({
         </div>
       </div>
 
-      {/* Filters Panel */}
+      {/* Filter Panel */}
       {showFilters && (
         <div className="card mb-4">
           <div className="card-body">
-            <div className="row g-3">
+            <div className="row">
               <div className="col-md-3">
                 <label className="form-label small">Başlangıç Tarihi</label>
                 <input
@@ -287,7 +305,7 @@ const VisitorsList = ({
         </div>
       )}
 
-      {/* Table Header */}
+      {/* Table Header Info */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="text-muted small">
           Toplam {pagination.totalCount || 0} ziyaretçi
@@ -317,7 +335,7 @@ const VisitorsList = ({
         )}
       </div>
 
-      {/* Visitors Table */}
+      {/* ✅ DÜZELTME: Visitors Table - Aktif sıralama ile */}
       <div className="table-responsive">
         <table className="table table-hover">
           <thead>
@@ -334,45 +352,36 @@ const VisitorsList = ({
               </th>
               <th style={{ width: '120px' }}>
                 <button 
-                  className="btn btn-link text-decoration-none p-0 fw-medium text-dark d-flex align-items-center"
+                  className={getSortButtonClass('date')}
                   onClick={() => handleSort('date')}
+                  title="Tarihe göre sırala"
                 >
                   Tarih
-                  <i className={`bi ms-1 ${
-                    filters.sortBy === 'date' 
-                      ? filters.sortOrder === 'desc' ? 'bi-arrow-down' : 'bi-arrow-up'
-                      : 'bi-arrow-down-up'
-                  }`}></i>
+                  <i className={`bi ms-1 ${getSortIcon('date')}`}></i>
                 </button>
               </th>
               <th>
                 <button 
-                  className="btn btn-link text-decoration-none p-0 fw-medium text-dark d-flex align-items-center"
+                  className={getSortButtonClass('company')}
                   onClick={() => handleSort('company')}
+                  title="Şirkete göre sırala"
                 >
                   Şirket
-                  <i className={`bi ms-1 ${
-                    filters.sortBy === 'company' 
-                      ? filters.sortOrder === 'desc' ? 'bi-arrow-down' : 'bi-arrow-up'
-                      : 'bi-arrow-down-up'
-                  }`}></i>
+                  <i className={`bi ms-1 ${getSortIcon('company')}`}></i>
                 </button>
               </th>
               <th>
                 <button 
-                  className="btn btn-link text-decoration-none p-0 fw-medium text-dark d-flex align-items-center"
+                  className={getSortButtonClass('visitor')}
                   onClick={() => handleSort('visitor')}
+                  title="Ziyaretçiye göre sırala"
                 >
                   Ziyaretçi
-                  <i className={`bi ms-1 ${
-                    filters.sortBy === 'visitor' 
-                      ? filters.sortOrder === 'desc' ? 'bi-arrow-down' : 'bi-arrow-up'
-                      : 'bi-arrow-down-up'
-                  }`}></i>
+                  <i className={`bi ms-1 ${getSortIcon('visitor')}`}></i>
                 </button>
               </th>
               <th>Açıklama</th>
-              <th style={{ width: '120px' }}>İşlemler</th>
+              <th style={{ width: '140px' }}>İşlemler</th>
             </tr>
           </thead>
           <tbody>
@@ -384,69 +393,56 @@ const VisitorsList = ({
                       className="form-check-input"
                       type="checkbox"
                       checked={selectedVisitors.includes(visitor.id)}
-                      onChange={() => onSelectVisitor?.(visitor.id)}
+                      onChange={() => onSelectVisitor(visitor.id)}
                     />
                   </div>
                 </td>
                 <td>
-                  <div>
-                    <div className={`fw-medium ${getStatusColor(visitor.date)}`}>
-                      {formatDateForDisplay(visitor.date)}
-                    </div>
-                    <small className="text-muted">
-                      {getRelativeDate(visitor.date)}
-                    </small>
-                  </div>
-                </td>
-                <td>
-                  <span className="fw-medium text-primary">
-                    {visitor.company || 'N/A'}
+                  <span className={`small ${getTimeAgoColor(visitor.date)}`}>
+                    {formatDisplayDate(visitor.date)}
                   </span>
                 </td>
                 <td>
-                  <div>
-                    <div className="fw-medium">
-                      {visitor.visitor || 'N/A'}
-                    </div>
-                  </div>
+                  <span className="fw-medium">{visitor.company}</span>
                 </td>
                 <td>
-                  <div style={{ maxWidth: '200px' }}>
-                    <div className="text-truncate" title={visitor.description}>
-                      {visitor.description || 'Açıklama yok'}
-                    </div>
-                  </div>
+                  <span>{visitor.visitorName || visitor.visitor}</span>
                 </td>
                 <td>
+                  <span className="small text-muted">
+                    {visitor.description ? (
+                      visitor.description.length > 50 
+                        ? visitor.description.substring(0, 50) + '...'
+                        : visitor.description
+                    ) : '-'}
+                  </span>
+                </td>
+                <td>
+                  {/* ✅ İŞLEMLER DROPDOWN - Sonraki adımda bu bölüm güncellenecek */}
                   <div className="dropdown">
-                    <button
-                      className="btn btn-outline-secondary btn-sm dropdown-toggle"
+                    <button 
+                      className="btn btn-sm btn-outline-secondary dropdown-toggle"
                       type="button"
                       data-bs-toggle="dropdown"
+                      aria-expanded="false"
                     >
-                      <i className="bi bi-three-dots"></i>
+                      <i className="bi bi-three-dots-vertical"></i>
                     </button>
                     <ul className="dropdown-menu">
                       <li>
-                        <button 
-                          className="dropdown-item"
-                          onClick={() => onViewVisitor?.(visitor)}
-                        >
+                        <button className="dropdown-item" onClick={() => onViewVisitor(visitor)}>
                           <i className="bi bi-eye me-2"></i>Detayları Gör
                         </button>
                       </li>
                       <li>
-                        <button 
-                          className="dropdown-item"
-                          onClick={() => onEditVisitor?.(visitor)}
-                        >
+                        <button className="dropdown-item" onClick={() => onEditVisitor(visitor)}>
                           <i className="bi bi-pencil me-2"></i>Düzenle
                         </button>
                       </li>
                       <li><hr className="dropdown-divider" /></li>
                       <li>
                         <button 
-                          className="dropdown-item text-danger"
+                          className="dropdown-item text-danger" 
                           onClick={() => handleDeleteClick(visitor)}
                         >
                           <i className="bi bi-trash me-2"></i>Sil
@@ -461,61 +457,78 @@ const VisitorsList = ({
         </table>
       </div>
 
-      {/* Loading overlay for additional data */}
-      {loading && visitors.length > 0 && (
-        <div className="position-relative">
-          <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light bg-opacity-75">
-            <div className="spinner-border text-danger">
-              <span className="visually-hidden">Yükleniyor...</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Pagination */}
-      {pagination.totalPages > 1 && (
+      {pagination && pagination.totalPages > 1 && (
         <div className="d-flex justify-content-between align-items-center mt-4">
           <div className="text-muted small">
-            {((pagination.page - 1) * pagination.pageSize) + 1}-
-            {Math.min(pagination.page * pagination.pageSize, pagination.totalCount)} / {' '}
-            {pagination.totalCount} kayıt
+            Sayfa {pagination.currentPage} / {pagination.totalPages}
+            ({pagination.totalCount} toplam kayıt)
           </div>
           <nav>
             <ul className="pagination pagination-sm mb-0">
-              <li className={`page-item ${!pagination.hasPreviousPage ? 'disabled' : ''}`}>
+              <li className={`page-item ${pagination.currentPage <= 1 ? 'disabled' : ''}`}>
                 <button 
                   className="page-link"
-                  onClick={() => onPageChange?.(pagination.page - 1)}
-                  disabled={!pagination.hasPreviousPage}
+                  onClick={() => onPageChange(1)}
+                  disabled={pagination.currentPage <= 1}
+                >
+                  <i className="bi bi-chevron-double-left"></i>
+                </button>
+              </li>
+              <li className={`page-item ${pagination.currentPage <= 1 ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link"
+                  onClick={() => onPageChange(pagination.currentPage - 1)}
+                  disabled={pagination.currentPage <= 1}
                 >
                   <i className="bi bi-chevron-left"></i>
                 </button>
               </li>
               
               {/* Page numbers */}
-              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                const pageNum = Math.max(1, pagination.page - 2) + i;
-                if (pageNum > pagination.totalPages) return null;
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, index) => {
+                let pageNumber;
+                if (pagination.totalPages <= 5) {
+                  pageNumber = index + 1;
+                } else {
+                  const current = pagination.currentPage;
+                  if (current <= 3) {
+                    pageNumber = index + 1;
+                  } else if (current > pagination.totalPages - 3) {
+                    pageNumber = pagination.totalPages - 4 + index;
+                  } else {
+                    pageNumber = current - 2 + index;
+                  }
+                }
                 
                 return (
-                  <li key={pageNum} className={`page-item ${pagination.page === pageNum ? 'active' : ''}`}>
+                  <li key={pageNumber} className={`page-item ${pagination.currentPage === pageNumber ? 'active' : ''}`}>
                     <button 
                       className="page-link"
-                      onClick={() => onPageChange?.(pageNum)}
+                      onClick={() => onPageChange(pageNumber)}
                     >
-                      {pageNum}
+                      {pageNumber}
                     </button>
                   </li>
                 );
               })}
               
-              <li className={`page-item ${!pagination.hasNextPage ? 'disabled' : ''}`}>
+              <li className={`page-item ${pagination.currentPage >= pagination.totalPages ? 'disabled' : ''}`}>
                 <button 
                   className="page-link"
-                  onClick={() => onPageChange?.(pagination.page + 1)}
-                  disabled={!pagination.hasNextPage}
+                  onClick={() => onPageChange(pagination.currentPage + 1)}
+                  disabled={pagination.currentPage >= pagination.totalPages}
                 >
                   <i className="bi bi-chevron-right"></i>
+                </button>
+              </li>
+              <li className={`page-item ${pagination.currentPage >= pagination.totalPages ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link"
+                  onClick={() => onPageChange(pagination.totalPages)}
+                  disabled={pagination.currentPage >= pagination.totalPages}
+                >
+                  <i className="bi bi-chevron-double-right"></i>
                 </button>
               </li>
             </ul>
