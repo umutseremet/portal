@@ -1,4 +1,4 @@
-# Acara Admin Panel
+# Vervo Portal
 
 Modern ve responsive admin panel uygulaması. React ve Bootstrap kullanılarak geliştirilmiştir.
 

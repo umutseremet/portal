@@ -18,6 +18,7 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
   const portalRef = useRef(document.createElement('div'));
   const [pos, setPos] = useState({ top: 0, left: 0, width: 220 });
 
+  // Portal element'i DOM'a ekle
   useEffect(() => {
     const el = portalRef.current;
     el.style.position = 'fixed';
@@ -79,6 +80,12 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
     };
   }, [dropdownOpen]);
 
+  // ✅ EKSIK OLAN FONKSIYON: handleToggle
+  const handleToggle = (e) => {
+    e.stopPropagation();
+    setDropdownOpen(prev => !prev);
+  };
+
   const handleLogout = async () => {
     try { await logout(); } finally { navigate('/login'); }
   };
@@ -122,30 +129,31 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
         </div>
 
         {/* Sağ Aksiyonlar */}
-        <div className="d-flex align-items-center">
-          <button className="btn btn-link" style={hit} aria-label="Bildirimler">
+        <div className="d-flex align-items-center header-actions">
+          {/* Notification Button */}
+          <button className="btn btn-link notification-btn" style={hit} aria-label="Bildirimler">
             <i className="bi bi-bell fs-5"></i>
           </button>
-          <button className="btn btn-link" style={hit} aria-label="Ayarlar">
-            <i className="bi bi-gear fs-5"></i>
-          </button>
+          
+          
 
-          {/* Kullanıcı */}
-          <div className="ms-2">
+          {/* User Avatar & Dropdown */}
+          <div className="user-dropdown">
             <button
               ref={triggerRef}
               type="button"
               className="btn d-flex align-items-center"
-              onClick={(e)=>{ e.stopPropagation(); setDropdownOpen(v=>!v); }}
+              onClick={handleToggle} // ✅ handleToggle kullanıyoruz
               style={{ ...hit, paddingLeft:6, paddingRight:10 }}
               aria-haspopup="menu"
               aria-expanded={dropdownOpen}
             >
-              <div className="rounded-circle text-white fw-bold d-flex justify-content-center align-items-center me-2"
-                   style={{ width:36, height:36, background:'#FF6B6B' }}>
+              {/* ✅ Avatar - büyütülmüş boyut ve mesafe */}
+              <div className="avatar avatar-xxl rounded-circle text-white fw-bold d-flex justify-content-center align-items-center user-avatar"
+                   style={{ backgroundColor:'#FF6B6B' }}>
                 {initials}
               </div>
-              <span className="d-none d-sm-block small text-dark">{getUserName()}</span>
+              <span className="d-none d-sm-block small text-dark ms-2">{getUserName()}</span>
               <i className={`bi bi-chevron-${dropdownOpen ? 'up' : 'down'} ms-2 text-muted`}></i>
             </button>
           </div>
@@ -169,7 +177,6 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
             <div className="dropdown-item px-3 py-2 text-muted">{getUserName()}</div>
             <hr className="dropdown-divider" />
             <button className="dropdown-item px-3 py-2">Profilim</button>
-            <button className="dropdown-item px-3 py-2">Ayarlar</button>
             <hr className="dropdown-divider" />
             <button className="dropdown-item px-3 py-2 text-danger" onClick={handleLogout} disabled={loading}>
               {loading ? 'Çıkış yapılıyor…' : 'Çıkış Yap'}
@@ -189,8 +196,7 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
           >
             <div className="dropdown-item px-3 py-2 text-muted">{getUserName()}</div>
             <hr className="dropdown-divider" />
-            <button className="dropdown-item px-3 py-2">Profilim</button>
-            <button className="dropdown-item px-3 py-2">Ayarlar</button>
+            <button className="dropdown-item px-3 py-2">Profilim</button> 
             <hr className="dropdown-divider" />
             <button className="dropdown-item px-3 py-2 text-danger" onClick={handleLogout} disabled={loading}>
               {loading ? 'Çıkış yapılıyor…' : 'Çıkış Yap'}

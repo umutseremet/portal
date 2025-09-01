@@ -432,3 +432,32 @@ body {
 /* Dropdown portalla geldiği için Bootstrap çarpışması olmasın */
 .dropdown-item { background: transparent; border: 0; width: 100%; text-align: left; }
 .dropdown-item:focus { outline: none; }
+
+
+/* Header Actions için gelişmiş spacing */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* Elementler arası mesafe */
+}
+
+/* Notification butonu için özel ayar */
+.notification-btn {
+  margin-right: 16px; /* Avatar'dan önce mesafe */
+}
+
+/* Avatar için margin */
+.user-dropdown .avatar {
+  margin-left: 8px;
+}
+
+/* Responsive ayarlar */
+@media (max-width: 768px) {
+  .header-actions {
+    gap: 12px;
+  }
+  
+  .notification-btn {
+    margin-right: 8px;
+  }
+}

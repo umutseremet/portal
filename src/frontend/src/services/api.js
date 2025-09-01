@@ -96,49 +96,26 @@ class ApiService {
   // ===== AUTHENTICATION ENDPOINTS =====
 
   async login(credentials) {
-    try {
-      console.log('API: Login attempt', { email: credentials.email });
-      
-      // For development, use mock authentication
-      // if (process.env.NODE_ENV === 'development') {
-      //   // Mock authentication for development
-      //   const mockResponse = {
-      //     success: true,
-      //     token: 'mock-jwt-token-' + Date.now(),
-      //     user: {
-      //       id: 1,
-      //       email: credentials.email,
-      //       username: credentials.email.split('@')[0],
-      //       firstName: 'Admin',
-      //       lastName: 'User',
-      //       role: 'admin'
-      //     }
-      //   };
-        
-      //   // Simulate network delay
-      //   await new Promise(resolve => setTimeout(resolve, 500));
-        
-      //   console.log('API: Mock login successful', mockResponse);
-      //   return mockResponse;
-      // }
+  try {
+    console.log('API: Login attempt', { email: credentials.email });
+    
+    // Backend Username field'ı bekliyor, email'i username olarak gönder
+    const response = await this.post('/Auth/login', {
+      username: credentials.email,  // email'i username olarak gönder
+      password: credentials.password
+    });
 
-      // Production authentication
-      const response = await this.post('/Auth/login', {
-        email: credentials.email,
-        password: credentials.password
-      });
+    return {
+      success: true,
+      token: response.token,
+      user: response.user
+    };
 
-      return {
-        success: true,
-        token: response.token,
-        user: response.user
-      };
-
-    } catch (error) {
-      console.error('API: Login failed', error);
-      throw new Error(error.message || 'Giriş işlemi başarısız');
-    }
+  } catch (error) {
+    console.error('API: Login failed', error);
+    throw new Error(error.message || 'Giriş işlemi başarısız');
   }
+}
 
   async register(userData) {
     try {

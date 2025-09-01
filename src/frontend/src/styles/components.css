@@ -425,6 +425,49 @@
 .avatar-lg { width: 48px; height: 48px; font-size: var(--font-size-base); }
 .avatar-xl { width: 64px; height: 64px; font-size: var(--font-size-lg); }
 
+/* Yeni büyük avatar boyutu */
+.avatar-xxl { 
+  width: 50px; 
+  height: 50px; 
+  font-size: var(--font-size-xl); /* Daha büyük yazı boyutu */
+  font-weight: var(--font-weight-bold);
+}
+
+/* Header actions için özel spacing */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px; /* Aralarındaki mesafeyi artır */
+}
+
+.header-actions .btn-link {
+  color: #6c757d !important;
+  padding: 8px !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+  border: none !important;
+  background: none !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-decoration: none !important;
+  margin-right: 8px; /* Notification icon ile avatar arasında mesafe */
+}
+
+/* User avatar için özel stil */
+.user-avatar {
+  margin-left: 12px; /* Sol taraftan mesafe */
+}
+
+/* Header actions için özel spacing */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px; /* Aralarındaki mesafeyi artır */
+}
+
 /* Dropdown Component */
 .dropdown-menu {
   --bs-dropdown-min-width: 12rem;
