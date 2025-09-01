@@ -100,27 +100,27 @@ class ApiService {
       console.log('API: Login attempt', { email: credentials.email });
       
       // For development, use mock authentication
-      if (process.env.NODE_ENV === 'development') {
-        // Mock authentication for development
-        const mockResponse = {
-          success: true,
-          token: 'mock-jwt-token-' + Date.now(),
-          user: {
-            id: 1,
-            email: credentials.email,
-            username: credentials.email.split('@')[0],
-            firstName: 'Admin',
-            lastName: 'User',
-            role: 'admin'
-          }
-        };
+      // if (process.env.NODE_ENV === 'development') {
+      //   // Mock authentication for development
+      //   const mockResponse = {
+      //     success: true,
+      //     token: 'mock-jwt-token-' + Date.now(),
+      //     user: {
+      //       id: 1,
+      //       email: credentials.email,
+      //       username: credentials.email.split('@')[0],
+      //       firstName: 'Admin',
+      //       lastName: 'User',
+      //       role: 'admin'
+      //     }
+      //   };
         
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 500));
+      //   // Simulate network delay
+      //   await new Promise(resolve => setTimeout(resolve, 500));
         
-        console.log('API: Mock login successful', mockResponse);
-        return mockResponse;
-      }
+      //   console.log('API: Mock login successful', mockResponse);
+      //   return mockResponse;
+      // }
 
       // Production authentication
       const response = await this.post('/Auth/login', {
@@ -437,4 +437,4 @@ class ApiService {
 
 // Create and export a singleton instance
 const apiService = new ApiService();
-export default apiService;
+export default apiService;  
