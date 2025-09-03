@@ -1,70 +1,64 @@
 // src/frontend/src/components/Visitors/VisitorDetailModal.js
-import { formatDate } from '../../utils/helpers';
+import React from 'react';
 
-const VisitorDetailModal = ({ 
-  show, 
-  onHide, 
-  visitor = null,
-  onEdit,
-  onDelete 
-}) => {
-  
+const VisitorDetailModal = ({ visitor, show, onHide, onEdit, onDelete }) => {
+  // ✅ GÜVENLIK KONTROLÜ: Visitor objesi var mı ve geçerli mi?
   if (!show || !visitor) return null;
 
-  // Format date for display
-  const formatDisplayDate = (dateStr) => {
+  // ✅ FORMATTELENMİŞ DEĞERLER: String olarak döndür
+  const formatDisplayDate = (dateValue) => {
+    if (!dateValue) return 'Belirtilmemiş';
     try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('tr-TR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
+      return new Date(dateValue).toLocaleDateString('tr-TR');
     } catch (error) {
-      return dateStr;
+      return 'Geçersiz tarih';
     }
   };
 
-  // Get status badge based on date
-  const getVisitStatus = () => {
-    try {
-      const visitDate = new Date(visitor.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      visitDate.setHours(0, 0, 0, 0);
+  // ✅ GÜVENLİ RENDER HELPER: Obje yerine string döndür
+  const safeRender = (value, defaultValue = 'Belirtilmemiş') => {
+    if (value === null || value === undefined) return defaultValue;
+    if (typeof value === 'object') return JSON.stringify(value); // Geçici çözüm
+    return String(value);
+  };
 
-      if (visitDate.getTime() === today.getTime()) {
+  // Visitor verilerini güvenli şekilde al
+  const visitorName = visitor.visitorName || visitor.visitor || 'İsimsiz Ziyaretçi';
+  const companyName = visitor.company || 'Bilinmeyen Şirket';
+  const description = visitor.description || '';
+  const visitDate = visitor.date;
+  const createdAt = visitor.createdAt;
+  const updatedAt = visitor.updatedAt;
+
+  // Status helper
+  const getVisitStatus = () => {
+    if (!visitDate) return { text: 'Belirsiz', class: 'bg-secondary' };
+    
+    try {
+      const today = new Date();
+      const visit = new Date(visitDate);
+      
+      if (visit.toDateString() === today.toDateString()) {
         return { text: 'Bugün', class: 'bg-success' };
-      } else if (visitDate > today) {
+      } else if (visit > today) {
         return { text: 'Gelecek', class: 'bg-info' };
       } else {
-        const diffTime = Math.abs(today - visitDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays === 1) {
-          return { text: 'Dün', class: 'bg-warning' };
-        } else if (diffDays <= 7) {
-          return { text: `${diffDays} gün önce`, class: 'bg-secondary' };
-        } else {
-          return { text: 'Geçmiş', class: 'bg-light text-dark' };
-        }
+        return { text: 'Tamamlandı', class: 'bg-primary' };
       }
     } catch (error) {
-      return { text: 'Bilinmiyor', class: 'bg-secondary' };
+      return { text: 'Hata', class: 'bg-danger' };
     }
   };
 
   const status = getVisitStatus();
 
-  // Handle delete with confirmation
   const handleDelete = () => {
-    if (window.confirm(`${visitor.visitorName || visitor.visitor} ziyaretçisini silmek istediğinizden emin misiniz?`)) {
+    if (window.confirm(`${visitorName} adlı ziyaretçiyi silmek istediğinizden emin misiniz?`)) {
       onDelete(visitor);
       onHide();
     }
   };
 
-  // Handle edit
   const handleEdit = () => {
     onEdit(visitor);
     onHide();
@@ -83,12 +77,12 @@ const VisitorDetailModal = ({
               </div>
               <div>
                 <h5 className="modal-title mb-1">
-                  {visitor.visitorName || visitor.visitor}
+                  {safeRender(visitorName)}
                 </h5>
                 <div className="d-flex align-items-center gap-2">
                   <span className="text-muted small">
                     <i className="bi bi-building me-1"></i>
-                    {visitor.company}
+                    {safeRender(companyName)}
                   </span>
                   <span className={`badge ${status.class} small`}>
                     {status.text}
@@ -117,7 +111,7 @@ const VisitorDetailModal = ({
                 <label className="form-label small text-muted">Tarih</label>
                 <div className="fw-medium">
                   <i className="bi bi-calendar3 me-2 text-primary"></i>
-                  {formatDisplayDate(visitor.date)}
+                  {formatDisplayDate(visitDate)}
                 </div>
               </div>
 
@@ -125,7 +119,7 @@ const VisitorDetailModal = ({
                 <label className="form-label small text-muted">Şirket</label>
                 <div className="fw-medium">
                   <i className="bi bi-building me-2 text-primary"></i>
-                  {visitor.company}
+                  {safeRender(companyName)}
                 </div>
               </div>
 
@@ -133,16 +127,16 @@ const VisitorDetailModal = ({
                 <label className="form-label small text-muted">Ziyaretçi Adı</label>
                 <div className="fw-medium">
                   <i className="bi bi-person me-2 text-primary"></i>
-                  {visitor.visitorName || visitor.visitor}
+                  {safeRender(visitorName)}
                 </div>
               </div>
 
-              {visitor.description && (
+              {description && (
                 <div className="col-12 mb-3">
                   <label className="form-label small text-muted">Açıklama / Ziyaret Amacı</label>
                   <div className="fw-medium border rounded p-3 bg-light">
                     <i className="bi bi-journal-text me-2 text-primary"></i>
-                    {visitor.description}
+                    {safeRender(description)}
                   </div>
                 </div>
               )}
@@ -160,26 +154,26 @@ const VisitorDetailModal = ({
               <div className="col-md-6 mb-3">
                 <label className="form-label small text-muted">Kayıt ID</label>
                 <div className="fw-medium">
-                  <code className="text-muted"># {visitor.id}</code>
+                  <code className="text-muted"># {safeRender(visitor.id)}</code>
                 </div>
               </div>
 
-              {visitor.createdAt && (
+              {createdAt && (
                 <div className="col-md-6 mb-3">
                   <label className="form-label small text-muted">Kayıt Tarihi</label>
                   <div className="fw-medium">
                     <i className="bi bi-calendar-plus me-2 text-success"></i>
-                    {formatDisplayDate(visitor.createdAt)}
+                    {formatDisplayDate(createdAt)}
                   </div>
                 </div>
               )}
 
-              {visitor.updatedAt && visitor.updatedAt !== visitor.createdAt && (
+              {updatedAt && updatedAt !== createdAt && (
                 <div className="col-md-6 mb-3">
                   <label className="form-label small text-muted">Son Güncelleme</label>
                   <div className="fw-medium">
                     <i className="bi bi-calendar-check me-2 text-warning"></i>
-                    {formatDisplayDate(visitor.updatedAt)}
+                    {formatDisplayDate(updatedAt)}
                   </div>
                 </div>
               )}
@@ -189,8 +183,8 @@ const VisitorDetailModal = ({
             <div className="alert alert-info mt-4">
               <i className="bi bi-info-circle me-2"></i>
               <strong>Kayıt Özeti:</strong> Bu ziyaretçi kaydı 
-              {formatDisplayDate(visitor.date)} tarihinde {visitor.company} şirketinden 
-              {visitor.visitorName || visitor.visitor} için oluşturulmuştur.
+              {' ' + formatDisplayDate(visitDate)} tarihinde {safeRender(companyName)} şirketinden 
+              {' ' + safeRender(visitorName)} için oluşturulmuştur.
             </div>
           </div>
 

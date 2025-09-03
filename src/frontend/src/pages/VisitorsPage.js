@@ -15,7 +15,7 @@ const VisitorsPage = () => {
     filters,
     pagination,
     selectedVisitors,
-    
+
     // State
     loading,
     statsLoading,
@@ -25,7 +25,7 @@ const VisitorsPage = () => {
     selectedCount,
     isAllSelected,
     filterSummary,
-    
+
     // Actions
     loadVisitors,
     loadStats,
@@ -79,7 +79,7 @@ const VisitorsPage = () => {
       console.log('Handling filter change:', newFilters);
       // Önce state'i güncelle, sonra load et
       updateFilters(newFilters);
-      
+
       // Kısa delay ile filtreli yükleme
       setTimeout(() => {
         loadVisitors(1, true, newFilters);
@@ -140,10 +140,13 @@ const VisitorsPage = () => {
     setViewingVisitor(visitor);
   };
 
-  // Handle close modals
+  // ✅ MODAL CLOSE FIX
   const handleCloseModal = () => {
+    console.log('Closing modal');
     setShowNewVisitorModal(false);
     setEditingVisitor(null);
+    // ✅ Modal kapatıldığında error state'ini temizle
+    // setModalError(null);
   };
 
   const handleCloseDetailModal = () => {
@@ -168,19 +171,38 @@ const VisitorsPage = () => {
   };
 
   // Handle save visitor (create or update)
+  // ✅ HANDLERSAVEVISITOR FIX - VisitorsPage.js için
   const handleSaveVisitor = async (visitorData) => {
     try {
+      console.log('Saving visitor:', { editingVisitor, visitorData });
+
       if (editingVisitor) {
-        await updateVisitor(editingVisitor.id, visitorData);
-        console.log('Visitor updated successfully');
+        // Güncelleme
+        const result = await updateVisitor(editingVisitor.id, visitorData);
+        console.log('Update result:', result);
+
+        if (result.success) {
+          console.log('✅ Visitor updated successfully');
+          // Modal'ı kapat
+          handleCloseModal();
+          // Başarı mesajı göster (isteğe bağlı)
+          // showSuccessMessage('Ziyaretçi başarıyla güncellendi');
+        }
       } else {
-        await createVisitor(visitorData);
-        console.log('Visitor created successfully');
+        // Yeni kayıt
+        const result = await createVisitor(visitorData);
+        console.log('Create result:', result);
+
+        if (result.success) {
+          console.log('✅ Visitor created successfully');
+          handleCloseModal();
+          // showSuccessMessage('Ziyaretçi başarıyla oluşturuldu');
+        }
       }
-      handleCloseModal();
     } catch (error) {
-      console.error('Failed to save visitor:', error);
-      // Error is handled in the hook
+      console.error('❌ Save visitor failed:', error);
+      // Hata mesajını modal'da göster veya toast kullan
+      // setModalError(error.message);
     }
   };
 
@@ -237,9 +259,9 @@ const VisitorsPage = () => {
               <div className="alert alert-danger alert-dismissible fade show">
                 <i className="bi bi-exclamation-triangle-fill me-2"></i>
                 {error}
-                <button 
-                  type="button" 
-                  className="btn-close" 
+                <button
+                  type="button"
+                  className="btn-close"
                   onClick={clearError}
                   aria-label="Close"
                 ></button>
@@ -251,28 +273,28 @@ const VisitorsPage = () => {
         {/* Stats Cards */}
         {stats && (
           <div className="row g-4 mb-4">
-            <StatsCard 
+            <StatsCard
               title="Toplam Ziyaretçi"
               value={stats.totalVisitors || 0}
               icon="bi-people-fill"
               trend={stats.totalVisitorsTrend}
               loading={statsLoading}
             />
-            <StatsCard 
+            <StatsCard
               title="Bu Ay"
               value={stats.monthlyVisitors || 0}
               icon="bi-calendar-month"
               trend={stats.monthlyVisitorsTrend}
               loading={statsLoading}
             />
-            <StatsCard 
+            <StatsCard
               title="Bu Hafta"
               value={stats.weeklyVisitors || 0}
               icon="bi-calendar-week"
               trend={stats.weeklyVisitorsTrend}
               loading={statsLoading}
             />
-            <StatsCard 
+            <StatsCard
               title="Bugün"
               value={stats.todayVisitors || 0}
               icon="bi-calendar-day"
@@ -285,25 +307,25 @@ const VisitorsPage = () => {
         {/* Stats Cards - API'den gelen verilerle */}
         {stats && (
           <div className="row g-4 mb-4">
-            <StatsCard 
+            <StatsCard
               title="Toplam Ziyaretçi"
               value={stats.totalVisitors || 0}
               icon="bi-people-fill"
               color="success"
             />
-            <StatsCard 
+            <StatsCard
               title="Bu Ay"
               value={stats.thisMonthVisitors || 0}
               icon="bi-calendar-month"
               color="danger"
             />
-            <StatsCard 
+            <StatsCard
               title="Bu Hafta"
               value={stats.thisWeekVisitors || 0}
               icon="bi-calendar-week"
               color="info"
             />
-            <StatsCard 
+            <StatsCard
               title="Bugün"
               value={stats.todayVisitors || 0}
               icon="bi-calendar-day"
@@ -311,7 +333,7 @@ const VisitorsPage = () => {
             />
           </div>
         )}
-        
+
         {/* Stats Loading State */}
         {statsLoading && (
           <div className="row g-4 mb-4">
@@ -343,7 +365,7 @@ const VisitorsPage = () => {
                   selectedCount={selectedCount}
                   isAllSelected={isAllSelected}
                   filterSummary={filterSummary}
-                  
+
                   // Actions
                   onSort={handleSort}
                   onPageChange={handlePageChange}

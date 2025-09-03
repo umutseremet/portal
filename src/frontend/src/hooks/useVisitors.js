@@ -48,7 +48,7 @@ export const useVisitors = (initialFilters = {}) => {
   // ✅ DÜZELTME: loadVisitors fonksiyonunu optimize et
   const loadVisitors = useCallback(async (page = 1, resetData = true, filtersToUse = null) => {
     if (!mountedRef.current) return;
-    
+
     try {
       setLoading(true);
       clearError();
@@ -84,7 +84,7 @@ export const useVisitors = (initialFilters = {}) => {
         setVisitors(response.visitors || []);
       } else {
         // For infinite scroll or load more functionality
-        setVisitors(prev => 
+        setVisitors(prev =>
           page === 1 ? response.visitors || [] : [...prev, ...(response.visitors || [])]
         );
       }
@@ -100,10 +100,10 @@ export const useVisitors = (initialFilters = {}) => {
 
     } catch (err) {
       if (!mountedRef.current) return;
-      
+
       console.error('Error loading visitors:', err);
       setError(err.message || 'Ziyaretçiler yüklenirken hata oluştu');
-      
+
       // Fallback data for development
       if (err.message?.includes('Failed to fetch') || err.message?.includes('ERR_CONNECTION_REFUSED')) {
         setError('API bağlantısı kurulamadı. Backend sunucusunun çalıştığından emin olun.');
@@ -150,8 +150,8 @@ export const useVisitors = (initialFilters = {}) => {
     // İlk yüklemeden sonra ve gerçek filtre değişikliğinde çalışır
     if (initialLoadDoneRef.current) {
       const hasActiveFilters = filters.fromDate || filters.toDate || filters.company || filters.visitor ||
-                              filters.sortBy !== 'date' || filters.sortOrder !== 'desc';
-      
+        filters.sortBy !== 'date' || filters.sortOrder !== 'desc';
+
       if (hasActiveFilters) {
         console.log('Filter changed, triggering debounced load:', filters);
         debouncedLoadVisitors(filters);
@@ -169,11 +169,11 @@ export const useVisitors = (initialFilters = {}) => {
   // Load visitor statistics
   const loadStats = useCallback(async () => {
     if (!mountedRef.current) return;
-    
+
     try {
       setStatsLoading(true);
       const response = await visitorService.getVisitorStats();
-      
+
       if (mountedRef.current) {
         console.log('Stats loaded:', response);
         setStats(response);
@@ -253,18 +253,18 @@ export const useVisitors = (initialFilters = {}) => {
   // Create visitor
   const createVisitor = useCallback(async (visitorData) => {
     if (!mountedRef.current) return;
-    
+
     try {
       setLoading(true);
       clearError();
 
       const response = await visitorService.createVisitor(visitorData);
-      
+
       if (mountedRef.current) {
         // Reload visitors to get updated list
         await loadVisitors(1, true, filters);
       }
-      
+
       return response;
     } catch (err) {
       if (mountedRef.current) {
@@ -281,51 +281,79 @@ export const useVisitors = (initialFilters = {}) => {
   // Update visitor
   const updateVisitor = useCallback(async (id, visitorData) => {
     if (!mountedRef.current) return;
-    
+
     try {
       setLoading(true);
       clearError();
 
+      console.log('Updating visitor:', { id, visitorData });
+
+      // ✅ API çağrısı yap
       const response = await visitorService.updateVisitor(id, visitorData);
-      
-      if (mountedRef.current) {
-        // Update the visitor in the current list
-        setVisitors(prev => 
-          prev.map(visitor => 
-            visitor.id === id 
-              ? { ...visitor, ...response }
-              : visitor
-          )
-        );
+      console.log('Update API response:', response);
+
+      if (!mountedRef.current) return;
+
+      // ✅ STATE GÜNCELLEMESİ: Sadece response'daki visitor objesini kullan
+      if (response?.visitor) {
+        setVisitors(prevVisitors => {
+          return prevVisitors.map(visitor => {
+            if (visitor.id === id) {
+              // ✅ GÜVENLI MERGE: Obje render hatası yapmamak için
+              return {
+                ...visitor,
+                ...response.visitor,
+                // ✅ Tarih formatlarını kontrol et
+                date: response.visitor.date || response.visitor.Date,
+                company: response.visitor.company || response.visitor.Company,
+                visitor: response.visitor.visitor || response.visitor.Visitor || response.visitor.visitorName,
+                visitorName: response.visitor.visitorName || response.visitor.visitor,
+                description: response.visitor.description || response.visitor.Description,
+                updatedAt: response.visitor.updatedAt || response.visitor.UpdatedAt || new Date().toISOString()
+              };
+            }
+            return visitor;
+          });
+        });
+
+        console.log('✅ Visitor updated successfully in state');
+
+        // Statistics'i yenile
+        loadStats();
+
+        return { success: true, visitor: response.visitor };
+      } else {
+        throw new Error('Güncelleme yanıtında visitor bilgisi bulunamadı');
       }
-      
-      return response;
-    } catch (err) {
+    } catch (error) {
+      console.error('❌ Update visitor error:', error);
+
       if (mountedRef.current) {
-        setError(err.message || 'Ziyaretçi güncellenirken hata oluştu');
+        setError(error.message || 'Ziyaretçi güncellenirken hata oluştu');
       }
-      throw err;
+
+      throw error;
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, [clearError]);
+  }, [clearError, loadStats]);
 
   // Delete visitor
   const deleteVisitor = useCallback(async (id) => {
     if (!mountedRef.current) return;
-    
+
     try {
       setLoading(true);
       clearError();
 
       await visitorService.deleteVisitor(id);
-      
+
       if (mountedRef.current) {
         // Remove visitor from the current list
         setVisitors(prev => prev.filter(visitor => visitor.id !== id));
-        
+
         // Update pagination
         setPagination(prev => ({
           ...prev,
@@ -346,17 +374,17 @@ export const useVisitors = (initialFilters = {}) => {
 
   // Visitor selection for bulk operations
   const selectVisitor = useCallback((id) => {
-    setSelectedVisitors(prev => 
-      prev.includes(id) 
+    setSelectedVisitors(prev =>
+      prev.includes(id)
         ? prev.filter(visitorId => visitorId !== id)
         : [...prev, id]
     );
   }, []);
 
   const selectAllVisitors = useCallback(() => {
-    setSelectedVisitors(prev => 
-      prev.length === visitors.length 
-        ? [] 
+    setSelectedVisitors(prev =>
+      prev.length === visitors.length
+        ? []
         : visitors.map(visitor => visitor.id)
     );
   }, [visitors]);
@@ -368,7 +396,7 @@ export const useVisitors = (initialFilters = {}) => {
   // Bulk delete
   const deleteSelectedVisitors = useCallback(async () => {
     if (!mountedRef.current || selectedVisitors.length === 0) return;
-    
+
     try {
       setLoading(true);
       clearError();
@@ -377,19 +405,19 @@ export const useVisitors = (initialFilters = {}) => {
       await Promise.all(
         selectedVisitors.map(id => visitorService.deleteVisitor(id))
       );
-      
+
       if (mountedRef.current) {
         // Remove deleted visitors from the current list
-        setVisitors(prev => 
+        setVisitors(prev =>
           prev.filter(visitor => !selectedVisitors.includes(visitor.id))
         );
-        
+
         // Update pagination
         setPagination(prev => ({
           ...prev,
           totalCount: prev.totalCount - selectedVisitors.length
         }));
-        
+
         // Clear selection
         setSelectedVisitors([]);
       }
@@ -429,10 +457,10 @@ export const useVisitors = (initialFilters = {}) => {
     } else if (filters.toDate) {
       parts.push(`${filters.toDate} tarihinden önce`);
     }
-    
+
     if (filters.company) parts.push(`Şirket: ${filters.company}`);
     if (filters.visitor) parts.push(`Ziyaretçi: ${filters.visitor}`);
-    
+
     return parts.join(', ');
   }, [filters]);
 
@@ -443,7 +471,7 @@ export const useVisitors = (initialFilters = {}) => {
     filters,
     pagination,
     selectedVisitors,
-    
+
     // State
     loading,
     statsLoading,
@@ -453,7 +481,7 @@ export const useVisitors = (initialFilters = {}) => {
     selectedCount,
     isAllSelected,
     filterSummary,
-    
+
     // Actions
     loadVisitors,
     loadStats,
