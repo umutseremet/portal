@@ -11,9 +11,7 @@ const Layout = ({ children }) => {
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth < BREAKPOINT : false
   );
-  const [sidebarOpen, setSidebarOpen] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth >= BREAKPOINT : true
-  );
+  const [sidebarOpen, setSidebarOpen] = useState(true); // Desktop'ta da default kapalı
   const location = useLocation();
 
   const toggleSidebar = () => setSidebarOpen(v => !v);
@@ -45,11 +43,11 @@ const Layout = ({ children }) => {
         <div
           className="sidebar-overlay show"
           onClick={() => setSidebarOpen(false)}
-          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.5)', zIndex:1035 }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1035 }}
         />
       )}
 
-      <main className={`main-content ${sidebarOpen && !isMobile ? 'with-sidebar' : 'without-sidebar'}`} style={{ zIndex:1 }}>
+      <main className={`main-content ${sidebarOpen && !isMobile ? 'with-sidebar' : 'without-sidebar'}`} style={{ zIndex: 1 }}>
         <div className="content-wrapper">{children}</div>
         <Footer />
       </main>

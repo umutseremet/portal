@@ -1,15 +1,43 @@
 // src/frontend/src/components/Layout/Sidebar.js
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [expandedMenus, setExpandedMenus] = useState({});
 
+  // Ana menü yapılandırması
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'bi-speedometer2', path: '/dashboard' },
-    { id: 'production', label: 'Üretim Planlama', icon: 'bi-gear-fill', path: '/production' },
-    { id: 'visitors', label: 'Ziyaretçiler', icon: 'bi-people-fill', path: '/visitors' }
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: 'bi-speedometer2',
+      path: '/dashboard',
+      type: 'single'
+    },
+    {
+      id: 'production',
+      label: 'Üretim',
+      icon: 'bi-gear-fill',
+      type: 'group',
+      children: [
+        { id: 'bom-transfer', label: 'BOM Listesi Aktarımı', path: '/production/bom-transfer' },
+        { id: 'data-cam', label: 'Data / CAM Hazırlama', path: '/production/data-cam' },
+        { id: 'production-planning', label: 'Üretim Planlama', path: '/production/planning' },
+        { id: 'production-tracking', label: 'Üretim Takip', path: '/production/tracking' },
+        { id: 'reports', label: 'Raporlar', path: '/production/reports' }
+      ]
+    },
+    {
+      id: 'other-operations',
+      label: 'Diğer İşlemler',
+      icon: 'bi-three-dots',
+      type: 'group',
+      children: [
+        { id: 'visitors', label: 'Ziyaretçiler', path: '/visitors' }
+      ]
+    }
   ];
 
   const handleMenuClick = (path, e) => {
@@ -17,15 +45,180 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     navigate(path);
     // Mobilde menüden seçim yapınca kapat
     if (isMobile && isOpen) {
-      // küçük bir gecikme ile kapat (routing'in state güncellemesiyle çakışmasın)
       setTimeout(() => toggleSidebar(), 80);
     }
   };
 
+  const toggleSubmenu = (menuId, e) => {
+    e.preventDefault();
+    setExpandedMenus(prev => ({
+      ...prev,
+      [menuId]: !prev[menuId]
+    }));
+  };
+
   const isActive = (path) => location.pathname === path;
+  const isParentActive = (children) => children.some(child => isActive(child.path));
+
+  const renderMenuItem = (item) => {
+    if (item.type === 'single') {
+      return (
+        <button
+          key={item.id}
+          className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
+          onClick={(e) => handleMenuClick(item.path, e)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            width: '100%',
+            padding: '0.75rem 1.5rem',
+            margin: '0 0.5rem 0.25rem 0.5rem',
+            background: isActive(item.path) ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
+            border: 'none',
+            borderRadius: '8px',
+            color: isActive(item.path) ? '#FF6B6B' : '#6c757d',
+            fontSize: '0.95rem',
+            fontWeight: isActive(item.path) ? '600' : '400',
+            textAlign: 'left',
+            transition: 'all 0.2s ease',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            if (!isActive(item.path)) {
+              e.target.style.background = 'rgba(108, 117, 125, 0.08)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isActive(item.path)) {
+              e.target.style.background = 'transparent';
+            }
+          }}
+        >
+          <i className={`${item.icon} me-3`} style={{ fontSize: '1.1rem', width: '16px' }}></i>
+          {item.label}
+        </button>
+      );
+    }
+
+    // Group menü (alt menülü)
+    const isExpanded = expandedMenus[item.id];
+    const hasActiveChild = isParentActive(item.children);
+
+    return (
+      <div key={item.id} className="nav-group">
+        <button
+          className={`nav-link nav-group-toggle ${hasActiveChild ? 'active' : ''}`}
+          onClick={(e) => toggleSubmenu(item.id, e)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            padding: '0.75rem 1.5rem',
+            margin: '0 0.5rem 0.25rem 0.5rem',
+            background: hasActiveChild ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
+            border: 'none',
+            borderRadius: '8px',
+            color: hasActiveChild ? '#FF6B6B' : '#6c757d',
+            fontSize: '0.95rem',
+            fontWeight: hasActiveChild ? '600' : '400',
+            textAlign: 'left',
+            transition: 'all 0.2s ease',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            if (!hasActiveChild) {
+              e.target.style.background = 'rgba(108, 117, 125, 0.08)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!hasActiveChild) {
+              e.target.style.background = 'transparent';
+            }
+          }}
+        >
+          <div className="d-flex align-items-center">
+            <i className={`${item.icon} me-3`} style={{ fontSize: '1.1rem', width: '16px' }}></i>
+            {item.label}
+          </div>
+          <i 
+            className={`bi bi-chevron-${isExpanded ? 'down' : 'right'} transition-transform`}
+            style={{ 
+              fontSize: '0.8rem',
+              transition: 'transform 0.2s ease'
+            }}
+          ></i>
+        </button>
+
+        {/* Alt menü */}
+        <div 
+          className={`submenu ${isExpanded ? 'expanded' : 'collapsed'}`}
+          style={{
+            maxHeight: isExpanded ? `${item.children.length * 42}px` : '0',
+            overflow: 'hidden',
+            transition: 'max-height 0.3s ease',
+            marginLeft: '0.5rem',
+            marginRight: '0.5rem'
+          }}
+        >
+          {item.children.map((child) => (
+            <button
+              key={child.id}
+              className={`nav-link nav-sublink ${isActive(child.path) ? 'active' : ''}`}
+              onClick={(e) => handleMenuClick(child.path, e)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                padding: '0.6rem 1rem 0.6rem 2.5rem',
+                margin: '0.125rem 0',
+                background: isActive(child.path) ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
+                border: 'none',
+                borderRadius: '6px',
+                color: isActive(child.path) ? '#FF6B6B' : '#8892b0',
+                fontSize: '0.875rem',
+                fontWeight: isActive(child.path) ? '500' : '400',
+                textAlign: 'left',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive(child.path)) {
+                  e.target.style.background = 'rgba(108, 117, 125, 0.05)';
+                  e.target.style.color = '#6c757d';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive(child.path)) {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#8892b0';
+                }
+              }}
+            >
+              <div 
+                style={{
+                  width: '4px',
+                  height: '4px',
+                  borderRadius: '50%',
+                  background: isActive(child.path) ? '#FF6B6B' : '#8892b0',
+                  marginRight: '12px'
+                }}
+              ></div>
+              {child.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className={`sidebar ${isOpen ? 'show' : ''}`}>
+    <div className={`sidebar ${isOpen ? 'show' : ''}`} style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh',
+      overflowX: 'hidden'
+    }}>
       {/* Sidebar Header */}
       <div
         className="sidebar-header"
@@ -71,7 +264,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       </div>
 
       {/* Sidebar Content */}
-      <div className="sidebar-content" style={{ padding: '1rem 0' }}>
+      <div className="sidebar-content" style={{ padding: '1rem 0', flex: 1, overflowY: 'auto' }}>
         <nav className="sidebar-nav">
           <div className="nav-section">
             <div
@@ -92,53 +285,25 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
               Ana Menü
             </div>
 
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
-                onClick={(e) => handleMenuClick(item.path, e)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  width: '100%',
-                  padding: '0.75rem 1.5rem',
-                  margin: '0 0.5rem 0.25rem 0.5rem',
-                  background: isActive(item.path) ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: isActive(item.path) ? '#FF6B6B' : '#6c757d',
-                  fontSize: '0.95rem',
-                  fontWeight: isActive(item.path) ? 600 : 500,
-                  textAlign: 'left',
-                  textDecoration: 'none',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer',
-                  position: 'relative'
-                }}
-                aria-current={isActive(item.path) ? 'page' : undefined}
-              >
-                <i className={`bi ${item.icon} me-3`} style={{ fontSize: '18px' }}></i>
-                <span className="nav-text">{item.label}</span>
-
-                {isActive(item.path) && (
-                  <div
-                    className="nav-indicator"
-                    style={{
-                      position: 'absolute',
-                      right: '8px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      width: '4px',
-                      height: '20px',
-                      background: '#FF6B6B',
-                      borderRadius: '2px'
-                    }}
-                  />
-                )}
-              </button>
-            ))}
+            {menuItems.map(renderMenuItem)}
           </div>
         </nav>
+      </div>
+
+      {/* Sidebar Footer (Opsiyonel) */}
+      <div 
+        className="sidebar-footer"
+        style={{
+          padding: '1rem 1.5rem',
+          borderTop: '1px solid #e9ecef',
+          color: '#8892b0',
+          fontSize: '0.75rem'
+        }}
+      >
+        <div className="d-flex align-items-center justify-content-between">
+          <span>v1.0.0</span>
+          <i className="bi bi-info-circle"></i>
+        </div>
       </div>
     </div>
   );
