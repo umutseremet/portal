@@ -1,24 +1,25 @@
 // src/frontend/src/pages/VisitorsPage.js
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import VisitorsList from '../components/Visitors/VisitorsList';
 import VisitorModal from '../components/Visitors/VisitorModal';
 import VisitorDetailModal from '../components/Visitors/VisitorDetailModal';
-import StatsCard from '../components/Dashboard/StatsCard';
 import { useVisitors } from '../hooks/useVisitors';
 
 const VisitorsPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   // Use the visitors hook
   const {
     // Data
     visitors,
-    stats,
     filters,
     pagination,
     selectedVisitors,
 
     // State
     loading,
-    statsLoading,
     error,
     isEmpty,
     hasFilters,
@@ -28,7 +29,6 @@ const VisitorsPage = () => {
 
     // Actions
     loadVisitors,
-    loadStats,
     createVisitor,
     updateVisitor,
     deleteVisitor,
@@ -73,7 +73,7 @@ const VisitorsPage = () => {
     }
   };
 
-  // ✅ DÜZELTME: Handle filter change - Sonsuz döngüyü önlemek için
+  // Handle filter change
   const handleFilterChange = (newFilters) => {
     try {
       console.log('Handling filter change:', newFilters);
@@ -89,7 +89,7 @@ const VisitorsPage = () => {
     }
   };
 
-  // ✅ DÜZELTME: Handle reset filters - Tüm kayıtları yüklemek için
+  // Handle reset filters
   const handleResetFilters = () => {
     try {
       console.log('Resetting filters');
@@ -140,13 +140,11 @@ const VisitorsPage = () => {
     setViewingVisitor(visitor);
   };
 
-  // ✅ MODAL CLOSE FIX
+  // Handle close modal
   const handleCloseModal = () => {
     console.log('Closing modal');
     setShowNewVisitorModal(false);
     setEditingVisitor(null);
-    // ✅ Modal kapatıldığında error state'ini temizle
-    // setModalError(null);
   };
 
   const handleCloseDetailModal = () => {
@@ -171,7 +169,6 @@ const VisitorsPage = () => {
   };
 
   // Handle save visitor (create or update)
-  // ✅ HANDLERSAVEVISITOR FIX - VisitorsPage.js için
   const handleSaveVisitor = async (visitorData) => {
     try {
       console.log('Saving visitor:', { editingVisitor, visitorData });
@@ -183,8 +180,42 @@ const VisitorsPage = () => {
 
         if (result.success) {
           console.log('✅ Visitor updated successfully');
+          
           // Modal'ı kapat
           handleCloseModal();
+          
+          // ✅ URL'deki stat parametrelerini temizle
+          const currentSearchParams = new URLSearchParams(location.search);
+          
+          // Stat ile ilgili parametreleri kaldır
+          const paramsToRemove = ['fromDate', 'toDate', 'company', 'visitor', 'sortBy', 'sortOrder', 'page'];
+          paramsToRemove.forEach(param => {
+            currentSearchParams.delete(param);
+          });
+          
+          // Temizlenmiş URL ile navigate et
+          const cleanedSearch = currentSearchParams.toString();
+          const newPath = cleanedSearch ? `${location.pathname}?${cleanedSearch}` : location.pathname;
+          
+          navigate(newPath, { replace: true });
+          
+          // Filtreleri sıfırla
+          resetFilters();
+          
+          // Filtreler temizlendikten sonra veriyi yeniden yükle
+          const defaultFilters = {
+            fromDate: '',
+            toDate: '',
+            company: '',
+            visitor: '',
+            sortBy: 'date',
+            sortOrder: 'desc'
+          };
+          
+          setTimeout(() => {
+            loadVisitors(1, true, defaultFilters);
+          }, 100);
+          
           // Başarı mesajı göster (isteğe bağlı)
           // showSuccessMessage('Ziyaretçi başarıyla güncellendi');
         }
@@ -256,93 +287,14 @@ const VisitorsPage = () => {
         {error && (
           <div className="row mb-4">
             <div className="col-12">
-              <div className="alert alert-danger alert-dismissible fade show">
+              <div className="alert alert-danger alert-dismissible fade show" role="alert">
                 <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                {error}
-                <button
-                  type="button"
-                  className="btn-close"
+                <strong>Hata!</strong> {error}
+                <button 
+                  type="button" 
+                  className="btn-close" 
                   onClick={clearError}
-                  aria-label="Close"
                 ></button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Stats Cards */}
-        {stats && (
-          <div className="row g-4 mb-4">
-            <StatsCard
-              title="Toplam Ziyaretçi"
-              value={stats.totalVisitors || 0}
-              icon="bi-people-fill"
-              trend={stats.totalVisitorsTrend}
-              loading={statsLoading}
-            />
-            <StatsCard
-              title="Bu Ay"
-              value={stats.monthlyVisitors || 0}
-              icon="bi-calendar-month"
-              trend={stats.monthlyVisitorsTrend}
-              loading={statsLoading}
-            />
-            <StatsCard
-              title="Bu Hafta"
-              value={stats.weeklyVisitors || 0}
-              icon="bi-calendar-week"
-              trend={stats.weeklyVisitorsTrend}
-              loading={statsLoading}
-            />
-            <StatsCard
-              title="Bugün"
-              value={stats.todayVisitors || 0}
-              icon="bi-calendar-day"
-              trend={stats.todayVisitorsTrend}
-              loading={statsLoading}
-            />
-          </div>
-        )}
-
-        {/* Stats Cards - API'den gelen verilerle */}
-        {stats && (
-          <div className="row g-4 mb-4">
-            <StatsCard
-              title="Toplam Ziyaretçi"
-              value={stats.totalVisitors || 0}
-              icon="bi-people-fill"
-              color="success"
-            />
-            <StatsCard
-              title="Bu Ay"
-              value={stats.thisMonthVisitors || 0}
-              icon="bi-calendar-month"
-              color="danger"
-            />
-            <StatsCard
-              title="Bu Hafta"
-              value={stats.thisWeekVisitors || 0}
-              icon="bi-calendar-week"
-              color="info"
-            />
-            <StatsCard
-              title="Bugün"
-              value={stats.todayVisitors || 0}
-              icon="bi-calendar-day"
-              color="warning"
-            />
-          </div>
-        )}
-
-        {/* Stats Loading State */}
-        {statsLoading && (
-          <div className="row g-4 mb-4">
-            <div className="col-12">
-              <div className="text-center py-3">
-                <div className="spinner-border text-danger me-2" role="status">
-                  <span className="visually-hidden">İstatistikler yükleniyor...</span>
-                </div>
-                <span className="text-muted">İstatistikler yükleniyor...</span>
               </div>
             </div>
           </div>

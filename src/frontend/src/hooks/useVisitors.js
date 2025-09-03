@@ -1,4 +1,4 @@
-// ===== DÜZELTME 1: src/frontend/src/hooks/useVisitors.js =====
+// src/frontend/src/hooks/useVisitors.js
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import visitorService from '../services/visitorService';
@@ -38,14 +38,22 @@ export const useVisitors = (initialFilters = {}) => {
 
   // Ref to track if component is mounted and initial load
   const mountedRef = useRef(true);
-  const initialLoadDoneRef = useRef(false); // ✅ EKLEME: İlk yükleme kontrolü
+  const initialLoadDoneRef = useRef(false);
 
   // Clear error
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  // ✅ DÜZELTME: loadVisitors fonksiyonunu optimize et
+  // ✅ Clear stats fonksiyonu
+  const clearStats = useCallback(() => {
+    if (mountedRef.current) {
+      setStats(null);
+      setStatsLoading(false);
+    }
+  }, []);
+
+  // Load visitors fonksiyonu
   const loadVisitors = useCallback(async (page = 1, resetData = true, filtersToUse = null) => {
     if (!mountedRef.current) return;
 
@@ -89,84 +97,30 @@ export const useVisitors = (initialFilters = {}) => {
         );
       }
 
+      // Update pagination
       setPagination({
-        page: response.page || 1,
-        pageSize: response.pageSize || 10,
+        page: response.page || page,
+        pageSize: response.pageSize || pagination.pageSize,
         totalCount: response.totalCount || 0,
         totalPages: response.totalPages || 0,
         hasNextPage: response.hasNextPage || false,
         hasPreviousPage: response.hasPreviousPage || false
       });
 
+      console.log('✅ Visitors loaded successfully');
     } catch (err) {
-      if (!mountedRef.current) return;
-
-      console.error('Error loading visitors:', err);
-      setError(err.message || 'Ziyaretçiler yüklenirken hata oluştu');
-
-      // Fallback data for development
-      if (err.message?.includes('Failed to fetch') || err.message?.includes('ERR_CONNECTION_REFUSED')) {
-        setError('API bağlantısı kurulamadı. Backend sunucusunun çalıştığından emin olun.');
-        // Mock data for development
-        setVisitors([]);
-        setPagination({
-          page: 1,
-          pageSize: 10,
-          totalCount: 0,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPreviousPage: false
-        });
+      console.error('❌ Load visitors error:', err);
+      if (mountedRef.current) {
+        setError(err.message || 'Ziyaretçiler yüklenirken hata oluştu');
       }
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, [pagination.pageSize, clearError]); // ✅ DÜZELTME: filters dependency'yi kaldır
+  }, [filters, pagination.pageSize, clearError]);
 
-  // ✅ DÜZELTME: Sadece initial load için useEffect
-  useEffect(() => {
-    if (!initialLoadDoneRef.current) {
-      console.log('useVisitors: Initial load triggered');
-      initialLoadDoneRef.current = true;
-      loadVisitors(1, true, filters);
-    }
-  }, []); // ✅ Empty dependency - sadece mount'ta çalışır
-
-  // ✅ DÜZELTME: Filtre değişikliklerinde debounced yeniden yükleme
-  const debouncedLoadVisitors = useMemo(
-    () => debounce((newFilters) => {
-      if (initialLoadDoneRef.current) { // ✅ Sadece initial load'dan sonra
-        console.log('Debounced load with filters:', newFilters);
-        loadVisitors(1, true, newFilters);
-      }
-    }, 300), // ✅ 300ms debounce
-    [loadVisitors]
-  );
-
-  // ✅ DÜZELTME: Filtre değiştiğinde yeniden yükleme
-  useEffect(() => {
-    // İlk yüklemeden sonra ve gerçek filtre değişikliğinde çalışır
-    if (initialLoadDoneRef.current) {
-      const hasActiveFilters = filters.fromDate || filters.toDate || filters.company || filters.visitor ||
-        filters.sortBy !== 'date' || filters.sortOrder !== 'desc';
-
-      if (hasActiveFilters) {
-        console.log('Filter changed, triggering debounced load:', filters);
-        debouncedLoadVisitors(filters);
-      }
-    }
-  }, [filters.fromDate, filters.toDate, filters.company, filters.visitor, filters.sortBy, filters.sortOrder, debouncedLoadVisitors]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  // Load visitor statistics
+  // Load statistics
   const loadStats = useCallback(async () => {
     if (!mountedRef.current) return;
 
@@ -199,13 +153,13 @@ export const useVisitors = (initialFilters = {}) => {
     }
   }, []);
 
-  // ✅ DÜZELTME: updateFilters sonsuz döngüyü önle
+  // Update filters
   const updateFilters = useCallback((newFilters) => {
     console.log('Updating filters from:', filters, 'to:', newFilters);
     setFilters(prev => ({ ...prev, ...newFilters }));
-  }, []); // ✅ Empty dependency
+  }, []);
 
-  // ✅ DÜZELTME: resetFilters sonsuz döngüyü önle  
+  // Reset filters
   const resetFilters = useCallback(() => {
     console.log('Resetting filters');
     const defaultFilters = {
@@ -217,7 +171,7 @@ export const useVisitors = (initialFilters = {}) => {
       sortOrder: 'desc'
     };
     setFilters(defaultFilters);
-  }, []); // ✅ Empty dependency
+  }, []);
 
   // Quick date filters
   const setQuickDateFilter = useCallback((filterType) => {
@@ -288,22 +242,22 @@ export const useVisitors = (initialFilters = {}) => {
 
       console.log('Updating visitor:', { id, visitorData });
 
-      // ✅ API çağrısı yap
+      // API çağrısı yap
       const response = await visitorService.updateVisitor(id, visitorData);
       console.log('Update API response:', response);
 
       if (!mountedRef.current) return;
 
-      // ✅ STATE GÜNCELLEMESİ: Sadece response'daki visitor objesini kullan
+      // STATE GÜNCELLEMESİ: Sadece response'daki visitor objesini kullan
       if (response?.visitor) {
         setVisitors(prevVisitors => {
           return prevVisitors.map(visitor => {
             if (visitor.id === id) {
-              // ✅ GÜVENLI MERGE: Obje render hatası yapmamak için
+              // GÜVENLI MERGE: Obje render hatası yapmamak için
               return {
                 ...visitor,
                 ...response.visitor,
-                // ✅ Tarih formatlarını kontrol et
+                // Tarih formatlarını kontrol et
                 date: response.visitor.date || response.visitor.Date,
                 company: response.visitor.company || response.visitor.Company,
                 visitor: response.visitor.visitor || response.visitor.Visitor || response.visitor.visitorName,
@@ -464,6 +418,22 @@ export const useVisitors = (initialFilters = {}) => {
     return parts.join(', ');
   }, [filters]);
 
+  // Effect to load initial data
+  useEffect(() => {
+    if (!initialLoadDoneRef.current) {
+      loadVisitors();
+      loadStats();
+      initialLoadDoneRef.current = true;
+    }
+  }, [loadVisitors, loadStats]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   return {
     // Data
     visitors,
@@ -485,6 +455,7 @@ export const useVisitors = (initialFilters = {}) => {
     // Actions
     loadVisitors,
     loadStats,
+    clearStats, // ✅ YENİ EKLENEN
     createVisitor,
     updateVisitor,
     deleteVisitor,
