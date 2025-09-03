@@ -43,12 +43,42 @@ const VisitorModal = ({
     }
   }, [show, visitor]);
 
-  // Format date for input field (YYYY-MM-DD)
+  // ✅ KALICI ÇÖZÜM: Backend'den DateTime gelirken timezone sorununu çöz
   const formatDateForInput = (dateString) => {
     try {
-      const date = new Date(dateString);
-      return date.toISOString().split('T')[0];
+      if (!dateString) return '';
+      
+      console.log('📅 Formatting date input:', dateString); // Debug için
+      
+      // Eğer tarih zaten YYYY-MM-DD formatındaysa, doğrudan kullan
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        console.log('✅ Already in correct format:', dateString);
+        return dateString;
+      }
+      
+      // Backend'den gelen DateTime string'i (.NET format)
+      let date;
+      
+      // ISO string check
+      if (dateString.includes('T')) {
+        // ISO format: 2025-07-23T00:00:00 veya 2025-07-23T00:00:00.000Z
+        date = new Date(dateString.split('T')[0] + 'T12:00:00'); // Noon'a set ederek timezone offset'ini önle
+      } else {
+        // Sadece tarih: 2025-07-23
+        date = new Date(dateString + 'T12:00:00'); // Noon'a set et
+      }
+      
+      // Manual format - daha güvenli
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      const result = `${year}-${month}-${day}`;
+      console.log('✅ Formatted result:', result);
+      
+      return result;
     } catch (error) {
+      console.error('❌ Date formatting error:', error);
       return '';
     }
   };
@@ -195,16 +225,12 @@ const VisitorModal = ({
                     className={`form-control ${errors.company ? 'is-invalid' : ''}`}
                     value={formData.company}
                     onChange={(e) => handleInputChange('company', e.target.value)}
-                    placeholder="Örn: ABC Teknoloji A.Ş."
-                    maxLength="100"
+                    placeholder="Şirket adını giriniz"
                     disabled={isSubmitting}
                   />
                   {errors.company && (
                     <div className="invalid-feedback">{errors.company}</div>
                   )}
-                  <div className="form-text">
-                    {formData.company.length}/100 karakter
-                  </div>
                 </div>
 
                 <div className="col-12 mb-3">
@@ -216,52 +242,37 @@ const VisitorModal = ({
                     className={`form-control ${errors.visitorName ? 'is-invalid' : ''}`}
                     value={formData.visitorName}
                     onChange={(e) => handleInputChange('visitorName', e.target.value)}
-                    placeholder="Örn: Ahmet Yılmaz"
-                    maxLength="255"
+                    placeholder="Ziyaretçi adını giriniz"
                     disabled={isSubmitting}
                   />
                   {errors.visitorName && (
                     <div className="invalid-feedback">{errors.visitorName}</div>
                   )}
-                  <div className="form-text">
-                    {formData.visitorName.length}/255 karakter
-                  </div>
                 </div>
 
-                <div className="col-12">
+                <div className="col-12 mb-3">
                   <label className="form-label">
                     Açıklama / Ziyaret Amacı
                   </label>
                   <textarea
                     className={`form-control ${errors.description ? 'is-invalid' : ''}`}
-                    rows="4"
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Ziyaret hakkında açıklama, amaç ve diğer notlar..."
-                    maxLength="500"
+                    placeholder="Ziyaret ile ilgili açıklama giriniz (isteğe bağlı)"
+                    rows="3"
                     disabled={isSubmitting}
-                  ></textarea>
+                  />
                   {errors.description && (
                     <div className="invalid-feedback">{errors.description}</div>
                   )}
-                  <div className="form-text">
-                    {formData.description.length}/500 karakter
-                  </div>
                 </div>
-              </div>
-
-              {/* Bilgilendirme */}
-              <div className="alert alert-info">
-                <i className="bi bi-info-circle me-2"></i>
-                <strong>Not:</strong> Zorunlu alanları (*) doldurmayı unutmayın. 
-                Tüm bilgiler daha sonra düzenlenebilir.
               </div>
             </div>
 
             <div className="modal-footer">
               <button 
                 type="button" 
-                className="btn btn-secondary"
+                className="btn btn-secondary" 
                 onClick={handleClose}
                 disabled={isSubmitting}
               >
@@ -270,14 +281,20 @@ const VisitorModal = ({
               </button>
               <button 
                 type="submit" 
-                className="btn btn-danger"
+                className="btn btn-primary"
                 disabled={isSubmitting}
               >
-                {isSubmitting && (
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                {isSubmitting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2"></span>
+                    Kaydediliyor...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-check me-1"></i>
+                    {visitor ? 'Güncelle' : 'Kaydet'}
+                  </>
                 )}
-                <i className={`bi ${visitor ? 'bi-check-lg' : 'bi-plus-lg'} me-1`}></i>
-                {visitor ? 'Güncelle' : 'Kaydet'}
               </button>
             </div>
           </form>
