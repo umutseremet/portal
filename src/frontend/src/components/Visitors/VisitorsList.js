@@ -194,9 +194,9 @@ const VisitorsList = ({
       {/* Header with Actions */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h5 className="card-title mb-0">Ziyaretçiler</h5>
+          {/* <h5 className="card-title mb-0">Ziyaretçiler</h5> */}
           <p className="text-muted mb-0 small">
-            Toplam {pagination.totalCount || 0} ziyaretçi
+            
             {filterSummary && (
               <span className="ms-2 text-info">
                 ({filterSummary})

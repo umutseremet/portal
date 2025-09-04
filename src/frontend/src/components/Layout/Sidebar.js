@@ -7,7 +7,6 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
   const navigate = useNavigate();
   const [expandedMenus, setExpandedMenus] = useState({});
 
-  // Ana menü yapılandırması
   const menuItems = [
     {
       id: 'dashboard',
@@ -45,6 +44,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     navigate(path);
     // Mobilde menüden seçim yapınca kapat
     if (isMobile && isOpen) {
+      // küçük bir gecikme ile kapat (routing'in state güncellemesiyle çakışmasın)
       setTimeout(() => toggleSidebar(), 80);
     }
   };
@@ -82,11 +82,6 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
             textAlign: 'left',
             transition: 'all 0.2s ease',
             cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => {
-            if (!isActive(item.path)) {
-              e.target.style.background = 'rgba(108, 117, 125, 0.08)';
-            }
           }}
           onMouseLeave={(e) => {
             if (!isActive(item.path)) {
@@ -126,11 +121,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
             transition: 'all 0.2s ease',
             cursor: 'pointer'
           }}
-          onMouseEnter={(e) => {
-            if (!hasActiveChild) {
-              e.target.style.background = 'rgba(108, 117, 125, 0.08)';
-            }
-          }}
+           
           onMouseLeave={(e) => {
             if (!hasActiveChild) {
               e.target.style.background = 'transparent';
@@ -141,9 +132,9 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
             <i className={`${item.icon} me-3`} style={{ fontSize: '1.1rem', width: '16px' }}></i>
             {item.label}
           </div>
-          <i 
+          <i
             className={`bi bi-chevron-${isExpanded ? 'down' : 'right'} transition-transform`}
-            style={{ 
+            style={{
               fontSize: '0.8rem',
               transition: 'transform 0.2s ease'
             }}
@@ -151,7 +142,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
         </button>
 
         {/* Alt menü */}
-        <div 
+        <div
           className={`submenu ${isExpanded ? 'expanded' : 'collapsed'}`}
           style={{
             maxHeight: isExpanded ? `${item.children.length * 42}px` : '0',
@@ -195,7 +186,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
                 }
               }}
             >
-              <div 
+              <div
                 style={{
                   width: '4px',
                   height: '4px',
@@ -264,7 +255,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       </div>
 
       {/* Sidebar Content */}
-      <div className="sidebar-content" style={{ padding: '1rem 0', flex: 1, overflowY: 'auto' }}>
+      <div className="sidebar-content" style={{ padding: '1rem 0' }}>
         <nav className="sidebar-nav">
           <div className="nav-section">
             <div
@@ -285,25 +276,55 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
               Ana Menü
             </div>
 
+            {/* {menuItems.map((item) => (
+              <button
+                key={item.id}
+                className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
+                onClick={(e) => handleMenuClick(item.path, e)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  width: '100%',
+                  padding: '0.75rem 1.5rem',
+                  margin: '0 0.5rem 0.25rem 0.5rem',
+                  background: isActive(item.path) ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: isActive(item.path) ? '#FF6B6B' : '#6c757d',
+                  fontSize: '0.95rem',
+                  fontWeight: isActive(item.path) ? 600 : 500,
+                  textAlign: 'left',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  position: 'relative'
+                }}
+                aria-current={isActive(item.path) ? 'page' : undefined}
+              >
+                <i className={`bi ${item.icon} me-3`} style={{ fontSize: '18px' }}></i>
+                <span className="nav-text">{item.label}</span>
+
+                {isActive(item.path) && (
+                  <div
+                    className="nav-indicator"
+                    style={{
+                      position: 'absolute',
+                      right: '8px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '4px',
+                      height: '20px',
+                      background: '#FF6B6B',
+                      borderRadius: '2px'
+                    }}
+                  />
+                )}
+              </button>
+            ))} */}
+
             {menuItems.map(renderMenuItem)}
           </div>
         </nav>
-      </div>
-
-      {/* Sidebar Footer (Opsiyonel) */}
-      <div 
-        className="sidebar-footer"
-        style={{
-          padding: '1rem 1.5rem',
-          borderTop: '1px solid #e9ecef',
-          color: '#8892b0',
-          fontSize: '0.75rem'
-        }}
-      >
-        <div className="d-flex align-items-center justify-content-between">
-          <span>v1.0.0</span>
-          <i className="bi bi-info-circle"></i>
-        </div>
       </div>
     </div>
   );
