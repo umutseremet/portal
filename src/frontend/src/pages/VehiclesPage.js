@@ -221,8 +221,8 @@ const VehiclesPage = () => {
   };
 
   return (
-    <div className="dashboard-page">
-      <div className="container-fluid">
+    <div className="vehicles-page">
+      <div className="container-fluid" >
         {/* Page Header - Visitors benzeri */}
         <div className="row mb-4">
           <div className="col-12">
@@ -256,7 +256,7 @@ const VehiclesPage = () => {
         <div className="row">
           <div className="col-12">
             <div className="card h-100">
-              <div className="card-body p-0">
+              <div className="card-body">
                 <VehiclesList
                   vehicles={vehicles}
                   loading={loading}

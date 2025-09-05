@@ -85,9 +85,9 @@ const VehiclesList = ({
   // Handle sort
   const handleSort = (column) => {
     console.log('Sorting by:', column, 'Current sort:', filters.sortBy, filters.sortOrder);
-    
+
     const newOrder = filters.sortBy === column && filters.sortOrder === 'desc' ? 'asc' : 'desc';
-    
+
     if (onSort) {
       onSort(column, newOrder);
     }
@@ -146,7 +146,7 @@ const VehiclesList = ({
     }
 
     const activeFilters = [];
-    
+
     if (filterSummary.search) activeFilters.push(`Arama: "${filterSummary.search}"`);
     if (filterSummary.brand) activeFilters.push(`Marka: "${filterSummary.brand}"`);
     if (filterSummary.model) activeFilters.push(`Model: "${filterSummary.model}"`);
@@ -155,9 +155,9 @@ const VehiclesList = ({
     if (filterSummary.ownershipType) activeFilters.push(`Tip: "${getOwnershipTypeText(filterSummary.ownershipType)}"`);
 
     const activeCount = filterSummary.activeCount || activeFilters.length;
-    
+
     if (activeCount === 0) return '';
-    
+
     return `${activeCount} filtre aktif`;
   };
 
@@ -186,8 +186,8 @@ const VehiclesList = ({
           {hasFilters ? 'Filtrelere uygun araç bulunamadı' : 'Henüz araç kaydı bulunmuyor'}
         </h5>
         <p className="text-muted">
-          {hasFilters 
-            ? 'Filtre kriterlerinizi değiştirmeyi deneyin.' 
+          {hasFilters
+            ? 'Filtre kriterlerinizi değiştirmeyi deneyin.'
             : 'İlk araç kaydınızı oluşturmak için "Yeni Araç" butonunu kullanın.'
           }
         </p>
@@ -206,42 +206,10 @@ const VehiclesList = ({
       {/* Header with Actions */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-    
-          <p className="text-muted mb-0 small">
-            Toplam {pagination.totalCount || vehicles.length} araç
-            {/* DÜZELTİLDİ: Object render hatası çözüldü */}
-            {getFilterSummaryText() && (
-              <span className="ms-2 text-info">
-                ({getFilterSummaryText()})
-              </span>
-            )}
-          </p>
+          {/* Sol taraf boş - ziyaretçiler gibi */}
         </div>
         <div className="d-flex gap-2">
-          {/* Bulk Actions */}
-          {selectedCount > 0 && (
-            <div className="d-flex gap-2 me-3">
-              <span className="badge bg-primary align-self-center">
-                {selectedCount} seçili
-              </span>
-              <button 
-                className="btn btn-outline-danger btn-sm"
-                onClick={onBulkDelete}
-                title="Seçilenleri Sil"
-              >
-                <i className="bi bi-trash"></i>
-              </button>
-              <button 
-                className="btn btn-outline-secondary btn-sm"
-                onClick={onClearSelection}
-                title="Seçimi Temizle"
-              >
-                <i className="bi bi-x"></i>
-              </button>
-            </div>
-          )}
-
-          <button 
+          <button
             className="btn btn-outline-secondary btn-sm"
             onClick={() => setShowFilters(!showFilters)}
           >
@@ -249,14 +217,14 @@ const VehiclesList = ({
             Filtrele
             {hasFilters && <span className="badge bg-danger ms-1 rounded-pill">!</span>}
           </button>
-          <button 
+          <button
             className="btn btn-outline-secondary btn-sm"
             onClick={onExport}
           >
             <i className="bi bi-download me-1"></i>
             Excel
           </button>
-          <button 
+          <button
             className="btn btn-danger btn-sm"
             onClick={onNewVisitor}
           >
@@ -326,31 +294,55 @@ const VehiclesList = ({
                   <option value="personal">Kişisel</option>
                 </select>
               </div>
-              <div className="col-md-9 d-flex align-items-end gap-2">
-                <button 
-                  className="btn btn-danger btn-sm"
-                  onClick={handleApplyFilters}
-                >
-                  <i className="bi bi-search me-1"></i>
-                  Filtrele
-                </button>
-                <button 
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={handleResetFilters}
-                >
-                  <i className="bi bi-arrow-clockwise me-1"></i>
-                  Temizle
-                </button>
+              <div className="row mt-3">
+              <div className="col-12">
+                <div className="d-flex gap-2">
+                  <button 
+                    className="btn btn-primary btn-sm"
+                    onClick={handleApplyFilters}
+                  >
+                    <i className="bi bi-search me-1"></i>
+                    Filtrele
+                  </button>
+                  <button 
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={handleResetFilters}
+                  >
+                    <i className="bi bi-arrow-clockwise me-1"></i>
+                    Temizle
+                  </button>
+                  <button 
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={() => setShowFilters(false)}
+                  >
+                    <i className="bi bi-x me-1"></i>
+                    Kapat
+                  </button>
+                </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
       )}
 
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="text-muted small">
+          Toplam {pagination.totalCount || vehicles.length} araç
+          {selectedVehicles.length > 0 && (
+            <span className="ms-2 text-primary">
+              ({selectedVehicles.length} seçili)
+            </span>
+          )}
+        </div>
+
+      </div>
+
+
       {/* Vehicles Table */}
       <div className="table-responsive">
         <table className="table table-hover">
-          <thead className="table-light">
+          <thead >
             <tr>
               <th width="50">
                 <div className="form-check">
@@ -472,28 +464,42 @@ const VehiclesList = ({
                   </small>
                 </td>
                 <td>
-                  <div className="btn-group btn-group-sm">
+                  <div className="dropdown">
                     <button
-                      className="btn btn-outline-primary btn-sm"
-                      onClick={() => onViewVisitor?.(vehicle)}
-                      title="Detayları Görüntüle"
+                      className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
                     >
-                      <i className="bi bi-eye"></i>
+                      <i className="bi bi-three-dots-vertical"></i>
                     </button>
-                    <button
-                      className="btn btn-outline-warning btn-sm"
-                      onClick={() => onEditVisitor?.(vehicle)}
-                      title="Düzenle"
-                    >
-                      <i className="bi bi-pencil"></i>
-                    </button>
-                    <button
-                      className="btn btn-outline-danger btn-sm"
-                      onClick={() => handleDeleteClick(vehicle)}
-                      title="Sil"
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
+                    <ul className="dropdown-menu">
+                      <li>
+                        <button
+                          className="dropdown-item"
+                          onClick={() => onViewVisitor?.(vehicle)}
+                        >
+                          <i className="bi bi-eye me-2"></i>Detayları Gör
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          className="dropdown-item"
+                          onClick={() => onEditVisitor?.(vehicle)}
+                        >
+                          <i className="bi bi-pencil me-2"></i>Düzenle
+                        </button>
+                      </li>
+                      <li><hr className="dropdown-divider" /></li>
+                      <li>
+                        <button
+                          className="dropdown-item text-danger"
+                          onClick={() => handleDeleteClick(vehicle)}
+                        >
+                          <i className="bi bi-trash me-2"></i>Sil
+                        </button>
+                      </li>
+                    </ul>
                   </div>
                 </td>
               </tr>
@@ -506,7 +512,7 @@ const VehiclesList = ({
       {pagination.totalPages > 1 && (
         <div className="d-flex justify-content-between align-items-center mt-4">
           <div className="small text-muted">
-            Sayfa {pagination.currentPage} / {pagination.totalPages} 
+            Sayfa {pagination.currentPage} / {pagination.totalPages}
             (Toplam {pagination.totalCount} kayıt)
           </div>
           <nav>
@@ -520,11 +526,11 @@ const VehiclesList = ({
                   Önceki
                 </button>
               </li>
-              
+
               {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                 const pageNum = Math.max(1, pagination.currentPage - 2) + i;
                 if (pageNum > pagination.totalPages) return null;
-                
+
                 return (
                   <li key={pageNum} className={`page-item ${pageNum === pagination.currentPage ? 'active' : ''}`}>
                     <button
@@ -536,7 +542,7 @@ const VehiclesList = ({
                   </li>
                 );
               })}
-              
+
               <li className={`page-item ${!pagination.hasNextPage ? 'disabled' : ''}`}>
                 <button
                   className="page-link"
