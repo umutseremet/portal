@@ -1,3 +1,4 @@
+// src/frontend/src/App.js - UPDATED with Vehicle Routes
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -7,6 +8,7 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 import DashboardPage from './pages/DashboardPage';
 import ProductionPage from './pages/ProductionPage';
 import VisitorsPage from './pages/VisitorsPage';
+import VehiclesPage from './pages/VehiclesPage';
 import './App.css';
 
 function App() {
@@ -14,7 +16,10 @@ function App() {
     <div className="App">
       <AuthProvider>
         <Routes>
+          {/* Public Routes */}
           <Route path="/login" element={<Login />} />
+          
+          {/* Protected Routes */}
           <Route
             path="/dashboard"
             element={
@@ -25,8 +30,20 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
-            path="/production"
+            path="/vehicles"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <VehiclesPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/production/*"
             element={
               <ProtectedRoute>
                 <Layout>
@@ -35,6 +52,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/visitors"
             element={
@@ -45,6 +63,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
+          {/* Redirect routes */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

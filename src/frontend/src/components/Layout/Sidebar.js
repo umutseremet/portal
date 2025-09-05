@@ -1,4 +1,4 @@
-// src/frontend/src/components/Layout/Sidebar.js
+// src/frontend/src/components/Layout/Sidebar.js - UPDATED
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -13,6 +13,13 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       label: 'Dashboard',
       icon: 'bi-speedometer2',
       path: '/dashboard',
+      type: 'single'
+    },
+    {
+      id: 'vehicle-tracking',
+      label: 'Araç Takip',
+      icon: 'bi-car-front',
+      path: '/vehicles',
       type: 'single'
     },
     {
@@ -79,254 +86,198 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
             color: isActive(item.path) ? '#FF6B6B' : '#6c757d',
             fontSize: '0.95rem',
             fontWeight: isActive(item.path) ? '600' : '400',
-            textAlign: 'left',
+            textDecoration: 'none',
             transition: 'all 0.2s ease',
-            cursor: 'pointer'
-          }}
-          onMouseLeave={(e) => {
-            if (!isActive(item.path)) {
-              e.target.style.background = 'transparent';
-            }
+            textAlign: 'left'
           }}
         >
-          <i className={`${item.icon} me-3`} style={{ fontSize: '1.1rem', width: '16px' }}></i>
+          <i className={`${item.icon} me-3`} style={{ fontSize: '1.1rem' }}></i>
           {item.label}
         </button>
       );
     }
 
-    // Group menü (alt menülü)
-    const isExpanded = expandedMenus[item.id];
-    const hasActiveChild = isParentActive(item.children);
+    if (item.type === 'group') {
+      const isExpanded = expandedMenus[item.id];
+      const hasActiveChild = isParentActive(item.children);
 
-    return (
-      <div key={item.id} className="nav-group">
-        <button
-          className={`nav-link nav-group-toggle ${hasActiveChild ? 'active' : ''}`}
-          onClick={(e) => toggleSubmenu(item.id, e)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            padding: '0.75rem 1.5rem',
-            margin: '0 0.5rem 0.25rem 0.5rem',
-            background: hasActiveChild ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
-            border: 'none',
-            borderRadius: '8px',
-            color: hasActiveChild ? '#FF6B6B' : '#6c757d',
-            fontSize: '0.95rem',
-            fontWeight: hasActiveChild ? '600' : '400',
-            textAlign: 'left',
-            transition: 'all 0.2s ease',
-            cursor: 'pointer'
-          }}
-           
-          onMouseLeave={(e) => {
-            if (!hasActiveChild) {
-              e.target.style.background = 'transparent';
-            }
-          }}
-        >
-          <div className="d-flex align-items-center">
-            <i className={`${item.icon} me-3`} style={{ fontSize: '1.1rem', width: '16px' }}></i>
-            {item.label}
-          </div>
-          <i
-            className={`bi bi-chevron-${isExpanded ? 'down' : 'right'} transition-transform`}
+      return (
+        <div key={item.id} className="nav-group">
+          <button
+            className={`nav-link nav-group-toggle ${hasActiveChild ? 'active' : ''}`}
+            onClick={(e) => toggleSubmenu(item.id, e)}
             style={{
-              fontSize: '0.8rem',
-              transition: 'transform 0.2s ease'
-            }}
-          ></i>
-        </button>
-
-        {/* Alt menü */}
-        <div
-          className={`submenu ${isExpanded ? 'expanded' : 'collapsed'}`}
-          style={{
-            maxHeight: isExpanded ? `${item.children.length * 42}px` : '0',
-            overflow: 'hidden',
-            transition: 'max-height 0.3s ease',
-            marginLeft: '0.5rem',
-            marginRight: '0.5rem'
-          }}
-        >
-          {item.children.map((child) => (
-            <button
-              key={child.id}
-              className={`nav-link nav-sublink ${isActive(child.path) ? 'active' : ''}`}
-              onClick={(e) => handleMenuClick(child.path, e)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                width: '100%',
-                padding: '0.6rem 1rem 0.6rem 2.5rem',
-                margin: '0.125rem 0',
-                background: isActive(child.path) ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
-                border: 'none',
-                borderRadius: '6px',
-                color: isActive(child.path) ? '#FF6B6B' : '#8892b0',
-                fontSize: '0.875rem',
-                fontWeight: isActive(child.path) ? '500' : '400',
-                textAlign: 'left',
-                transition: 'all 0.2s ease',
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive(child.path)) {
-                  e.target.style.background = 'rgba(108, 117, 125, 0.05)';
-                  e.target.style.color = '#6c757d';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive(child.path)) {
-                  e.target.style.background = 'transparent';
-                  e.target.style.color = '#8892b0';
-                }
-              }}
-            >
-              <div
-                style={{
-                  width: '4px',
-                  height: '4px',
-                  borderRadius: '50%',
-                  background: isActive(child.path) ? '#FF6B6B' : '#8892b0',
-                  marginRight: '12px'
-                }}
-              ></div>
-              {child.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className={`sidebar ${isOpen ? 'show' : ''}`} style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      overflowX: 'hidden'
-    }}>
-      {/* Sidebar Header */}
-      <div
-        className="sidebar-header"
-        style={{
-          padding: '2rem 1.5rem 1rem',
-          borderBottom: '1px solid #e9ecef',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}
-      >
-        <div className="d-flex align-items-center">
-          <div
-            className="logo-icon"
-            style={{
-              width: '40px',
-              height: '40px',
-              background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
-              borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '20px'
+              justifyContent: 'space-between',
+              width: '100%',
+              padding: '0.75rem 1.5rem',
+              margin: '0 0.5rem 0.25rem 0.5rem',
+              background: hasActiveChild ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
+              border: 'none',
+              borderRadius: '8px',
+              color: hasActiveChild ? '#FF6B6B' : '#6c757d',
+              fontSize: '0.95rem',
+              fontWeight: hasActiveChild ? '600' : '400',
+              textDecoration: 'none',
+              transition: 'all 0.2s ease'
             }}
           >
-            <i className="bi bi-calendar-event-fill"></i>
-          </div>
-          <h4 className="logo-text mb-0 ms-3 fw-bold text-dark">vervo</h4>
-        </div>
-
-        {/* Sadece mobilde kapama butonu */}
-        {isMobile && (
-          <button
-            className="btn btn-link text-muted p-1"
-            onClick={(e) => { e.stopPropagation(); toggleSidebar(); }}
-            style={{ border: 'none', background: 'none', fontSize: '20px', lineHeight: 1 }}
-            aria-label="Menüyü kapat"
-          >
-            <i className="bi bi-x-lg"></i>
-          </button>
-        )}
-      </div>
-
-      {/* Sidebar Content */}
-      <div className="sidebar-content" style={{ padding: '1rem 0' }}>
-        <nav className="sidebar-nav">
-          <div className="nav-section">
-            <div
-              className="nav-section-title"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0.5rem 1.5rem',
-                color: '#6c757d',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                marginBottom: '0.5rem'
-              }}
-            >
-              <i className="bi bi-house-door me-2"></i>
-              Ana Menü
+            <div className="d-flex align-items-center">
+              <i className={`${item.icon} me-3`} style={{ fontSize: '1.1rem' }}></i>
+              {item.label}
             </div>
-
-            {/* {menuItems.map((item) => (
+            <i 
+              className={`bi ${isExpanded ? 'bi-chevron-up' : 'bi-chevron-down'}`}
+              style={{ fontSize: '0.8rem', transition: 'transform 0.2s ease' }}
+            ></i>
+          </button>
+          
+          <div 
+            className={`nav-submenu ${isExpanded ? 'show' : ''}`}
+            style={{
+              maxHeight: isExpanded ? `${item.children.length * 50}px` : '0',
+              opacity: isExpanded ? '1' : '0',
+              overflow: 'hidden',
+              transition: 'all 0.3s ease',
+              paddingLeft: '1rem'
+            }}
+          >
+            {item.children.map((child) => (
               <button
-                key={item.id}
-                className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
-                onClick={(e) => handleMenuClick(item.path, e)}
+                key={child.id}
+                className={`nav-link nav-sub-link ${isActive(child.path) ? 'active' : ''}`}
+                onClick={(e) => handleMenuClick(child.path, e)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   width: '100%',
-                  padding: '0.75rem 1.5rem',
-                  margin: '0 0.5rem 0.25rem 0.5rem',
-                  background: isActive(item.path) ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
+                  padding: '0.6rem 1.5rem',
+                  margin: '0 0.5rem 0.15rem 0.5rem',
+                  background: isActive(child.path) ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
                   border: 'none',
-                  borderRadius: '8px',
-                  color: isActive(item.path) ? '#FF6B6B' : '#6c757d',
-                  fontSize: '0.95rem',
-                  fontWeight: isActive(item.path) ? 600 : 500,
-                  textAlign: 'left',
+                  borderRadius: '6px',
+                  color: isActive(child.path) ? '#FF6B6B' : '#8e9297',
+                  fontSize: '0.875rem',
+                  fontWeight: isActive(child.path) ? '600' : '400',
                   textDecoration: 'none',
                   transition: 'all 0.2s ease',
-                  cursor: 'pointer',
-                  position: 'relative'
+                  textAlign: 'left'
                 }}
-                aria-current={isActive(item.path) ? 'page' : undefined}
               >
-                <i className={`bi ${item.icon} me-3`} style={{ fontSize: '18px' }}></i>
-                <span className="nav-text">{item.label}</span>
-
-                {isActive(item.path) && (
-                  <div
-                    className="nav-indicator"
-                    style={{
-                      position: 'absolute',
-                      right: '8px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      width: '4px',
-                      height: '20px',
-                      background: '#FF6B6B',
-                      borderRadius: '2px'
-                    }}
-                  />
-                )}
+                <i className="bi bi-dot me-2" style={{ fontSize: '1.2rem' }}></i>
+                {child.label}
               </button>
-            ))} */}
+            ))}
+          </div>
+        </div>
+      );
+    }
 
+    return null;
+  };
+
+  return (
+    <>
+      {/* Mobile Overlay */}
+      {isMobile && isOpen && (
+        <div 
+          className="sidebar-overlay"
+          onClick={toggleSidebar}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1040
+          }}
+        />
+      )}
+
+      {/* Sidebar */}
+      <nav
+        className={`sidebar ${isOpen ? 'show' : ''}`}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: isOpen ? 0 : '-280px',
+          width: '280px',
+          height: '100vh',
+          backgroundColor: '#ffffff',
+          borderRight: '1px solid #e3e6f0',
+          transition: 'left 0.3s ease',
+          zIndex: 1041,
+          overflowY: 'auto',
+          paddingTop: '70px', // Account for fixed header
+          boxShadow: isOpen ? '0 0 20px rgba(0, 0, 0, 0.1)' : 'none'
+        }}
+      >
+        <div className="sidebar-content" style={{ padding: '1rem 0' }}>
+          {/* Logo/Brand Area */}
+          <div 
+            className="sidebar-brand"
+            style={{
+              padding: '0 1.5rem 1rem 1.5rem',
+              borderBottom: '1px solid #e3e6f0',
+              marginBottom: '1rem'
+            }}
+          >
+            <div className="d-flex align-items-center">
+              <div 
+                className="brand-icon"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: '#FF6B6B',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: '12px'
+                }}
+              >
+                <i className="bi bi-grid-1x2-fill text-white"></i>
+              </div>
+              <div>
+                <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#2d3748' }}>
+                  Vervo Portal
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#8e9297' }}>
+                  Yönetim Paneli
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Menu */}
+          <div className="nav flex-column">
             {menuItems.map(renderMenuItem)}
           </div>
-        </nav>
-      </div>
-    </div>
+        </div>
+
+        {/* Sidebar Footer */}
+        <div 
+          className="sidebar-footer"
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '1rem 1.5rem',
+            borderTop: '1px solid #e3e6f0',
+            backgroundColor: '#f8f9fa'
+          }}
+        >
+          <div className="text-center">
+            <small className="text-muted">
+              © 2025 Vervo Portal
+            </small>
+          </div>
+        </div>
+      </nav>
+    </>
   );
 };
 
