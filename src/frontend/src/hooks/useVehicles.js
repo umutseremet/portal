@@ -1,4 +1,5 @@
 // src/frontend/src/hooks/useVehicles.js
+// DÜZELTILMIŞ VERSİYON - API verilerinin ekrana yansıması için
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { vehicleService } from '../services/vehicleService';
@@ -43,7 +44,7 @@ export const useVehicles = (initialFilters = {}) => {
     setError(null);
   }, []);
 
-  // Load vehicles function
+  // Load vehicles function - DÜZELTİLMİŞ VERSİYON
   const loadVehicles = useCallback(async (page = 1, resetData = true, filtersToUse = null) => {
     if (!mountedRef.current) return;
 
@@ -65,45 +66,82 @@ export const useVehicles = (initialFilters = {}) => {
         }
       });
 
-      console.log('Loading vehicles with params:', params);
+      console.log('🔍 Loading vehicles with params:', params);
 
       const response = await vehicleService.getVehicles(params);
 
-      console.log('API Response received:', {
+      console.log('📡 API Response received:', {
         response,
-        vehiclesArray: response?.data,
-        vehiclesCount: response?.data?.length,
+        vehiclesData: response?.data,
+        vehiclesArray: Array.isArray(response?.data) ? response.data : [],
+        vehiclesCount: Array.isArray(response?.data) ? response.data.length : 0,
         totalCount: response?.totalCount
       });
 
       if (!mountedRef.current) return;
 
-      if (resetData) {
-        setVehicles(response.data || []);
-      } else {
-        // For infinite scroll or load more functionality
-        setVehicles(prev =>
-          page === 1 ? 
-            response.data || [] : 
-            [...prev, ...(response.data || [])]
-        );
+      // API yanıtını kontrol et ve doğru formatta state'e yaz
+      let vehiclesArray = [];
+      
+      if (response) {
+        // Farklı API response formatlarını handle et
+        if (Array.isArray(response.data)) {
+          vehiclesArray = response.data;
+        } else if (Array.isArray(response)) {
+          vehiclesArray = response;
+        } else if (response.vehicles && Array.isArray(response.vehicles)) {
+          vehiclesArray = response.vehicles;
+        } else if (response.items && Array.isArray(response.items)) {
+          vehiclesArray = response.items;
+        } else {
+          console.warn('⚠️ Unexpected API response format:', response);
+          vehiclesArray = [];
+        }
       }
 
+      console.log('✅ Processed vehicles array:', {
+        vehiclesArray,
+        length: vehiclesArray.length,
+        resetData
+      });
+
+      // State'i güncelle
+      if (resetData) {
+        setVehicles(vehiclesArray);
+        console.log('🔄 Vehicles state RESET with:', vehiclesArray.length, 'items');
+      } else {
+        // For infinite scroll or load more functionality
+        setVehicles(prev => {
+          const newVehicles = page === 1 ? vehiclesArray : [...prev, ...vehiclesArray];
+          console.log('🔄 Vehicles state APPENDED, total:', newVehicles.length, 'items');
+          return newVehicles;
+        });
+      }
+
+      // Pagination'ı güncelle
       setPagination(prev => ({
         ...prev,
         currentPage: page,
-        totalCount: response.totalCount || 0,
-        totalPages: response.totalPages || 0,
-        hasNextPage: response.hasNextPage || false,
-        hasPreviousPage: response.hasPreviousPage || false
+        totalCount: response?.totalCount || response?.total || vehiclesArray.length,
+        totalPages: response?.totalPages || Math.ceil((response?.totalCount || vehiclesArray.length) / pagination.pageSize),
+        hasNextPage: response?.hasNextPage || false,
+        hasPreviousPage: response?.hasPreviousPage || false
       }));
 
       initialLoadDoneRef.current = true;
 
+      console.log('✅ Vehicles loaded successfully:', {
+        vehiclesCount: vehiclesArray.length,
+        totalCount: response?.totalCount || vehiclesArray.length,
+        currentPage: page
+      });
+
     } catch (err) {
-      console.error('Load vehicles error:', err);
+      console.error('❌ Load vehicles error:', err);
       if (mountedRef.current) {
         setError(err.message || 'Araç verileri yüklenirken hata oluştu');
+        // Hata durumunda da boş array set et
+        setVehicles([]);
       }
     } finally {
       if (mountedRef.current) {
@@ -161,13 +199,13 @@ export const useVehicles = (initialFilters = {}) => {
       if (!mountedRef.current) return;
 
       // Update state with the new vehicle data
-      if (response?.data || response?.vehicle) {
+      if (response?.data || response?.vehicle || response) {
         setVehicles(prevVehicles => {
           return prevVehicles.map(vehicle => {
             if (vehicle.id === id) {
               return {
                 ...vehicle,
-                ...(response.data || response.vehicle),
+                ...(response.data || response.vehicle || response),
                 updatedAt: new Date().toISOString()
               };
             }
@@ -178,7 +216,7 @@ export const useVehicles = (initialFilters = {}) => {
         console.log('✅ Vehicle updated successfully in state');
         showAlert('Araç başarıyla güncellendi.', 'success');
 
-        return { success: true, vehicle: response.data || response.vehicle };
+        return { success: true, vehicle: response.data || response.vehicle || response };
       } else {
         throw new Error('Güncelleme yanıtında araç bilgisi bulunamadı');
       }
@@ -322,6 +360,7 @@ export const useVehicles = (initialFilters = {}) => {
 
   // Filter functions
   const updateFilters = useCallback((newFilters) => {
+    console.log('🔍 Updating filters:', newFilters);
     setFilters(prev => ({ ...prev, ...newFilters }));
     setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to first page
   }, []);
@@ -337,25 +376,40 @@ export const useVehicles = (initialFilters = {}) => {
       sortBy: 'createdAt',
       sortOrder: 'desc'
     };
+    console.log('🔄 Resetting filters to:', resetFilters);
     setFilters(resetFilters);
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
 
   // Page navigation
   const goToPage = useCallback((page) => {
+    console.log('📄 Going to page:', page);
     setPagination(prev => ({ ...prev, currentPage: page }));
   }, []);
 
-  // Initial load
+  // Initial load - DÜZELTİLDİ
   useEffect(() => {
-    if (!initialLoadDoneRef.current) {
+    console.log('🚀 useVehicles: Initial effect running', {
+      initialLoadDone: initialLoadDoneRef.current,
+      mounted: mountedRef.current
+    });
+    
+    if (!initialLoadDoneRef.current && mountedRef.current) {
+      console.log('🔄 Calling loadVehicles for initial load');
       loadVehicles();
     }
   }, [loadVehicles]);
 
-  // Load vehicles when filters or pagination change
+  // Load vehicles when filters or pagination change - DÜZELTİLDİ
   useEffect(() => {
-    if (initialLoadDoneRef.current) {
+    console.log('🔍 Filter/Pagination effect running', {
+      initialLoadDone: initialLoadDoneRef.current,
+      currentPage: pagination.currentPage,
+      filters
+    });
+    
+    if (initialLoadDoneRef.current && mountedRef.current) {
+      console.log('🔄 Calling loadVehicles due to filter/pagination change');
       loadVehicles(pagination.currentPage, true);
     }
   }, [filters, pagination.currentPage, pagination.pageSize]);
@@ -363,6 +417,7 @@ export const useVehicles = (initialFilters = {}) => {
   // Cleanup
   useEffect(() => {
     return () => {
+      console.log('🧹 useVehicles: Cleanup running');
       mountedRef.current = false;
     };
   }, []);
@@ -389,6 +444,16 @@ export const useVehicles = (initialFilters = {}) => {
       ownershipType: filters.ownershipType
     }).filter(v => v && v !== '').length
   };
+
+  // Debug: Vehicles state değişikliklerini logla
+  useEffect(() => {
+    console.log('🔄 Vehicles state changed:', {
+      vehiclesCount: vehicles.length,
+      vehicles: vehicles.slice(0, 3), // İlk 3 aracı göster
+      loading,
+      error
+    });
+  }, [vehicles, loading, error]);
 
   return {
     // Data
