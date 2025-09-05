@@ -20,9 +20,11 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       label: 'Üretim',
       icon: 'bi-gear-fill',
       children: [
-        { id: 'production-overview', label: 'Genel Bakış', path: '/production/overview' },
-        { id: 'production-lines', label: 'Üretim Hatları', path: '/production/lines' },
-        { id: 'production-reports', label: 'Raporlar', path: '/production/reports' }
+        { id: 'bom-transfer', label: 'BOM Listesi Aktarımı', path: '/production/bom-transfer' },
+        { id: 'data-cam', label: 'Data / CAM Hazırlama', path: '/production/data-cam' },
+        { id: 'production-planning', label: 'Üretim Planlama', path: '/production/planning' },
+        { id: 'production-tracking', label: 'Üretim Takip', path: '/production/tracking' },
+        { id: 'reports', label: 'Raporlar', path: '/production/reports' }
       ]
     },
     {
@@ -110,9 +112,8 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
             <i 
               className={`bi ${isExpanded ? 'bi-chevron-down' : 'bi-chevron-right'}`}
               style={{ 
-                fontSize: '0.75rem',
-                transition: 'transform 0.2s ease',
-                transform: isExpanded ? 'rotate(0deg)' : 'rotate(0deg)'
+                fontSize: '0.8rem',
+                transition: 'transform 0.2s ease'
               }}
             ></i>
           </button>
@@ -121,29 +122,28 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           <div 
             className={`submenu ${isExpanded ? 'expanded' : 'collapsed'}`}
             style={{
-              maxHeight: isExpanded ? `${item.children.length * 45}px` : '0',
-              opacity: isExpanded ? '1' : '0',
+              maxHeight: isExpanded ? '200px' : '0',
               overflow: 'hidden',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transition: 'max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               paddingLeft: '1rem'
             }}
           >
-            {item.children.map((child) => (
+            {item.children.map(child => (
               <button
                 key={child.id}
-                className={`nav-link nav-sub-link ${isActive(child.path) ? 'active' : ''}`}
+                className={`nav-link nav-sublink ${isActive(child.path) ? 'active' : ''}`}
                 onClick={(e) => handleMenuClick(child.path, e)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   width: '100%',
-                  padding: '0.6rem 1.5rem',
-                  margin: '0.125rem 0.5rem 0.125rem 0.5rem',
+                  padding: '0.5rem 1rem',
+                  margin: '0.125rem 0.25rem',
                   background: isActive(child.path) ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
                   border: 'none',
                   borderRadius: '6px',
-                  color: isActive(child.path) ? '#FF6B6B' : '#8e9297',
-                  fontSize: '0.875rem',
+                  color: isActive(child.path) ? '#FF6B6B' : '#6c757d',
+                  fontSize: '0.8rem',
                   fontWeight: isActive(child.path) ? '600' : '400',
                   textDecoration: 'none',
                   transition: 'all 0.2s ease',
@@ -192,24 +192,8 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
 
   return (
     <>
-      {/* Sidebar */}
-      <nav
-        className={`sidebar ${isOpen ? 'show' : ''}`}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: isOpen ? '0' : '-280px',
-          width: '280px',
-          height: '100vh',
-          backgroundColor: '#ffffff',
-          borderRight: '1px solid #e3e6f0',
-          transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          zIndex: 1041,
-          overflowY: 'auto',
-          paddingTop: '80px', // Account for fixed header
-          boxShadow: '2px 0 10px rgba(0, 0, 0, 0.1)'
-        }}
-      >
+      {/* Sidebar - CSS'in kontrol etmesine izin ver */}
+      <nav className={`sidebar ${isOpen ? 'show' : ''}`}>
         {/* Sidebar Header */}
         <div 
           className="sidebar-header"
@@ -251,9 +235,11 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           </div>
         </div>
 
-        {/* Navigation Menu */}
-        <div className="sidebar-nav" style={{ padding: '0 0.5rem' }}>
-          {menuItems.map(renderMenuItem)}
+        {/* Navigation Menu - Sidebar Content olarak sar */}
+        <div className="sidebar-content">
+          <div className="sidebar-nav" style={{ padding: '0 0.5rem' }}>
+            {menuItems.map(renderMenuItem)}
+          </div>
         </div>
 
         {/* Mobile Close Button */}
@@ -283,4 +269,4 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;

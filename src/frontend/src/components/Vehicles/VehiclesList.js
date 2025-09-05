@@ -206,7 +206,7 @@ const VehiclesList = ({
       {/* Header with Actions */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h4 className="mb-1">Araç Listesi</h4>
+    
           <p className="text-muted mb-0 small">
             Toplam {pagination.totalCount || vehicles.length} araç
             {/* DÜZELTİLDİ: Object render hatası çözüldü */}
