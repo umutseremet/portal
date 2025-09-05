@@ -1,57 +1,28 @@
 // src/frontend/src/services/vehicleService.js
+
 import api from './api';
 
-export const vehicleService = {
+/**
+ * Vehicle service for API operations
+ */
+const vehicleServiceMethods = {
   /**
-   * Get vehicles with pagination and filtering
+   * Get all vehicles with pagination and filters
+   * @param {Object} params - Query parameters
    */
   async getVehicles(params = {}) {
     try {
-      const queryParams = new URLSearchParams();
-      
-      // Pagination
-      if (params.page) queryParams.append('page', params.page);
-      if (params.pageSize) queryParams.append('pageSize', params.pageSize);
-      
-      // Sorting
-      if (params.sortBy) queryParams.append('sortBy', params.sortBy);
-      if (params.sortDirection) queryParams.append('sortDirection', params.sortDirection);
-      
-      // Filters
-      if (params.search) queryParams.append('search', params.search);
-      if (params.licensePlate) queryParams.append('licensePlate', params.licensePlate);
-      if (params.brand) queryParams.append('brand', params.brand);
-      if (params.companyName) queryParams.append('companyName', params.companyName);
-      if (params.ownershipType) queryParams.append('ownershipType', params.ownershipType);
-      if (params.yearFrom) queryParams.append('yearFrom', params.yearFrom);
-      if (params.yearTo) queryParams.append('yearTo', params.yearTo);
-      if (params.assignedUserName) queryParams.append('assignedUserName', params.assignedUserName);
-      if (params.location) queryParams.append('location', params.location);
-      
-      // Service status filters
-      if (params.inspectionDue) queryParams.append('inspectionDue', 'true');
-      if (params.insuranceDue) queryParams.append('insuranceDue', 'true');
-      if (params.serviceDue) queryParams.append('serviceDue', 'true');
-      if (params.highMileage) queryParams.append('highMileage', 'true');
-      
-      const url = queryParams.toString() ? `vehicles?${queryParams}` : 'vehicles';
-      const response = await api.get(url);
-      
-      return {
-        data: response.data.data || response.data,
-        totalCount: response.data.totalCount || response.data.length,
-        totalPages: response.data.totalPages || 1,
-        currentPage: response.data.currentPage || 1,
-        pageSize: response.data.pageSize || 10
-      };
+      const response = await api.get('vehicles', { params });
+      return response.data;
     } catch (error) {
       console.error('Error fetching vehicles:', error);
-      throw new Error('Araç verileri alınamadı');
+      throw new Error('Araç listesi alınamadı');
     }
   },
 
   /**
-   * Get vehicle by ID
+   * Get single vehicle by ID
+   * @param {string|number} id - Vehicle ID
    */
   async getVehicle(id) {
     try {
@@ -59,46 +30,22 @@ export const vehicleService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching vehicle:', error);
-      throw new Error('Araç detayları alınamadı');
-    }
-  },
-
-  /**
-   * Get vehicle logs
-   */
-  async getVehicleLogs(id) {
-    try {
-      const response = await api.get(`vehicles/${id}/logs`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching vehicle logs:', error);
-      throw new Error('Araç kayıtları alınamadı');
+      
+      if (error.response?.status === 404) {
+        throw new Error('Araç bulunamadı');
+      }
+      
+      throw new Error('Araç bilgileri alınamadı');
     }
   },
 
   /**
    * Create new vehicle
+   * @param {Object} vehicleData - Vehicle data
    */
   async createVehicle(vehicleData) {
     try {
-      // Prepare form data for image upload
-      const formData = new FormData();
-      
-      // Add vehicle data
-      Object.keys(vehicleData).forEach(key => {
-        if (key === 'vehicleImage' && vehicleData[key]) {
-          formData.append('vehicleImage', vehicleData[key]);
-        } else if (vehicleData[key] !== null && vehicleData[key] !== undefined) {
-          formData.append(key, vehicleData[key]);
-        }
-      });
-
-      const response = await api.post('vehicles', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
+      const response = await api.post('vehicles', vehicleData);
       return response.data;
     } catch (error) {
       console.error('Error creating vehicle:', error);
@@ -115,27 +62,12 @@ export const vehicleService = {
 
   /**
    * Update vehicle
+   * @param {string|number} id - Vehicle ID
+   * @param {Object} vehicleData - Updated vehicle data
    */
   async updateVehicle(id, vehicleData) {
     try {
-      // Prepare form data for image upload
-      const formData = new FormData();
-      
-      // Add vehicle data
-      Object.keys(vehicleData).forEach(key => {
-        if (key === 'vehicleImage' && vehicleData[key]) {
-          formData.append('vehicleImage', vehicleData[key]);
-        } else if (vehicleData[key] !== null && vehicleData[key] !== undefined) {
-          formData.append(key, vehicleData[key]);
-        }
-      });
-
-      const response = await api.put(`vehicles/${id}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
+      const response = await api.put(`vehicles/${id}`, vehicleData);
       return response.data;
     } catch (error) {
       console.error('Error updating vehicle:', error);
@@ -209,7 +141,8 @@ export const vehicleService = {
         }
       });
       
-      const url = queryParams.toString() ? `vehicles/export?${queryParams}` : 'vehicles/export';
+      const url = queryParams.toString() ? 
+        `vehicles/export?${queryParams}` : 'vehicles/export';
       
       const response = await api.get(url, {
         responseType: 'blob',
@@ -267,3 +200,9 @@ export const vehicleService = {
     }
   }
 };
+
+// Named export
+export const vehicleService = vehicleServiceMethods;
+
+// Default export
+export default vehicleServiceMethods;

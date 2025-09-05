@@ -1511,7 +1511,7 @@ html {
   .vehicle-detail table.table-borderless td:last-child {
     font-size: 0.85rem;
   }
-}
+
 
 @media (max-width: 576px) {
   /* Extra small screens */

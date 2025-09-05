@@ -1,32 +1,29 @@
 {
-  "name": "admin-panel-vervo",
+  "name": "vervo-portal-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "Modern Admin Panel with Acara Theme - React & Bootstrap",
-  "keywords": ["react", "admin-panel", "bootstrap", "dashboard", "acara"],
-  "author": "Your Name",
-  "license": "MIT",
+  "type": "module",
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
-    "@testing-library/react": "^13.4.0", 
+    "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.8.1",
+    "react-router-dom": "^6.3.0",
     "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4",
-    "bootstrap": "^5.3.0",
-    "bootstrap-icons": "^1.10.0"
+    "axios": "^0.27.2",
+    "bootstrap": "^5.2.0",
+    "bootstrap-icons": "^1.9.1",
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build", 
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "eslint src/**/*.{js,jsx}",
-    "lint:fix": "eslint src/**/*.{js,jsx} --fix",
-    "format": "prettier --write src/**/*.{js,jsx,css,md}",
-    "analyze": "npm run build && npx serve -s build"
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json,css,md}",
+    "analyze": "npm run build && npx bundle-analyzer build/static/js/*.js"
   },
   "eslintConfig": {
     "extends": [
@@ -34,6 +31,7 @@
       "react-app/jest"
     ],
     "rules": {
+      "import/no-anonymous-default-export": "off",
       "no-unused-vars": "warn",
       "no-console": "warn"
     }
@@ -41,7 +39,7 @@
   "browserslist": {
     "production": [
       ">0.2%",
-      "not dead", 
+      "not dead",
       "not op_mini all"
     ],
     "development": [
@@ -51,8 +49,9 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "eslint": "^8.0.0",
-    "prettier": "^2.8.0"
+    "prettier": "^2.7.0"
   },
-  "homepage": "."
+  "proxy": "http://localhost:5000"
 }

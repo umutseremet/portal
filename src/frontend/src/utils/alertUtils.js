@@ -1,396 +1,321 @@
 // src/frontend/src/utils/alertUtils.js
-// React bileşenleri için alert/notification yardımcı fonksiyonları
-
-import { NOTIFICATION_TYPES } from './constants';
 
 /**
- * Alert container'ı kontrol et ve oluştur
+ * Assign object to a variable before exporting as module default - Bu sorunun çözümü
+ * Her export default için önce bir değişkene atama yapıyoruz
  */
-const ensureAlertContainer = () => {
-  let container = document.getElementById('alertContainer');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'alertContainer';
-    container.style.cssText = `
-      position: fixed;
-      top: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1050;
-      width: 90%;
-      max-width: 500px;
-      pointer-events: none;
-    `;
-    document.body.appendChild(container);
-  }
-  return container;
+
+/**
+ * Alert utilities for showing notifications and confirmations
+ */
+
+/**
+ * Show success alert
+ * @param {string} message - Alert message
+ * @param {object} options - Additional options
+ */
+const showSuccess = (message, options = {}) => {
+  showAlert(message, 'success', options);
 };
 
 /**
- * Alert tipi için icon belirleme
+ * Show error alert
+ * @param {string} message - Alert message
+ * @param {object} options - Additional options
  */
-const getAlertIcon = (type) => {
-  const icons = {
-    success: 'bi-check-circle',
-    error: 'bi-exclamation-triangle',
-    danger: 'bi-exclamation-triangle',
-    warning: 'bi-exclamation-circle',
-    info: 'bi-info-circle',
-    primary: 'bi-info-circle',
-    secondary: 'bi-info-circle'
+const showError = (message, options = {}) => {
+  showAlert(message, 'error', options);
+};
+
+/**
+ * Show warning alert
+ * @param {string} message - Alert message
+ * @param {object} options - Additional options
+ */
+const showWarning = (message, options = {}) => {
+  showAlert(message, 'warning', options);
+};
+
+/**
+ * Show info alert
+ * @param {string} message - Alert message
+ * @param {object} options - Additional options
+ */
+const showInfo = (message, options = {}) => {
+  showAlert(message, 'info', options);
+};
+
+/**
+ * Main alert function
+ * @param {string} message - Alert message
+ * @param {string} type - Alert type (success, error, warning, info)
+ * @param {object} options - Additional options
+ */
+const showAlert = (message, type = 'info', options = {}) => {
+  const {
+    duration = 4000,
+    position = 'top-right',
+    showCloseButton = true,
+    autoClose = true
+  } = options;
+
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined') {
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    return;
+  }
+
+  // Try to use an existing notification library if available
+  if (window.Swal && typeof window.Swal.fire === 'function') {
+    // SweetAlert2
+    const iconMap = {
+      success: 'success',
+      error: 'error',
+      warning: 'warning',
+      info: 'info'
+    };
+
+    window.Swal.fire({
+      icon: iconMap[type] || 'info',
+      title: message,
+      toast: true,
+      position: position,
+      showConfirmButton: !autoClose,
+      timer: autoClose ? duration : undefined,
+      timerProgressBar: autoClose
+    });
+    return;
+  }
+
+  // Try to use Bootstrap toast if available
+  if (typeof window.bootstrap !== 'undefined' && window.bootstrap.Toast) {
+    showBootstrapToast(message, type, options);
+    return;
+  }
+
+  // Fallback to creating our own toast
+  showCustomToast(message, type, options);
+};
+
+/**
+ * Show Bootstrap toast
+ */
+const showBootstrapToast = (message, type, options) => {
+  const { duration = 4000 } = options;
+  
+  // Create toast container if it doesn't exist
+  let toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+    toastContainer.style.zIndex = '9999';
+    document.body.appendChild(toastContainer);
+  }
+
+  const toastId = 'toast-' + Date.now();
+  const iconMap = {
+    success: 'bi-check-circle-fill text-success',
+    error: 'bi-x-circle-fill text-danger',
+    warning: 'bi-exclamation-triangle-fill text-warning',
+    info: 'bi-info-circle-fill text-primary'
   };
-  return icons[type] || 'bi-info-circle';
-};
 
-/**
- * Alert gösterme ana fonksiyonu
- */
-const showAlert = (message, type = 'info', duration = 5000) => {
-  const container = ensureAlertContainer();
-  
-  // Alert ID oluştur
-  const alertId = 'alert-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-
-  // Bootstrap alert class'ını belirle
-  const alertClass = type === 'error' ? 'danger' : type;
-
-  // Alert HTML'i oluştur
-  const alertHTML = `
-    <div 
-      class="alert alert-${alertClass} alert-dismissible fade show mb-2" 
-      role="alert" 
-      id="${alertId}" 
-      style="pointer-events: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(-10px); transition: all 0.3s ease;"
-    >
-      <i class="${getAlertIcon(type)} me-2"></i>
-      ${message}
-      <button 
-        type="button" 
-        class="btn-close" 
-        aria-label="Close"
-        onclick="document.getElementById('${alertId}').remove()"
-      ></button>
-    </div>
-  `;
-
-  // Alert'i container'a ekle
-  container.insertAdjacentHTML('beforeend', alertHTML);
-
-  // Animation için timeout
-  const alertElement = document.getElementById(alertId);
-  if (alertElement) {
-    // Fade in effect
-    setTimeout(() => {
-      alertElement.style.opacity = '1';
-      alertElement.style.transform = 'translateY(0)';
-    }, 10);
-
-    // Otomatik kaldırma
-    if (duration > 0) {
-      setTimeout(() => {
-        closeAlert(alertId);
-      }, duration);
-    }
-  }
-
-  return alertId;
-};
-
-/**
- * Alert kapatma fonksiyonu
- */
-const closeAlert = (alertId) => {
-  const alertElement = document.getElementById(alertId);
-  if (alertElement) {
-    // Fade out effect
-    alertElement.style.opacity = '0';
-    alertElement.style.transform = 'translateY(-10px)';
-    
-    setTimeout(() => {
-      if (alertElement && alertElement.parentNode) {
-        alertElement.parentNode.removeChild(alertElement);
-      }
-    }, 300);
-  }
-};
-
-/**
- * Tüm alert'leri temizle
- */
-const clearAllAlerts = () => {
-  const container = document.getElementById('alertContainer');
-  if (container) {
-    const alerts = container.querySelectorAll('.alert');
-    alerts.forEach(alert => {
-      alert.style.opacity = '0';
-      alert.style.transform = 'translateY(-10px)';
-    });
-    
-    setTimeout(() => {
-      container.innerHTML = '';
-    }, 300);
-  }
-};
-
-/**
- * Başarı mesajı göster
- */
-export const showSuccess = (message, duration = 5000) => {
-  return showAlert(message, NOTIFICATION_TYPES.SUCCESS, duration);
-};
-
-/**
- * Hata mesajı göster
- */
-export const showError = (message, duration = 8000) => {
-  return showAlert(message, NOTIFICATION_TYPES.ERROR, duration);
-};
-
-/**
- * Uyarı mesajı göster
- */
-export const showWarning = (message, duration = 6000) => {
-  return showAlert(message, NOTIFICATION_TYPES.WARNING, duration);
-};
-
-/**
- * Bilgi mesajı göster
- */
-export const showInfo = (message, duration = 5000) => {
-  return showAlert(message, NOTIFICATION_TYPES.INFO, duration);
-};
-
-/**
- * Custom toast notification (modern görünüm)
- */
-export const showToast = (message, type = 'info', duration = 4000) => {
-  const container = ensureAlertContainer();
-  
-  const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-  
   const toastHTML = `
-    <div 
-      id="${toastId}"
-      class="toast align-items-center text-white bg-${type === 'error' ? 'danger' : type} border-0 mb-2"
-      role="alert" 
-      aria-live="assertive" 
-      aria-atomic="true"
-      style="opacity: 0; transform: translateX(100%); transition: all 0.3s ease; pointer-events: auto;"
-    >
-      <div class="d-flex">
-        <div class="toast-body d-flex align-items-center">
-          <i class="${getAlertIcon(type)} me-2"></i>
-          ${message}
-        </div>
-        <button 
-          type="button" 
-          class="btn-close btn-close-white me-2 m-auto" 
-          aria-label="Close"
-          onclick="document.getElementById('${toastId}').remove()"
-        ></button>
+    <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <i class="bi ${iconMap[type] || iconMap.info} me-2"></i>
+        <strong class="me-auto">Bildirim</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+        ${message}
       </div>
     </div>
   `;
 
-  container.insertAdjacentHTML('beforeend', toastHTML);
-
+  toastContainer.insertAdjacentHTML('afterbegin', toastHTML);
+  
   const toastElement = document.getElementById(toastId);
-  if (toastElement) {
-    // Slide in from right
-    setTimeout(() => {
-      toastElement.style.opacity = '1';
-      toastElement.style.transform = 'translateX(0)';
-    }, 10);
+  const toast = new window.bootstrap.Toast(toastElement, {
+    delay: duration
+  });
+  
+  toast.show();
 
-    // Auto remove
-    if (duration > 0) {
-      setTimeout(() => {
-        if (toastElement && toastElement.parentNode) {
-          toastElement.style.opacity = '0';
-          toastElement.style.transform = 'translateX(100%)';
-          setTimeout(() => {
-            if (toastElement && toastElement.parentNode) {
-              toastElement.remove();
-            }
-          }, 300);
-        }
-      }, duration);
-    }
-  }
-
-  return toastId;
-};
-
-/**
- * Onay dialog'u göster
- */
-export const showConfirm = (message, title = 'Onay', confirmText = 'Evet', cancelText = 'Hayır') => {
-  return new Promise((resolve) => {
-    const modalId = 'confirm-modal-' + Date.now();
-    
-    const modalHTML = `
-      <div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">
-                <i class="bi bi-question-circle me-2 text-warning"></i>
-                ${title}
-              </h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <p class="mb-0">${message}</p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                ${cancelText}
-              </button>
-              <button type="button" class="btn btn-danger" id="${modalId}-confirm">
-                ${confirmText}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    const modal = document.getElementById(modalId);
-    const confirmBtn = document.getElementById(`${modalId}-confirm`);
-
-    // Bootstrap modal'ı başlat
-    const bsModal = new window.bootstrap.Modal(modal);
-    bsModal.show();
-
-    // Event listeners
-    confirmBtn.addEventListener('click', () => {
-      bsModal.hide();
-      resolve(true);
-    });
-
-    modal.addEventListener('hidden.bs.modal', () => {
-      modal.remove();
-      resolve(false);
-    });
+  // Remove toast element after it's hidden
+  toastElement.addEventListener('hidden.bs.toast', () => {
+    toastElement.remove();
   });
 };
 
 /**
- * Loading spinner göster
+ * Show custom toast (fallback)
  */
-export const showLoading = (message = 'Yükleniyor...') => {
-  const loadingId = 'loading-' + Date.now();
+const showCustomToast = (message, type, options) => {
+  const { duration = 4000, position = 'top-right' } = options;
   
-  const loadingHTML = `
-    <div class="modal fade" id="${loadingId}" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-      <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content">
-          <div class="modal-body text-center py-4">
-            <div class="spinner-border text-primary mb-3" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-            <div>${message}</div>
-          </div>
-        </div>
-      </div>
+  // Create toast container if it doesn't exist
+  let toastContainer = document.getElementById('custom-toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'custom-toast-container';
+    toastContainer.style.cssText = `
+      position: fixed;
+      ${position.includes('top') ? 'top: 20px;' : 'bottom: 20px;'}
+      ${position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
+      z-index: 9999;
+      max-width: 350px;
+    `;
+    document.body.appendChild(toastContainer);
+  }
+
+  const toastId = 'custom-toast-' + Date.now();
+  const colorMap = {
+    success: '#28a745',
+    error: '#dc3545',
+    warning: '#ffc107',
+    info: '#17a2b8'
+  };
+
+  const iconMap = {
+    success: '✓',
+    error: '✕',
+    warning: '⚠',
+    info: 'i'
+  };
+
+  const toastHTML = `
+    <div id="${toastId}" style="
+      background: white;
+      border-left: 4px solid ${colorMap[type] || colorMap.info};
+      border-radius: 4px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      animation: slideInRight 0.3s ease-out;
+    ">
+      <span style="
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: ${colorMap[type] || colorMap.info};
+        color: white;
+        font-weight: bold;
+        margin-right: 12px;
+        font-size: 14px;
+      ">${iconMap[type] || iconMap.info}</span>
+      <span style="flex: 1; color: #333; font-size: 14px;">${message}</span>
+      <button onclick="this.parentElement.remove()" style="
+        background: none;
+        border: none;
+        font-size: 18px;
+        color: #999;
+        cursor: pointer;
+        margin-left: 8px;
+        padding: 0;
+        width: 20px;
+        height: 20px;
+      ">×</button>
     </div>
   `;
 
-  document.body.insertAdjacentHTML('beforeend', loadingHTML);
-  
-  const modal = document.getElementById(loadingId);
-  const bsModal = new window.bootstrap.Modal(modal);
-  bsModal.show();
+  // Add animation styles if not already added
+  if (!document.getElementById('toast-animations')) {
+    const style = document.createElement('style');
+    style.id = 'toast-animations';
+    style.textContent = `
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
-  return {
-    close: () => {
-      bsModal.hide();
-      setTimeout(() => modal.remove(), 300);
-    },
-    updateMessage: (newMessage) => {
-      const messageEl = modal.querySelector('.modal-body div:last-child');
-      if (messageEl) messageEl.textContent = newMessage;
-    }
-  };
+  toastContainer.insertAdjacentHTML('afterbegin', toastHTML);
+  
+  const toastElement = document.getElementById(toastId);
+  
+  // Auto remove after duration
+  if (duration > 0) {
+    setTimeout(() => {
+      if (toastElement && toastElement.parentNode) {
+        toastElement.style.animation = 'slideInRight 0.3s ease-out reverse';
+        setTimeout(() => toastElement.remove(), 300);
+      }
+    }, duration);
+  }
 };
 
 /**
- * Progress bar ile loading göster
+ * Show confirmation dialog
+ * @param {string} message - Confirmation message
+ * @param {string} title - Dialog title
+ * @param {object} options - Additional options
  */
-export const showProgress = (message = 'İşleniyor...', initialProgress = 0) => {
-  const progressId = 'progress-' + Date.now();
-  
-  const progressHTML = `
-    <div class="modal fade" id="${progressId}" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-body py-4">
-            <div class="text-center mb-3">${message}</div>
-            <div class="progress mb-2" style="height: 8px;">
-              <div 
-                class="progress-bar progress-bar-striped progress-bar-animated" 
-                role="progressbar" 
-                style="width: ${initialProgress}%" 
-                aria-valuenow="${initialProgress}" 
-                aria-valuemin="0" 
-                aria-valuemax="100"
-              ></div>
-            </div>
-            <div class="text-center small text-muted">
-              <span class="progress-text">${initialProgress}%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
+const showConfirm = (message, title = 'Onay', options = {}) => {
+  return new Promise((resolve) => {
+    const {
+      confirmText = 'Evet',
+      cancelText = 'İptal',
+      confirmButtonClass = 'btn-danger',
+      cancelButtonClass = 'btn-secondary'
+    } = options;
 
-  document.body.insertAdjacentHTML('beforeend', progressHTML);
-  
-  const modal = document.getElementById(progressId);
-  const bsModal = new window.bootstrap.Modal(modal);
-  bsModal.show();
-
-  const progressBar = modal.querySelector('.progress-bar');
-  const progressText = modal.querySelector('.progress-text');
-
-  return {
-    close: () => {
-      bsModal.hide();
-      setTimeout(() => modal.remove(), 300);
-    },
-    updateProgress: (percent, message) => {
-      if (progressBar) {
-        progressBar.style.width = `${percent}%`;
-        progressBar.setAttribute('aria-valuenow', percent);
-      }
-      if (progressText) {
-        progressText.textContent = `${percent}%`;
-      }
-      if (message) {
-        const messageEl = modal.querySelector('.modal-body > div:first-child');
-        if (messageEl) messageEl.textContent = message;
-      }
+    // Check if SweetAlert2 is available
+    if (window.Swal && typeof window.Swal.fire === 'function') {
+      window.Swal.fire({
+        title: title,
+        text: message,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: confirmText,
+        cancelButtonText: cancelText,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        focusCancel: true
+      }).then((result) => {
+        resolve(result.isConfirmed);
+      });
+      return;
     }
-  };
+
+    // Fallback to native confirm
+    resolve(window.confirm(`${title}\n\n${message}`));
+  });
 };
 
-// Ana export fonksiyonu
-export { showAlert, closeAlert, clearAllAlerts };
-
-// Default export
-export default {
-  show: showAlert,
-  success: showSuccess,
-  error: showError,
-  warning: showWarning,
-  info: showInfo,
-  toast: showToast,
-  confirm: showConfirm,
-  loading: showLoading,
-  progress: showProgress,
-  close: closeAlert,
-  clearAll: clearAllAlerts
+// Create the utilities object FIRST, then export
+const alertUtilities = {
+  showAlert,
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showConfirm
 };
+
+// Named exports
+export { 
+  showAlert, 
+  showSuccess, 
+  showError, 
+  showWarning, 
+  showInfo, 
+  showConfirm 
+};
+
+// Default export - ESLint hatası için objesi önce değişkene atayıp sonra export ediyoruz
+export default alertUtilities;
