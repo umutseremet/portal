@@ -1,4 +1,5 @@
 ﻿// src/frontend/src/components/Vehicles/VehiclesList.js
+// DÜZELTİLMİŞ VERSİYON - filterSummary object render hatası çözüldü
 
 import React, { useState } from 'react';
 
@@ -26,7 +27,7 @@ const VehiclesList = ({
   isEmpty = false,
   selectedCount = 0,
   isAllSelected = false,
-  filterSummary = ''
+  filterSummary = {}
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [localFilters, setLocalFilters] = useState({
@@ -81,11 +82,10 @@ const VehiclesList = ({
     }
   };
 
-  // Handle sort - Visitors benzeri
+  // Handle sort
   const handleSort = (column) => {
     console.log('Sorting by:', column, 'Current sort:', filters.sortBy, filters.sortOrder);
     
-    // Aynı kolona tıklandığında sıralama yönünü değiştir
     const newOrder = filters.sortBy === column && filters.sortOrder === 'desc' ? 'asc' : 'desc';
     
     if (onSort) {
@@ -93,15 +93,15 @@ const VehiclesList = ({
     }
   };
 
-  // Get sort icon helper function - Visitors benzeri
+  // Get sort icon helper function
   const getSortIcon = (column) => {
     if (filters.sortBy !== column) {
-      return 'bi-arrow-down-up'; // Default icon when column is not sorted
+      return 'bi-arrow-down-up';
     }
     return filters.sortOrder === 'desc' ? 'bi-arrow-down' : 'bi-arrow-up';
   };
 
-  // Get sort button class helper - Visitors benzeri
+  // Get sort button class helper
   const getSortButtonClass = (column) => {
     const baseClass = "btn btn-link text-decoration-none p-0 fw-medium d-flex align-items-center";
     const activeClass = filters.sortBy === column ? "text-primary" : "text-dark";
@@ -139,7 +139,29 @@ const VehiclesList = ({
     }
   };
 
-  // Loading state - Visitors benzeri
+  // DÜZELTİLDİ: filterSummary'yi string'e çevir
+  const getFilterSummaryText = () => {
+    if (!filterSummary || typeof filterSummary !== 'object') {
+      return '';
+    }
+
+    const activeFilters = [];
+    
+    if (filterSummary.search) activeFilters.push(`Arama: "${filterSummary.search}"`);
+    if (filterSummary.brand) activeFilters.push(`Marka: "${filterSummary.brand}"`);
+    if (filterSummary.model) activeFilters.push(`Model: "${filterSummary.model}"`);
+    if (filterSummary.licensePlate) activeFilters.push(`Plaka: "${filterSummary.licensePlate}"`);
+    if (filterSummary.companyName) activeFilters.push(`Şirket: "${filterSummary.companyName}"`);
+    if (filterSummary.ownershipType) activeFilters.push(`Tip: "${getOwnershipTypeText(filterSummary.ownershipType)}"`);
+
+    const activeCount = filterSummary.activeCount || activeFilters.length;
+    
+    if (activeCount === 0) return '';
+    
+    return `${activeCount} filtre aktif`;
+  };
+
+  // Loading state
   if (loading && (!vehicles || vehicles.length === 0)) {
     return (
       <div className="d-flex justify-content-center align-items-center py-5">
@@ -153,7 +175,7 @@ const VehiclesList = ({
     );
   }
 
-  // Empty state - Visitors benzeri
+  // Empty state
   if (!loading && (!vehicles || vehicles.length === 0)) {
     return (
       <div className="text-center py-5">
@@ -181,18 +203,44 @@ const VehiclesList = ({
 
   return (
     <>
-      {/* Header with Actions - Visitors benzeri */}
+      {/* Header with Actions */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
+          <h4 className="mb-1">Araç Listesi</h4>
           <p className="text-muted mb-0 small">
-            {filterSummary && (
+            Toplam {pagination.totalCount || vehicles.length} araç
+            {/* DÜZELTİLDİ: Object render hatası çözüldü */}
+            {getFilterSummaryText() && (
               <span className="ms-2 text-info">
-                ({filterSummary})
+                ({getFilterSummaryText()})
               </span>
             )}
           </p>
         </div>
         <div className="d-flex gap-2">
+          {/* Bulk Actions */}
+          {selectedCount > 0 && (
+            <div className="d-flex gap-2 me-3">
+              <span className="badge bg-primary align-self-center">
+                {selectedCount} seçili
+              </span>
+              <button 
+                className="btn btn-outline-danger btn-sm"
+                onClick={onBulkDelete}
+                title="Seçilenleri Sil"
+              >
+                <i className="bi bi-trash"></i>
+              </button>
+              <button 
+                className="btn btn-outline-secondary btn-sm"
+                onClick={onClearSelection}
+                title="Seçimi Temizle"
+              >
+                <i className="bi bi-x"></i>
+              </button>
+            </div>
+          )}
+
           <button 
             className="btn btn-outline-secondary btn-sm"
             onClick={() => setShowFilters(!showFilters)}
@@ -218,7 +266,7 @@ const VehiclesList = ({
         </div>
       </div>
 
-      {/* Filter Panel - Visitors benzeri */}
+      {/* Filter Panel */}
       {showFilters && (
         <div className="card mb-4">
           <div className="card-body">
@@ -230,7 +278,7 @@ const VehiclesList = ({
                   className="form-control form-control-sm"
                   value={localFilters.brand}
                   onChange={(e) => handleLocalFilterChange('brand', e.target.value)}
-                  placeholder="Marka girin"
+                  placeholder="Toyota, BMW..."
                 />
               </div>
               <div className="col-md-3">
@@ -240,7 +288,7 @@ const VehiclesList = ({
                   className="form-control form-control-sm"
                   value={localFilters.model}
                   onChange={(e) => handleLocalFilterChange('model', e.target.value)}
-                  placeholder="Model girin"
+                  placeholder="Corolla, X5..."
                 />
               </div>
               <div className="col-md-3">
@@ -266,7 +314,7 @@ const VehiclesList = ({
             </div>
             <div className="row mt-3">
               <div className="col-md-3">
-                <label className="form-label small">Sahiplik Türü</label>
+                <label className="form-label small">Mülkiyet Tipi</label>
                 <select
                   className="form-select form-select-sm"
                   value={localFilters.ownershipType}
@@ -278,72 +326,33 @@ const VehiclesList = ({
                   <option value="personal">Kişisel</option>
                 </select>
               </div>
-              <div className="col-md-9 d-flex align-items-end">
-                <div className="d-flex gap-2">
-                  <button 
-                    className="btn btn-primary btn-sm"
-                    onClick={handleApplyFilters}
-                  >
-                    <i className="bi bi-search me-1"></i>
-                    Filtrele
-                  </button>
-                  <button 
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={handleResetFilters}
-                  >
-                    <i className="bi bi-arrow-clockwise me-1"></i>
-                    Temizle
-                  </button>
-                  <button 
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={() => setShowFilters(false)}
-                  >
-                    <i className="bi bi-x me-1"></i>
-                    Kapat
-                  </button>
-                </div>
+              <div className="col-md-9 d-flex align-items-end gap-2">
+                <button 
+                  className="btn btn-danger btn-sm"
+                  onClick={handleApplyFilters}
+                >
+                  <i className="bi bi-search me-1"></i>
+                  Filtrele
+                </button>
+                <button 
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={handleResetFilters}
+                >
+                  <i className="bi bi-arrow-clockwise me-1"></i>
+                  Temizle
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Table Header Info - Visitors benzeri */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div className="text-muted small">
-          Toplam {pagination.totalCount || 0} araç
-          {selectedVehicles.length > 0 && (
-            <span className="ms-2 text-primary">
-              ({selectedVehicles.length} seçili)
-            </span>
-          )}
-        </div>
-        {selectedVehicles.length > 0 && (
-          <div className="d-flex gap-2">
-            <button 
-              className="btn btn-sm btn-outline-secondary"
-              onClick={onClearSelection}
-            >
-              <i className="bi bi-x-circle me-1"></i>
-              Seçimi Temizle
-            </button>
-            <button 
-              className="btn btn-sm btn-outline-danger"
-              onClick={onBulkDelete}
-            >
-              <i className="bi bi-trash me-1"></i>
-              Seçilenleri Sil ({selectedVehicles.length})
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Vehicles Table - Visitors benzeri */}
+      {/* Vehicles Table */}
       <div className="table-responsive">
         <table className="table table-hover">
-          <thead>
+          <thead className="table-light">
             <tr>
-              <th style={{ width: '40px' }}>
+              <th width="50">
                 <div className="form-check">
                   <input
                     className="form-check-input"
@@ -354,57 +363,61 @@ const VehiclesList = ({
                 </div>
               </th>
               <th>
-                <button 
+                <button
                   className={getSortButtonClass('licensePlate')}
                   onClick={() => handleSort('licensePlate')}
-                  title="Plakaya göre sırala"
                 >
                   Plaka
-                  <i className={`bi ms-1 ${getSortIcon('licensePlate')}`}></i>
+                  <i className={`bi ${getSortIcon('licensePlate')} ms-1`}></i>
                 </button>
               </th>
               <th>
-                <button 
+                <button
                   className={getSortButtonClass('brand')}
                   onClick={() => handleSort('brand')}
-                  title="Markaya göre sırala"
                 >
-                  Marka
-                  <i className={`bi ms-1 ${getSortIcon('brand')}`}></i>
+                  Marka/Model
+                  <i className={`bi ${getSortIcon('brand')} ms-1`}></i>
                 </button>
               </th>
               <th>
-                <button 
-                  className={getSortButtonClass('model')}
-                  onClick={() => handleSort('model')}
-                  title="Modele göre sırala"
-                >
-                  Model
-                  <i className={`bi ms-1 ${getSortIcon('model')}`}></i>
-                </button>
-              </th>
-              <th>
-                <button 
+                <button
                   className={getSortButtonClass('year')}
                   onClick={() => handleSort('year')}
-                  title="Yıla göre sırala"
                 >
                   Yıl
-                  <i className={`bi ms-1 ${getSortIcon('year')}`}></i>
+                  <i className={`bi ${getSortIcon('year')} ms-1`}></i>
                 </button>
               </th>
               <th>
-                <button 
+                <button
                   className={getSortButtonClass('companyName')}
                   onClick={() => handleSort('companyName')}
-                  title="Şirkete göre sırala"
                 >
                   Şirket
-                  <i className={`bi ms-1 ${getSortIcon('companyName')}`}></i>
+                  <i className={`bi ${getSortIcon('companyName')} ms-1`}></i>
                 </button>
               </th>
-              <th>Durum</th>
-              <th style={{ width: '140px' }}>İşlemler</th>
+              <th>Atanan Kullanıcı</th>
+              <th>
+                <button
+                  className={getSortButtonClass('currentMileage')}
+                  onClick={() => handleSort('currentMileage')}
+                >
+                  Kilometre
+                  <i className={`bi ${getSortIcon('currentMileage')} ms-1`}></i>
+                </button>
+              </th>
+              <th>
+                <button
+                  className={getSortButtonClass('createdAt')}
+                  onClick={() => handleSort('createdAt')}
+                >
+                  Kayıt Tarihi
+                  <i className={`bi ${getSortIcon('createdAt')} ms-1`}></i>
+                </button>
+              </th>
+              <th width="120">İşlemler</th>
             </tr>
           </thead>
           <tbody>
@@ -416,7 +429,7 @@ const VehiclesList = ({
                       className="form-check-input"
                       type="checkbox"
                       checked={selectedVehicles.includes(vehicle.id)}
-                      onChange={() => onSelectVisitor(vehicle.id)}
+                      onChange={() => onSelectVisitor?.(vehicle.id)}
                     />
                   </div>
                 </td>
@@ -424,54 +437,63 @@ const VehiclesList = ({
                   <span className="fw-bold text-primary">{vehicle.licensePlate}</span>
                 </td>
                 <td>
-                  <span className="fw-medium">{vehicle.brand}</span>
+                  <div>
+                    <div className="fw-medium">{vehicle.brand} {vehicle.model}</div>
+                  </div>
                 </td>
+                <td>{vehicle.year || '-'}</td>
                 <td>
-                  <span>{vehicle.model}</span>
-                </td>
-                <td>
-                  <span className="small text-muted">{vehicle.year}</span>
-                </td>
-                <td>
-                  <span className="small">{vehicle.companyName}</span>
-                </td>
-                <td>
-                  <span className={`badge ${getOwnershipTypeBadge(vehicle.ownershipType)}`}>
-                    {getOwnershipTypeText(vehicle.ownershipType)}
+                  <span className="badge bg-light text-dark">
+                    {vehicle.companyName || 'Belirtilmemiş'}
                   </span>
                 </td>
                 <td>
-                  {/* Actions Dropdown - Visitors benzeri */}
-                  <div className="dropdown">
-                    <button 
-                      className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                      type="button"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
+                  {vehicle.assignedUserName ? (
+                    <div>
+                      <div className="small fw-medium">{vehicle.assignedUserName}</div>
+                      {vehicle.assignedUserPhone && (
+                        <div className="small text-muted">{vehicle.assignedUserPhone}</div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-muted small">Atanmamış</span>
+                  )}
+                </td>
+                <td>
+                  {vehicle.currentMileage ? (
+                    <span className="badge bg-info text-dark">
+                      {vehicle.currentMileage.toLocaleString()} km
+                    </span>
+                  ) : '-'}
+                </td>
+                <td>
+                  <small className="text-muted">
+                    {formatDisplayDate(vehicle.createdAt)}
+                  </small>
+                </td>
+                <td>
+                  <div className="btn-group btn-group-sm">
+                    <button
+                      className="btn btn-outline-primary btn-sm"
+                      onClick={() => onViewVisitor?.(vehicle)}
+                      title="Detayları Görüntüle"
                     >
-                      <i className="bi bi-three-dots-vertical"></i>
+                      <i className="bi bi-eye"></i>
                     </button>
-                    <ul className="dropdown-menu">
-                      <li>
-                        <button className="dropdown-item" onClick={() => onViewVisitor(vehicle)}>
-                          <i className="bi bi-eye me-2"></i>Detayları Gör
-                        </button>
-                      </li>
-                      <li>
-                        <button className="dropdown-item" onClick={() => onEditVisitor(vehicle)}>
-                          <i className="bi bi-pencil me-2"></i>Düzenle
-                        </button>
-                      </li>
-                      <li><hr className="dropdown-divider" /></li>
-                      <li>
-                        <button 
-                          className="dropdown-item text-danger" 
-                          onClick={() => handleDeleteClick(vehicle)}
-                        >
-                          <i className="bi bi-trash me-2"></i>Sil
-                        </button>
-                      </li>
-                    </ul>
+                    <button
+                      className="btn btn-outline-warning btn-sm"
+                      onClick={() => onEditVisitor?.(vehicle)}
+                      title="Düzenle"
+                    >
+                      <i className="bi bi-pencil"></i>
+                    </button>
+                    <button
+                      className="btn btn-outline-danger btn-sm"
+                      onClick={() => handleDeleteClick(vehicle)}
+                      title="Sil"
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -480,74 +502,63 @@ const VehiclesList = ({
         </table>
       </div>
 
-      {/* Pagination - Visitors benzeri */}
-      {pagination && pagination.totalPages > 1 && (
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
         <div className="d-flex justify-content-between align-items-center mt-4">
-          <div className="text-muted small">
-            Sayfa {pagination.currentPage} / {pagination.totalPages}
-            ({pagination.totalCount} toplam kayıt)
+          <div className="small text-muted">
+            Sayfa {pagination.currentPage} / {pagination.totalPages} 
+            (Toplam {pagination.totalCount} kayıt)
           </div>
           <nav>
             <ul className="pagination pagination-sm mb-0">
-              <li className={`page-item ${pagination.currentPage <= 1 ? 'disabled' : ''}`}>
-                <button 
+              <li className={`page-item ${!pagination.hasPreviousPage ? 'disabled' : ''}`}>
+                <button
                   className="page-link"
-                  onClick={() => onPageChange(1)}
-                  disabled={pagination.currentPage <= 1}
+                  onClick={() => onPageChange?.(pagination.currentPage - 1)}
+                  disabled={!pagination.hasPreviousPage}
                 >
-                  <i className="bi bi-chevron-double-left"></i>
-                </button>
-              </li>
-              <li className={`page-item ${pagination.currentPage <= 1 ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link"
-                  onClick={() => onPageChange(pagination.currentPage - 1)}
-                  disabled={pagination.currentPage <= 1}
-                >
-                  <i className="bi bi-chevron-left"></i>
+                  Önceki
                 </button>
               </li>
               
-              {/* Page numbers */}
-              {[...Array(Math.min(5, pagination.totalPages))].map((_, index) => {
-                let pageNum;
-                if (pagination.totalPages <= 5) {
-                  pageNum = index + 1;
-                } else if (pagination.currentPage <= 3) {
-                  pageNum = index + 1;
-                } else if (pagination.currentPage >= pagination.totalPages - 2) {
-                  pageNum = pagination.totalPages - 4 + index;
-                } else {
-                  pageNum = pagination.currentPage - 2 + index;
-                }
-
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                const pageNum = Math.max(1, pagination.currentPage - 2) + i;
+                if (pageNum > pagination.totalPages) return null;
+                
                 return (
-                  <li key={pageNum} className={`page-item ${pagination.currentPage === pageNum ? 'active' : ''}`}>
-                    <button 
+                  <li key={pageNum} className={`page-item ${pageNum === pagination.currentPage ? 'active' : ''}`}>
+                    <button
                       className="page-link"
-                      onClick={() => onPageChange(pageNum)}
+                      onClick={() => onPageChange?.(pageNum)}
                     >
                       {pageNum}
                     </button>
                   </li>
                 );
               })}
-
-              <li className={`page-item ${pagination.currentPage >= pagination.totalPages ? 'disabled' : ''}`}>
-                <button 
+              
+              <li className={`page-item ${!pagination.hasNextPage ? 'disabled' : ''}`}>
+                <button
                   className="page-link"
-                  onClick={() => onPageChange(pagination.totalPages)}
-                  disabled={pagination.currentPage >= pagination.totalPages}
+                  onClick={() => onPageChange?.(pagination.currentPage + 1)}
+                  disabled={!pagination.hasNextPage}
                 >
-                  <i className="bi bi-chevron-double-right"></i>
+                  Sonraki
                 </button>
               </li>
             </ul>
           </nav>
         </div>
       )}
+
+      {loading && vehicles.length > 0 && (
+        <div className="text-center py-3">
+          <div className="spinner-border spinner-border-sm text-danger me-2"></div>
+          <small className="text-muted">Yükleniyor...</small>
+        </div>
+      )}
     </>
   );
 };
 
-export default VehiclesList; 
+export default VehiclesList;

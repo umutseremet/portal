@@ -111,7 +111,7 @@ body {
   background: rgba(255, 107, 107, 0.5) !important;
 }
 
-/* Sidebar Overlay */
+/* Sidebar Overlay - DÜZELTİLMİŞ */
 .sidebar-overlay {
   position: fixed !important;
   top: 0 !important;
@@ -123,11 +123,13 @@ body {
   opacity: 0 !important;
   visibility: hidden !important;
   transition: all 0.3s ease !important;
+  pointer-events: none !important; /* EKLE: Başlangıçta tıklanamaz */
 }
 
 .sidebar-overlay.show {
   opacity: 1 !important;
   visibility: visible !important;
+  pointer-events: auto !important; /* EKLE: Show durumunda tıklanabilir */
 }
 
 /* Desktop için - Sidebar her zaman görünür */

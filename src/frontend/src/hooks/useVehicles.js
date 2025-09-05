@@ -84,15 +84,14 @@ export const useVehicles = (initialFilters = {}) => {
       let vehiclesArray = [];
       
       if (response) {
-        // Farklı API response formatlarını handle et
-        if (Array.isArray(response.data)) {
+        // API service'ten mappedResponse geldiği için direkt data property'sini kullan
+        if (response.data && Array.isArray(response.data)) {
           vehiclesArray = response.data;
+          console.log('✅ Using response.data array with', response.data.length, 'vehicles');
         } else if (Array.isArray(response)) {
+          // Fallback: Direkt array gelirse
           vehiclesArray = response;
-        } else if (response.vehicles && Array.isArray(response.vehicles)) {
-          vehiclesArray = response.vehicles;
-        } else if (response.items && Array.isArray(response.items)) {
-          vehiclesArray = response.items;
+          console.log('✅ Using direct response array with', response.length, 'vehicles');
         } else {
           console.warn('⚠️ Unexpected API response format:', response);
           vehiclesArray = [];

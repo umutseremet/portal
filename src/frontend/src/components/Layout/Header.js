@@ -15,7 +15,15 @@ const Header = ({ toggleSidebar, sidebarOpen, isMobile }) => {
     e.stopPropagation();
     
     console.log('🍔 Header: Hamburger clicked, current sidebar state:', sidebarOpen);
+    console.log('🍔 Header: isMobile:', isMobile);
+    
+    // React state'i güncelle
     toggleSidebar();
+    
+    // Eski assets/js kodları ile uyumluluk için
+    if (typeof window.toggleSidebar === 'function') {
+      window.toggleSidebar();
+    }
   };
 
   // Handle user dropdown toggle

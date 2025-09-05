@@ -1,212 +1,268 @@
 // src/frontend/src/services/api.js
+// VEHICLES API'İ İÇİN DÜZELTİLMİŞ VERSİYON
 
-// API Base Configuration
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
+import axios from 'axios';
 
 class ApiService {
   constructor() {
-    this.baseURL = API_BASE_URL;
-    this.customHeaders = {};
-  }
+    this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5154/api';
+    
+    // Create axios instance
+    this.api = axios.create({
+      baseURL: this.baseURL,
+      timeout: 30000,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
 
-  // Get auth token from localStorage
-  getAuthToken() {
-    return localStorage.getItem('authToken');
-  }
+    // Request interceptor
+    this.api.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('authToken') || localStorage.getItem('vervo_auth_token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        console.log('🚀 API Request:', {
+          method: config.method?.toUpperCase(),
+          url: `${config.baseURL}${config.url}`,
+          params: config.params,
+          data: config.data
+        });
+        return config;
+      },
+      (error) => {
+        console.error('❌ Request interceptor error:', error);
+        return Promise.reject(error);
+      }
+    );
 
-  // Build headers with auth token
-  getHeaders() {
-    const token = this.getAuthToken();
-    return {
-      'Content-Type': 'application/json',
-      ...this.customHeaders,
-      ...(token && { 'Authorization': `Bearer ${token}` })
-    };
-  }
+    // Response interceptor
+    this.api.interceptors.response.use(
+      (response) => {
+        console.log('✅ API Response:', {
+          status: response.status,
+          url: response.config.url,
+          data: response.data
+        });
+        return response;
+      },
+      (error) => {
+        console.error('❌ Response interceptor error:', {
+          status: error.response?.status,
+          url: error.config?.url,
+          message: error.message,
+          data: error.response?.data
+        });
 
-  // Generic request method
-  async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`;
-    const config = {
-      headers: this.getHeaders(),
-      ...options
-    };
-
-    try {
-      console.log(`API Request: ${config.method || 'GET'} ${url}`);
-
-      const response = await fetch(url, config);
-
-      // Handle HTTP errors
-      if (!response.ok) {
-        let errorMessage = `HTTP error! status: ${response.status}`;
-
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch (jsonError) {
-          console.warn('Could not parse error response as JSON');
+        if (error.response?.status === 401) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('vervo_auth_token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('vervo_user_data');
+          window.location.href = '/login';
         }
 
-        throw new Error(errorMessage);
+        return Promise.reject(error);
       }
+    );
+  }
 
-      // Return response data
-      const data = await response.json();
-      console.log(`API Response: ${config.method || 'GET'} ${url} - Success`);
-      return data;
-
+  // Generic methods
+  async get(endpoint, params = {}) {
+    try {
+      const response = await this.api.get(endpoint, { params });
+      return response.data;
     } catch (error) {
-      console.error(`API Request failed: ${config.method || 'GET'} ${url}`, error);
-
-      // Handle different types of errors
-      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-        throw new Error('API sunucusuna bağlanılamıyor. Backend sunucusunun çalıştığından emin olun.');
-      } else if (error.message.includes('ERR_CONNECTION_REFUSED')) {
-        throw new Error('Bağlantı reddedildi. API sunucusu çalışmıyor olabilir.');
-      }
-
+      this.handleError('GET', endpoint, error);
       throw error;
     }
   }
 
-  // HTTP Methods
-  async get(endpoint) {
-    return this.request(endpoint, { method: 'GET' });
+  async post(endpoint, data = {}) {
+    try {
+      const response = await this.api.post(endpoint, data);
+      return response.data;
+    } catch (error) {
+      this.handleError('POST', endpoint, error);
+      throw error;
+    }
   }
 
-  async post(endpoint, data) {
-    return this.request(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-  }
-
-  async put(endpoint, data) {
-    return this.request(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(data)
-    });
+  async put(endpoint, data = {}) {
+    try {
+      const response = await this.api.put(endpoint, data);
+      return response.data;
+    } catch (error) {
+      this.handleError('PUT', endpoint, error);
+      throw error;
+    }
   }
 
   async delete(endpoint) {
-    return this.request(endpoint, { method: 'DELETE' });
+    try {
+      const response = await this.api.delete(endpoint);
+      return response.data;
+    } catch (error) {
+      this.handleError('DELETE', endpoint, error);
+      throw error;
+    }
   }
 
-  // ===== AUTHENTICATION ENDPOINTS =====
+  handleError(method, endpoint, error) {
+    const errorInfo = {
+      method,
+      endpoint,
+      status: error.response?.status,
+      message: error.message,
+      data: error.response?.data
+    };
+    console.error(`❌ ${method} ${endpoint} failed:`, errorInfo);
+  }
 
-  async login(credentials) {
+  // ===== VEHICLES ENDPOINTS - DÜZELTİLMİŞ VERSİYON =====
+
+  async getVehicles(params = {}) {
+    const queryParams = new URLSearchParams();
+
+    // Add filter parameters
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryParams.append(key, params[key]);
+      }
+    });
+
+    const endpoint = queryParams.toString()
+      ? `/Vehicles?${queryParams.toString()}` : '/Vehicles';
+
+    console.log('🚗 API getVehicles endpoint:', `${this.baseURL}${endpoint}`);
+
     try {
-      console.log('API: Login attempt', { email: credentials.email });
+      const response = await this.get(endpoint);
+      console.log('🚗 API getVehicles raw response:', response);
 
-      // Backend Username field'ı bekliyor, email'i username olarak gönder
-      const response = await this.post('/Auth/login', {
-        username: credentials.email,  // email'i username olarak gönder
-        password: credentials.password
+      // ÖNEMLİ: Backend response formatını kontrol et ve düzelt
+      let mappedResponse;
+
+      if (Array.isArray(response)) {
+        // Backend direkt Array dönüyorsa (şu anki durum)
+        console.log('📋 Backend returned direct array, mapping to expected format');
+        mappedResponse = {
+          data: response,
+          totalCount: response.length,
+          page: 1,
+          pageSize: response.length,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false
+        };
+      } else if (response && typeof response === 'object') {
+        // Backend object dönüyorsa
+        mappedResponse = {
+          data: response.data || response.Data || response.vehicles || response.Vehicles || response.items || [],
+          totalCount: response.totalCount || response.TotalCount || response.total || 0,
+          page: response.page || response.Page || 1,
+          pageSize: response.pageSize || response.PageSize || 10,
+          totalPages: response.totalPages || response.TotalPages || 0,
+          hasNextPage: response.hasNextPage || response.HasNextPage || false,
+          hasPreviousPage: response.hasPreviousPage || response.HasPreviousPage || false
+        };
+      } else {
+        // Beklenmeyen format
+        console.warn('⚠️ Unexpected response format, returning empty result');
+        mappedResponse = {
+          data: [],
+          totalCount: 0,
+          page: 1,
+          pageSize: 10,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPreviousPage: false
+        };
+      }
+
+      console.log('✅ API getVehicles mapped response:', {
+        ...mappedResponse,
+        vehiclesCount: mappedResponse.data?.length,
+        firstVehicle: mappedResponse.data?.[0],
+        sampleVehicles: mappedResponse.data?.slice(0, 2)
       });
 
-      return {
-        success: true,
-        token: response.token,
-        user: response.user
-      };
-
+      return mappedResponse;
     } catch (error) {
-      console.error('API: Login failed', error);
-      throw new Error(error.message || 'Giriş işlemi başarısız');
+      console.error('❌ API getVehicles error:', error);
+      throw error;
     }
   }
 
-  async register(userData) {
+  async getVehicle(id) {
+    if (!id) {
+      throw new Error('Vehicle ID is required');
+    }
+    return this.get(`/Vehicles/${id}`);
+  }
+
+  async createVehicle(vehicleData) {
+    if (!vehicleData) {
+      throw new Error('Vehicle data is required');
+    }
+    return this.post('/Vehicles', vehicleData);
+  }
+
+  async updateVehicle(id, vehicleData) {
+    if (!id) {
+      throw new Error('Vehicle ID is required');
+    }
+    if (!vehicleData) {
+      throw new Error('Vehicle data is required');
+    }
+
+    console.log('🔄 API updateVehicle call:', { id, vehicleData });
+
     try {
-      const response = await this.post('/Auth/register', userData);
-      return {
-        success: true,
-        token: response.token,
-        user: response.user
-      };
+      const response = await this.put(`/Vehicles/${id}`, vehicleData);
+      console.log('✅ API updateVehicle raw response:', response);
+
+      return response;
     } catch (error) {
-      console.error('API: Registration failed', error);
-      throw new Error(error.message || 'Kayıt işlemi başarısız');
+      console.error('❌ API updateVehicle error:', error);
+      throw error;
     }
   }
 
-  async logout() {
-    try {
-      // Clear local storage
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-
-      console.log('API: Logout successful');
-      return { success: true };
-    } catch (error) {
-      console.error('API: Logout error', error);
-      // Still clear local storage even if API call fails
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      return { success: true };
+  async deleteVehicle(id) {
+    if (!id) {
+      throw new Error('Vehicle ID is required');
     }
+    return this.delete(`/Vehicles/${id}`);
   }
 
-  async refreshToken() {
-    try {
-      const response = await this.post('/Auth/refresh');
-      return {
-        success: true,
-        token: response.token,
-        user: response.user
-      };
-    } catch (error) {
-      console.error('API: Token refresh failed', error);
-      return {
-        success: false,
-        error: error.message || 'Token yenileme başarısız'
-      };
-    }
+  async getVehicleStats() {
+    return this.get('/Vehicles/stats');
   }
 
-  async forgotPassword(email) {
-    try {
-      await this.post('/Auth/forgot-password', { email });
-      return { success: true };
-    } catch (error) {
-      throw new Error(error.message || 'Şifre sıfırlama isteği gönderilemedi');
-    }
+  async exportVehicles(filters = {}) {
+    const queryParams = new URLSearchParams();
+
+    // Add filter parameters
+    Object.keys(filters).forEach(key => {
+      if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
+        queryParams.append(key, filters[key]);
+      }
+    });
+
+    const endpoint = queryParams.toString() ?
+      `/Vehicles/export?${queryParams.toString()}` : '/Vehicles/export';
+
+    return this.get(endpoint);
   }
 
-  async resetPassword(token, newPassword) {
-    try {
-      await this.post('/Auth/reset-password', {
-        token,
-        password: newPassword
-      });
-      return { success: true };
-    } catch (error) {
-      throw new Error(error.message || 'Şifre sıfırlama başarısız');
-    }
-  }
-
-  async verifyToken() {
-    try {
-      const response = await this.post('/Auth/verify');
-      return {
-        success: true,
-        user: response.user
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.message || 'Token doğrulama başarısız'
-      };
-    }
-  }
-
-  // ===== VISITORS ENDPOINTS =====
+  // ===== VISITORS ENDPOINTS - ORİJİNAL FORMAT GERİ YÜKLENDİ =====
 
   async getVisitors(params = {}) {
     const queryParams = new URLSearchParams();
 
-    // Add filter parameters
     Object.keys(params).forEach(key => {
       if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
         queryParams.append(key, params[key]);
@@ -222,7 +278,7 @@ class ApiService {
       const response = await this.get(endpoint);
       console.log('API getVisitors raw response:', response);
 
-      // Backend response format mapping
+      // Backend response format mapping for visitors - ORİJİNAL FORMAT
       const mappedResponse = {
         visitors: response.visitors || response.Visitors || [],
         totalCount: response.totalCount || response.TotalCount || 0,
@@ -232,6 +288,12 @@ class ApiService {
         hasNextPage: response.hasNextPage || response.HasNextPage || false,
         hasPreviousPage: response.hasPreviousPage || response.HasPreviousPage || false
       };
+
+      console.log('API getVisitors mapped response:', {
+        ...mappedResponse,
+        visitorsCount: mappedResponse.visitors?.length,
+        firstVisitor: mappedResponse.visitors?.[0]
+      });
 
       return mappedResponse;
     } catch (error) {
@@ -289,7 +351,6 @@ class ApiService {
   async exportVisitors(filters = {}) {
     const queryParams = new URLSearchParams();
 
-    // Add filter parameters
     Object.keys(filters).forEach(key => {
       if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
         queryParams.append(key, filters[key]);
@@ -302,111 +363,48 @@ class ApiService {
     return this.get(endpoint);
   }
 
-  // ===== VEHICLES ENDPOINTS =====
+  // ===== AUTH ENDPOINTS =====
 
-  async getVehicles(params = {}) {
-    const queryParams = new URLSearchParams();
-
-    // Add filter parameters
-    Object.keys(params).forEach(key => {
-      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
-        queryParams.append(key, params[key]);
+  async login(credentials) {
+    try {
+      const response = await this.post('/auth/login', credentials);
+      
+      if (response.token) {
+        localStorage.setItem('authToken', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
       }
-    });
-
-    const endpoint = queryParams.toString()
-      ? `/Vehicles?${queryParams.toString()}` : '/Vehicles';
-
-    console.log('API getVehicles endpoint:', `${this.baseURL}${endpoint}`);
-
-    try {
-      const response = await this.get(endpoint);
-      console.log('API getVehicles raw response:', response);
-
-      // Backend response format mapping for vehicles
-      const mappedResponse = {
-        data: response.data || response.Data || response.vehicles || response.Vehicles || [],
-        totalCount: response.totalCount || response.TotalCount || 0,
-        page: response.page || response.Page || 1,
-        pageSize: response.pageSize || response.PageSize || 10,
-        totalPages: response.totalPages || response.TotalPages || 0,
-        hasNextPage: response.hasNextPage || response.HasNextPage || false,
-        hasPreviousPage: response.hasPreviousPage || response.HasPreviousPage || false
-      };
-
-      console.log('API getVehicles mapped response:', {
-        ...mappedResponse,
-        vehiclesCount: mappedResponse.data?.length,
-        firstVehicle: mappedResponse.data?.[0]
-      });
-
-      return mappedResponse;
-    } catch (error) {
-      console.error('API getVehicles error:', error);
-      throw error;
-    }
-  }
-
-  async getVehicle(id) {
-    if (!id) {
-      throw new Error('Vehicle ID is required');
-    }
-    return this.get(`/Vehicles/${id}`);
-  }
-
-  async createVehicle(vehicleData) {
-    if (!vehicleData) {
-      throw new Error('Vehicle data is required');
-    }
-    return this.post('/Vehicles', vehicleData);
-  }
-
-  async updateVehicle(id, vehicleData) {
-    if (!id) {
-      throw new Error('Vehicle ID is required');
-    }
-    if (!vehicleData) {
-      throw new Error('Vehicle data is required');
-    }
-
-    console.log('API updateVehicle call:', { id, vehicleData });
-
-    try {
-      const response = await this.put(`/Vehicles/${id}`, vehicleData);
-      console.log('API updateVehicle raw response:', response);
-
+      
       return response;
     } catch (error) {
-      console.error('API updateVehicle error:', error);
+      console.error('Login error:', error);
       throw error;
     }
   }
 
-  async deleteVehicle(id) {
-    if (!id) {
-      throw new Error('Vehicle ID is required');
+  async logout() {
+    try {
+      await this.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
     }
-    return this.delete(`/Vehicles/${id}`);
   }
 
-  async getVehicleStats() {
-    return this.get('/Vehicles/stats');
-  }
-
-  async exportVehicles(filters = {}) {
-    const queryParams = new URLSearchParams();
-
-    // Add filter parameters
-    Object.keys(filters).forEach(key => {
-      if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
-        queryParams.append(key, filters[key]);
+  async refreshToken() {
+    try {
+      const response = await this.post('/auth/refresh');
+      
+      if (response.token) {
+        localStorage.setItem('authToken', response.token);
       }
-    });
-
-    const endpoint = queryParams.toString() ?
-      `/Vehicles/export?${queryParams.toString()}` : '/Vehicles/export';
-
-    return this.get(endpoint);
+      
+      return response;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      throw error;
+    }
   }
 }
 
