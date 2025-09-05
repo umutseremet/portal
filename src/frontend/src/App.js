@@ -1,4 +1,4 @@
-// src/frontend/src/App.js - UPDATED with Vehicle Routes
+// src/frontend/src/App.js
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
