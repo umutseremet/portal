@@ -1,328 +1,314 @@
 // src/frontend/src/pages/VehiclesPage.js
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import VehiclesList from '../components/Vehicles/VehiclesList';
-import VehicleDetail from '../components/Vehicles/VehicleDetail';
-import VehicleForm from '../components/Vehicles/VehicleForm';
+import VehicleModal from '../components/Vehicles/VehicleModal';
+import VehicleDetailModal from '../components/Vehicles/VehicleDetailModal';
 import DeleteConfirmModal from '../components/common/DeleteConfirmModal';
-import { vehicleService } from '../services/vehicleService';
-import { showAlert } from '../utils/alertUtils';
+import { useVehicles } from '../hooks/useVehicles';
 
 const VehiclesPage = () => {
-  // State management
-  const [vehicles, setVehicles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [selectedVehicles, setSelectedVehicles] = useState([]);
-  const [currentView, setCurrentView] = useState('list'); // 'list', 'detail', 'create', 'edit'
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
-  
-  // Pagination and filtering
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    pageSize: 10,
-    totalCount: 0,
-    totalPages: 0
-  });
-  
-  const [filters, setFilters] = useState({
-    search: '',
-    brand: '',
-    companyName: '',
-    ownershipType: '',
-    licensePlate: ''
-  });
-  
-  const [sorting, setSorting] = useState({
-    field: 'createdAt',
-    direction: 'desc'
-  });
+  // Use the vehicles hook
+  const {
+    // Data
+    vehicles,
+    filters,
+    pagination,
+    selectedVehicles,
+
+    // State
+    loading,
+    error,
+    isEmpty,
+    hasFilters,
+    selectedCount,
+    isAllSelected,
+    filterSummary,
+
+    // Actions
+    loadVehicles,
+    createVehicle,
+    updateVehicle,
+    deleteVehicle,
+    exportVehicles,
+    updateFilters,
+    resetFilters,
+    goToPage,
+    selectVehicle,
+    selectAllVehicles,
+    clearSelection,
+    deleteSelectedVehicles,
+    clearError
+  } = useVehicles();
 
   // Modal states
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [vehicleToDelete, setVehicleToDelete] = useState(null);
+  const [showNewVehicleModal, setShowNewVehicleModal] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState(null);
+  const [viewingVehicle, setViewingVehicle] = useState(null);
 
-  // Load vehicles on component mount and when dependencies change
-  useEffect(() => {
-    loadVehicles();
-  }, [pagination.currentPage, pagination.pageSize, filters, sorting]);
-
-  /**
-   * Load vehicles from API
-   */
-  const loadVehicles = async () => {
-    setLoading(true);
-    setError(null);
-    
+  // Handle sort
+  const handleSort = (column, order) => {
     try {
-      const params = {
-        page: pagination.currentPage,
-        pageSize: pagination.pageSize,
+      console.log('Sorting by:', column, order);
+      updateFilters({
         ...filters,
-        sortBy: sorting.field,
-        sortDirection: sorting.direction
-      };
-      
-      const response = await vehicleService.getVehicles(params);
-      
-      setVehicles(response.data);
-      setPagination(prev => ({
-        ...prev,
-        totalCount: response.totalCount,
-        totalPages: response.totalPages
-      }));
-      
+        sortBy: column,
+        sortOrder: order
+      });
     } catch (error) {
-      console.error('Error loading vehicles:', error);
-      setError('Araç verileri yüklenirken hata oluştu.');
-      showAlert('Araç verileri yüklenirken hata oluştu.', 'error');
-    } finally {
-      setLoading(false);
+      console.error('Error sorting:', error);
     }
   };
 
-  /**
-   * Handle page changes
-   */
-  const handlePageChange = (newPage) => {
-    setPagination(prev => ({
-      ...prev,
-      currentPage: newPage
-    }));
+  // Handle page change
+  const handlePageChange = (page) => {
+    try {
+      console.log('Changing page to:', page);
+      goToPage(page);
+    } catch (error) {
+      console.error('Error changing page:', error);
+    }
   };
 
-  /**
-   * Handle filter changes
-   */
+  // Handle filter change
   const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-    setPagination(prev => ({
-      ...prev,
-      currentPage: 1 // Reset to first page when filtering
-    }));
+    try {
+      console.log('Updating filters:', newFilters);
+      updateFilters(newFilters);
+    } catch (error) {
+      console.error('Error updating filters:', error);
+    }
   };
 
-  /**
-   * Handle sorting changes
-   */
-  const handleSortChange = (field, direction) => {
-    setSorting({ field, direction });
+  // Handle vehicle selection
+  const handleVehicleSelect = (vehicleId) => {
+    try {
+      selectVehicle(vehicleId);
+    } catch (error) {
+      console.error('Error selecting vehicle:', error);
+    }
   };
 
-  /**
-   * Handle vehicle selection
-   */
-  const handleVehicleSelect = (vehicleId, isSelected) => {
-    setSelectedVehicles(prev => 
-      isSelected 
-        ? [...prev, vehicleId]
-        : prev.filter(id => id !== vehicleId)
-    );
-  };
-
-  /**
-   * Handle select all vehicles
-   */
+  // Handle select all
   const handleSelectAll = (isSelected) => {
-    setSelectedVehicles(isSelected ? vehicles.map(v => v.id) : []);
+    try {
+      if (isSelected) {
+        selectAllVehicles();
+      } else {
+        clearSelection();
+      }
+    } catch (error) {
+      console.error('Error selecting all vehicles:', error);
+    }
   };
 
-  /**
-   * Clear selection
-   */
+  // Handle clear selection
   const handleClearSelection = () => {
-    setSelectedVehicles([]);
+    try {
+      clearSelection();
+    } catch (error) {
+      console.error('Error clearing selection:', error);
+    }
   };
 
-  /**
-   * View vehicle details
-   */
+  // Handle view vehicle
   const handleViewVehicle = (vehicle) => {
-    setSelectedVehicle(vehicle);
-    setCurrentView('detail');
+    try {
+      setViewingVehicle(vehicle);
+    } catch (error) {
+      console.error('Error viewing vehicle:', error);
+    }
   };
 
-  /**
-   * Edit vehicle
-   */
+  // Handle edit vehicle
   const handleEditVehicle = (vehicle) => {
-    setSelectedVehicle(vehicle);
-    setCurrentView('edit');
+    try {
+      setEditingVehicle(vehicle);
+      setShowNewVehicleModal(true);
+    } catch (error) {
+      console.error('Error editing vehicle:', error);
+    }
   };
 
-  /**
-   * Create new vehicle
-   */
-  const handleCreateVehicle = () => {
-    setSelectedVehicle(null);
-    setCurrentView('create');
+  // Handle delete vehicle
+  const handleDeleteVehicle = async (vehicle) => {
+    if (window.confirm(`${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate}) aracını silmek istediğinizden emin misiniz?`)) {
+      try {
+        await deleteVehicle(vehicle.id);
+        console.log('Vehicle deleted successfully');
+      } catch (error) {
+        console.error('Failed to delete vehicle:', error);
+      }
+    }
   };
 
-  /**
-   * Delete single vehicle
-   */
-  const handleDeleteVehicle = (vehicle) => {
-    setVehicleToDelete(vehicle);
-    setShowDeleteModal(true);
-  };
-
-  /**
-   * Bulk delete vehicles
-   */
+  // Handle bulk delete
   const handleBulkDelete = async () => {
     if (selectedVehicles.length === 0) return;
     
-    try {
-      await vehicleService.deleteMultipleVehicles(selectedVehicles);
-      showAlert(`${selectedVehicles.length} araç başarıyla silindi.`, 'success');
-      setSelectedVehicles([]);
-      loadVehicles(); // Reload the list
-    } catch (error) {
-      console.error('Error bulk deleting vehicles:', error);
-      showAlert('Araçlar silinirken hata oluştu.', 'error');
-    }
-  };
-
-  /**
-   * Confirm delete vehicle
-   */
-  const confirmDeleteVehicle = async () => {
-    if (!vehicleToDelete) return;
-    
-    try {
-      await vehicleService.deleteVehicle(vehicleToDelete.id);
-      showAlert('Araç başarıyla silindi.', 'success');
-      setShowDeleteModal(false);
-      setVehicleToDelete(null);
-      loadVehicles(); // Reload the list
-    } catch (error) {
-      console.error('Error deleting vehicle:', error);
-      showAlert('Araç silinirken hata oluştu.', 'error');
-    }
-  };
-
-  /**
-   * Handle vehicle form submission (create/edit)
-   */
-  const handleVehicleFormSubmit = async (vehicleData) => {
-    try {
-      if (currentView === 'create') {
-        await vehicleService.createVehicle(vehicleData);
-        showAlert('Araç başarıyla eklendi.', 'success');
-      } else if (currentView === 'edit') {
-        await vehicleService.updateVehicle(selectedVehicle.id, vehicleData);
-        showAlert('Araç başarıyla güncellendi.', 'success');
+    if (window.confirm(`${selectedCount} aracı silmek istediğinizden emin misiniz?`)) {
+      try {
+        await deleteSelectedVehicles();
+        console.log('Bulk delete completed');
+      } catch (error) {
+        console.error('Bulk delete failed:', error);
       }
-      
-      setCurrentView('list');
-      setSelectedVehicle(null);
-      loadVehicles(); // Reload the list
-    } catch (error) {
-      console.error('Error saving vehicle:', error);
-      showAlert('Araç kaydedilirken hata oluştu.', 'error');
     }
   };
 
-  /**
-   * Go back to list view
-   */
-  const handleBackToList = () => {
-    setCurrentView('list');
-    setSelectedVehicle(null);
+  // Handle save vehicle (create/edit)
+  const handleSaveVehicle = async (vehicleData) => {
+    try {
+      console.log('Saving vehicle:', { editingVehicle, vehicleData });
+
+      if (editingVehicle) {
+        // Update
+        const result = await updateVehicle(editingVehicle.id, vehicleData);
+        console.log('Update result:', result);
+
+        if (result.success) {
+          console.log('✅ Vehicle updated successfully');
+          handleCloseModal();
+        }
+      } else {
+        // Create
+        const result = await createVehicle(vehicleData);
+        console.log('Create result:', result);
+
+        if (result.success) {
+          console.log('✅ Vehicle created successfully');
+          handleCloseModal();
+        }
+      }
+    } catch (error) {
+      console.error('❌ Save vehicle failed:', error);
+      throw error; // Re-throw to let modal handle the error
+    }
   };
 
-  // Render different views based on current view state
-  if (currentView === 'detail' && selectedVehicle) {
-    return (
-      <VehicleDetail
-        vehicle={selectedVehicle}
-        onBack={handleBackToList}
-        onEdit={() => handleEditVehicle(selectedVehicle)}
-        onDelete={() => handleDeleteVehicle(selectedVehicle)}
-      />
-    );
-  }
+  // Handle export
+  const handleExport = () => {
+    exportVehicles();
+  };
 
-  if (currentView === 'create' || currentView === 'edit') {
-    return (
-      <VehicleForm
-        vehicle={currentView === 'edit' ? selectedVehicle : null}
-        onSubmit={handleVehicleFormSubmit}
-        onCancel={handleBackToList}
-        isEditing={currentView === 'edit'}
-      />
-    );
-  }
+  // Handle close modal
+  const handleCloseModal = () => {
+    console.log('Closing modal');
+    setShowNewVehicleModal(false);
+    setEditingVehicle(null);
+  };
 
-  // Default list view
+  const handleCloseDetailModal = () => {
+    setViewingVehicle(null);
+  };
+
+  // Handle delete from detail modal
+  const handleDeleteFromDetail = async (vehicle) => {
+    try {
+      await deleteVehicle(vehicle.id);
+      console.log('Vehicle deleted successfully from detail modal');
+      handleCloseDetailModal(); // Close detail modal after delete
+    } catch (error) {
+      console.error('Failed to delete vehicle from detail modal:', error);
+    }
+  };
+
+  // Handle edit from detail modal
+  const handleEditFromDetail = (vehicle) => {
+    setViewingVehicle(null); // Close detail modal
+    setEditingVehicle(vehicle);
+    setShowNewVehicleModal(true); // Open edit modal
+  };
+
   return (
-    <div className="vehicles-page">
-      {/* Page Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h1 className="h3 text-gray-800">Araç Takip</h1>
-          <p className="text-muted mb-0">
-            Araç filosunu yönetin, detayları görüntüleyin ve takip edin
-          </p>
+    <div className="dashboard-page">
+      <div className="container-fluid">
+        {/* Page Header - Visitors benzeri */}
+        <div className="row mb-4">
+          <div className="col-12">
+            <div className="page-header">
+              <h2 className="page-title mb-2">Araçlar</h2>
+              <p className="page-subtitle text-muted">
+                Tüm araç kayıtlarını görüntüleyin ve yönetin
+              </p>
+            </div>
+          </div>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={handleCreateVehicle}
-          disabled={loading}
-        >
-          <i className="bi bi-plus-circle me-2"></i>
-          Yeni Araç Ekle
-        </button>
+
+        {/* Error Display - Visitors benzeri */}
+        {error && (
+          <div className="row mb-4">
+            <div className="col-12">
+              <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Hata!</strong> {error}
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={clearError}
+                ></button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Vehicles List - Visitors benzeri */}
+        <div className="row">
+          <div className="col-12">
+            <div className="card h-100">
+              <div className="card-body p-0">
+                <VehiclesList
+                  vehicles={vehicles}
+                  loading={loading}
+                  pagination={pagination}
+                  filters={filters}
+                  sorting={{ field: filters.sortBy, direction: filters.sortOrder }}
+                  selectedVehicles={selectedVehicles}
+                  onPageChange={handlePageChange}
+                  onFilterChange={handleFilterChange}
+                  onSort={handleSort}
+                  onSelectVisitor={handleVehicleSelect}
+                  onSelectAll={handleSelectAll}
+                  onClearSelection={handleClearSelection}
+                  onViewVisitor={handleViewVehicle}
+                  onEditVisitor={handleEditVehicle}
+                  onDeleteVisitor={handleDeleteVehicle}
+                  onBulkDelete={handleBulkDelete}
+                  onNewVisitor={() => setShowNewVehicleModal(true)}
+                  onExport={handleExport}
+                  onResetFilters={resetFilters}
+                  hasFilters={hasFilters}
+                  isEmpty={isEmpty}
+                  selectedCount={selectedCount}
+                  isAllSelected={isAllSelected}
+                  filterSummary={filterSummary}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modals */}
+        
+        {/* New/Edit Vehicle Modal */}
+        <VehicleModal
+          show={showNewVehicleModal}
+          onHide={handleCloseModal}
+          onSave={handleSaveVehicle}
+          vehicle={editingVehicle}
+          loading={loading}
+        />
+
+        {/* Vehicle Detail Modal */}
+        <VehicleDetailModal
+          show={!!viewingVehicle}
+          onHide={handleCloseDetailModal}
+          vehicle={viewingVehicle}
+          onEdit={handleEditFromDetail}
+          onDelete={handleDeleteFromDetail}
+          loading={loading}
+        />
       </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          <i className="bi bi-exclamation-triangle me-2"></i>
-          {error}
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setError(null)}
-          ></button>
-        </div>
-      )}
-
-      {/* Vehicles List */}
-      <VehiclesList
-        vehicles={vehicles}
-        loading={loading}
-        pagination={pagination}
-        filters={filters}
-        sorting={sorting}
-        selectedVehicles={selectedVehicles}
-        onPageChange={handlePageChange}
-        onFilterChange={handleFilterChange}
-        onSortChange={handleSortChange}
-        onVehicleSelect={handleVehicleSelect}
-        onSelectAll={handleSelectAll}
-        onClearSelection={handleClearSelection}
-        onViewVehicle={handleViewVehicle}
-        onEditVehicle={handleEditVehicle}
-        onDeleteVehicle={handleDeleteVehicle}
-        onBulkDelete={handleBulkDelete}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmModal
-        show={showDeleteModal}
-        title="Araç Sil"
-        message={
-          vehicleToDelete
-            ? `"${vehicleToDelete.brand} ${vehicleToDelete.model} (${vehicleToDelete.licensePlate})" aracını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`
-            : ''
-        }
-        onConfirm={confirmDeleteVehicle}
-        onCancel={() => {
-          setShowDeleteModal(false);
-          setVehicleToDelete(null);
-        }}
-        loading={loading}
-      />
     </div>
   );
 };

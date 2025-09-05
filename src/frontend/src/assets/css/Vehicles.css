@@ -1,1629 +1,583 @@
-/* src/frontend/assets/css/vehicles.css */
-/* Araç Takip Modülü Stilleri */
+/* src/frontend/src/assets/css/Vehicles.css */
+/* Vehicles Page Styles - Visitors benzeri tasarım */
 
 /* ==========================================================================
-   TIMELINE STYLES
+   MAIN LAYOUT & COLORS (Visitors benzeri)
    ========================================================================== */
-.timeline {
-  position: relative;
-  padding-left: 2rem;
+
+.vehicles-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding: 1.5rem;
 }
 
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 15px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: linear-gradient(to bottom, #FF6B6B, #FF8E53);
-  border-radius: 1px;
-}
-
-.timeline-item {
-  position: relative;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-}
-
-.timeline-item:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: -2rem;
-  right: 0;
-  height: 1px;
-  background: #e9ecef;
-}
-
-.timeline-marker {
-  position: absolute;
-  left: -2.5rem;
-  top: 0.5rem;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.timeline-marker.bg-primary {
-  background-color: #FF6B6B;
-}
-
-.timeline-marker.bg-success {
-  background-color: #28a745;
-}
-
-.timeline-marker.bg-warning {
-  background-color: #ffc107;
-}
-
-.timeline-marker.bg-danger {
-  background-color: #dc3545;
-}
-
-.timeline-content {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 8px;
-  border-left: 3px solid #FF6B6B;
-  transition: all 0.3s ease;
-}
-
-.timeline-content:hover {
-  background: #f1f3f4;
-  border-left-color: #FF8E53;
-}
-
-/* ==========================================================================
-   VEHICLE IMAGE STYLES
-   ========================================================================== */
-.vehicle-image-container {
-  position: relative;
-  overflow: hidden;
-  border-radius: 8px;
-  background: #f8f9fa;
-}
-
-.vehicle-image-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.vehicle-image-container:hover .vehicle-image-overlay {
-  opacity: 1;
-}
-
-.vehicle-image-overlay .btn {
-  margin: 0 0.25rem;
-  backdrop-filter: blur(5px);
-}
-
-.vehicle-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  min-height: 60px;
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-  color: #6c757d;
-  font-size: 1.5rem;
-}
-
-/* ==========================================================================
-   SERVICE ALERT BADGES
-   ========================================================================== */
-.service-alert {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  z-index: 10;
-}
-
-.service-alert .badge {
-  margin-left: 0.25rem;
-  font-size: 0.65rem;
-  padding: 0.35em 0.65em;
-  border-radius: 0.375rem;
-}
-
-.service-alert-pulse {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-/* ==========================================================================
-   VEHICLE FORM STYLES
-   ========================================================================== */
-.vehicle-form .card {
+.vehicles-page .card {
   border: none;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   border-radius: 12px;
-  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  background: white;
 }
 
-.vehicle-form .card-header {
-  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+/* ==========================================================================
+   BUTTONS & COLORS (Visitors renk paleti)
+   ========================================================================== */
+
+/* Primary buttons - Visitors benzeri kırmızı tonları */
+.vehicles-page .btn-primary {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  border: none;
   color: white;
-  border-bottom: none;
-  padding: 1.25rem 1.5rem;
-}
-
-.vehicle-form .card-header h5 {
-  margin: 0;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-}
-
-.vehicle-form .card-header i {
-  margin-right: 0.5rem;
-  font-size: 1.1rem;
-}
-
-.vehicle-form .form-label {
-  font-weight: 600;
-  color: #495057;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.vehicle-form .form-control,
-.vehicle-form .form-select {
+  font-weight: 500;
   border-radius: 8px;
-  border: 1px solid #dee2e6;
-  padding: 0.75rem;
-  font-size: 0.95rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
   transition: all 0.3s ease;
 }
 
-.vehicle-form .form-control:focus,
-.vehicle-form .form-select:focus {
-  border-color: #FF6B6B;
-  box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.25);
+.vehicles-page .btn-primary:hover {
+  background: linear-gradient(135deg, #c82333, #a71e2a);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
 
-.vehicle-form .form-control.is-invalid {
-  border-color: #dc3545;
+.vehicles-page .btn-primary:focus {
   box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
 }
 
-.vehicle-form .invalid-feedback {
-  display: block;
-  font-size: 0.825rem;
-  color: #dc3545;
-  margin-top: 0.25rem;
-}
-
-.vehicle-form .btn-primary {
-  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
-  border: none;
-  padding: 0.75rem 2rem;
-  font-weight: 600;
+/* Secondary buttons */
+.vehicles-page .btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: white;
+  font-weight: 500;
   border-radius: 8px;
-  transition: all 0.3s ease;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
 }
 
-.vehicle-form .btn-primary:hover {
-  background: linear-gradient(135deg, #FF8E53, #FF6B6B);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+.vehicles-page .btn-secondary:hover {
+  background-color: #5a6268;
+  border-color: #545b62;
+  transform: translateY(-1px);
 }
 
-.vehicle-form .btn-primary:disabled {
-  background: linear-gradient(135deg, #6c757d, #8e9297);
-  transform: none;
-  box-shadow: none;
-}
-
-.vehicle-form .input-group-text {
-  background: #f8f9fa;
-  border-color: #dee2e6;
+/* Outline buttons */
+.vehicles-page .btn-outline-secondary {
   color: #6c757d;
+  border-color: #6c757d;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.vehicles-page .btn-outline-secondary:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.vehicles-page .btn-outline-success {
+  color: #28a745;
+  border-color: #28a745;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.vehicles-page .btn-outline-success:hover {
+  background-color: #28a745;
+  border-color: #28a745;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.vehicles-page .btn-outline-warning {
+  color: #ffc107;
+  border-color: #ffc107;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.vehicles-page .btn-outline-warning:hover {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+  transform: translateY(-1px);
+}
+
+.vehicles-page .btn-outline-danger {
+  color: #dc3545;
+  border-color: #dc3545;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.vehicles-page .btn-outline-danger:hover {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Small buttons */
+.vehicles-page .btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+/* ==========================================================================
+   PAGE HEADER (Visitors benzeri)
+   ========================================================================== */
+
+.vehicles-page .page-header {
+  margin-bottom: 2rem;
+}
+
+.vehicles-page h1 {
+  color: #495057;
+  font-weight: 600;
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.vehicles-page .text-muted {
+  color: #6c757d !important;
+  font-size: 0.95rem;
+}
+
+.vehicles-page .d-flex.gap-2 {
+  gap: 0.75rem !important;
+}
+
+/* ==========================================================================
+   STATISTICS CARDS (Visitors benzeri)
+   ========================================================================== */
+
+.vehicles-page .statistics-summary .card {
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.vehicles-page .statistics-summary .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.vehicles-page .statistics-summary .card-body {
+  padding: 1.5rem;
+}
+
+.vehicles-page .statistics-summary .display-6 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.vehicles-page .statistics-summary .card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.25rem;
+}
+
+.vehicles-page .statistics-summary .card-text {
+  font-size: 0.875rem;
   font-weight: 500;
 }
 
-/* ==========================================================================
-   FILTER PANEL STYLES
-   ========================================================================== */
-.vehicle-filters {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e9ecef;
+.vehicles-page .statistics-summary .text-primary {
+  color: #dc3545 !important;
 }
 
-.vehicle-filters .form-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #6c757d;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
+.vehicles-page .statistics-summary .text-success {
+  color: #28a745 !important;
 }
 
-.vehicle-filters .form-label i {
-  margin-right: 0.5rem;
-  color: #FF6B6B;
+.vehicles-page .statistics-summary .text-info {
+  color: #17a2b8 !important;
 }
 
-.vehicle-filters .form-control,
-.vehicle-filters .form-select {
-  font-size: 0.875rem;
-  border-radius: 6px;
-  border: 1px solid #dee2e6;
-  padding: 0.5rem 0.75rem;
-  transition: all 0.3s ease;
-}
-
-.vehicle-filters .form-control:focus,
-.vehicle-filters .form-select:focus {
-  border-color: #FF6B6B;
-  box-shadow: 0 0 0 0.15rem rgba(255, 107, 107, 0.15);
-}
-
-.vehicle-filters .form-text {
-  font-size: 0.75rem;
-  color: #8e9297;
-  margin-top: 0.25rem;
-}
-
-.vehicle-filters .form-check {
-  margin-bottom: 0.5rem;
-}
-
-.vehicle-filters .form-check-input:checked {
-  background-color: #FF6B6B;
-  border-color: #FF6B6B;
-}
-
-.vehicle-filters .form-check-label {
-  font-size: 0.85rem;
-  color: #495057;
-  margin-left: 0.25rem;
+.vehicles-page .statistics-summary .text-warning {
+  color: #ffc107 !important;
 }
 
 /* ==========================================================================
-   TABLE ENHANCEMENTS
+   TABLE STYLES (Visitors benzeri)
    ========================================================================== */
-.vehicles-list {
+
+.vehicles-page .table {
   background: white;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-}
-
-.vehicles-list .table {
   margin-bottom: 0;
-  border-collapse: separate;
-  border-spacing: 0;
 }
 
-.vehicles-list .table th {
-  border-top: none;
-  border-bottom: 2px solid #e9ecef;
+.vehicles-page .table thead th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
   font-weight: 600;
   color: #495057;
   font-size: 0.875rem;
   padding: 1rem 0.75rem;
-  background: #f8f9fa;
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 
-.vehicles-list .table td {
-  vertical-align: middle;
-  border-top: 1px solid #f1f3f4;
+.vehicles-page .table tbody td {
   padding: 0.875rem 0.75rem;
-  transition: background-color 0.2s ease;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f3f4;
+  font-size: 0.875rem;
 }
 
-.vehicles-list .table tbody tr {
-  transition: all 0.2s ease;
+.vehicles-page .table tbody tr:hover {
+  background-color: #f8f9fa;
 }
 
-.vehicles-list .table tbody tr:hover {
-  background-color: rgba(255, 107, 107, 0.05);
-  transform: translateX(2px);
-}
-
-.vehicles-list .table tbody tr:hover td {
-  border-top-color: rgba(255, 107, 107, 0.2);
-}
-
-/* Table responsive enhancements */
-.table-responsive {
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-/* ==========================================================================
-   SORT BUTTON STYLES
-   ========================================================================== */
-.btn-link {
+.vehicles-page .table .btn-link {
+  color: #495057;
   text-decoration: none;
-  font-weight: 600;
-  color: #6c757d;
-  transition: all 0.2s ease;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0;
   border: none;
   background: none;
-  padding: 0;
-  display: flex;
-  align-items: center;
 }
 
-.btn-link:hover {
-  color: #FF6B6B;
-  text-decoration: none;
+.vehicles-page .table .btn-link:hover {
+  color: #dc3545;
 }
 
-.btn-link.text-primary {
-  color: #FF6B6B !important;
+.vehicles-page .table .btn-link.text-primary {
+  color: #dc3545 !important;
 }
 
-.btn-link.text-primary i {
-  color: #FF6B6B !important;
-  transition: transform 0.2s ease;
+.vehicles-page .table .fw-bold {
+  font-weight: 600;
 }
 
-.btn-link:hover i {
-  transform: scale(1.1);
-}
-
-.btn-link i {
-  margin-left: 0.5rem;
-  font-size: 0.85rem;
-  opacity: 0.7;
+.vehicles-page .table .fw-medium {
+  font-weight: 500;
 }
 
 /* ==========================================================================
-   BADGE ENHANCEMENTS
+   FORM ELEMENTS (Visitors benzeri)
    ========================================================================== */
-.badge {
+
+.vehicles-page .form-control {
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+}
+
+.vehicles-page .form-control:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.vehicles-page .form-select {
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.vehicles-page .form-select:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.vehicles-page .input-group-text {
+  background-color: #f8f9fa;
+  border-color: #ced4da;
+  color: #6c757d;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   BADGES & STATUS (Visitors benzeri)
+   ========================================================================== */
+
+.vehicles-page .badge {
   font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.4em 0.8em;
+  font-weight: 500;
+  padding: 0.35em 0.65em;
   border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
 }
 
-.badge.bg-info {
-  background-color: #0dcaf0 !important;
-  color: #000 !important;
+.vehicles-page .badge.bg-success {
+  background-color: #28a745 !important;
 }
 
-.badge.bg-primary {
-  background: linear-gradient(135deg, #FF6B6B, #FF8E53) !important;
-  border: none;
-  color: white !important;
-}
-
-.badge.bg-success {
-  background-color: #198754 !important;
-}
-
-.badge.bg-warning {
+.vehicles-page .badge.bg-warning {
   background-color: #ffc107 !important;
-  color: #000 !important;
+  color: #212529 !important;
 }
 
-.badge.bg-danger {
+.vehicles-page .badge.bg-info {
+  background-color: #17a2b8 !important;
+}
+
+.vehicles-page .badge.bg-danger {
   background-color: #dc3545 !important;
 }
 
-.badge.bg-light {
-  background-color: #f8f9fa !important;
-  color: #495057 !important;
-  border: 1px solid #dee2e6;
-}
-
-.badge.bg-secondary {
+.vehicles-page .badge.bg-secondary {
   background-color: #6c757d !important;
 }
 
-/* Animated badges */
-.badge-pulse {
-  animation: badge-pulse 2s infinite;
-}
-
-@keyframes badge-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(255, 107, 107, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
-  }
-}
-
 /* ==========================================================================
-   DROPDOWN MENU ENHANCEMENTS
+   PAGINATION (Visitors benzeri)
    ========================================================================== */
-.dropdown-menu {
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
-  padding: 0.5rem 0;
-  min-width: 180px;
-  z-index: 1050;
-}
 
-.dropdown-item {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-  display: flex;
-  align-items: center;
-}
-
-.dropdown-item i {
-  width: 16px;
-  margin-right: 0.5rem;
-  text-align: center;
-}
-
-.dropdown-item:hover {
-  background-color: rgba(255, 107, 107, 0.1);
-  color: #FF6B6B;
-  transform: translateX(2px);
-}
-
-.dropdown-item.text-danger:hover {
-  background-color: rgba(220, 53, 69, 0.1);
-  color: #dc3545;
-}
-
-.dropdown-divider {
-  border-top: 1px solid #e9ecef;
-  margin: 0.5rem 0;
-}
-
-.dropdown-toggle::after {
-  border: none;
-  content: "\f107";
-  font-family: "Font Awesome 5 Free";
-  font-weight: 900;
-  vertical-align: 0;
-}
-
-.dropdown-toggle:empty::after {
-  margin-left: 0;
-}
-
-/* ==========================================================================
-   PAGE HEADER STYLES
-   ========================================================================== */
-.vehicles-page {
-  padding: 1.5rem 0;
-}
-
-.vehicles-page h1 {
-  color: #2d3748;
-  font-weight: 700;
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-}
-
-.vehicles-page p.text-muted {
-  font-size: 1rem;
-  color: #6c757d !important;
+.vehicles-page .pagination {
   margin-bottom: 0;
 }
 
-.page-header-actions {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.page-header-actions .btn {
-  border-radius: 8px;
-  font-weight: 600;
-  padding: 0.625rem 1.25rem;
-  transition: all 0.3s ease;
-}
-
-.page-header-actions .btn:hover {
-  transform: translateY(-1px);
-}
-
-/* ==========================================================================
-   LOADING SPINNER
-   ========================================================================== */
-.spinner-border-primary {
-  color: #FF6B6B;
-}
-
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 3rem 0;
-  flex-direction: column;
-}
-
-.loading-container .spinner-border {
-  width: 3rem;
-  height: 3rem;
-  margin-bottom: 1rem;
-}
-
-.loading-text {
-  color: #6c757d;
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
-/* ==========================================================================
-   ALERT STYLES
-   ========================================================================== */
-.alert {
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  padding: 1rem 1.25rem;
-  border-left: 4px solid;
-}
-
-.alert i {
-  margin-right: 0.5rem;
-  font-size: 1rem;
-}
-
-.alert-danger {
-  background-color: rgba(220, 53, 69, 0.1);
-  color: #721c24;
-  border-left-color: #dc3545;
-}
-
-.alert-warning {
-  background-color: rgba(255, 193, 7, 0.1);
-  color: #664d03;
-  border-left-color: #ffc107;
-}
-
-.alert-success {
-  background-color: rgba(25, 135, 84, 0.1);
-  color: #0f5132;
-  border-left-color: #198754;
-}
-
-.alert-info {
-  background-color: rgba(13, 202, 240, 0.1);
-  color: #055160;
-  border-left-color: #0dcaf0;
-}
-
-.alert-dismissible .btn-close {
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-}
-
-.alert-dismissible .btn-close:hover {
-  opacity: 1;
-}
-
-/* ==========================================================================
-   VEHICLE DETAIL TABS
-   ========================================================================== */
-.nav-tabs {
-  border-bottom: 2px solid #e9ecef;
-  margin-bottom: 1.5rem;
-}
-
-.nav-tabs .nav-item {
-  margin-bottom: -2px;
-}
-
-.nav-tabs .nav-link {
-  border: none;
-  color: #6c757d;
-  font-weight: 600;
-  padding: 0.75rem 1rem;
-  margin-right: 0.25rem;
-  border-radius: 8px 8px 0 0;
-  transition: all 0.3s ease;
-  background: transparent;
-}
-
-.nav-tabs .nav-link:hover {
-  border: none;
-  color: #FF6B6B;
-  background-color: rgba(255, 107, 107, 0.05);
-  transform: translateY(-2px);
-}
-
-.nav-tabs .nav-link.active {
-  color: #FF6B6B;
-  background-color: #fff;
-  border: none;
-  border-bottom: 2px solid #FF6B6B;
-  transform: translateY(-2px);
-}
-
-.nav-tabs .nav-link i {
-  margin-right: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.tab-content {
-  background: white;
-  border-radius: 0 8px 8px 8px;
-  padding: 1.5rem;
-}
-
-/* ==========================================================================
-   DETAIL TABLE STYLES
-   ========================================================================== */
-.vehicle-detail table.table-borderless {
-  margin-bottom: 0;
-}
-
-.vehicle-detail table.table-borderless td {
-  padding: 0.5rem 0;
-  border: none;
-  vertical-align: top;
-}
-
-.vehicle-detail table.table-borderless td:first-child {
-  width: 35%;
-  color: #6c757d;
-  font-weight: 500;
-  padding-right: 1rem;
-}
-
-.vehicle-detail table.table-borderless td:last-child {
-  font-weight: 500;
+.vehicles-page .pagination .page-link {
   color: #495057;
-}
-
-.vehicle-detail .table-borderless tr:nth-child(even) {
-  background-color: rgba(248, 249, 250, 0.5);
-}
-
-/* ==========================================================================
-   IMAGE UPLOAD AREA
-   ========================================================================== */
-.image-upload-area {
-  border: 2px dashed #dee2e6;
-  border-radius: 8px;
-  padding: 2rem;
-  text-align: center;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  background: #fafbfc;
-}
-
-.image-upload-area:hover {
-  border-color: #FF6B6B;
-  background-color: rgba(255, 107, 107, 0.05);
-  transform: translateY(-2px);
-}
-
-.image-upload-area.dragover {
-  border-color: #FF6B6B;
-  background-color: rgba(255, 107, 107, 0.1);
-  border-style: solid;
-}
-
-.image-upload-area i {
-  font-size: 2rem;
-  color: #FF6B6B;
-  margin-bottom: 0.5rem;
-}
-
-.image-upload-area .upload-text {
-  color: #6c757d;
-  font-weight: 500;
-}
-
-.image-upload-area .upload-hint {
-  color: #8e9297;
-  font-size: 0.85rem;
-  margin-top: 0.5rem;
-}
-
-/* Image preview */
-.image-preview {
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.image-preview img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.image-preview-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.image-preview:hover .image-preview-overlay {
-  opacity: 1;
-}
-
-/* ==========================================================================
-   EMPTY STATE STYLES
-   ========================================================================== */
-.empty-state {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #6c757d;
-}
-
-.empty-state i {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  color: #dee2e6;
-}
-
-.empty-state h5 {
-  color: #8e9297;
-  margin-bottom: 0.5rem;
-}
-
-.empty-state p {
-  color: #adb5bd;
-  margin-bottom: 1.5rem;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* ==========================================================================
-   CUSTOM SCROLLBAR
-   ========================================================================== */
-.sidebar::-webkit-scrollbar,
-.table-responsive::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.sidebar::-webkit-scrollbar-track,
-.table-responsive::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.sidebar::-webkit-scrollbar-thumb,
-.table-responsive::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
-  transition: background 0.3s ease;
-}
-
-.sidebar::-webkit-scrollbar-thumb:hover,
-.table-responsive::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* ==========================================================================
-   ANIMATION CLASSES
-   ========================================================================== */
-.fade-in {
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.slide-down {
-  animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    max-height: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    max-height: 500px;
-    transform: translateY(0);
-  }
-}
-
-.slide-up {
-  animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.zoom-in {
-  animation: zoomIn 0.3s ease-out;
-}
-
-@keyframes zoomIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Hover animations */
-.hover-lift {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* ==========================================================================
-   RESPONSIVE STYLES
-   ========================================================================== */
-@media (max-width: 768px) {
-  /* Timeline responsive */
-  .timeline {
-    padding-left: 1.5rem;
-  }
-  
-  .timeline::before {
-    left: 11px;
-  }
-  
-  .timeline-marker {
-    left: -1.75rem;
-    width: 8px;
-    height: 8px;
-  }
-  
-  .timeline-content {
-    padding: 0.75rem;
-  }
-  
-  /* Form responsive */
-  .vehicle-form .row > .col-md-6,
-  .vehicle-form .row > .col-md-4 {
-    margin-bottom: 0.5rem;
-  }
-  
-  .vehicle-form .card-header {
-    padding: 1rem 1.25rem;
-  }
-  
-  .vehicle-form .card-body {
-    padding: 1.25rem;
-  }
-  
-  /* Table responsive */
-  .vehicles-list .table th,
-  .vehicles-list .table td {
-    padding: 0.5rem 0.375rem;
-    font-size: 0.8rem;
-  }
-  
-  /* Page header responsive */
-  .vehicles-page h1 {
-    font-size: 1.5rem;
-  }
-  
-  .page-header-actions {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-  }
-  
-  .page-header-actions .btn {
-    width: 100%;
-  }
-  
-  /* Filter responsive */
-  .vehicle-filters {
-    padding: 1rem;
-  }
-  
-  .vehicle-filters .col-md-6,
-  .vehicle-filters .col-md-4,
-  .vehicle-filters .col-md-3 {
-    margin-bottom: 1rem;
-  }
-  
-  /* Tab responsive */
-  .nav-tabs .nav-link.active {
-    color: #000 !important;
-    border-bottom-color: #000 !important;
-  }
-  
-  .dropdown-item:hover {
-    background: #000 !important;
-    color: #fff !important;
-  }
-}
-
-/* ==========================================================================
-   REDUCED MOTION SUPPORT
-   ========================================================================== */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-  
-  .fade-in,
-  .slide-down,
-  .slide-up,
-  .zoom-in {
-    animation: none !important;
-  }
-  
-  .hover-lift:hover {
-    transform: none !important;
-  }
-  
-  .service-alert-pulse,
-  .badge-pulse {
-    animation: none !important;
-  }
-}
-
-/* ==========================================================================
-   DARK MODE SUPPORT (Future Enhancement)
-   ========================================================================== */
-@media (prefers-color-scheme: dark) {
-  .vehicles-list,
-  .vehicle-filters,
-  .vehicle-form .card {
-    background: #1a1a1a;
-    color: #ffffff;
-  }
-  
-  .timeline-content {
-    background: #2d2d2d;
-    color: #ffffff;
-  }
-  
-  .vehicle-form .form-control,
-  .vehicle-form .form-select,
-  .vehicle-filters .form-control,
-  .vehicle-filters .form-select {
-    background: #2d2d2d;
-    border-color: #404040;
-    color: #ffffff;
-  }
-  
-  .vehicle-form .form-control:focus,
-  .vehicle-form .form-select:focus,
-  .vehicle-filters .form-control:focus,
-  .vehicle-filters .form-select:focus {
-    background: #2d2d2d;
-    border-color: #FF6B6B;
-    color: #ffffff;
-  }
-  
-  .vehicles-list .table th {
-    background: #2d2d2d;
-    color: #ffffff;
-    border-bottom-color: #404040;
-  }
-  
-  .vehicles-list .table td {
-    border-top-color: #404040;
-    color: #ffffff;
-  }
-  
-  .vehicles-list .table tbody tr:hover {
-    background-color: rgba(255, 107, 107, 0.15);
-  }
-  
-  .dropdown-menu {
-    background: #2d2d2d;
-    border: 1px solid #404040;
-  }
-  
-  .dropdown-item {
-    color: #ffffff;
-  }
-  
-  .dropdown-item:hover {
-    background-color: rgba(255, 107, 107, 0.2);
-    color: #ffffff;
-  }
-  
-  .nav-tabs .nav-link {
-    color: #cccccc;
-  }
-  
-  .tab-content {
-    background: #1a1a1a;
-    color: #ffffff;
-  }
-  
-  .alert-success {
-    background-color: rgba(25, 135, 84, 0.2);
-    color: #75dd88;
-  }
-  
-  .alert-danger {
-    background-color: rgba(220, 53, 69, 0.2);
-    color: #ff6b6b;
-  }
-  
-  .alert-warning {
-    background-color: rgba(255, 193, 7, 0.2);
-    color: #ffed4a;
-  }
-  
-  .alert-info {
-    background-color: rgba(13, 202, 240, 0.2);
-    color: #66d9ef;
-  }
-}
-
-/* ==========================================================================
-   UTILITY CLASSES
-   ========================================================================== */
-.text-vehicle-primary {
-  color: #FF6B6B !important;
-}
-
-.text-vehicle-secondary {
-  color: #FF8E53 !important;
-}
-
-.bg-vehicle-primary {
-  background-color: #FF6B6B !important;
-}
-
-.bg-vehicle-secondary {
-  background-color: #FF8E53 !important;
-}
-
-.border-vehicle-primary {
-  border-color: #FF6B6B !important;
-}
-
-.border-vehicle-secondary {
-  border-color: #FF8E53 !important;
-}
-
-.shadow-vehicle {
-  box-shadow: 0 2px 10px rgba(255, 107, 107, 0.15) !important;
-}
-
-.shadow-vehicle-lg {
-  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.15) !important;
-}
-
-.rounded-vehicle {
-  border-radius: 12px !important;
-}
-
-.rounded-vehicle-sm {
-  border-radius: 8px !important;
-}
-
-.rounded-vehicle-lg {
-  border-radius: 16px !important;
-}
-
-/* Status indicators */
-.status-active {
-  color: #198754;
-}
-
-.status-inactive {
-  color: #6c757d;
-}
-
-.status-warning {
-  color: #f59e0b;
-}
-
-.status-danger {
-  color: #dc3545;
-}
-
-.status-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 0.5rem;
-}
-
-.status-dot.active {
-  background-color: #198754;
-  animation: pulse-green 2s infinite;
-}
-
-.status-dot.inactive {
-  background-color: #6c757d;
-}
-
-.status-dot.warning {
-  background-color: #f59e0b;
-  animation: pulse-yellow 2s infinite;
-}
-
-.status-dot.danger {
-  background-color: #dc3545;
-  animation: pulse-red 2s infinite;
-}
-
-@keyframes pulse-green {
-  0% {
-    box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 8px rgba(25, 135, 84, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(25, 135, 84, 0);
-  }
-}
-
-@keyframes pulse-yellow {
-  0% {
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
-  }
-}
-
-@keyframes pulse-red {
-  0% {
-    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 8px rgba(220, 53, 69, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
-  }
-}
-
-/* Text utilities */
-.text-truncate-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.text-truncate-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.font-weight-medium {
-  font-weight: 500 !important;
-}
-
-.font-weight-semibold {
-  font-weight: 600 !important;
-}
-
-/* Spacing utilities specific to vehicles */
-.p-vehicle {
-  padding: 1.5rem !important;
-}
-
-.m-vehicle {
-  margin: 1.5rem !important;
-}
-
-.gap-vehicle {
-  gap: 1rem !important;
-}
-
-.gap-vehicle-sm {
-  gap: 0.5rem !important;
-}
-
-.gap-vehicle-lg {
-  gap: 1.5rem !important;
-}
-
-/* ==========================================================================
-   COMPONENT SPECIFIC ENHANCEMENTS
-   ========================================================================== */
-
-/* Vehicle card specific */
-.vehicle-card {
-  transition: all 0.3s ease;
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
-  overflow: hidden;
-  background: white;
-}
-
-.vehicle-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  border-color: #FF6B6B;
-}
-
-.vehicle-card .card-header {
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-  border-bottom: 1px solid #dee2e6;
-  padding: 1rem 1.25rem;
-}
-
-.vehicle-card .card-body {
-  padding: 1.25rem;
-}
-
-.vehicle-card .card-footer {
-  background: #f8f9fa;
-  border-top: 1px solid #dee2e6;
-  padding: 0.75rem 1.25rem;
-}
-
-/* Pagination enhancements */
-.pagination {
-  margin: 0;
-}
-
-.pagination .page-item {
-  margin: 0 0.125rem;
-}
-
-.pagination .page-link {
-  border: 1px solid #dee2e6;
-  color: #6c757d;
+  border-color: #dee2e6;
   padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
   border-radius: 6px;
+  margin: 0 2px;
   font-weight: 500;
-  transition: all 0.2s ease;
 }
 
-.pagination .page-link:hover {
-  background-color: #FF6B6B;
-  border-color: #FF6B6B;
-  color: white;
-  transform: translateY(-1px);
+.vehicles-page .pagination .page-link:hover {
+  color: #dc3545;
+  background-color: #f8f9fa;
+  border-color: #dc3545;
 }
 
-.pagination .page-item.active .page-link {
-  background-color: #FF6B6B;
-  border-color: #FF6B6B;
+.vehicles-page .pagination .page-item.active .page-link {
+  background-color: #dc3545;
+  border-color: #dc3545;
   color: white;
 }
 
-.pagination .page-item.disabled .page-link {
+.vehicles-page .pagination .page-item.disabled .page-link {
   background-color: #f8f9fa;
   border-color: #dee2e6;
   color: #adb5bd;
 }
 
-/* Search and filter enhancements */
-.search-box {
-  position: relative;
-}
+/* ==========================================================================
+   DROPDOWN MENUS (Visitors benzeri)
+   ========================================================================== */
 
-.search-box .form-control {
-  padding-left: 2.5rem;
-}
-
-.search-box .search-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #6c757d;
-  pointer-events: none;
-}
-
-.filter-badge {
-  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
-  color: white;
-  border-radius: 12px;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.7rem;
-  font-weight: 600;
+.vehicles-page .dropdown-toggle::after {
   margin-left: 0.5rem;
 }
 
-/* Action buttons */
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
+.vehicles-page .dropdown-menu {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 0;
 }
 
-.action-buttons .btn {
-  padding: 0.375rem 0.75rem;
+.vehicles-page .dropdown-item {
+  padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  border-radius: 6px;
-  font-weight: 500;
+  color: #495057;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
 }
 
-.action-buttons .btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
+.vehicles-page .dropdown-item:hover {
+  background-color: #f8f9fa;
+  color: #495057;
 }
 
-/* Quick stats */
-.quick-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
+.vehicles-page .dropdown-item.text-danger {
+  color: #dc3545 !important;
+}
+
+.vehicles-page .dropdown-item.text-danger:hover {
+  background-color: #f8d7da;
+  color: #721c24 !important;
+}
+
+/* ==========================================================================
+   ALERTS (Visitors benzeri)
+   ========================================================================== */
+
+.vehicles-page .alert {
+  border: none;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.vehicles-page .alert-danger {
+  color: #721c24;
+  background-color: rgba(248, 215, 218, 0.8);
+  border-left: 4px solid #dc3545;
+}
+
+.vehicles-page .alert-success {
+  color: #155724;
+  background-color: rgba(212, 237, 218, 0.8);
+  border-left: 4px solid #28a745;
+}
+
+.vehicles-page .alert-warning {
+  color: #856404;
+  background-color: rgba(255, 243, 205, 0.8);
+  border-left: 4px solid #ffc107;
+}
+
+.vehicles-page .alert-info {
+  color: #0c5460;
+  background-color: rgba(209, 236, 241, 0.8);
+  border-left: 4px solid #17a2b8;
+}
+
+/* ==========================================================================
+   MODALS (Visitors benzeri)
+   ========================================================================== */
+
+.vehicles-page .modal-content {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.vehicles-page .modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  border-radius: 12px 12px 0 0;
+  padding: 1.25rem 1.5rem;
+}
+
+.vehicles-page .modal-title {
+  font-weight: 600;
+  color: #495057;
+  font-size: 1.1rem;
+}
+
+.vehicles-page .modal-body {
+  padding: 1.5rem;
+}
+
+.vehicles-page .modal-footer {
+  border-top: 1px solid #e9ecef;
+  padding: 1rem 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 0 0 12px 12px;
+}
+
+/* ==========================================================================
+   FILTER PANELS (Visitors benzeri)
+   ========================================================================== */
+
+.vehicles-page .filter-panel {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
   margin-bottom: 1.5rem;
 }
 
-.quick-stat {
-  background: white;
-  border-radius: 8px;
-  padding: 1rem;
-  text-align: center;
-  border: 1px solid #e9ecef;
-  transition: all 0.3s ease;
+.vehicles-page .filter-panel .card-body {
+  padding: 1.5rem;
 }
 
-.quick-stat:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.quick-stat .stat-number {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #FF6B6B;
-  margin-bottom: 0.25rem;
-}
-
-.quick-stat .stat-label {
-  font-size: 0.85rem;
-  color: #6c757d;
+.vehicles-page .form-label {
   font-weight: 500;
-}
-
-.quick-stat .stat-icon {
-  font-size: 1.25rem;
-  color: #FF8E53;
+  color: #495057;
   margin-bottom: 0.5rem;
+  font-size: 0.875rem;
 }
 
 /* ==========================================================================
-   FINAL CLEANUP & BROWSER COMPATIBILITY
+   LOADING & EMPTY STATES (Visitors benzeri)
    ========================================================================== */
 
-/* Ensure consistent box-sizing */
-.vehicle-form *,
-.vehicle-filters *,
-.vehicles-list *,
-.vehicle-detail * {
-  box-sizing: border-box;
+.vehicles-page .spinner-border {
+  width: 2rem;
+  height: 2rem;
+  color: #dc3545;
 }
 
-/* Smooth scrolling for in-page navigation */
-html {
-  scroll-behavior: smooth;
+.vehicles-page .empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
 }
 
-/* Focus management for accessibility */
-.vehicle-form .form-control:focus,
-.vehicle-form .form-select:focus,
-.vehicle-filters .form-control:focus,
-.vehicle-filters .form-select:focus {
-  outline: none;
+.vehicles-page .empty-state .display-1 {
+  font-size: 4rem;
+  color: #adb5bd;
+  margin-bottom: 1rem;
 }
 
-/* Prevent layout shift from scrollbars */
-.table-responsive {
-  scrollbar-gutter: stable;
+.vehicles-page .empty-state h4 {
+  color: #6c757d;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
 }
 
-/* Ensure buttons are never too small on touch devices */
-@media (pointer: coarse) {
-  .btn,
-  .dropdown-item,
-  .page-link {
-    min-height: 44px;
-    min-width: 44px;
-  }
+.vehicles-page .empty-state p {
+  color: #adb5bd;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
 }
 
 /* ==========================================================================
-   END OF VEHICLES.CSS
-   ========================================================================== */-tabs .nav-link {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
-  }
-  
-  .tab-content {
+   RESPONSIVE DESIGN (Visitors benzeri)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .vehicles-page {
     padding: 1rem;
   }
   
-  /* Detail table responsive */
-  .vehicle-detail table.table-borderless td:first-child {
-    width: 40%;
-    font-size: 0.85rem;
+  .vehicles-page .d-flex.gap-2 {
+    flex-direction: column;
+    gap: 0.5rem !important;
   }
   
-  .vehicle-detail table.table-borderless td:last-child {
-    font-size: 0.85rem;
+  .vehicles-page .btn {
+    width: 100%;
+    justify-content: center;
   }
-
+  
+  .vehicles-page .statistics-summary .col-md-3 {
+    margin-bottom: 1rem;
+  }
+  
+  .vehicles-page .table-responsive {
+    font-size: 0.8rem;
+  }
+  
+  .vehicles-page .modal-dialog {
+    margin: 0.5rem;
+  }
+}
 
 @media (max-width: 576px) {
-  /* Extra small screens */
-  .vehicles-page {
-    padding: 1rem 0;
+  .vehicles-page h1 {
+    font-size: 1.5rem;
   }
   
-  .vehicle-form .card-header h5 {
-    font-size: 1rem;
-  }
-  
-  .nav-tabs .nav-link {
-    padding: 0.5rem;
+  .vehicles-page .btn {
     font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
   }
   
-  .nav-tabs .nav-link i {
-    display: none;
-  }
-  
-  .dropdown-menu {
-    min-width: 150px;
-  }
-  
-  .dropdown-item {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.8rem;
-  }
-  
-  .badge {
-    font-size: 0.65rem;
-    padding: 0.3em 0.6em;
-  }
-}
-
-/* ==========================================================================
-   PRINT STYLES
-   ========================================================================== */
-@media print {
-  .vehicle-detail .btn,
-  .vehicle-detail .nav-tabs,
-  .page-header-actions,
-  .dropdown {
-    display: none !important;
-  }
-  
-  .vehicle-detail .card {
-    border: none !important;
-    box-shadow: none !important;
-  }
-  
-  .vehicle-detail .card-body {
-    padding: 0 !important;
-  }
-  
-  .nav-tabs + .tab-content {
-    border-radius: 0;
-  }
-  
-  .timeline::before {
-    background: #000;
-  }
-  
-  .timeline-marker {
-    background: #000 !important;
-    border-color: #000;
-  }
-  
-  .alert {
-    border: 1px solid #000;
-    background: none !important;
-    color: #000 !important;
-  }
-  
-  .badge {
-    border: 1px solid #000;
-    background: none !important;
-    color: #000 !important;
-  }
-}
-
-/* ==========================================================================
-   HIGH CONTRAST MODE SUPPORT
-   ========================================================================== */
-@media (prefers-contrast: high) {
-  .timeline::before {
-    background: #000;
-  }
-  
-  .timeline-marker {
-    border-color: #000;
-    background: #fff;
-  }
-  
-  .vehicle-form .form-control:focus,
-  .vehicle-form .form-select:focus {
-    border-color: #000;
-    box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.25);
-  }
-  
-  .btn-primary {
-    background: #000 !important;
-    border-color: #000 !important;
-  }
-  
-  .nav-tabs .nav-link.active {
-    color: #000 !important;
-    border-bottom-color: #000 !important;
-  }
-  
-  .dropdown-item:hover {
-    background: #000 !important;
-    color: #fff !important;
+  .vehicles-page .statistics-summary .display-6 {
+    font-size: 2rem;
   }
 }

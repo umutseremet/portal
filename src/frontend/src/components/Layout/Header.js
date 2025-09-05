@@ -1,211 +1,348 @@
 // src/frontend/src/components/Layout/Header.js
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
-const Header = ({ toggleSidebar, sidebarOpen }) => {
-  const { user, logout, loading } = useAuth();
+const Header = ({ toggleSidebar, sidebarOpen, isMobile }) => {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia('(max-width: 640px)').matches : false
-  );
+  const dropdownRef = useRef(null);
 
-  const triggerRef = useRef(null);
-  const portalRef = useRef(document.createElement('div'));
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 220 });
-
-  // Portal element'i DOM'a ekle
-  useEffect(() => {
-    const el = portalRef.current;
-    el.style.position = 'fixed';
-    el.style.zIndex = '2000';
-    document.body.appendChild(el);
-    return () => { try { document.body.removeChild(el); } catch(_){} };
-  }, []);
-
-  // Ekran boyutu dinleme
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 640px)');
-    const handler = (e) => setIsMobile(e.matches);
-    mq.addEventListener?.('change', handler);
-    return () => mq.removeEventListener?.('change', handler);
-  }, []);
-
-  // Dropdown pozisyonu (masaüstü)
-  const measure = () => {
-    if (!triggerRef.current) return;
-    const r = triggerRef.current.getBoundingClientRect();
-    const menuW = Math.max(220, Math.min(280, window.innerWidth * 0.5));
-    let left = r.right - menuW; // sağa hizala
-    const pad = 8;
-    if (left + menuW > window.innerWidth - pad) left = window.innerWidth - pad - menuW;
-    if (left < pad) left = pad;
-    const top = r.bottom + 8;
-    setPos({ top, left, width: menuW });
+  // Handle hamburger menu click
+  const handleHamburgerClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('🍔 Header: Hamburger clicked, current sidebar state:', sidebarOpen);
+    toggleSidebar();
   };
 
-  useLayoutEffect(() => {
-    if (dropdownOpen && !isMobile) {
-      measure();
-      const onResize = () => measure();
-      window.addEventListener('resize', onResize);
-      window.addEventListener('scroll', onResize, true);
-      return () => {
-        window.removeEventListener('resize', onResize);
-        window.removeEventListener('scroll', onResize, true);
-      };
-    }
-  }, [dropdownOpen, isMobile]);
-
-  // Dış tıklama & ESC
-  useEffect(() => {
-    const onClick = (e) => {
-      if (!dropdownOpen) return;
-      if (triggerRef.current?.contains(e.target)) return;
-      if (portalRef.current?.contains(e.target)) return;
-      setDropdownOpen(false);
-    };
-    const onKey = (e) => {
-      if (e.key === 'Escape') setDropdownOpen(false);
-    };
-    document.addEventListener('click', onClick);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('click', onClick);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [dropdownOpen]);
-
-  // ✅ EKSIK OLAN FONKSIYON: handleToggle
-  const handleToggle = (e) => {
+  // Handle user dropdown toggle
+  const handleDropdownToggle = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     setDropdownOpen(prev => !prev);
   };
 
-  const handleLogout = async () => {
-    try { await logout(); } finally { navigate('/login'); }
+  // Handle logout
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
-  const getUserName = () =>
-    user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` :
-    user?.fullName || user?.username || 'Admin User';
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
 
-  const initials = getUserName().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
-  const hit = { width:44, height:44, minWidth:44, minHeight:44, display:'inline-flex', alignItems:'center', justifyContent:'center', borderRadius:8 };
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user) return 'U';
+    const name = user.fullName || user.name || user.email || 'User';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
 
   return (
-    <nav className="navbar navbar-light header-nav fixed-top" style={{ zIndex: 1040 }}>
-      <div className="container-fluid d-flex justify-content-between align-items-center">
+    <header 
+      className="header-nav navbar navbar-expand-lg"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '80px',
+        zIndex: 1050,
+        backgroundColor: '#ffffff',
+        borderBottom: '1px solid #e9ecef',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.08)',
+        padding: '0'
+      }}
+    >
+      <div 
+        className="container-fluid"
+        style={{
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 1.5rem',
+          justifyContent: 'space-between'
+        }}
+      >
+        {/* Left Side - Hamburger Menu */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <button
+            className="hamburger-menu-btn"
+            onClick={handleHamburgerClick}
+            type="button"
+            aria-label="Toggle sidebar"
+            style={{
+              border: '2px solid #FF6B6B',
+              backgroundColor: 'white',
+              color: '#FF6B6B',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              minWidth: '44px',
+              minHeight: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              outline: 'none',
+              boxShadow: 'none'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#FF6B6B';
+              e.target.style.color = 'white';
+              e.target.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'white';
+              e.target.style.color = '#FF6B6B';
+              e.target.style.transform = 'translateY(0)';
+            }}
+          >
+            <i className="bi bi-list" style={{ fontSize: '1.25rem' }}></i>
+          </button>
 
-        {/* Hamburger */}
-        <button
-          type="button"
-          className="btn d-flex align-items-center justify-content-center me-3"
-          onClick={(e)=>{ e.stopPropagation(); toggleSidebar?.(); }}
-          style={{
-            ...hit,
-            border:'2px solid #FF6B6B',
-            background: sidebarOpen ? '#FF6B6B' : 'white',
-            color: sidebarOpen ? 'white' : '#FF6B6B',
-            fontSize: '1.5rem'
-          }}
-          aria-label={sidebarOpen ? 'Menüyü kapat':'Menüyü aç'}
-          aria-expanded={sidebarOpen}
-          aria-controls="sidebar"
-        >
-          <i className="bi bi-list" />
-        </button>
-
-        {/* Logo & Path */}
-        <div className="d-flex align-items-center flex-grow-1">
-          <i className="bi bi-calendar-event-fill me-2"></i>
-          <h4 className="mb-0 text-dark">vervo</h4>
-          <span className="ms-3 text-muted d-none d-lg-block">/ {location.pathname.replace('/', '')}</span>
+          {/* Portal Title (Desktop Only) */}
+          {!isMobile && (
+            <div style={{ marginLeft: '1rem' }}>
+              <h5 style={{ margin: 0, color: '#212529', fontWeight: '600' }}>
+                Vervo Portal
+              </h5>
+              <small style={{ color: '#6c757d' }}>Yönetim Paneli</small>
+            </div>
+          )}
         </div>
 
-        {/* Sağ Aksiyonlar */}
-        <div className="d-flex align-items-center header-actions">
-          {/* Notification Button */}
-          <button className="btn btn-link notification-btn" style={hit} aria-label="Bildirimler">
-            <i className="bi bi-bell fs-5"></i>
+        {/* Right Side - User Actions */}
+        <div 
+          className="header-actions"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}
+        >
+          {/* Notifications */}
+          <button
+            className="btn btn-link"
+            style={{
+              color: '#6c757d',
+              padding: '8px',
+              borderRadius: '6px',
+              transition: 'all 0.2s ease',
+              minWidth: '44px',
+              minHeight: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: 'none',
+              backgroundColor: 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = 'rgba(108, 117, 125, 0.1)';
+              e.target.style.color = '#495057';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'transparent';
+              e.target.style.color = '#6c757d';
+            }}
+          >
+            <i className="bi bi-bell" style={{ fontSize: '1.1rem' }}></i>
           </button>
-          
-          
 
-          {/* User Avatar & Dropdown */}
-          <div className="user-dropdown">
+          {/* User Dropdown */}
+          <div className="dropdown" ref={dropdownRef}>
             <button
-              ref={triggerRef}
-              type="button"
-              className="btn d-flex align-items-center"
-              onClick={handleToggle} // ✅ handleToggle kullanıyoruz
-              style={{ ...hit, paddingLeft:6, paddingRight:10 }}
-              aria-haspopup="menu"
-              aria-expanded={dropdownOpen}
+              className="btn btn-link dropdown-toggle"
+              onClick={handleDropdownToggle}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '4px 8px',
+                border: 'none',
+                backgroundColor: 'transparent',
+                borderRadius: '8px',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(108, 117, 125, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
             >
-              {/* ✅ Avatar - büyütülmüş boyut ve mesafe */}
-              <div className="avatar avatar-xxl rounded-circle text-white fw-bold d-flex justify-content-center align-items-center user-avatar"
-                   style={{ backgroundColor:'#FF6B6B' }}>
-                {initials}
+              {/* User Avatar */}
+              <div
+                className="user-avatar"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: '#FF6B6B',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '14px',
+                  fontWeight: '600' , textDecoration: 'none'
+                }}
+              >
+                {getUserInitials()}
               </div>
-              <span className="d-none d-sm-block small text-dark ms-2">{getUserName()}</span>
-              <i className={`bi bi-chevron-${dropdownOpen ? 'up' : 'down'} ms-2 text-muted`}></i>
+              
+              {/* User Name (Desktop Only) */}
+              {!isMobile && (
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#212529' }}>
+                    {user?.fullName || user?.name || 'Kullanıcı'}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>
+                    {user?.email || 'user@example.com'}
+                  </div>
+                </div>
+              )}
             </button>
+
+            {/* Dropdown Menu */}
+            {dropdownOpen && (
+              <div
+                className="dropdown-menu show"
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  minWidth: '200px',
+                  backgroundColor: 'white',
+                  border: '1px solid #e9ecef',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  zIndex: 1000,
+                  marginTop: '8px',
+                  padding: '8px 0', 
+                }}
+              >
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #e9ecef' }}>
+                  <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#212529' }}>
+                    {user?.fullName || user?.name || 'Kullanıcı'}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>
+                    {user?.email || 'user@example.com'}
+                  </div>
+                </div>
+                
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    navigate('/profile');
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: '100%',
+                    padding: '8px 16px',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#212529',
+                    fontSize: '0.875rem',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#f8f9fa';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <i className="bi bi-person me-2"></i>
+                  Profil
+                </button>
+                
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    navigate('/settings');
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: '100%',
+                    padding: '8px 16px',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#212529',
+                    fontSize: '0.875rem',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#f8f9fa';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <i className="bi bi-gear me-2"></i>
+                  Ayarlar
+                </button>
+                
+                <hr style={{ margin: '8px 0', border: 'none', borderTop: '1px solid #e9ecef' }} />
+                
+                <button
+                  className="dropdown-item"
+                  onClick={handleLogout}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: '100%',
+                    padding: '8px 16px',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#dc3545',
+                    fontSize: '0.875rem',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#f8f9fa';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <i className="bi bi-box-arrow-right me-2"></i>
+                  Çıkış Yap
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* PORTAL: Dropdown */}
-      {dropdownOpen && createPortal(
-        isMobile ? (
-          // Bottom sheet (mobil)
-          <div
-            role="menu"
-            style={{
-              position:'fixed', left:0, right:0, bottom:0,
-              background:'#fff', borderTopLeftRadius:16, borderTopRightRadius:16,
-              boxShadow:'0 -10px 30px rgba(0,0,0,.08)', padding:'8px 0',
-              zIndex:2000, paddingBottom:'env(safe-area-inset-bottom)'
-            }}
-            onClick={(e)=>e.stopPropagation()}
-          >
-            <div className="dropdown-item px-3 py-2 text-muted">{getUserName()}</div>
-            <hr className="dropdown-divider" />
-            <button className="dropdown-item px-3 py-2">Profilim</button>
-            <hr className="dropdown-divider" />
-            <button className="dropdown-item px-3 py-2 text-danger" onClick={handleLogout} disabled={loading}>
-              {loading ? 'Çıkış yapılıyor…' : 'Çıkış Yap'}
-            </button>
-          </div>
-        ) : (
-          // Masaüstü: sağ üst hizalı açılır menü
-          <div
-            role="menu"
-            style={{
-              position:'fixed',
-              top: pos.top, left: pos.left, width: pos.width,
-              background:'#fff', border:'1px solid #e5e7eb', borderRadius:12,
-              boxShadow:'0 10px 30px rgba(0,0,0,.08)', padding:'6px 0'
-            }}
-            onClick={(e)=>e.stopPropagation()}
-          >
-            <div className="dropdown-item px-3 py-2 text-muted">{getUserName()}</div>
-            <hr className="dropdown-divider" />
-            <button className="dropdown-item px-3 py-2">Profilim</button> 
-            <hr className="dropdown-divider" />
-            <button className="dropdown-item px-3 py-2 text-danger" onClick={handleLogout} disabled={loading}>
-              {loading ? 'Çıkış yapılıyor…' : 'Çıkış Yap'}
-            </button>
-          </div>
-        ),
-        portalRef.current
-      )}
-    </nav>
+    </header>
   );
 };
 

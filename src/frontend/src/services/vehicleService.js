@@ -1,208 +1,228 @@
 // src/frontend/src/services/vehicleService.js
 
-import api from './api';
+import apiService from './api';
 
-/**
- * Vehicle service for API operations
- */
-const vehicleServiceMethods = {
-  /**
-   * Get all vehicles with pagination and filters
-   * @param {Object} params - Query parameters
-   */
+class VehicleService {
+  
+  // Get vehicles with filtering and pagination
   async getVehicles(params = {}) {
     try {
-      const response = await api.get('vehicles', { params });
-      return response.data;
+      // Use the apiService.getVehicles method directly
+      return await apiService.getVehicles(params);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
-      throw new Error('Araç listesi alınamadı');
+      throw new Error(error.message || 'Araç listesi alınırken hata oluştu');
     }
-  },
+  }
 
-  /**
-   * Get single vehicle by ID
-   * @param {string|number} id - Vehicle ID
-   */
+  // Get single vehicle by ID
   async getVehicle(id) {
     try {
-      const response = await api.get(`vehicles/${id}`);
-      return response.data;
+      if (!id) {
+        throw new Error('Araç ID\'si gerekli');
+      }
+
+      return await apiService.getVehicle(id);
     } catch (error) {
       console.error('Error fetching vehicle:', error);
-      
-      if (error.response?.status === 404) {
-        throw new Error('Araç bulunamadı');
-      }
-      
-      throw new Error('Araç bilgileri alınamadı');
+      throw new Error(error.message || 'Araç alınırken hata oluştu');
     }
-  },
+  }
 
-  /**
-   * Create new vehicle
-   * @param {Object} vehicleData - Vehicle data
-   */
+  // Create new vehicle
   async createVehicle(vehicleData) {
     try {
-      const response = await api.post('vehicles', vehicleData);
-      return response.data;
+      // Validate required fields
+      if (!vehicleData.brand || !vehicleData.model || !vehicleData.licensePlate) {
+        throw new Error('Marka, model ve plaka zorunlu alanlar');
+      }
+
+      // Format data to ensure consistency
+      const formattedData = {
+        ...vehicleData,
+        licensePlate: vehicleData.licensePlate?.toUpperCase().trim()
+      };
+
+      return await apiService.createVehicle(formattedData);
     } catch (error) {
       console.error('Error creating vehicle:', error);
-      
-      if (error.response?.status === 409) {
-        throw new Error('Bu plaka numarası zaten kayıtlı');
-      } else if (error.response?.status === 400) {
-        throw new Error('Girilen bilgiler geçersiz');
-      }
-      
-      throw new Error('Araç oluşturulamadı');
+      throw new Error(error.message || 'Araç oluşturulurken hata oluştu');
     }
-  },
+  }
 
-  /**
-   * Update vehicle
-   * @param {string|number} id - Vehicle ID
-   * @param {Object} vehicleData - Updated vehicle data
-   */
+  // Update existing vehicle
   async updateVehicle(id, vehicleData) {
     try {
-      const response = await api.put(`vehicles/${id}`, vehicleData);
-      return response.data;
+      if (!id) {
+        throw new Error('Araç ID\'si gerekli');
+      }
+
+      // Format data to ensure consistency
+      const formattedData = {
+        ...vehicleData
+      };
+
+      if (formattedData.licensePlate) {
+        formattedData.licensePlate = formattedData.licensePlate.toUpperCase().trim();
+      }
+
+      return await apiService.updateVehicle(id, formattedData);
     } catch (error) {
       console.error('Error updating vehicle:', error);
-      
-      if (error.response?.status === 404) {
-        throw new Error('Araç bulunamadı');
-      } else if (error.response?.status === 409) {
-        throw new Error('Bu plaka numarası başka bir araçta kayıtlı');
-      } else if (error.response?.status === 400) {
-        throw new Error('Girilen bilgiler geçersiz');
-      }
-      
-      throw new Error('Araç güncellenemedi');
+      throw new Error(error.message || 'Araç güncellenirken hata oluştu');
     }
-  },
+  }
 
-  /**
-   * Delete vehicle
-   */
+  // Delete vehicle
   async deleteVehicle(id) {
     try {
-      await api.delete(`vehicles/${id}`);
+      if (!id) {
+        throw new Error('Araç ID\'si gerekli');
+      }
+
+      return await apiService.deleteVehicle(id);
     } catch (error) {
       console.error('Error deleting vehicle:', error);
-      
-      if (error.response?.status === 404) {
-        throw new Error('Araç bulunamadı');
-      }
-      
-      throw new Error('Araç silinemedi');
+      throw new Error(error.message || 'Araç silinirken hata oluştu');
     }
-  },
+  }
 
-  /**
-   * Delete multiple vehicles
-   */
+  // Delete multiple vehicles
   async deleteMultipleVehicles(vehicleIds) {
     try {
-      const promises = vehicleIds.map(id => this.deleteVehicle(id));
-      await Promise.all(promises);
+      if (!vehicleIds || vehicleIds.length === 0) {
+        throw new Error('Silinecek araç ID\'leri gerekli');
+      }
+
+      // Delete all vehicles in parallel
+      const deletePromises = vehicleIds.map(id => this.deleteVehicle(id));
+      await Promise.all(deletePromises);
+      
+      return { success: true, deletedCount: vehicleIds.length };
     } catch (error) {
       console.error('Error bulk deleting vehicles:', error);
-      throw new Error('Araçlar silinemedi');
+      throw new Error(error.message || 'Araçlar silinirken hata oluştu');
     }
-  },
+  }
 
-  /**
-   * Get vehicle statistics
-   */
+  // Get vehicle statistics
   async getVehicleStats() {
     try {
-      const response = await api.get('vehicles/stats');
-      return response.data;
+      return await apiService.getVehicleStats();
     } catch (error) {
       console.error('Error fetching vehicle stats:', error);
-      throw new Error('Araç istatistikleri alınamadı');
+      throw new Error(error.message || 'Araç istatistikleri alınırken hata oluştu');
     }
-  },
+  }
 
-  /**
-   * Export vehicles to Excel
-   */
+  // Export vehicles to Excel
   async exportVehicles(params = {}) {
     try {
-      const queryParams = new URLSearchParams();
-      
-      // Add filter params
-      Object.keys(params).forEach(key => {
-        if (params[key]) {
-          queryParams.append(key, params[key]);
-        }
-      });
-      
-      const url = queryParams.toString() ? 
-        `vehicles/export?${queryParams}` : 'vehicles/export';
-      
-      const response = await api.get(url, {
-        responseType: 'blob',
-      });
-      
-      // Create download link
-      const blob = new Blob([response.data], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-      });
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `araclar_${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-      
+      return await apiService.exportVehicles(params);
     } catch (error) {
       console.error('Error exporting vehicles:', error);
-      throw new Error('Araç listesi dışa aktarılamadı');
+      throw new Error(error.message || 'Araç listesi dışa aktarılırken hata oluştu');
     }
-  },
+  }
 
-  /**
-   * Upload vehicle image
-   */
+  // Upload vehicle image
   async uploadVehicleImage(vehicleId, imageFile) {
     try {
+      if (!vehicleId) {
+        throw new Error('Araç ID\'si gerekli');
+      }
+      if (!imageFile) {
+        throw new Error('Resim dosyası gerekli');
+      }
+
       const formData = new FormData();
       formData.append('vehicleImage', imageFile);
 
-      const response = await api.post(`vehicles/${vehicleId}/image`, formData, {
+      // Use fetch directly for file upload
+      const response = await fetch(`${apiService.baseURL}/Vehicles/${vehicleId}/image`, {
+        method: 'POST',
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${apiService.getAuthToken()}`
+          // Don't set Content-Type for FormData, browser will set it automatically
         },
+        body: formData
       });
-      
-      return response.data;
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
     } catch (error) {
       console.error('Error uploading vehicle image:', error);
-      throw new Error('Araç resmi yüklenemedi');
-    }
-  },
-
-  /**
-   * Delete vehicle image
-   */
-  async deleteVehicleImage(vehicleId) {
-    try {
-      await api.delete(`vehicles/${vehicleId}/image`);
-    } catch (error) {
-      console.error('Error deleting vehicle image:', error);
-      throw new Error('Araç resmi silinemedi');
+      throw new Error(error.message || 'Araç resmi yüklenirken hata oluştu');
     }
   }
-};
 
-// Named export
-export const vehicleService = vehicleServiceMethods;
+  // Delete vehicle image
+  async deleteVehicleImage(vehicleId) {
+    try {
+      if (!vehicleId) {
+        throw new Error('Araç ID\'si gerekli');
+      }
 
-// Default export
-export default vehicleServiceMethods;
+      return await apiService.delete(`/Vehicles/${vehicleId}/image`);
+    } catch (error) {
+      console.error('Error deleting vehicle image:', error);
+      throw new Error(error.message || 'Araç resmi silinirken hata oluştu');
+    }
+  }
+
+  // Format date to ensure consistency
+  formatDate(date) {
+    if (!date) return null;
+    
+    const dateObj = date instanceof Date ? date : new Date(date);
+    return dateObj.toISOString().split('T')[0]; // YYYY-MM-DD format
+  }
+
+  // Validate vehicle data
+  validateVehicleData(vehicleData) {
+    const errors = [];
+
+    if (!vehicleData.brand || vehicleData.brand.trim() === '') {
+      errors.push('Marka gerekli');
+    }
+
+    if (!vehicleData.model || vehicleData.model.trim() === '') {
+      errors.push('Model gerekli');
+    }
+
+    if (!vehicleData.licensePlate || vehicleData.licensePlate.trim() === '') {
+      errors.push('Plaka gerekli');
+    }
+
+    // Basic license plate format validation (Turkish format)
+    if (vehicleData.licensePlate) {
+      const plateRegex = /^[0-9]{2}\s?[A-Z]{1,3}\s?[0-9]{1,4}$/i;
+      if (!plateRegex.test(vehicleData.licensePlate.trim())) {
+        errors.push('Geçerli bir plaka formatı giriniz (örn: 34 ABC 123)');
+      }
+    }
+
+    if (vehicleData.year && (vehicleData.year < 1900 || vehicleData.year > new Date().getFullYear() + 1)) {
+      errors.push('Geçerli bir model yılı giriniz');
+    }
+
+    if (vehicleData.mileage && vehicleData.mileage < 0) {
+      errors.push('Kilometre negatif olamaz');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+}
+
+// Create a single instance
+const vehicleService = new VehicleService();
+
+// Export both named and default
+export { vehicleService };
+export default vehicleService;

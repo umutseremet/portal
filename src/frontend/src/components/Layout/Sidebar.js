@@ -1,145 +1,130 @@
-// src/frontend/src/components/Layout/Sidebar.js - UPDATED
+// src/frontend/src/components/Layout/Sidebar.js
 import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const [expandedMenus, setExpandedMenus] = useState({});
+  const location = useLocation();
+  const [expandedGroups, setExpandedGroups] = useState({});
 
+  // Menu items configuration
   const menuItems = [
     {
       id: 'dashboard',
       label: 'Dashboard',
       icon: 'bi-speedometer2',
-      path: '/dashboard',
-      type: 'single'
-    },
-    {
-      id: 'vehicle-tracking',
-      label: 'Araç Takip',
-      icon: 'bi-car-front',
-      path: '/vehicles',
-      type: 'single'
+      path: '/dashboard'
     },
     {
       id: 'production',
       label: 'Üretim',
       icon: 'bi-gear-fill',
-      type: 'group',
       children: [
-        { id: 'bom-transfer', label: 'BOM Listesi Aktarımı', path: '/production/bom-transfer' },
-        { id: 'data-cam', label: 'Data / CAM Hazırlama', path: '/production/data-cam' },
-        { id: 'production-planning', label: 'Üretim Planlama', path: '/production/planning' },
-        { id: 'production-tracking', label: 'Üretim Takip', path: '/production/tracking' },
-        { id: 'reports', label: 'Raporlar', path: '/production/reports' }
+        { id: 'production-overview', label: 'Genel Bakış', path: '/production/overview' },
+        { id: 'production-lines', label: 'Üretim Hatları', path: '/production/lines' },
+        { id: 'production-reports', label: 'Raporlar', path: '/production/reports' }
       ]
     },
     {
-      id: 'other-operations',
-      label: 'Diğer İşlemler',
-      icon: 'bi-three-dots',
-      type: 'group',
-      children: [
-        { id: 'visitors', label: 'Ziyaretçiler', path: '/visitors' }
-      ]
-    }
+      id: 'vehicles',
+      label: 'Araç Takip',
+      icon: 'bi-truck',
+      path: '/vehicles'
+    },
+    {
+      id: 'visitors',
+      label: 'Ziyaretçi Takip',
+      icon: 'bi-people-fill',
+      path: '/visitors'
+    } 
   ];
 
+  // Check if current path is active
+  const isActive = (path) => {
+    return location.pathname === path || 
+           (path !== '/' && location.pathname.startsWith(path));
+  };
+
+  // Handle menu click
   const handleMenuClick = (path, e) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('🔗 Sidebar: Navigating to:', path);
+    
+    // Navigate to the path
     navigate(path);
-    // Mobilde menüden seçim yapınca kapat
+    
+    // Close sidebar on mobile after navigation
     if (isMobile && isOpen) {
-      // küçük bir gecikme ile kapat (routing'in state güncellemesiyle çakışmasın)
-      setTimeout(() => toggleSidebar(), 80);
+      setTimeout(() => toggleSidebar(), 150);
     }
   };
 
-  const toggleSubmenu = (menuId, e) => {
+  // Handle group toggle
+  const handleGroupToggle = (groupId, e) => {
     e.preventDefault();
-    setExpandedMenus(prev => ({
+    e.stopPropagation();
+    
+    setExpandedGroups(prev => ({
       ...prev,
-      [menuId]: !prev[menuId]
+      [groupId]: !prev[groupId]
     }));
   };
 
-  const isActive = (path) => location.pathname === path;
-  const isParentActive = (children) => children.some(child => isActive(child.path));
-
+  // Render menu item
   const renderMenuItem = (item) => {
-    if (item.type === 'single') {
-      return (
-        <button
-          key={item.id}
-          className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
-          onClick={(e) => handleMenuClick(item.path, e)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            width: '100%',
-            padding: '0.75rem 1.5rem',
-            margin: '0 0.5rem 0.25rem 0.5rem',
-            background: isActive(item.path) ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
-            border: 'none',
-            borderRadius: '8px',
-            color: isActive(item.path) ? '#FF6B6B' : '#6c757d',
-            fontSize: '0.95rem',
-            fontWeight: isActive(item.path) ? '600' : '400',
-            textDecoration: 'none',
-            transition: 'all 0.2s ease',
-            textAlign: 'left'
-          }}
-        >
-          <i className={`${item.icon} me-3`} style={{ fontSize: '1.1rem' }}></i>
-          {item.label}
-        </button>
-      );
-    }
-
-    if (item.type === 'group') {
-      const isExpanded = expandedMenus[item.id];
-      const hasActiveChild = isParentActive(item.children);
-
+    // Group item with children
+    if (item.children) {
+      const isExpanded = expandedGroups[item.id];
+      const hasActiveChild = item.children.some(child => isActive(child.path));
+      
       return (
         <div key={item.id} className="nav-group">
           <button
             className={`nav-link nav-group-toggle ${hasActiveChild ? 'active' : ''}`}
-            onClick={(e) => toggleSubmenu(item.id, e)}
+            onClick={(e) => handleGroupToggle(item.id, e)}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               width: '100%',
-              padding: '0.75rem 1.5rem',
-              margin: '0 0.5rem 0.25rem 0.5rem',
+              padding: '0.75rem 1rem',
+              margin: '0.125rem 0.5rem',
               background: hasActiveChild ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
               border: 'none',
               borderRadius: '8px',
               color: hasActiveChild ? '#FF6B6B' : '#6c757d',
-              fontSize: '0.95rem',
-              fontWeight: hasActiveChild ? '600' : '400',
+              fontSize: '0.875rem',
+              fontWeight: hasActiveChild ? '600' : '500',
               textDecoration: 'none',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              textAlign: 'left',
+              cursor: 'pointer'
             }}
           >
-            <div className="d-flex align-items-center">
-              <i className={`${item.icon} me-3`} style={{ fontSize: '1.1rem' }}></i>
-              {item.label}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <i className={`${item.icon} me-3`} style={{ fontSize: '1.1rem', width: '20px' }}></i>
+              <span>{item.label}</span>
             </div>
             <i 
-              className={`bi ${isExpanded ? 'bi-chevron-up' : 'bi-chevron-down'}`}
-              style={{ fontSize: '0.8rem', transition: 'transform 0.2s ease' }}
+              className={`bi ${isExpanded ? 'bi-chevron-down' : 'bi-chevron-right'}`}
+              style={{ 
+                fontSize: '0.75rem',
+                transition: 'transform 0.2s ease',
+                transform: isExpanded ? 'rotate(0deg)' : 'rotate(0deg)'
+              }}
             ></i>
           </button>
           
+          {/* Submenu */}
           <div 
-            className={`nav-submenu ${isExpanded ? 'show' : ''}`}
+            className={`submenu ${isExpanded ? 'expanded' : 'collapsed'}`}
             style={{
-              maxHeight: isExpanded ? `${item.children.length * 50}px` : '0',
+              maxHeight: isExpanded ? `${item.children.length * 45}px` : '0',
               opacity: isExpanded ? '1' : '0',
               overflow: 'hidden',
-              transition: 'all 0.3s ease',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               paddingLeft: '1rem'
             }}
           >
@@ -153,7 +138,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
                   alignItems: 'center',
                   width: '100%',
                   padding: '0.6rem 1.5rem',
-                  margin: '0 0.5rem 0.15rem 0.5rem',
+                  margin: '0.125rem 0.5rem 0.125rem 0.5rem',
                   background: isActive(child.path) ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
                   border: 'none',
                   borderRadius: '6px',
@@ -162,7 +147,8 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
                   fontWeight: isActive(child.path) ? '600' : '400',
                   textDecoration: 'none',
                   transition: 'all 0.2s ease',
-                  textAlign: 'left'
+                  textAlign: 'left',
+                  cursor: 'pointer'
                 }}
               >
                 <i className="bi bi-dot me-2" style={{ fontSize: '1.2rem' }}></i>
@@ -174,111 +160,127 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       );
     }
 
-    return null;
+    // Simple menu item
+    return (
+      <button
+        key={item.id}
+        className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
+        onClick={(e) => handleMenuClick(item.path, e)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          width: '100%',
+          padding: '0.75rem 1rem',
+          margin: '0.125rem 0.5rem',
+          background: isActive(item.path) ? 'rgba(255, 107, 107, 0.1)' : 'transparent',
+          border: 'none',
+          borderRadius: '8px',
+          color: isActive(item.path) ? '#FF6B6B' : '#6c757d',
+          fontSize: '0.875rem',
+          fontWeight: isActive(item.path) ? '600' : '500',
+          textDecoration: 'none',
+          transition: 'all 0.2s ease',
+          textAlign: 'left',
+          cursor: 'pointer'
+        }}
+      >
+        <i className={`${item.icon} me-3`} style={{ fontSize: '1.1rem', width: '20px' }}></i>
+        <span>{item.label}</span>
+      </button>
+    );
   };
 
   return (
     <>
-      {/* Mobile Overlay */}
-      {isMobile && isOpen && (
-        <div 
-          className="sidebar-overlay"
-          onClick={toggleSidebar}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 1040
-          }}
-        />
-      )}
-
       {/* Sidebar */}
       <nav
         className={`sidebar ${isOpen ? 'show' : ''}`}
         style={{
           position: 'fixed',
           top: 0,
-          left: isOpen ? 0 : '-280px',
+          left: isOpen ? '0' : '-280px',
           width: '280px',
           height: '100vh',
           backgroundColor: '#ffffff',
           borderRight: '1px solid #e3e6f0',
-          transition: 'left 0.3s ease',
+          transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           zIndex: 1041,
           overflowY: 'auto',
-          paddingTop: '70px', // Account for fixed header
-          boxShadow: isOpen ? '0 0 20px rgba(0, 0, 0, 0.1)' : 'none'
+          paddingTop: '80px', // Account for fixed header
+          boxShadow: '2px 0 10px rgba(0, 0, 0, 0.1)'
         }}
       >
-        <div className="sidebar-content" style={{ padding: '1rem 0' }}>
-          {/* Logo/Brand Area */}
-          <div 
-            className="sidebar-brand"
-            style={{
-              padding: '0 1.5rem 1rem 1.5rem',
-              borderBottom: '1px solid #e3e6f0',
-              marginBottom: '1rem'
-            }}
-          >
-            <div className="d-flex align-items-center">
-              <div 
-                className="brand-icon"
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: '#FF6B6B',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: '12px'
-                }}
-              >
-                <i className="bi bi-grid-1x2-fill text-white"></i>
-              </div>
-              <div>
-                <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#2d3748' }}>
-                  Vervo Portal
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#8e9297' }}>
-                  Yönetim Paneli
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Navigation Menu */}
-          <div className="nav flex-column">
-            {menuItems.map(renderMenuItem)}
-          </div>
-        </div>
-
-        {/* Sidebar Footer */}
+        {/* Sidebar Header */}
         <div 
-          className="sidebar-footer"
+          className="sidebar-header"
           style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            padding: '1rem 1.5rem',
-            borderTop: '1px solid #e3e6f0',
-            backgroundColor: '#f8f9fa'
+            padding: '1.5rem 1rem 1rem',
+            borderBottom: '1px solid #e9ecef',
+            marginBottom: '1rem'
           }}
         >
-          <div className="text-center">
-            <small className="text-muted">
-              © 2025 Vervo Portal
-            </small>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div 
+              className="logo-icon"
+              style={{
+                width: '36px',
+                height: '36px',
+                background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '18px',
+                marginRight: '12px'
+              }}
+            >
+              <i className="bi bi-truck"></i>
+            </div>
+            <h4 
+              className="logo-text"
+              style={{
+                fontWeight: '700',
+                color: '#212529',
+                fontSize: '1.25rem',
+                margin: 0
+              }}
+            >
+              Vervo Portal
+            </h4>
           </div>
         </div>
+
+        {/* Navigation Menu */}
+        <div className="sidebar-nav" style={{ padding: '0 0.5rem' }}>
+          {menuItems.map(renderMenuItem)}
+        </div>
+
+        {/* Mobile Close Button */}
+        {isMobile && (
+          <button
+            className="sidebar-close-btn"
+            onClick={toggleSidebar}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'none',
+              border: 'none',
+              fontSize: '1.5rem',
+              color: '#6c757d',
+              cursor: 'pointer',
+              padding: '5px',
+              borderRadius: '4px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <i className="bi bi-x-lg"></i>
+          </button>
+        )}
       </nav>
     </>
   );
 };
 
-export default Sidebar;
+export default Sidebar; 
