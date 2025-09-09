@@ -61,40 +61,70 @@ const VehicleDetailModal = ({
     }
   };
 
+  const handleDelete = () => {
+    if (window.confirm(`${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate}) aracını silmek istediğinizden emin misiniz?`)) {
+      onDelete(vehicle);
+      onHide();
+    }
+  };
+
+  // Handle edit
+  const handleEdit = () => {
+    onEdit(vehicle);
+    onHide();
+  };
+
   return (
-    <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-      <div className="modal-dialog modal-xl modal-dialog-scrollable">
+    <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="modal-dialog modal-lg modal-dialog-centered">
         <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">
-              <i className="bi bi-car-front me-2"></i>
-              {vehicle.brand} {vehicle.model} - {vehicle.licensePlate}
-            </h5>
-            <button
-              type="button"
-              className="btn-close"
+          <div className="modal-header bg-light">
+            <div className="d-flex align-items-center">
+              <div className="me-3">
+                <div className="avatar-lg bg-primary text-white d-flex align-items-center justify-content-center rounded-circle">
+                  <i className="bi bi-car-front-fill fs-4"></i>
+                </div>
+              </div>
+              <div>
+                <h5 className="modal-title mb-1">
+                  {vehicle.brand} {vehicle.model}
+                </h5>
+                <div className="d-flex align-items-center gap-2">
+                  <span className="text-muted small">
+                    <i className="bi bi-hash me-1"></i>
+                    {vehicle.licensePlate} • {vehicle.year}
+                  </span>
+                  <span className={`badge ${getOwnershipTypeBadge(vehicle.ownershipType)} small`}>
+                    {getOwnershipTypeText(vehicle.ownershipType)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button 
+              type="button" 
+              className="btn-close" 
               onClick={onHide}
               disabled={loading}
             ></button>
           </div>
-
+          
           <div className="modal-body">
-            <div className="row g-4">
-              {/* Vehicle Image */}
-              {vehicle.vehicleImageUrl && (
-                <div className="col-12 text-center">
-                  <img
-                    src={vehicle.vehicleImageUrl}
-                    alt={`${vehicle.brand} ${vehicle.model}`}
-                    className="img-fluid rounded"
-                    style={{ maxHeight: '300px', maxWidth: '100%' }}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
+            {/* Vehicle Image */}
+            {vehicle.vehicleImageUrl && (
+              <div className="text-center mb-4">
+                <img
+                  src={vehicle.vehicleImageUrl}
+                  alt={`${vehicle.brand} ${vehicle.model}`}
+                  className="img-fluid rounded"
+                  style={{ maxHeight: '200px', maxWidth: '100%' }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
 
+            <div className="row g-4">
               {/* Basic Information */}
               <div className="col-md-6">
                 <div className="card h-100">
@@ -289,26 +319,29 @@ const VehicleDetailModal = ({
               onClick={onHide}
               disabled={loading}
             >
+              <i className="bi bi-x me-1"></i>
               Kapat
             </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => onEdit?.(vehicle)}
-              disabled={loading}
-            >
-              <i className="bi bi-pencil me-1"></i>
-              Düzenle
-            </button>
-            <button
-              type="button"
-              className="btn btn-danger"
-              onClick={() => onDelete?.(vehicle)}
-              disabled={loading}
-            >
-              <i className="bi bi-trash me-1"></i>
-              Sil
-            </button>
+            <div className="d-flex gap-2">
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={handleEdit}
+                disabled={loading}
+              >
+                <i className="bi bi-pencil me-1"></i>
+                Düzenle
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-danger"
+                onClick={handleDelete}
+                disabled={loading}
+              >
+                <i className="bi bi-trash me-1"></i>
+                Sil
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -1,15 +1,16 @@
 // src/frontend/src/components/Vehicles/VehicleModal.js
 
 import React, { useState, useEffect } from 'react';
-import { vehicleService } from '../../services/vehicleService';
 
 const VehicleModal = ({ 
-  show = false, 
+  show, 
   onHide, 
   onSave, 
   vehicle = null, 
   loading = false 
 }) => {
+  const isEdit = vehicle !== null;
+  
   const [formData, setFormData] = useState({
     licensePlate: '',
     brand: '',
@@ -17,85 +18,84 @@ const VehicleModal = ({
     year: new Date().getFullYear(),
     vin: '',
     companyName: '',
-    inspectionDate: '',
-    insurance: '',
-    insuranceExpiryDate: '',
-    lastServiceDate: '',
-    currentMileage: 0,
-    fuelConsumption: 0,
-    tireCondition: '',
-    registrationInfo: '',
-    ownershipType: 'company',
+    location: '',
     assignedUserName: '',
     assignedUserPhone: '',
-    location: '',
-    vehicleImageUrl: ''
+    currentMileage: '',
+    fuelConsumption: '',
+    tireCondition: '',
+    lastServiceDate: '',
+    insurance: '',
+    insuranceExpiryDate: '',
+    inspectionDate: '',
+    ownershipType: 'company',
+    vehicleImageUrl: '',
+    registrationInfo: ''
   });
-
+  
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  const isEdit = Boolean(vehicle?.id);
-
-  // Initialize form data when vehicle prop changes
+  // Initialize form data when modal opens
   useEffect(() => {
-    if (vehicle && isEdit) {
-      setFormData({
-        licensePlate: vehicle.licensePlate || '',
-        brand: vehicle.brand || '',
-        model: vehicle.model || '',
-        year: vehicle.year || new Date().getFullYear(),
-        vin: vehicle.vin || '',
-        companyName: vehicle.companyName || '',
-        inspectionDate: vehicle.inspectionDate ? vehicle.inspectionDate.split('T')[0] : '',
-        insurance: vehicle.insurance || '',
-        insuranceExpiryDate: vehicle.insuranceExpiryDate ? vehicle.insuranceExpiryDate.split('T')[0] : '',
-        lastServiceDate: vehicle.lastServiceDate ? vehicle.lastServiceDate.split('T')[0] : '',
-        currentMileage: vehicle.currentMileage || 0,
-        fuelConsumption: vehicle.fuelConsumption || 0,
-        tireCondition: vehicle.tireCondition || '',
-        registrationInfo: vehicle.registrationInfo || '',
-        ownershipType: vehicle.ownershipType || 'company',
-        assignedUserName: vehicle.assignedUserName || '',
-        assignedUserPhone: vehicle.assignedUserPhone || '',
-        location: vehicle.location || '',
-        vehicleImageUrl: vehicle.vehicleImageUrl || ''
-      });
-    } else {
-      // Reset form for new vehicle
-      setFormData({
-        licensePlate: '',
-        brand: '',
-        model: '',
-        year: new Date().getFullYear(),
-        vin: '',
-        companyName: '',
-        inspectionDate: '',
-        insurance: '',
-        insuranceExpiryDate: '',
-        lastServiceDate: '',
-        currentMileage: 0,
-        fuelConsumption: 0,
-        tireCondition: '',
-        registrationInfo: '',
-        ownershipType: 'company',
-        assignedUserName: '',
-        assignedUserPhone: '',
-        location: '',
-        vehicleImageUrl: ''
-      });
+    if (show) {
+      if (isEdit && vehicle) {
+        setFormData({
+          licensePlate: vehicle.licensePlate || '',
+          brand: vehicle.brand || '',
+          model: vehicle.model || '',
+          year: vehicle.year || new Date().getFullYear(),
+          vin: vehicle.vin || '',
+          companyName: vehicle.companyName || '',
+          location: vehicle.location || '',
+          assignedUserName: vehicle.assignedUserName || '',
+          assignedUserPhone: vehicle.assignedUserPhone || '',
+          currentMileage: vehicle.currentMileage || '',
+          fuelConsumption: vehicle.fuelConsumption || '',
+          tireCondition: vehicle.tireCondition || '',
+          lastServiceDate: vehicle.lastServiceDate ? vehicle.lastServiceDate.split('T')[0] : '',
+          insurance: vehicle.insurance || '',
+          insuranceExpiryDate: vehicle.insuranceExpiryDate ? vehicle.insuranceExpiryDate.split('T')[0] : '',
+          inspectionDate: vehicle.inspectionDate ? vehicle.inspectionDate.split('T')[0] : '',
+          ownershipType: vehicle.ownershipType || 'company',
+          vehicleImageUrl: vehicle.vehicleImageUrl || '',
+          registrationInfo: vehicle.registrationInfo || ''
+        });
+      } else {
+        setFormData({
+          licensePlate: '',
+          brand: '',
+          model: '',
+          year: new Date().getFullYear(),
+          vin: '',
+          companyName: '',
+          location: '',
+          assignedUserName: '',
+          assignedUserPhone: '',
+          currentMileage: '',
+          fuelConsumption: '',
+          tireCondition: '',
+          lastServiceDate: '',
+          insurance: '',
+          insuranceExpiryDate: '',
+          inspectionDate: '',
+          ownershipType: 'company',
+          vehicleImageUrl: '',
+          registrationInfo: ''
+        });
+      }
+      setErrors({});
     }
-    setErrors({});
-  }, [vehicle, isEdit]);
+  }, [show, vehicle, isEdit]);
 
-  // Handle input change
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-
+    
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -109,7 +109,6 @@ const VehicleModal = ({
   const validateForm = () => {
     const newErrors = {};
 
-    // Required fields
     if (!formData.licensePlate.trim()) {
       newErrors.licensePlate = 'Plaka zorunludur';
     }
@@ -122,12 +121,8 @@ const VehicleModal = ({
       newErrors.model = 'Model zorunludur';
     }
 
-    if (!formData.year || formData.year < 1900 || formData.year > new Date().getFullYear() + 1) {
-      newErrors.year = 'Geçerli bir model yılı giriniz';
-    }
-
-    if (!formData.companyName.trim()) {
-      newErrors.companyName = 'Şirket adı zorunludur';
+    if (!formData.year || formData.year < 1980 || formData.year > new Date().getFullYear() + 1) {
+      newErrors.year = 'Geçerli bir yıl giriniz';
     }
 
     setErrors(newErrors);
@@ -137,27 +132,37 @@ const VehicleModal = ({
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     if (!validateForm()) {
       return;
     }
 
     setSubmitting(true);
-
+    
     try {
-      // Format data for API
       const submitData = {
-        ...formData,
-        licensePlate: formData.licensePlate.toUpperCase().trim(),
+        licensePlate: formData.licensePlate.trim(),
+        brand: formData.brand.trim(),
+        model: formData.model.trim(),
         year: parseInt(formData.year),
-        currentMileage: parseInt(formData.currentMileage),
-        fuelConsumption: parseFloat(formData.fuelConsumption),
-        inspectionDate: formData.inspectionDate || null,
+        vin: formData.vin.trim(),
+        companyName: formData.companyName.trim(),
+        location: formData.location.trim(),
+        assignedUserName: formData.assignedUserName.trim(),
+        assignedUserPhone: formData.assignedUserPhone.trim(),
+        currentMileage: formData.currentMileage ? parseInt(formData.currentMileage) : null,
+        fuelConsumption: formData.fuelConsumption ? parseFloat(formData.fuelConsumption) : null,
+        tireCondition: formData.tireCondition,
+        lastServiceDate: formData.lastServiceDate || null,
+        insurance: formData.insurance.trim(),
         insuranceExpiryDate: formData.insuranceExpiryDate || null,
-        lastServiceDate: formData.lastServiceDate || null
+        inspectionDate: formData.inspectionDate || null,
+        ownershipType: formData.ownershipType,
+        vehicleImageUrl: formData.vehicleImageUrl.trim(),
+        registrationInfo: formData.registrationInfo.trim()
       };
 
-      await onSave?.(submitData);
+      await onSave(submitData);
       onHide?.();
     } catch (error) {
       console.error('Form submission error:', error);
@@ -169,6 +174,7 @@ const VehicleModal = ({
   // Handle modal close
   const handleClose = () => {
     if (!submitting) {
+      setErrors({});
       onHide?.();
     }
   };
@@ -179,8 +185,8 @@ const VehicleModal = ({
   if (!show) return null;
 
   return (
-    <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-      <div className="modal-dialog modal-xl modal-dialog-scrollable">
+    <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="modal-dialog modal-lg modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">
@@ -197,17 +203,19 @@ const VehicleModal = ({
           
           <form onSubmit={handleSubmit}>
             <div className="modal-body">
-              <div className="row g-3">
-                {/* Basic Information */}
+              {/* Temel Bilgiler */}
+              <div className="row mb-4">
                 <div className="col-12">
-                  <h6 className="text-primary border-bottom pb-2">
+                  <h6 className="text-muted border-bottom pb-2 mb-3">
                     <i className="bi bi-info-circle me-1"></i>
                     Temel Bilgiler
                   </h6>
                 </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Plaka <span className="text-danger">*</span></label>
+                
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">
+                    Plaka <span className="text-danger">*</span>
+                  </label>
                   <input
                     type="text"
                     className={`form-control ${errors.licensePlate ? 'is-invalid' : ''}`}
@@ -222,15 +230,17 @@ const VehicleModal = ({
                   )}
                 </div>
 
-                <div className="col-md-6">
-                  <label className="form-label">Marka <span className="text-danger">*</span></label>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">
+                    Marka <span className="text-danger">*</span>
+                  </label>
                   <input
                     type="text"
                     className={`form-control ${errors.brand ? 'is-invalid' : ''}`}
                     name="brand"
                     value={formData.brand}
                     onChange={handleChange}
-                    placeholder="Örn: Toyota"
+                    placeholder="Toyota, BMW..."
                     disabled={submitting}
                   />
                   {errors.brand && (
@@ -238,15 +248,17 @@ const VehicleModal = ({
                   )}
                 </div>
 
-                <div className="col-md-6">
-                  <label className="form-label">Model <span className="text-danger">*</span></label>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">
+                    Model <span className="text-danger">*</span>
+                  </label>
                   <input
                     type="text"
                     className={`form-control ${errors.model ? 'is-invalid' : ''}`}
                     name="model"
                     value={formData.model}
                     onChange={handleChange}
-                    placeholder="Örn: Corolla"
+                    placeholder="Corolla, X3..."
                     disabled={submitting}
                   />
                   {errors.model && (
@@ -254,8 +266,10 @@ const VehicleModal = ({
                   )}
                 </div>
 
-                <div className="col-md-6">
-                  <label className="form-label">Model Yılı <span className="text-danger">*</span></label>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">
+                    Yıl <span className="text-danger">*</span>
+                  </label>
                   <select
                     className={`form-select ${errors.year ? 'is-invalid' : ''}`}
                     name="year"
@@ -272,31 +286,20 @@ const VehicleModal = ({
                   )}
                 </div>
 
-                {/* Company Information */}
-                <div className="col-12 mt-4">
-                  <h6 className="text-primary border-bottom pb-2">
-                    <i className="bi bi-building me-1"></i>
-                    Şirket Bilgileri
-                  </h6>
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Şirket Adı <span className="text-danger">*</span></label>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">VIN Numarası</label>
                   <input
                     type="text"
-                    className={`form-control ${errors.companyName ? 'is-invalid' : ''}`}
-                    name="companyName"
-                    value={formData.companyName}
+                    className="form-control"
+                    name="vin"
+                    value={formData.vin}
                     onChange={handleChange}
-                    placeholder="Şirket adını girin"
+                    placeholder="17 karakter VIN"
                     disabled={submitting}
                   />
-                  {errors.companyName && (
-                    <div className="invalid-feedback">{errors.companyName}</div>
-                  )}
                 </div>
 
-                <div className="col-md-6">
+                <div className="col-md-6 mb-3">
                   <label className="form-label">Sahiplik Türü</label>
                   <select
                     className="form-select"
@@ -310,55 +313,31 @@ const VehicleModal = ({
                     <option value="personal">Kişisel</option>
                   </select>
                 </div>
+              </div>
 
-                <div className="col-md-6">
-                  <label className="form-label">Atanan Kullanıcı</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="assignedUserName"
-                    value={formData.assignedUserName}
-                    onChange={handleChange}
-                    placeholder="Kullanıcı adı"
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Telefon</label>
-                  <input
-                    type="tel"
-                    className="form-control"
-                    name="assignedUserPhone"
-                    value={formData.assignedUserPhone}
-                    onChange={handleChange}
-                    placeholder="0555 123 45 67"
-                    disabled={submitting}
-                  />
-                </div>
-
-                {/* Technical Information */}
-                <div className="col-12 mt-4">
-                  <h6 className="text-primary border-bottom pb-2">
-                    <i className="bi bi-gear me-1"></i>
-                    Teknik Bilgiler
+              {/* Şirket & Konum Bilgileri */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h6 className="text-muted border-bottom pb-2 mb-3">
+                    <i className="bi bi-building me-1"></i>
+                    Şirket & Konum Bilgileri
                   </h6>
                 </div>
 
-                <div className="col-md-6">
-                  <label className="form-label">VIN Numarası</label>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">Şirket Adı</label>
                   <input
                     type="text"
                     className="form-control"
-                    name="vin"
-                    value={formData.vin}
+                    name="companyName"
+                    value={formData.companyName}
                     onChange={handleChange}
-                    placeholder="17 karakter VIN"
+                    placeholder="Şirket adı"
                     disabled={submitting}
                   />
                 </div>
 
-                <div className="col-md-6">
+                <div className="col-md-6 mb-3">
                   <label className="form-label">Konum</label>
                   <input
                     type="text"
@@ -371,7 +350,43 @@ const VehicleModal = ({
                   />
                 </div>
 
-                <div className="col-md-6">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">Atanan Kullanıcı</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="assignedUserName"
+                    value={formData.assignedUserName}
+                    onChange={handleChange}
+                    placeholder="Kullanıcı adı"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">Telefon</label>
+                  <input
+                    type="tel"
+                    className="form-control"
+                    name="assignedUserPhone"
+                    value={formData.assignedUserPhone}
+                    onChange={handleChange}
+                    placeholder="0555 123 45 67"
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+
+              {/* Teknik Bilgiler */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h6 className="text-muted border-bottom pb-2 mb-3">
+                    <i className="bi bi-gear me-1"></i>
+                    Teknik Bilgiler
+                  </h6>
+                </div>
+
+                <div className="col-md-6 mb-3">
                   <label className="form-label">Kilometre</label>
                   <div className="input-group">
                     <input
@@ -381,88 +396,32 @@ const VehicleModal = ({
                       value={formData.currentMileage}
                       onChange={handleChange}
                       min="0"
+                      placeholder="0"
                       disabled={submitting}
                     />
                     <span className="input-group-text">km</span>
                   </div>
                 </div>
 
-                <div className="col-md-6">
+                <div className="col-md-6 mb-3">
                   <label className="form-label">Yakıt Tüketimi</label>
                   <div className="input-group">
                     <input
                       type="number"
+                      step="0.1"
                       className="form-control"
                       name="fuelConsumption"
                       value={formData.fuelConsumption}
                       onChange={handleChange}
                       min="0"
-                      max="99.9"
-                      step="0.1"
+                      placeholder="6.5"
                       disabled={submitting}
                     />
                     <span className="input-group-text">L/100km</span>
                   </div>
                 </div>
 
-                {/* Insurance & Dates */}
-                <div className="col-12 mt-4">
-                  <h6 className="text-primary border-bottom pb-2">
-                    <i className="bi bi-shield-check me-1"></i>
-                    Sigorta & Tarihler
-                  </h6>
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Sigorta Şirketi</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="insurance"
-                    value={formData.insurance}
-                    onChange={handleChange}
-                    placeholder="Sigorta şirketi adı"
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Sigorta Bitiş Tarihi</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    name="insuranceExpiryDate"
-                    value={formData.insuranceExpiryDate}
-                    onChange={handleChange}
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Muayene Tarihi</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    name="inspectionDate"
-                    value={formData.inspectionDate}
-                    onChange={handleChange}
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Son Servis Tarihi</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    name="lastServiceDate"
-                    value={formData.lastServiceDate}
-                    onChange={handleChange}
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div className="col-md-6">
+                <div className="col-md-6 mb-3">
                   <label className="form-label">Lastik Durumu</label>
                   <select
                     className="form-select"
@@ -480,7 +439,76 @@ const VehicleModal = ({
                   </select>
                 </div>
 
-                <div className="col-md-6">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">Son Servis Tarihi</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    name="lastServiceDate"
+                    value={formData.lastServiceDate}
+                    onChange={handleChange}
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+
+              {/* Sigorta & Muayene Bilgileri */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h6 className="text-muted border-bottom pb-2 mb-3">
+                    <i className="bi bi-shield-check me-1"></i>
+                    Sigorta & Muayene Bilgileri
+                  </h6>
+                </div>
+
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">Sigorta Şirketi</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="insurance"
+                    value={formData.insurance}
+                    onChange={handleChange}
+                    placeholder="Sigorta şirketi adı"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">Sigorta Bitiş Tarihi</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    name="insuranceExpiryDate"
+                    value={formData.insuranceExpiryDate}
+                    onChange={handleChange}
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">Muayene Tarihi</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    name="inspectionDate"
+                    value={formData.inspectionDate}
+                    onChange={handleChange}
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+
+              {/* Diğer Bilgiler */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h6 className="text-muted border-bottom pb-2 mb-3">
+                    <i className="bi bi-image me-1"></i>
+                    Diğer Bilgiler
+                  </h6>
+                </div>
+
+                <div className="col-12 mb-3">
                   <label className="form-label">Araç Resmi URL</label>
                   <input
                     type="url"
@@ -493,7 +521,7 @@ const VehicleModal = ({
                   />
                 </div>
 
-                <div className="col-12">
+                <div className="col-12 mb-3">
                   <label className="form-label">Ruhsat Bilgileri</label>
                   <textarea
                     className="form-control"
@@ -515,6 +543,7 @@ const VehicleModal = ({
                 onClick={handleClose}
                 disabled={submitting}
               >
+                <i className="bi bi-x me-1"></i>
                 İptal
               </button>
               <button 
@@ -527,6 +556,7 @@ const VehicleModal = ({
                     <span className="visually-hidden">Loading...</span>
                   </span>
                 )}
+                <i className="bi bi-check2 me-1"></i>
                 {isEdit ? 'Güncelle' : 'Kaydet'}
               </button>
             </div>

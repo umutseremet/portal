@@ -72,7 +72,8 @@ namespace API.Controllers
                         OwnershipType = v.OwnershipType,
                         Insurance = v.Insurance,
                         VIN = v.VIN,
-                        FuelConsumption =  v.FuelConsumption
+                        FuelConsumption =  v.FuelConsumption,
+                        VehicleImageUrl = v.VehicleImageUrl
                     })
                     .ToListAsync();
 

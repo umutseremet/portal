@@ -178,10 +178,10 @@ namespace API.Models
         public string TireCondition { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
-
         public string OwnershipType { get; set; }
         public string Insurance { get; internal set; }
         public string VIN { get; internal set; }
         public decimal FuelConsumption { get; internal set; }
+        public string? VehicleImageUrl { get; internal set; }
     }
 }
