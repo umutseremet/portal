@@ -120,7 +120,7 @@ public class AuthController : ControllerBase
         {
             new Claim("sub", user.Id.ToString()),
             new Claim("username", user.Login),
-            new Claim("email", user.Email),
+            new Claim("email", user.Mail),
             new Claim("fullname", user.FullName),
             new Claim("admin", user.Admin.ToString().ToLower())
         };

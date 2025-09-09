@@ -2,13 +2,13 @@
 
 import React from 'react';
 
-const VehicleDetailModal = ({ 
-  show = false, 
-  onHide, 
-  vehicle = null, 
-  onEdit, 
+const VehicleDetailModal = ({
+  show = false,
+  onHide,
+  vehicle = null,
+  onEdit,
   onDelete,
-  loading = false 
+  loading = false
 }) => {
   if (!show || !vehicle) return null;
 
@@ -70,21 +70,21 @@ const VehicleDetailModal = ({
               <i className="bi bi-car-front me-2"></i>
               {vehicle.brand} {vehicle.model} - {vehicle.licensePlate}
             </h5>
-            <button 
-              type="button" 
-              className="btn-close" 
+            <button
+              type="button"
+              className="btn-close"
               onClick={onHide}
               disabled={loading}
             ></button>
           </div>
-          
+
           <div className="modal-body">
             <div className="row g-4">
               {/* Vehicle Image */}
               {vehicle.vehicleImageUrl && (
                 <div className="col-12 text-center">
-                  <img 
-                    src={vehicle.vehicleImageUrl} 
+                  <img
+                    src={vehicle.vehicleImageUrl}
                     alt={`${vehicle.brand} ${vehicle.model}`}
                     className="img-fluid rounded"
                     style={{ maxHeight: '300px', maxWidth: '100%' }}
@@ -184,11 +184,11 @@ const VehicleDetailModal = ({
                     <div className="row g-2">
                       <div className="col-6">
                         <small className="text-muted">Kilometre</small>
-                        <div>{vehicle.currentMileage ? `${vehicle.currentMileage.toLocaleString()} km` : 'Belirtilmemiş'}</div>
+                        <div>{vehicle.currentMileage}</div>
                       </div>
                       <div className="col-6">
                         <small className="text-muted">Yakıt Tüketimi</small>
-                        <div>{vehicle.fuelConsumption ? `${vehicle.fuelConsumption} L/100km` : 'Belirtilmemiş'}</div>
+                        <div>{vehicle.fuelConsumption + 'L/100km'}</div>
                       </div>
                       <div className="col-12">
                         <small className="text-muted">Lastik Durumu</small>
@@ -281,18 +281,18 @@ const VehicleDetailModal = ({
               </div>
             </div>
           </div>
-          
+
           <div className="modal-footer">
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn btn-secondary"
               onClick={onHide}
               disabled={loading}
             >
               Kapat
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn btn-primary"
               onClick={() => onEdit?.(vehicle)}
               disabled={loading}
@@ -300,8 +300,8 @@ const VehicleDetailModal = ({
               <i className="bi bi-pencil me-1"></i>
               Düzenle
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn btn-danger"
               onClick={() => onDelete?.(vehicle)}
               disabled={loading}

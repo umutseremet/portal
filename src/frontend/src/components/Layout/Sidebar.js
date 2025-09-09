@@ -15,18 +15,18 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       icon: 'bi-speedometer2',
       path: '/dashboard'
     },
-    {
-      id: 'production',
-      label: 'Üretim',
-      icon: 'bi-gear-fill',
-      children: [
-        { id: 'bom-transfer', label: 'BOM Listesi Aktarımı', path: '/production/bom-transfer' },
-        { id: 'data-cam', label: 'Data / CAM Hazırlama', path: '/production/data-cam' },
-        { id: 'production-planning', label: 'Üretim Planlama', path: '/production/planning' },
-        { id: 'production-tracking', label: 'Üretim Takip', path: '/production/tracking' },
-        { id: 'reports', label: 'Raporlar', path: '/production/reports' }
-      ]
-    },
+    // {
+    //   id: 'production',
+    //   label: 'Üretim',
+    //   icon: 'bi-gear-fill',
+    //   children: [
+    //     { id: 'bom-transfer', label: 'BOM Listesi Aktarımı', path: '/production/bom-transfer' },
+    //     { id: 'data-cam', label: 'Data / CAM Hazırlama', path: '/production/data-cam' },
+    //     { id: 'production-planning', label: 'Üretim Planlama', path: '/production/planning' },
+    //     { id: 'production-tracking', label: 'Üretim Takip', path: '/production/tracking' },
+    //     { id: 'reports', label: 'Raporlar', path: '/production/reports' }
+    //   ]
+    // },
     {
       id: 'vehicles',
       label: 'Araç Takip',

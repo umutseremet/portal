@@ -224,7 +224,7 @@ const Header = ({ toggleSidebar, sidebarOpen, isMobile }) => {
                     {user?.fullName || user?.name || 'Kullanıcı'}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>
-                    {user?.email || 'user@example.com'}
+                    {user?.mail || 'user@example.com'}
                   </div>
                 </div>
               )}
@@ -253,7 +253,7 @@ const Header = ({ toggleSidebar, sidebarOpen, isMobile }) => {
                     {user?.fullName || user?.name || 'Kullanıcı'}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>
-                    {user?.email || 'user@example.com'}
+                    {user?.mail || 'user@example.com'}
                   </div>
                 </div>
                 

@@ -68,7 +68,11 @@ namespace API.Controllers
                         CurrentMileage = v.CurrentMileage,
                         TireCondition = v.TireCondition,
                         CreatedAt = v.CreatedAt,
-                        UpdatedAt = v.UpdatedAt
+                        UpdatedAt = v.UpdatedAt,
+                        OwnershipType = v.OwnershipType,
+                        Insurance = v.Insurance,
+                        VIN = v.VIN,
+                        FuelConsumption =  v.FuelConsumption
                     })
                     .ToListAsync();
 
