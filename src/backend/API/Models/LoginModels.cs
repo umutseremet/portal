@@ -33,10 +33,10 @@ public class RedmineUserResponse
     public User User { get; set; } = new();
 }
 
-public class ErrorResponse
-{
-    public string Message { get; set; } = string.Empty;
-}
+//public class ErrorResponse
+//{
+//    public string Message { get; set; } = string.Empty;
+//}
 
 // YENİ EKLENEN MODELLER - Mevcut modellerin altına ekleyin
 

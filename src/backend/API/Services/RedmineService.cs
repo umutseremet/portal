@@ -218,6 +218,275 @@ public class RedmineService
             ConfigurationValid = !string.IsNullOrEmpty(baseUrl)
         };
     }
+
+    /// <summary>
+    /// Redmine projelerini getirir
+    /// </summary>
+    public async Task<ProjectsResult?> GetProjectsAsync(
+        string username,
+        string password,
+        int? status = null,
+        string? name = null,
+        int limit = 25,
+        int offset = 0)
+    {
+        try
+        {
+            // Basic auth header oluştur
+            var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+
+            // Query parametreleri
+            var queryParams = new List<string>
+        {
+            $"limit={limit}",
+            $"offset={offset}"
+        };
+
+            if (status.HasValue)
+            {
+                queryParams.Add($"status={status.Value}");
+            }
+
+            if (!string.IsNullOrEmpty(name))
+            {
+                queryParams.Add($"name={Uri.EscapeDataString(name)}");
+            }
+
+            // Farklı configuration key'lerini deneyelim
+            var redmineBaseUrl = _configuration["RedmineSettings:BaseUrl"]
+                               ?? _configuration["Redmine:BaseUrl"]
+                               ?? "http://192.168.1.17:9292/"; // Fallback
+
+            var queryString = string.Join("&", queryParams);
+            var url = $"{redmineBaseUrl}/projects.json?{queryString}";
+
+            _logger.LogInformation("Getting projects from Redmine: {Url}", url);
+
+            // Call Redmine API
+            var response = await _httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Redmine projects request failed. Status: {StatusCode}", response.StatusCode);
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+            };
+
+            var projectsResponse = JsonSerializer.Deserialize<RedmineProjectsResponse>(content, options);
+
+            if (projectsResponse != null)
+            {
+                _logger.LogInformation("Successfully retrieved {Count} projects",
+                    projectsResponse.Projects?.Count ?? 0);
+
+                return new ProjectsResult
+                {
+                    Projects = projectsResponse.Projects ?? new List<RedmineProjectDetail>(),
+                    TotalCount = projectsResponse.TotalCount,
+                    Offset = projectsResponse.Offset,
+                    Limit = projectsResponse.Limit
+                };
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during Redmine projects request");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// ID'ye göre tek proje getirir
+    /// </summary>
+    public async Task<RedmineProjectDetail?> GetProjectByIdAsync(
+        string username,
+        string password,
+        int projectId)
+    {
+        try
+        {
+            // Basic auth header oluştur
+            var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+
+            // Farklı configuration key'lerini deneyelim
+            var redmineBaseUrl = _configuration["RedmineSettings:BaseUrl"]
+                               ?? _configuration["Redmine:BaseUrl"]
+                               ?? "http://192.168.1.17:9292/"; // Fallback
+            var url = $"{redmineBaseUrl}/projects/{projectId}.json";
+
+            _logger.LogInformation("Getting project from Redmine: {Url}", url);
+
+            // Call Redmine API
+            var response = await _httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Redmine project request failed. Status: {StatusCode}", response.StatusCode);
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+            };
+
+            var projectResponse = JsonSerializer.Deserialize<RedmineProjectResponse>(content, options);
+
+            if (projectResponse?.Project != null)
+            {
+                _logger.LogInformation("Successfully retrieved project: {Name}",
+                    projectResponse.Project.Name);
+
+                return projectResponse.Project;
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during Redmine project request for ID: {ProjectId}", projectId);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Aktif projeleri getirir (kısayol metod)
+    /// </summary>
+    public async Task<ProjectsResult?> GetActiveProjectsAsync(
+        string username,
+        string password,
+        int limit = 100)
+    {
+        return await GetProjectsAsync(username, password, 1, null, limit, 0); // status 1 = Active
+    }
+
+    /// <summary>
+    /// Kullanıcının erişebildiği projeleri getirir
+    /// </summary>
+    public async Task<ProjectsResult?> GetUserProjectsAsync(
+        string username,
+        string password,
+        int userId,
+        int limit = 100)
+    {
+        try
+        {
+            // Redmine BaseUrl'i configuration'dan al (mevcut kodunuzla aynı)
+            var redmineBaseUrl = _configuration["RedmineSettings:BaseUrl"]
+                               ?? _configuration["Redmine:BaseUrl"]
+                               ?? "http://192.168.1.17:9292/"; // Fallback
+
+            if (string.IsNullOrEmpty(redmineBaseUrl))
+            {
+                _logger.LogError("Redmine BaseUrl not configured");
+                return null;
+            }
+
+            // Önce kullanıcının membership'lerini al
+            var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+            _httpClient.DefaultRequestHeaders.Accept.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            var url = $"{redmineBaseUrl.TrimEnd('/')}/users/{userId}/memberships.json?limit={limit}";
+
+            _logger.LogInformation("Getting user memberships from Redmine: {Url}", url);
+
+            var response = await _httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Redmine user memberships request failed. Status: {StatusCode}", response.StatusCode);
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var membershipsResponse = JsonSerializer.Deserialize<RedmineMembershipsResponse>(content, options);
+
+            if (membershipsResponse?.Memberships != null)
+            {
+                // Membership'lerden proje bilgilerini çıkar
+                var projects = membershipsResponse.Memberships
+                    .Where(m => m.Project != null)
+                    .Select(m => new RedmineProjectDetail
+                    {
+                        Id = m.Project!.Id,
+                        Name = m.Project.Name,
+                        Identifier = m.Project.Identifier,
+                        Status = 1, // Varsayılan aktif
+                        IsPublic = false, // Varsayılan private
+                        CreatedOn = DateTime.Now,
+                        UpdatedOn = DateTime.Now
+                    })
+                    .ToList();
+
+                _logger.LogInformation("Successfully retrieved {Count} user projects",
+                    projects.Count);
+
+                return new ProjectsResult
+                {
+                    Projects = projects,
+                    TotalCount = projects.Count,
+                    Offset = 0,
+                    Limit = limit
+                };
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during Redmine user projects request for user: {UserId}", userId);
+            return null;
+        }
+    }
+
+    // Redmine API response models for projects
+    public class RedmineProjectResponse
+    {
+        public RedmineProjectDetail Project { get; set; } = new();
+    }
+
+    public class RedmineMembershipsResponse
+    {
+        public List<RedmineMembership> Memberships { get; set; } = new();
+        public int TotalCount { get; set; }
+        public int Offset { get; set; }
+        public int Limit { get; set; }
+    }
+
+    public class RedmineMembership
+    {
+        public int Id { get; set; }
+        public RedmineProject? Project { get; set; }
+        public List<RedmineRole> Roles { get; set; } = new();
+    }
+
+    public class RedmineRole
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
 }
 
 // Configuration status için yardımcı class
