@@ -88,6 +88,10 @@ namespace API.Controllers
                         X = i.X,
                         Y = i.Y,
                         Z = i.Z,
+                        Supplier = i.Supplier,
+                        SupplierCode = i.SupplierCode,
+                        Unit = i.Unit,
+                        Price = i.Price,
                         ImageUrl = i.ImageUrl,
                         Cancelled = i.Cancelled,
                         CreatedAt = i.CreatedAt,
@@ -141,6 +145,10 @@ namespace API.Controllers
                     X = item.X,
                     Y = item.Y,
                     Z = item.Z,
+                    Supplier = item.Supplier,
+                    SupplierCode = item.SupplierCode,
+                    Unit = item.Unit,
+                    Price = item.Price,
                     ImageUrl = item.ImageUrl,
                     Cancelled = item.Cancelled,
                     CreatedAt = item.CreatedAt,
@@ -194,7 +202,11 @@ namespace API.Controllers
                     Z = request.Z,
                     ImageUrl = request.ImageUrl?.Trim(),
                     Cancelled = false,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    SupplierCode = request.SupplierCode,
+                    Supplier = request.Supplier,
+                    Unit = request.Unit,
+                    Price = request.Price
                 };
 
                 _context.Items.Add(item);
@@ -216,6 +228,10 @@ namespace API.Controllers
                         Name = item.Name,
                         DocNumber = item.DocNumber,
                         GroupId = item.GroupId,
+                        Supplier = item.Supplier,
+                        SupplierCode = item.SupplierCode,
+                        Unit = item.Unit,
+                        Price = item.Price,
                         GroupName = item.ItemGroup?.Name ?? "",
                         X = item.X,
                         Y = item.Y,
@@ -279,6 +295,10 @@ namespace API.Controllers
                 item.X = request.X;
                 item.Y = request.Y;
                 item.Z = request.Z;
+                item.Supplier = request.Supplier;
+                item.SupplierCode = request.SupplierCode;
+                item.Unit = request.Unit;
+                item.Price = request.Price;
                 item.ImageUrl = request.ImageUrl?.Trim();
                 item.Cancelled = request.Cancelled;
                 item.UpdatedAt = DateTime.UtcNow;
@@ -307,7 +327,11 @@ namespace API.Controllers
                         ImageUrl = item.ImageUrl,
                         Cancelled = item.Cancelled,
                         CreatedAt = item.CreatedAt,
-                        UpdatedAt = item.UpdatedAt
+                        UpdatedAt = item.UpdatedAt,
+                        Supplier = request.Supplier,
+                        SupplierCode = request.SupplierCode,
+                        Unit = request.Unit,
+                        Price = request.Price
                     }
                 });
             }
@@ -371,6 +395,10 @@ namespace API.Controllers
                         X = i.X,
                         Y = i.Y,
                         Z = i.Z,
+                        Supplier = i.Supplier,
+                        SupplierCode = i.SupplierCode,
+                        Unit = i.Unit,
+                        Price = i.Price,
                         ImageUrl = i.ImageUrl,
                         Cancelled = i.Cancelled,
                         CreatedAt = i.CreatedAt,
@@ -420,6 +448,10 @@ namespace API.Controllers
                         X = i.X,
                         Y = i.Y,
                         Z = i.Z,
+                        Supplier = i.Supplier,
+                        SupplierCode = i.SupplierCode,
+                        Unit = i.Unit,
+                        Price = i.Price,
                         ImageUrl = i.ImageUrl,
                         Cancelled = i.Cancelled,
                         CreatedAt = i.CreatedAt,

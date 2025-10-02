@@ -41,8 +41,15 @@ namespace API.Data.Entities
 
         public DateTime? UpdatedAt { get; set; }
 
+        public string SupplierCode { get; set; } = string.Empty;
+        public double Price { get; set; }
+        public string? Supplier { get; set; }
+        public string? Unit { get; set; }
+
         // Navigation property
         [ForeignKey("GroupId")]
         public virtual ItemGroup? ItemGroup { get; set; }
+
+
     }
 }
