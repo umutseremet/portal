@@ -10,6 +10,7 @@ import ProductionPage from './pages/ProductionPage';
 import VisitorsPage from './pages/VisitorsPage';
 import VehiclesPage from './pages/VehiclesPage';
 import './App.css';
+import WeeklyProductionCalendarPage from './pages/WeeklyProductionCalendarPage';
 
 function App() {
   return (
@@ -18,7 +19,7 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
-          
+
           {/* Protected Routes */}
           <Route
             path="/dashboard"
@@ -30,7 +31,17 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
+          <Route
+            path="/production/weekly-calendar"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <WeeklyProductionCalendarPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/vehicles"
             element={
@@ -41,7 +52,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/production/*"
             element={
@@ -52,7 +63,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/visitors"
             element={
@@ -63,7 +74,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           {/* Redirect routes */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

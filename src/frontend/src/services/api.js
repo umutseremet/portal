@@ -475,6 +475,71 @@ class ApiService {
       };
     }
   }
+
+  // ===== WEEKLY PRODUCTION CALENDAR ENDPOINTS =====
+
+/**
+ * Get weekly production calendar data
+ * @param {Object} params - Request parameters
+ * @param {number|null} params.parentIssueId - Parent issue ID for recursive search
+ * @param {string|null} params.startDate - Week start date (yyyy-MM-dd format)
+ * @param {number|null} params.projectId - Project ID for filtering
+ * @returns {Promise<Object>} Weekly calendar response
+ */
+async getWeeklyProductionCalendar(params = {}) {
+  try {
+    console.log('📅 API getWeeklyProductionCalendar request:', params);
+
+    const requestBody = {
+      parentIssueId: params.parentIssueId || null,
+      startDate: params.startDate || null,
+      projectId: params.projectId || null
+    };
+
+    const response = await this.post('/RedmineWeeklyCalendar/GetWeeklyProductionCalendar', requestBody);
+    
+    console.log('📅 API getWeeklyProductionCalendar raw response:', response);
+
+    // Response formatını düzenle (camelCase'e çevir)
+    const mappedResponse = {
+      weekStart: response.weekStart || response.WeekStart,
+      weekEnd: response.weekEnd || response.WeekEnd,
+      days: (response.days || response.Days || []).map(day => ({
+        date: day.date || day.Date,
+        dayOfWeek: day.dayOfWeek ?? day.DayOfWeek,
+        dayName: day.dayName || day.DayName,
+        productionIssues: (day.productionIssues || day.ProductionIssues || []).map(issue => ({
+          issueId: issue.issueId ?? issue.IssueId,
+          projectId: issue.projectId ?? issue.ProjectId,
+          projectName: issue.projectName || issue.ProjectName || '',
+          subject: issue.subject || issue.Subject || '',
+          trackerName: issue.trackerName || issue.TrackerName || '',
+          completionPercentage: issue.completionPercentage ?? issue.CompletionPercentage ?? 0,
+          estimatedHours: issue.estimatedHours ?? issue.EstimatedHours,
+          statusName: issue.statusName || issue.StatusName || '',
+          isClosed: issue.isClosed ?? issue.IsClosed ?? false,
+          priorityName: issue.priorityName || issue.PriorityName || 'Normal',
+          assignedTo: issue.assignedTo || issue.AssignedTo || 'Atanmamış',
+          plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
+          plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
+          isCompleted: issue.isCompleted ?? issue.IsCompleted ?? false,
+          statusText: issue.statusText || issue.StatusText || '',
+          productionType: issue.productionType || issue.ProductionType || ''
+        }))
+      }))
+    };
+
+    console.log('✅ API getWeeklyProductionCalendar mapped response:', mappedResponse);
+    return mappedResponse;
+  } catch (error) {
+    console.error('❌ API getWeeklyProductionCalendar error:', error);
+    throw error;
+  }
+}
+
+// ===== EXPORT =====
+// Mevcut export satırınızın sonuna bu fonksiyonu ekleyin:
+// getWeeklyProductionCalendar: this.getWeeklyProductionCalendar.bind(this),
 }
 
 // Create a single instance

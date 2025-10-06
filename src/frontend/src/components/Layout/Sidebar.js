@@ -36,36 +36,41 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
         { id: 'item-groups', label: 'Ürün Grupları', path: '/definitions/item-groups' },
       ]
     },
-    {
-      id: 'vehicles',
-      label: 'Araç Takip',
-      icon: 'bi-truck',
-      path: '/vehicles'
-    },
+    // {
+    //   id: 'vehicles',
+    //   label: 'Araç Takip',
+    //   icon: 'bi-truck',
+    //   path: '/vehicles'
+    // },
     {
       id: 'visitors',
       label: 'Ziyaretçi Takip',
       icon: 'bi-people-fill',
       path: '/visitors'
-    } 
+    },
+    {
+      id: 'weekly-calendar',
+      label: 'Haftalık Takvim',
+      path: '/production/weekly-calendar'
+    }
   ];
 
   // Check if current path is active
   const isActive = (path) => {
-    return location.pathname === path || 
-           (path !== '/' && location.pathname.startsWith(path));
+    return location.pathname === path ||
+      (path !== '/' && location.pathname.startsWith(path));
   };
 
   // Handle menu click
   const handleMenuClick = (path, e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     console.log('🔗 Sidebar: Navigating to:', path);
-    
+
     // Navigate to the path
     navigate(path);
-    
+
     // Close sidebar on mobile after navigation
     if (isMobile && isOpen) {
       setTimeout(() => toggleSidebar(), 150);
@@ -76,7 +81,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
   const handleGroupToggle = (groupId, e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     setExpandedGroups(prev => ({
       ...prev,
       [groupId]: !prev[groupId]
@@ -89,7 +94,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     if (item.children) {
       const isExpanded = expandedGroups[item.id];
       const hasActiveChild = item.children.some(child => isActive(child.path));
-      
+
       return (
         <div key={item.id} className="nav-group">
           <button
@@ -118,17 +123,17 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
               <i className={`${item.icon} me-3`} style={{ fontSize: '1.1rem', width: '20px' }}></i>
               <span>{item.label}</span>
             </div>
-            <i 
+            <i
               className={`bi ${isExpanded ? 'bi-chevron-down' : 'bi-chevron-right'}`}
-              style={{ 
+              style={{
                 fontSize: '0.8rem',
                 transition: 'transform 0.2s ease'
               }}
             ></i>
           </button>
-          
+
           {/* Submenu */}
-          <div 
+          <div
             className={`submenu ${isExpanded ? 'expanded' : 'collapsed'}`}
             style={{
               maxHeight: isExpanded ? '200px' : '0',
@@ -204,7 +209,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       {/* Sidebar - CSS'in kontrol etmesine izin ver */}
       <nav className={`sidebar ${isOpen ? 'show' : ''}`}>
         {/* Sidebar Header */}
-        <div 
+        <div
           className="sidebar-header"
           style={{
             padding: '1.5rem 1rem 1rem',
@@ -213,7 +218,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div 
+            <div
               className="logo-icon"
               style={{
                 width: '36px',
@@ -230,7 +235,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
             >
               <i className="bi bi-truck"></i>
             </div>
-            <h4 
+            <h4
               className="logo-text"
               style={{
                 fontWeight: '700',
