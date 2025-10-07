@@ -2,16 +2,16 @@
 import React from 'react';
 import GroupedIssueCard from './GroupedIssueCard';
 
-const CalendarGrid = ({ days, formatDate }) => {
+const CalendarGrid = ({ days, formatDate, onCardClick }) => {
   const isToday = (dateInput) => {
     try {
       const today = new Date();
       const checkDate = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-      
+
       // Sadece tarih kısmını karşılaştır
       return today.getFullYear() === checkDate.getFullYear() &&
-             today.getMonth() === checkDate.getMonth() &&
-             today.getDate() === checkDate.getDate();
+        today.getMonth() === checkDate.getMonth() &&
+        today.getDate() === checkDate.getDate();
     } catch (error) {
       console.error('Error checking isToday:', error);
       return false;
@@ -21,8 +21,8 @@ const CalendarGrid = ({ days, formatDate }) => {
   return (
     <div className="calendar-grid">
       {days?.map((day, index) => (
-        <div 
-          key={index} 
+        <div
+          key={index}
           className={`calendar-day-card ${isToday(day.date) ? 'today' : ''}`}
         >
           {/* Day Header */}
@@ -40,7 +40,11 @@ const CalendarGrid = ({ days, formatDate }) => {
           <div className="day-issues">
             {day.groupedProductions && day.groupedProductions.length > 0 ? (
               day.groupedProductions.map((group, idx) => (
-                <GroupedIssueCard key={idx} group={group} />
+                <GroupedIssueCard
+                  key={idx}
+                  group={group}
+                  onClick={() => onCardClick && onCardClick(group, day.date)}  // YENİ satır
+                />
               ))
             ) : (
               <div className="no-issues">

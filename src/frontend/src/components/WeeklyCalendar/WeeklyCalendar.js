@@ -1,5 +1,6 @@
 // src/frontend/src/components/WeeklyCalendar/WeeklyCalendar.js
-import React from 'react';
+import React, { useState } from 'react'; // useState eklendi
+
 import { useWeeklyCalendar } from '../../hooks/useWeeklyCalendar';
 import CalendarHeader from './CalendarHeader';
 import CalendarNavigation from './CalendarNavigation';
@@ -7,7 +8,16 @@ import CalendarGrid from './CalendarGrid';
 import { LoadingState, EmptyState } from './LoadingState';
 import './WeeklyCalendar.css';
 
+import IssueDetailsModal from './IssueDetailsModal'; // YENİ satır
+
+
 const WeeklyCalendar = () => {
+
+  // Component içine (useWeeklyCalendar'dan önce):
+  const [showModal, setShowModal] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+
   const {
     // Data
     calendarData,
@@ -38,6 +48,18 @@ const WeeklyCalendar = () => {
     formatDate
   } = useWeeklyCalendar();
 
+  // useWeeklyCalendar'dan sonra (productionTypes tanımından sonra):
+  const handleCardClick = (group, date) => {
+    setSelectedGroup(group);
+    setSelectedDate(date);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedGroup(null);
+    setSelectedDate(null);
+  };
   const productionTypes = getAllProductionTypes();
   const projectLegend = getProjectLegend();
 
@@ -48,9 +70,9 @@ const WeeklyCalendar = () => {
     <div className="weekly-production-calendar">
       <div className="container-fluid">
         {/* Header */}
-        <CalendarHeader 
-          onRefresh={fetchCalendarData} 
-          loading={loading} 
+        <CalendarHeader
+          onRefresh={fetchCalendarData}
+          loading={loading}
         />
 
         {/* Navigation with Filters and Legend */}
@@ -88,14 +110,22 @@ const WeeklyCalendar = () => {
             <CalendarGrid
               days={calendarData.days}
               formatDate={formatDate}
+              onCardClick={handleCardClick}  // YENİ satır
             />
 
             {/* Empty State - if all days have no issues */}
-            {calendarData.days?.every(d => 
+            {calendarData.days?.every(d =>
               (d.groupedProductions || []).length === 0
             ) && <EmptyState />}
           </>
         )}
+
+        <IssueDetailsModal
+          show={showModal}
+          onHide={handleCloseModal}
+          selectedGroup={selectedGroup}
+          selectedDate={selectedDate}
+        />
       </div>
     </div>
   );
