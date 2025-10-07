@@ -2,7 +2,6 @@
 import React from 'react';
 import { useWeeklyCalendar } from '../../hooks/useWeeklyCalendar';
 import CalendarHeader from './CalendarHeader';
-import ProjectLegend from './ProjectLegend';
 import CalendarNavigation from './CalendarNavigation';
 import CalendarGrid from './CalendarGrid';
 import { LoadingState, EmptyState } from './LoadingState';
@@ -27,7 +26,6 @@ const WeeklyCalendar = () => {
     // Filters
     updateFilters,
     resetFilters,
-    filterIssuesByType,
     getAllProductionTypes,
 
     // Statistics & Legend
@@ -43,6 +41,9 @@ const WeeklyCalendar = () => {
   const productionTypes = getAllProductionTypes();
   const projectLegend = getProjectLegend();
 
+  // 🐛 DEBUG: Console'da kontrol edelim
+  console.log('🎨 WeeklyCalendar - projectLegend:', projectLegend);
+
   return (
     <div className="weekly-production-calendar">
       <div className="container-fluid">
@@ -52,10 +53,7 @@ const WeeklyCalendar = () => {
           loading={loading} 
         />
 
-        {/* Project Legend */}
-        <ProjectLegend projects={projectLegend} />
-
-        {/* Navigation with Filters - CalendarFilters KALDIRILDI */}
+        {/* Navigation with Filters and Legend */}
         <CalendarNavigation
           weekStart={calendarData?.weekStart}
           weekEnd={calendarData?.weekEnd}
@@ -63,12 +61,14 @@ const WeeklyCalendar = () => {
           onPrevious={goToPreviousWeek}
           onNext={goToNextWeek}
           onToday={goToToday}
-          // Filtre props'ları eklendi
+          // Filtre props'ları
           filters={filters}
           projectList={projectList}
           productionTypes={productionTypes}
           onFilterChange={updateFilters}
           onResetFilters={resetFilters}
+          // ✅ BURADA EKSİKTİ - projectLegend prop'u eklendi
+          projectLegend={projectLegend}
         />
 
         {/* Loading State */}

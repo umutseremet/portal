@@ -66,14 +66,7 @@ const CalendarNavigation = ({
           </div>
 
           <div className="d-flex gap-2">
-            <button
-              className="btn btn-outline-primary"
-              onClick={onToday}
-              disabled={loading}
-            >
-              <i className="bi bi-calendar-today me-2"></i>
-              Bugün
-            </button>
+            
             
             {/* Proje Renkleri Butonu */}
             <button
@@ -106,7 +99,14 @@ const CalendarNavigation = ({
                 </span>
               )}
             </button>
-            
+            <button
+              className="btn btn-outline-primary"
+              onClick={onToday}
+              disabled={loading}
+            >
+              <i className="bi bi-calendar-today me-2"></i>
+              Bugün
+            </button>
             <button
               className="btn btn-outline-secondary"
               onClick={onNext}
@@ -190,10 +190,7 @@ const CalendarNavigation = ({
                   <div className="project-info">
                     <span className="project-code">{project.code}</span>
                     <span className="project-name text-muted">{project.name}</span>
-                  </div>
-                  <span className="project-count badge bg-secondary ms-auto">
-                    {project.count} iş
-                  </span>
+                  </div> 
                 </div>
               ))}
             </div>
