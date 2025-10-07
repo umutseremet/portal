@@ -35,7 +35,19 @@ namespace API.Models
         public DateTime Date { get; set; }
         public int DayOfWeek { get; set; }
         public string DayName { get; set; } = string.Empty;
-        public List<ProductionIssueData> ProductionIssues { get; set; } = new();
+        public List<GroupedProductionData> GroupedProductions { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Proje ve iş tipine göre gruplanmış üretim verisi
+    /// </summary>
+    public class GroupedProductionData
+    {
+        public int ProjectId { get; set; }
+        public string ProjectCode { get; set; } = string.Empty;
+        public string ProjectName { get; set; } = string.Empty;
+        public string ProductionType { get; set; } = string.Empty;
+        public int IssueCount { get; set; }
     }
 
     public class ProductionIssueData
@@ -43,6 +55,7 @@ namespace API.Models
         public int IssueId { get; set; }
         public int ProjectId { get; set; }
         public string ProjectName { get; set; } = string.Empty;
+        public string ProjectCode { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;
         public string TrackerName { get; set; } = string.Empty;
         public int CompletionPercentage { get; set; }
@@ -63,4 +76,7 @@ namespace API.Models
         /// </summary>
         public string ProductionType => TrackerName.Replace("Üretim - ", "").Trim();
     }
+
+
+    
 }

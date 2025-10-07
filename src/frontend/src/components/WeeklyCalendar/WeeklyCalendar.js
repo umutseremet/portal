@@ -2,8 +2,7 @@
 import React from 'react';
 import { useWeeklyCalendar } from '../../hooks/useWeeklyCalendar';
 import CalendarHeader from './CalendarHeader';
-import CalendarStats from './CalendarStats';
-import CalendarFilters from './CalendarFilters';
+import ProjectLegend from './ProjectLegend';
 import CalendarNavigation from './CalendarNavigation';
 import CalendarGrid from './CalendarGrid';
 import { LoadingState, EmptyState } from './LoadingState';
@@ -31,8 +30,8 @@ const WeeklyCalendar = () => {
     filterIssuesByType,
     getAllProductionTypes,
 
-    // Statistics
-    getStatistics,
+    // Statistics & Legend
+    getProjectLegend,
 
     // Actions
     fetchCalendarData,
@@ -41,8 +40,8 @@ const WeeklyCalendar = () => {
     formatDate
   } = useWeeklyCalendar();
 
-  const stats = getStatistics();
   const productionTypes = getAllProductionTypes();
+  const projectLegend = getProjectLegend();
 
   return (
     <div className="weekly-production-calendar">
@@ -53,19 +52,10 @@ const WeeklyCalendar = () => {
           loading={loading} 
         />
 
-        {/* Statistics */}
-        <CalendarStats statistics={stats} />
+        {/* Project Legend */}
+        <ProjectLegend projects={projectLegend} />
 
-        {/* Filters */}
-        <CalendarFilters
-          filters={filters}
-          projectList={projectList}
-          productionTypes={productionTypes}
-          onFilterChange={updateFilters}
-          onResetFilters={resetFilters}
-        />
-
-        {/* Navigation */}
+        {/* Navigation with Filters - CalendarFilters KALDIRILDI */}
         <CalendarNavigation
           weekStart={calendarData?.weekStart}
           weekEnd={calendarData?.weekEnd}
@@ -73,6 +63,12 @@ const WeeklyCalendar = () => {
           onPrevious={goToPreviousWeek}
           onNext={goToNextWeek}
           onToday={goToToday}
+          // Filtre props'ları eklendi
+          filters={filters}
+          projectList={projectList}
+          productionTypes={productionTypes}
+          onFilterChange={updateFilters}
+          onResetFilters={resetFilters}
         />
 
         {/* Loading State */}
@@ -91,13 +87,12 @@ const WeeklyCalendar = () => {
           <>
             <CalendarGrid
               days={calendarData.days}
-              filterIssuesByType={filterIssuesByType}
               formatDate={formatDate}
             />
 
             {/* Empty State - if all days have no issues */}
             {calendarData.days?.every(d => 
-              filterIssuesByType(d.productionIssues || []).length === 0
+              (d.groupedProductions || []).length === 0
             ) && <EmptyState />}
           </>
         )}

@@ -1,7 +1,7 @@
 // src/frontend/src/hooks/useWeeklyCalendar.js
 import { useState, useEffect, useCallback } from 'react';
 import apiService from '../services/api';
-
+import { getProjectColor } from '../utils/colorUtils';
 export const useWeeklyCalendar = () => {
   // State
   const [calendarData, setCalendarData] = useState(null);
@@ -23,8 +23,27 @@ export const useWeeklyCalendar = () => {
     return new Date(d.setDate(diff));
   }, []);
 
-  const formatDate = useCallback((date) => {
-    return date.toISOString().split('T')[0];
+  // Tarih formatlama fonksiyonu - GÜNCELLENMİŞ
+  const formatDate = useCallback((dateInput) => {
+    try {
+      // Eğer zaten string ise Date objesine çevir
+      const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+
+      // Geçerli bir tarih mi kontrol et
+      if (!(date instanceof Date) || isNaN(date.getTime())) {
+        console.warn('Invalid date input:', dateInput);
+        return '-';
+      }
+
+      return date.toLocaleDateString('tr-TR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, dateInput);
+      return '-';
+    }
   }, []);
 
   // Fetch calendar data
@@ -33,8 +52,9 @@ export const useWeeklyCalendar = () => {
     setError(null);
 
     try {
+      const weekStart = getWeekStart(currentWeek);
       const requestBody = {
-        startDate: formatDate(getWeekStart(currentWeek)),
+        startDate: weekStart.toISOString().split('T')[0],
         parentIssueId: filters.parentIssueId ? parseInt(filters.parentIssueId) : null,
         projectId: filters.projectId ? parseInt(filters.projectId) : null
       };
@@ -42,16 +62,19 @@ export const useWeeklyCalendar = () => {
       console.log('📅 Fetching calendar data:', requestBody);
 
       const response = await apiService.getWeeklyProductionCalendar(requestBody);
-      
+
       console.log('✅ Calendar data received:', response);
       setCalendarData(response);
 
-      // Extract unique projects
+      // Extract unique projects from groupedProductions
       const projects = new Set();
       response.days?.forEach(day => {
-        day.productionIssues?.forEach(issue => {
-          if (issue.projectId && issue.projectName) {
-            projects.add(JSON.stringify({ id: issue.projectId, name: issue.projectName }));
+        day.groupedProductions?.forEach(group => {
+          if (group.projectId && group.projectCode) {
+            projects.add(JSON.stringify({
+              id: group.projectId,
+              code: group.projectCode
+            }));
           }
         });
       });
@@ -63,7 +86,7 @@ export const useWeeklyCalendar = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentWeek, filters, formatDate, getWeekStart]);
+  }, [currentWeek, filters, getWeekStart]);
 
   // Load data when filters or week changes
   useEffect(() => {
@@ -101,9 +124,9 @@ export const useWeeklyCalendar = () => {
   }, []);
 
   // Filter issues by production type
-  const filterIssuesByType = useCallback((issues) => {
-    if (filters.productionType === 'all') return issues;
-    return issues.filter(issue => issue.productionType === filters.productionType);
+  const filterIssuesByType = useCallback((groups) => {
+    if (filters.productionType === 'all') return groups;
+    return groups.filter(group => group.productionType === filters.productionType);
   }, [filters.productionType]);
 
   // Get all unique production types
@@ -111,37 +134,42 @@ export const useWeeklyCalendar = () => {
     if (!calendarData) return [];
     const types = new Set();
     calendarData.days?.forEach(day => {
-      day.productionIssues?.forEach(issue => {
-        if (issue.productionType) types.add(issue.productionType);
+      day.groupedProductions?.forEach(group => {
+        if (group.productionType) types.add(group.productionType);
       });
     });
     return Array.from(types).sort();
   }, [calendarData]);
 
-  // Calculate statistics
-  const getStatistics = useCallback(() => {
-    if (!calendarData) return { total: 0, completed: 0, inProgress: 0, avgCompletion: 0 };
-    
-    let total = 0;
-    let completed = 0;
-    let totalCompletion = 0;
+  // Proje legend verilerini hesapla
+  const getProjectLegend = useCallback(() => {
+    if (!calendarData) return [];
+
+    const projectMap = new Map();
 
     calendarData.days?.forEach(day => {
-      const filteredIssues = filterIssuesByType(day.productionIssues || []);
-      filteredIssues.forEach(issue => {
-        total++;
-        totalCompletion += issue.completionPercentage || 0;
-        if (issue.isCompleted) completed++;
+      day.groupedProductions?.forEach(group => {
+        const key = group.projectId;
+
+        if (projectMap.has(key)) {
+          const existing = projectMap.get(key);
+          existing.count += group.issueCount || 1;
+        } else {
+          projectMap.set(key, {
+            projectId: group.projectId,
+            code: group.projectCode || 'Kod Yok',
+            name: group.projectName || 'İsimsiz Proje',
+            color: getProjectColor(group.projectId),
+            count: group.issueCount || 1
+          });
+        }
       });
     });
 
-    return {
-      total,
-      completed,
-      inProgress: total - completed,
-      avgCompletion: total > 0 ? Math.round(totalCompletion / total) : 0
-    };
-  }, [calendarData, filterIssuesByType]);
+    // Map'i array'e çevir ve kod'a göre sırala
+    return Array.from(projectMap.values())
+      .sort((a, b) => a.code.localeCompare(b.code));
+  }, [calendarData]);
 
   return {
     // Data
@@ -165,8 +193,8 @@ export const useWeeklyCalendar = () => {
     filterIssuesByType,
     getAllProductionTypes,
 
-    // Statistics
-    getStatistics,
+    // Statistics & Legend
+    getProjectLegend,
 
     // Actions
     fetchCalendarData,
