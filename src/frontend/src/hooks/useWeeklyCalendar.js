@@ -48,15 +48,17 @@ export const useWeeklyCalendar = () => {
 
   // Fetch calendar data
   const fetchCalendarData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
     try {
+      setLoading(true);
+      setError(null);
+
       const weekStart = getWeekStart(currentWeek);
+
       const requestBody = {
         startDate: weekStart.toISOString().split('T')[0],
         parentIssueId: filters.parentIssueId ? parseInt(filters.parentIssueId) : null,
-        projectId: filters.projectId ? parseInt(filters.projectId) : null
+        projectId: filters.projectId ? parseInt(filters.projectId) : null,
+        productionType: filters.productionType && filters.productionType !== 'all' ? filters.productionType : null  // YENİ
       };
 
       console.log('📅 Fetching calendar data:', requestBody);

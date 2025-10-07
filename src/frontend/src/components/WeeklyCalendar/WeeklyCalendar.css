@@ -399,13 +399,14 @@
   animation: fadeIn 0.3s ease-in-out;
 }
 
+/* Meksika dalgası efekti
 .calendar-day-card:nth-child(1) { animation-delay: 0.05s; }
 .calendar-day-card:nth-child(2) { animation-delay: 0.1s; }
 .calendar-day-card:nth-child(3) { animation-delay: 0.15s; }
 .calendar-day-card:nth-child(4) { animation-delay: 0.2s; }
 .calendar-day-card:nth-child(5) { animation-delay: 0.25s; }
 .calendar-day-card:nth-child(6) { animation-delay: 0.3s; }
-.calendar-day-card:nth-child(7) { animation-delay: 0.35s; }
+.calendar-day-card:nth-child(7) { animation-delay: 0.35s; } */
 
 /* Loading State */
 .spinner-border {

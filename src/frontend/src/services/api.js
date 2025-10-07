@@ -490,7 +490,8 @@ class ApiService {
       const requestBody = {
         parentIssueId: params.parentIssueId || null,
         startDate: params.startDate || null,
-        projectId: params.projectId || null
+        projectId: params.projectId || null,
+        productionType: params.productionType && params.productionType !== 'all' ? params.productionType : null  // YENİ
       };
 
       const response = await this.post('/RedmineWeeklyCalendar/GetWeeklyProductionCalendar', requestBody);
@@ -502,11 +503,10 @@ class ApiService {
         weekStart: response.weekStart || response.WeekStart,
         weekEnd: response.weekEnd || response.WeekEnd,
         days: (response.days || response.Days || []).map(day => {
-          // Tarih string formatında geliyorsa Date objesine çevirmeye gerek yok
           let dateValue = day.date || day.Date;
 
           return {
-            date: dateValue, // String olarak bırak, formatDate fonksiyonu halledecek
+            date: dateValue,
             dayOfWeek: day.dayOfWeek ?? day.DayOfWeek,
             dayName: day.dayName || day.DayName,
             groupedProductions: (day.groupedProductions || day.GroupedProductions || []).map(group => ({

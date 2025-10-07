@@ -145,7 +145,7 @@ const CalendarNavigation = ({
               <div className="col-lg-4 col-md-6">
                 <label className="form-label fw-semibold">
                   <i className="bi bi-gear me-1"></i>
-                  Üretim Tipi
+                  İş Tipi
                 </label>
                 <select
                   className="form-select"

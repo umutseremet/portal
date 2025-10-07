@@ -32,21 +32,17 @@ namespace API.Controllers
             _configuration = configuration;
         }
 
-        /// <summary>
-        /// Haftalık takvim görünümü için üretim işlerini getirir
-        /// </summary>
-        /// <param name="request">Haftalık takvim isteği</param>
-        /// <returns>Haftalık takvim verisi</returns>
+        // 1. GetWeeklyProductionCalendar metodunu güncelle
         [HttpPost("GetWeeklyProductionCalendar")]
 #if DEBUG
-        [AllowAnonymous] // Development'ta herkese açık
+        [AllowAnonymous]
 #endif
         public async Task<IActionResult> GetWeeklyProductionCalendar([FromBody] GetWeeklyProductionCalendarRequest request)
         {
             try
             {
-                _logger.LogInformation("Getting weekly production calendar data for parent issue: {ParentIssueId}, StartDate: {StartDate}, ProjectId: {ProjectId}",
-                    request.ParentIssueId, request.StartDate, request.ProjectId);
+                _logger.LogInformation("Getting weekly production calendar data for parent issue: {ParentIssueId}, StartDate: {StartDate}, ProjectId: {ProjectId}, ProductionType: {ProductionType}",
+                    request.ParentIssueId, request.StartDate, request.ProjectId, request.ProductionType);
 
                 DateTime weekStart;
                 if (string.IsNullOrEmpty(request.StartDate))
@@ -63,7 +59,8 @@ namespace API.Controllers
                     weekStart = GetWeekStart(weekStart);
                 }
 
-                var result = await GetWeeklyProductionDataAsync(weekStart, request.ParentIssueId, request.ProjectId);
+                // ProductionType parametresini de geç
+                var result = await GetWeeklyProductionDataAsync(weekStart, request.ParentIssueId, request.ProjectId, request.ProductionType);
 
                 _logger.LogInformation("Weekly production calendar data retrieved successfully for week starting: {WeekStart}", weekStart);
                 return Ok(result);
@@ -76,10 +73,13 @@ namespace API.Controllers
         }
 
         #region Private Methods
+
+        // 2. GetWeeklyProductionDataAsync metoduna productionType parametresini ekle
         private async Task<WeeklyProductionCalendarResponse> GetWeeklyProductionDataAsync(
-    DateTime weekStart,
-    int? parentIssueId,
-    int? projectId)
+            DateTime weekStart,
+            int? parentIssueId,
+            int? projectId,
+            string? productionType)  // YENİ PARAMETRE
         {
             var response = new WeeklyProductionCalendarResponse
             {
@@ -99,13 +99,13 @@ namespace API.Controllers
             {
                 var currentDate = weekStart.AddDays(day);
 
-                // Ham verileri çek
+                // Ham verileri çek - productionType'ı da geç
                 var rawIssues = await GetProductionIssuesForDateAsync(
                     connection,
                     currentDate,
                     parentIssueId,
-                    projectId);
-
+                    projectId,
+                    productionType);  // YENİ PARAMETRE
 
                 // Proje ve iş tipine göre grupla
                 var groupedData = rawIssues
@@ -141,28 +141,32 @@ namespace API.Controllers
 
             return response;
         }
+
+        // 3. GetProductionIssuesForDateAsync metoduna productionType parametresini ekle ve SQL'e ekle
         private async Task<List<ProductionIssueData>> GetProductionIssuesForDateAsync(
-        SqlConnection connection,
-        DateTime date,
-        int? parentIssueId,
-        int? projectId)
+            SqlConnection connection,
+            DateTime date,
+            int? parentIssueId,
+            int? projectId,
+            string? productionType)  // YENİ PARAMETRE
         {
             var issues = new List<ProductionIssueData>();
-
             string sql;
 
-            // ParentIssueId varsa recursive CTE kullan, yoksa tüm üretim işlerini getir
             if (parentIssueId.HasValue)
             {
+                // ... (mevcut SQL - WITH RECURSIVE kısmı aynı kalacak)
                 sql = @"
             WITH RecursiveIssues AS (
-                SELECT id
+                -- Ana iş
+                SELECT id, parent_id
                 FROM issues
-                WHERE parent_id = @ParentIssueId
+                WHERE id = @ParentIssueId
                 
                 UNION ALL
                 
-                SELECT i.id
+                -- Alt işler (recursive)
+                SELECT i.id, i.parent_id
                 FROM issues i
                 INNER JOIN RecursiveIssues ri ON i.parent_id = ri.id
             )
@@ -190,15 +194,15 @@ namespace API.Controllers
             LEFT JOIN custom_values cv_pbaslangic 
                 ON cv_pbaslangic.customized_id = i.id 
                 AND cv_pbaslangic.customized_type = 'Issue'
-                AND cv_pbaslangic.custom_field_id = 12  -- Planlanan Başlangıç
+                AND cv_pbaslangic.custom_field_id = 12
             LEFT JOIN custom_values cv_pbitis 
                 ON cv_pbitis.customized_id = i.id 
                 AND cv_pbitis.customized_type = 'Issue'
-                AND cv_pbitis.custom_field_id = 4  -- Planlanan Bitiş
+                AND cv_pbitis.custom_field_id = 4
             LEFT JOIN custom_values cv_proje_kodu 
                 ON cv_proje_kodu.customized_id = p.id 
                 AND cv_proje_kodu.customized_type = 'Project'
-                AND cv_proje_kodu.custom_field_id = 3  -- Proje Kodu
+                AND cv_proje_kodu.custom_field_id = 3
             WHERE i.id IN (SELECT id FROM RecursiveIssues)
                 AND t.name LIKE N'Üretim -%'
                 AND cv_pbaslangic.value IS NOT NULL
@@ -234,15 +238,15 @@ namespace API.Controllers
             LEFT JOIN custom_values cv_pbaslangic 
                 ON cv_pbaslangic.customized_id = i.id 
                 AND cv_pbaslangic.customized_type = 'Issue'
-                AND cv_pbaslangic.custom_field_id = 12  -- Planlanan Başlangıç
+                AND cv_pbaslangic.custom_field_id = 12
             LEFT JOIN custom_values cv_pbitis 
                 ON cv_pbitis.customized_id = i.id 
                 AND cv_pbitis.customized_type = 'Issue'
-                AND cv_pbitis.custom_field_id = 4  -- Planlanan Bitiş
+                AND cv_pbitis.custom_field_id = 4
             LEFT JOIN custom_values cv_proje_kodu 
                 ON cv_proje_kodu.customized_id = p.id 
                 AND cv_proje_kodu.customized_type = 'Project'
-                AND cv_proje_kodu.custom_field_id = 3  -- Proje Kodu
+                AND cv_proje_kodu.custom_field_id = 3
             WHERE t.name LIKE N'Üretim -%'
                 AND cv_pbaslangic.value IS NOT NULL
                 AND cv_pbitis.value IS NOT NULL
@@ -254,6 +258,12 @@ namespace API.Controllers
             if (projectId.HasValue)
             {
                 sql += " AND i.project_id = @ProjectId";
+            }
+
+            // YENİ: ProductionType filtresi varsa ekle
+            if (!string.IsNullOrEmpty(productionType))
+            {
+                sql += " AND t.name = @ProductionTypeName";
             }
 
             sql += " ORDER BY p.name, t.name, i.subject";
@@ -272,13 +282,20 @@ namespace API.Controllers
                 command.Parameters.AddWithValue("@ProjectId", projectId.Value);
             }
 
+            // YENİ: ProductionType parametresi ekle
+            if (!string.IsNullOrEmpty(productionType))
+            {
+                // "Lazer" -> "Üretim - Lazer" formatına çevir
+                command.Parameters.AddWithValue("@ProductionTypeName", $"Üretim - {productionType}");
+            }
+
             using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
+                // ... (geri kalan kod aynı kalacak - issue nesnesi oluşturma kısmı)
                 DateTime? plannedStart = null;
                 DateTime? plannedEnd = null;
 
-                // Planlanan tarih değerlerini parse et
                 var plannedStartStr = reader.IsDBNull(reader.GetOrdinal("planlanan_baslangic"))
                     ? null : reader.GetString(reader.GetOrdinal("planlanan_baslangic"));
                 var plannedEndStr = reader.IsDBNull(reader.GetOrdinal("planlanan_bitis"))

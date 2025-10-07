@@ -50,7 +50,8 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     },
     {
       id: 'weekly-calendar',
-      label: 'Haftalık Takvim',
+      label: 'Haftalık Üretim Planı',
+      icon: 'bi-calendar3',
       path: '/production/weekly-calendar'
     }
   ];

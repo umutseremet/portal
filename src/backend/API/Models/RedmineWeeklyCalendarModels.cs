@@ -20,6 +20,12 @@ namespace API.Models
         /// Proje ID'si - Belirli bir projeye göre filtreleme yapmak için (opsiyonel)
         /// </summary>
         public int? ProjectId { get; set; }
+
+        /// <summary>
+        /// Üretim tipi - Belirli bir üretim tipine göre filtreleme yapmak için (opsiyonel)
+        /// Örnek: "Lazer", "Abkant", "Kaynak" vb.
+        /// </summary>
+        public string? ProductionType { get; set; }
     }
 
     // Response Models

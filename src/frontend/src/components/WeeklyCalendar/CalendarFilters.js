@@ -45,7 +45,7 @@ const CalendarFilters = ({
           </div>
 
           <div className="col-lg-3 col-md-6">
-            <label className="form-label">Üretim Tipi</label>
+            <label className="form-label">İş Tipi</label>
             <select
               className="form-select"
               value={filters.productionType}
