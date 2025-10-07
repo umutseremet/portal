@@ -1,7 +1,14 @@
-// src/frontend/src/components/WeeklyCalendar/IssueCard.js - Sadeleştirilmiş Versiyon
+// src/frontend/src/components/WeeklyCalendar/IssueCard.js
 import React from 'react';
 
 const IssueCard = ({ issue }) => {
+  // ⚠️ GEÇİCİ DEBUG KODU - CONSOLE'DA GÖRECEKSİNİZ
+  console.log('🚀 COMPACT IssueCard render ediliyor:', {
+    projectName: issue.projectName,
+    issueId: issue.issueId,
+    productionType: issue.productionType
+  });
+
   const getProductionTypeColor = (type) => {
     const colors = {
       'Lazer': '#e74c3c',
@@ -27,7 +34,10 @@ const IssueCard = ({ issue }) => {
   return (
     <div 
       className="issue-card-compact"
-      style={{ borderLeftColor: getProductionTypeColor(issue.productionType) }}
+      style={{ 
+        borderLeftColor: getProductionTypeColor(issue.productionType),
+        backgroundColor: '#f8f9fa', //'#ffeb3b' // ⚠️ GEÇİCİ: SARI ARKA PLAN - GÖRECEKSINIZ
+      }}
     >
       {/* Üst Satır: İş Tipi + Tamamlanma */}
       <div className="issue-compact-header">

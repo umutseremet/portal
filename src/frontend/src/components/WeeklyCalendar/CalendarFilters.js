@@ -16,7 +16,7 @@ const CalendarFilters = ({
     <div className="card mb-4">
       <div className="card-body">
         <div className="row g-3">
-          <div className="col-lg-3 col-md-6">
+          {/* <div className="col-lg-3 col-md-6">
             <label className="form-label">Ana İş ID</label>
             <input
               type="number"
@@ -26,7 +26,7 @@ const CalendarFilters = ({
               onChange={(e) => handleChange('parentIssueId', e.target.value)}
             />
             <small className="text-muted">Boş bırakılırsa tüm işler gösterilir</small>
-          </div>
+          </div> */}
 
           <div className="col-lg-3 col-md-6">
             <label className="form-label">Proje</label>
