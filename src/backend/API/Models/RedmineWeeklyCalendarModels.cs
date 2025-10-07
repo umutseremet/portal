@@ -84,5 +84,48 @@ namespace API.Models
     }
 
 
-    
+    // API/Models/RedmineWeeklyCalendarModels.cs dosyasının sonuna eklenecek yeni model sınıfları
+
+    /// <summary>
+    /// Belirli bir tarih ve iş tipine göre detaylı iş listesi isteği
+    /// </summary>
+    public class GetIssuesByDateAndTypeRequest
+    {
+        [Required]
+        public string RedmineUsername { get; set; } = string.Empty;
+
+        [Required]
+        public string RedminePassword { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Hedef tarih (yyyy-MM-dd formatında)
+        /// </summary>
+        [Required]
+        [DataType(DataType.Date)]
+        public string Date { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Proje ID'si
+        /// </summary>
+        [Required]
+        public int ProjectId { get; set; }
+
+        /// <summary>
+        /// Üretim tipi (Lazer, Abkant, Kaynak vb.)
+        /// </summary>
+        [Required]
+        public string ProductionType { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Detaylı iş listesi yanıtı
+    /// </summary>
+    public class GetIssuesByDateAndTypeResponse
+    {
+        public DateTime Date { get; set; }
+        public int ProjectId { get; set; }
+        public string ProductionType { get; set; } = string.Empty;
+        public List<ProductionIssueData> Issues { get; set; } = new();
+        public int TotalCount { get; set; }
+    }
 }

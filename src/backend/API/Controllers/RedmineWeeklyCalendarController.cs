@@ -72,6 +72,158 @@ namespace API.Controllers
             }
         }
 
+        // API/Controllers/RedmineWeeklyCalendarController.cs içine eklenecek yeni method
+
+        /// <summary>
+        /// Belirli bir tarih, proje ve iş tipine göre detaylı iş listesini getirir
+        /// </summary>
+        [HttpPost("GetIssuesByDateAndType")]
+#if DEBUG
+        [AllowAnonymous]
+#endif
+        public async Task<IActionResult> GetIssuesByDateAndType([FromBody] GetIssuesByDateAndTypeRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Getting issues for date: {Date}, ProjectId: {ProjectId}, Type: {ProductionType}",
+                    request.Date, request.ProjectId, request.ProductionType);
+
+                if (!DateTime.TryParse(request.Date, out DateTime targetDate))
+                {
+                    return BadRequest(new ErrorResponse { Message = "Geçersiz tarih formatı" });
+                }
+
+                var connectionString = _configuration.GetConnectionString("RedmineConnection");
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    _logger.LogError("Redmine connection string not found");
+                    return StatusCode(500, new ErrorResponse { Message = "Veritabanı bağlantı ayarları bulunamadı" });
+                }
+
+                var issues = new List<ProductionIssueData>();
+
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var sql = @"
+                SELECT 
+                    i.id,
+                    i.project_id,
+                    i.subject,
+                    i.done_ratio as completion_percentage,
+                    i.estimated_hours,
+                    t.name as tracker_name,
+                    p.name as project_name,
+                    status.name as status_name,
+                    status.is_closed,
+                    priority.name as priority_name,
+                    ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') as assigned_to,
+                    cv_pbaslangic.value AS planlanan_baslangic,
+                    cv_pbitis.value AS planlanan_bitis,
+                    cv_proje_kodu.value AS proje_kodu
+                FROM issues i
+                JOIN trackers t ON i.tracker_id = t.id
+                LEFT JOIN projects p ON i.project_id = p.id
+                LEFT JOIN issue_statuses status ON i.status_id = status.id
+                LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
+                LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
+                LEFT JOIN custom_values cv_pbaslangic 
+                    ON cv_pbaslangic.customized_id = i.id 
+                    AND cv_pbaslangic.customized_type = 'Issue'
+                    AND cv_pbaslangic.custom_field_id = 2
+                LEFT JOIN custom_values cv_pbitis 
+                    ON cv_pbitis.customized_id = i.id 
+                    AND cv_pbitis.customized_type = 'Issue'
+                    AND cv_pbitis.custom_field_id = 4
+                LEFT JOIN custom_values cv_proje_kodu 
+                    ON cv_proje_kodu.customized_id = p.id 
+                    AND cv_proje_kodu.customized_type = 'Project'
+                    AND cv_proje_kodu.custom_field_id = 3
+                WHERE i.project_id = @ProjectId
+                    AND t.name = @TrackerName
+                    AND cv_pbaslangic.value IS NOT NULL
+                    AND cv_pbitis.value IS NOT NULL
+                    AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
+                    AND TRY_CAST(cv_pbitis.value AS DATE) >= @Date
+                ORDER BY i.id";
+
+                    using (var command = new SqlCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@Date", targetDate.Date);
+                        command.Parameters.AddWithValue("@ProjectId", request.ProjectId);
+                        command.Parameters.AddWithValue("@TrackerName", $"Üretim - {request.ProductionType}");
+
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                DateTime? plannedStart = null;
+                                DateTime? plannedEnd = null;
+
+                                var plannedStartStr = reader.IsDBNull(reader.GetOrdinal("planlanan_baslangic"))
+                                    ? null : reader.GetString(reader.GetOrdinal("planlanan_baslangic"));
+                                var plannedEndStr = reader.IsDBNull(reader.GetOrdinal("planlanan_bitis"))
+                                    ? null : reader.GetString(reader.GetOrdinal("planlanan_bitis"));
+
+                                if (!string.IsNullOrEmpty(plannedStartStr) && DateTime.TryParse(plannedStartStr, out var startDate))
+                                {
+                                    plannedStart = startDate;
+                                }
+
+                                if (!string.IsNullOrEmpty(plannedEndStr) && DateTime.TryParse(plannedEndStr, out var endDate))
+                                {
+                                    plannedEnd = endDate;
+                                }
+
+                                issues.Add(new ProductionIssueData
+                                {
+                                    IssueId = reader.GetInt32(reader.GetOrdinal("id")),
+                                    ProjectId = reader.GetInt32(reader.GetOrdinal("project_id")),
+                                    ProjectName = reader.IsDBNull(reader.GetOrdinal("project_name"))
+                                        ? string.Empty : reader.GetString(reader.GetOrdinal("project_name")),
+                                    ProjectCode = reader.IsDBNull(reader.GetOrdinal("proje_kodu"))
+                                        ? string.Empty : reader.GetString(reader.GetOrdinal("proje_kodu")),
+                                    Subject = reader.IsDBNull(reader.GetOrdinal("subject"))
+                                        ? string.Empty : reader.GetString(reader.GetOrdinal("subject")),
+                                    TrackerName = reader.IsDBNull(reader.GetOrdinal("tracker_name"))
+                                        ? string.Empty : reader.GetString(reader.GetOrdinal("tracker_name")),
+                                    CompletionPercentage = reader.GetInt32(reader.GetOrdinal("completion_percentage")),
+                                    EstimatedHours = reader.IsDBNull(reader.GetOrdinal("estimated_hours"))
+                                        ? null : reader.GetDecimal(reader.GetOrdinal("estimated_hours")),
+                                    StatusName = reader.IsDBNull(reader.GetOrdinal("status_name"))
+                                        ? string.Empty : reader.GetString(reader.GetOrdinal("status_name")),
+                                    IsClosed = reader.GetBoolean(reader.GetOrdinal("is_closed")),
+                                    PriorityName = reader.IsDBNull(reader.GetOrdinal("priority_name"))
+                                        ? "Normal" : reader.GetString(reader.GetOrdinal("priority_name")),
+                                    AssignedTo = reader.IsDBNull(reader.GetOrdinal("assigned_to"))
+                                        ? "Atanmamış" : reader.GetString(reader.GetOrdinal("assigned_to")),
+                                    PlannedStartDate = plannedStart,
+                                    PlannedEndDate = plannedEnd
+                                });
+                            }
+                        }
+                    }
+                }
+
+                _logger.LogInformation("Found {Count} issues for date: {Date}", issues.Count, request.Date);
+
+                return Ok(new GetIssuesByDateAndTypeResponse
+                {
+                    Date = targetDate,
+                    ProjectId = request.ProjectId,
+                    ProductionType = request.ProductionType,
+                    Issues = issues,
+                    TotalCount = issues.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting issues by date and type");
+                return StatusCode(500, new ErrorResponse { Message = "İşler getirilirken bir hata oluştu" });
+            }
+        }
+
         #region Private Methods
 
         // 2. GetWeeklyProductionDataAsync metoduna productionType parametresini ekle
