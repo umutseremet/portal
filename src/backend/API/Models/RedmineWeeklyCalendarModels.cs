@@ -91,11 +91,6 @@ namespace API.Models
     /// </summary>
     public class GetIssuesByDateAndTypeRequest
     {
-        [Required]
-        public string RedmineUsername { get; set; } = string.Empty;
-
-        [Required]
-        public string RedminePassword { get; set; } = string.Empty;
 
         /// <summary>
         /// Hedef tarih (yyyy-MM-dd formatında)

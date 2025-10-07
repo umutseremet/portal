@@ -93,7 +93,7 @@ namespace API.Controllers
                     return BadRequest(new ErrorResponse { Message = "Geçersiz tarih formatı" });
                 }
 
-                var connectionString = _configuration.GetConnectionString("RedmineConnection");
+                var connectionString = _configuration.GetConnectionString("DefaultConnection");
                 if (string.IsNullOrEmpty(connectionString))
                 {
                     _logger.LogError("Redmine connection string not found");
@@ -131,7 +131,7 @@ namespace API.Controllers
                 LEFT JOIN custom_values cv_pbaslangic 
                     ON cv_pbaslangic.customized_id = i.id 
                     AND cv_pbaslangic.customized_type = 'Issue'
-                    AND cv_pbaslangic.custom_field_id = 2
+                    AND cv_pbaslangic.custom_field_id = 12
                 LEFT JOIN custom_values cv_pbitis 
                     ON cv_pbitis.customized_id = i.id 
                     AND cv_pbitis.customized_type = 'Issue'

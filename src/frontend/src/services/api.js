@@ -528,6 +528,69 @@ class ApiService {
     }
   }
 
+  // src/services/api.js içine eklenecek yeni method
+
+  /**
+   * Get issues by date and production type
+   * @param {Object} params - Request parameters
+   * @param {string} params.date - Target date (yyyy-MM-dd)
+   * @param {number} params.projectId - Project ID
+   * @param {string} params.productionType - Production type
+   * @returns {Promise<Object>} Issues list response
+   */
+  async getIssuesByDateAndType(params = {}) {
+    try {
+      console.log('📋 API getIssuesByDateAndType request:', params);
+
+      // ✅ Credentials GEREKMİYOR - SQL Server'dan veri çekiliyor
+      const requestBody = {
+        date: params.date,
+        projectId: params.projectId,
+        productionType: params.productionType
+      };
+
+      const response = await this.post('/RedmineWeeklyCalendar/GetIssuesByDateAndType', requestBody);
+
+      console.log('📋 API getIssuesByDateAndType raw response:', response);
+
+      // Response formatını düzenle (camelCase'e çevir)
+      const mappedResponse = {
+        date: response.date || response.Date,
+        projectId: response.projectId || response.ProjectId,
+        productionType: response.productionType || response.ProductionType,
+        totalCount: response.totalCount || response.TotalCount || 0,
+        issues: (response.issues || response.Issues || []).map(issue => ({
+          issueId: issue.issueId || issue.IssueId,
+          projectId: issue.projectId || issue.ProjectId,
+          projectName: issue.projectName || issue.ProjectName || '',
+          projectCode: issue.projectCode || issue.ProjectCode || '',
+          subject: issue.subject || issue.Subject || '',
+          trackerName: issue.trackerName || issue.TrackerName || '',
+          completionPercentage: issue.completionPercentage ?? issue.CompletionPercentage ?? 0,
+          estimatedHours: issue.estimatedHours ?? issue.EstimatedHours ?? null,
+          statusName: issue.statusName || issue.StatusName || '',
+          isClosed: issue.isClosed ?? issue.IsClosed ?? false,
+          priorityName: issue.priorityName || issue.PriorityName || '',
+          assignedTo: issue.assignedTo || issue.AssignedTo || '',
+          plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
+          plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
+          productionType: issue.productionType || issue.ProductionType || ''
+        }))
+      };
+
+      console.log('📋 Mapped issues response:', mappedResponse);
+      return mappedResponse;
+    } catch (error) {
+      console.error('❌ getIssuesByDateAndType error:', error);
+      throw error;
+    }
+  }
+
+  // ========================================
+  // NOT: Bu fonksiyonu ApiService class'ının içine ekleyin
+  // ve class'ın sonundaki export kısmına da ekleyin
+  // ========================================
+
   // ===== EXPORT =====
   // Mevcut export satırınızın sonuna bu fonksiyonu ekleyin:
   // getWeeklyProductionCalendar: this.getWeeklyProductionCalendar.bind(this),

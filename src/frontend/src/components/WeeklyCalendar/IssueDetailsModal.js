@@ -1,6 +1,6 @@
 // src/components/WeeklyCalendar/IssueDetailsModal.js
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiService from '../../services/api'; // ✅ axios yerine apiService
 
 const IssueDetailsModal = ({ show, onHide, selectedGroup, selectedDate }) => {
   const [issues, setIssues] = useState([]);
@@ -8,6 +8,7 @@ const IssueDetailsModal = ({ show, onHide, selectedGroup, selectedDate }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    console.log('🔄 Modal useEffect:', { show, selectedGroup, selectedDate });
     if (show && selectedGroup && selectedDate) {
       fetchIssueDetails();
     }
@@ -18,29 +19,37 @@ const IssueDetailsModal = ({ show, onHide, selectedGroup, selectedDate }) => {
     setError(null);
     
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://localhost:7123';
-      const redmineUsername = localStorage.getItem('redmineUsername');
-      const redminePassword = localStorage.getItem('redminePassword');
+      // ✅ Credentials kontrolü GEREKMİYOR - SQL Server'dan veri çekiliyor
 
-      const requestBody = {
-        redmineUsername,
-        redminePassword,
-        date: selectedDate,
+      // Tarih formatını düzelt
+      let formattedDate = selectedDate;
+      if (selectedDate instanceof Date) {
+        formattedDate = selectedDate.toISOString().split('T')[0];
+      } else if (typeof selectedDate === 'string') {
+        formattedDate = new Date(selectedDate).toISOString().split('T')[0];
+      }
+
+      const params = {
+        date: formattedDate,
         projectId: selectedGroup.projectId,
         productionType: selectedGroup.productionType
       };
 
-      const response = await axios.post(
-        `${apiUrl}/api/RedmineWeeklyCalendar/GetIssuesByDateAndType`,
-        requestBody
-      );
+      console.log('📤 Calling API with params:', params);
 
-      if (response.data && response.data.issues) {
-        setIssues(response.data.issues);
-      }
+      // ✅ apiService kullanarak çağrı yap (credentials GEREKMİYOR)
+      const response = await apiService.getIssuesByDateAndType(params);
+
+      console.log('📥 API Response:', response);
+
+      // Response'dan issues'ı al
+      const issuesData = response.issues || [];
+      
+      console.log('✅ Issues extracted:', issuesData);
+      setIssues(issuesData);
     } catch (err) {
-      console.error('Error fetching issue details:', err);
-      setError('İşler yüklenirken bir hata oluştu');
+      console.error('❌ Error fetching issue details:', err);
+      setError(err.message || 'İşler yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -55,26 +64,17 @@ const IssueDetailsModal = ({ show, onHide, selectedGroup, selectedDate }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
-
-  const getProductionTypeColor = (type) => {
-    const colors = {
-      'Lazer': '#e74c3c',
-      'Abkant': '#3498db',
-      'Kaynak': '#f39c12',
-      'Boya': '#9b59b6',
-      'Freze': '#1abc9c',
-      'Kaplama': '#34495e',
-      'Delik': '#95a5a6',
-      'Torna': '#e67e22',
-      'Data Hazırlama': '#16a085'
-    };
-    return colors[type] || '#7f8c8d';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) {
+      return '-';
+    }
   };
 
   if (!show) return null;
+
+  console.log('🎨 Rendering modal - issues count:', issues.length);
 
   return (
     <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
@@ -82,7 +82,7 @@ const IssueDetailsModal = ({ show, onHide, selectedGroup, selectedDate }) => {
         <div className="modal-content">
           {/* Modal Header */}
           <div className="modal-header" style={{ 
-            background: `linear-gradient(135deg, ${getProductionTypeColor(selectedGroup?.productionType)} 0%, ${getProductionTypeColor(selectedGroup?.productionType)}dd 100%)`,
+            background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
             color: 'white'
           }}>
             <div>
@@ -124,11 +124,29 @@ const IssueDetailsModal = ({ show, onHide, selectedGroup, selectedDate }) => {
               <div className="alert alert-danger m-4">
                 <i className="bi bi-exclamation-triangle me-2"></i>
                 {error}
+                <div className="mt-2 small">
+                  <strong>Debug Bilgisi:</strong>
+                  <br />
+                  Proje ID: {selectedGroup?.projectId}
+                  <br />
+                  İş Tipi: {selectedGroup?.productionType}
+                  <br />
+                  Tarih: {formatDate(selectedDate)}
+                </div>
               </div>
             ) : issues.length === 0 ? (
               <div className="text-center py-5">
                 <i className="bi bi-inbox fs-1 text-muted"></i>
                 <p className="mt-3 text-muted">Bu tarih ve iş tipi için kayıt bulunamadı</p>
+                <div className="mt-2 small text-muted">
+                  <strong>Arama Kriterleri:</strong>
+                  <br />
+                  Proje ID: {selectedGroup?.projectId}
+                  <br />
+                  İş Tipi: {selectedGroup?.productionType}
+                  <br />
+                  Tarih: {formatDate(selectedDate)}
+                </div>
               </div>
             ) : (
               <div className="table-responsive">
@@ -145,8 +163,8 @@ const IssueDetailsModal = ({ show, onHide, selectedGroup, selectedDate }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {issues.map((issue) => (
-                      <tr key={issue.issueId}>
+                    {issues.map((issue, index) => (
+                      <tr key={issue.issueId || index}>
                         <td>
                           <span className="badge bg-secondary">
                             #{issue.issueId}
