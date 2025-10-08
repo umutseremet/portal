@@ -1,5 +1,5 @@
 ﻿// src/frontend/src/components/Vehicles/VehiclesList.js
-// DÜZELTİLMİŞ VERSİYON - filterSummary object render hatası çözüldü
+// ✅ DÜZELT İLMİŞ VERSİYON - Tüm prop isimleri doğru
 
 import React, { useState } from 'react';
 
@@ -13,14 +13,14 @@ const VehiclesList = ({
   onPageChange,
   onFilterChange,
   onSort,
-  onSelectVisitor,
+  onSelectVehicle,      // ✅ DÜZELTME
   onSelectAll,
   onClearSelection,
-  onViewVisitor,
-  onEditVisitor,
-  onDeleteVisitor,
+  onViewVehicle,        // ✅ DÜZELTME
+  onEditVehicle,        // ✅ DÜZELTME
+  onDeleteVehicle,      // ✅ DÜZELTME
   onBulkDelete,
-  onNewVisitor,
+  onNewVehicle,         // ✅ DÜZELTME
   onExport,
   onResetFilters,
   hasFilters = false,
@@ -77,17 +77,15 @@ const VehiclesList = ({
 
   // Handle delete click
   const handleDeleteClick = (vehicle) => {
-    if (onDeleteVisitor) {
-      onDeleteVisitor(vehicle);
+    if (onDeleteVehicle) {  // ✅ DÜZELTME
+      onDeleteVehicle(vehicle);
     }
   };
 
   // Handle sort
   const handleSort = (column) => {
     console.log('Sorting by:', column, 'Current sort:', filters.sortBy, filters.sortOrder);
-
     const newOrder = filters.sortBy === column && filters.sortOrder === 'desc' ? 'asc' : 'desc';
-
     if (onSort) {
       onSort(column, newOrder);
     }
@@ -139,28 +137,6 @@ const VehiclesList = ({
     }
   };
 
-  // DÜZELTİLDİ: filterSummary'yi string'e çevir
-  const getFilterSummaryText = () => {
-    if (!filterSummary || typeof filterSummary !== 'object') {
-      return '';
-    }
-
-    const activeFilters = [];
-
-    if (filterSummary.search) activeFilters.push(`Arama: "${filterSummary.search}"`);
-    if (filterSummary.brand) activeFilters.push(`Marka: "${filterSummary.brand}"`);
-    if (filterSummary.model) activeFilters.push(`Model: "${filterSummary.model}"`);
-    if (filterSummary.licensePlate) activeFilters.push(`Plaka: "${filterSummary.licensePlate}"`);
-    if (filterSummary.companyName) activeFilters.push(`Şirket: "${filterSummary.companyName}"`);
-    if (filterSummary.ownershipType) activeFilters.push(`Tip: "${getOwnershipTypeText(filterSummary.ownershipType)}"`);
-
-    const activeCount = filterSummary.activeCount || activeFilters.length;
-
-    if (activeCount === 0) return '';
-
-    return `${activeCount} filtre aktif`;
-  };
-
   // Loading state
   if (loading && (!vehicles || vehicles.length === 0)) {
     return (
@@ -206,7 +182,7 @@ const VehiclesList = ({
       {/* Header with Actions */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          {/* Sol taraf boş - ziyaretçiler gibi */}
+          {/* Sol taraf boş */}
         </div>
         <div className="d-flex gap-2">
           <button
@@ -226,7 +202,7 @@ const VehiclesList = ({
           </button>
           <button
             className="btn btn-danger btn-sm"
-            onClick={onNewVisitor}
+            onClick={onNewVehicle}  // ✅ DÜZELTME
           >
             <i className="bi bi-plus-lg me-1"></i>
             Yeni Araç
@@ -294,9 +270,8 @@ const VehiclesList = ({
                   <option value="personal">Kişisel</option>
                 </select>
               </div>
-              <div className="row mt-3">
-              <div className="col-12">
-                <div className="d-flex gap-2">
+              <div className="col-md-9">
+                <div className="d-flex gap-2 align-items-end h-100">
                   <button 
                     className="btn btn-primary btn-sm"
                     onClick={handleApplyFilters}
@@ -321,7 +296,6 @@ const VehiclesList = ({
                 </div>
               </div>
             </div>
-            </div>
           </div>
         </div>
       )}
@@ -335,14 +309,12 @@ const VehiclesList = ({
             </span>
           )}
         </div>
-
       </div>
-
 
       {/* Vehicles Table */}
       <div className="table-responsive">
         <table className="table table-hover">
-          <thead >
+          <thead>
             <tr>
               <th width="50">
                 <div className="form-check">
@@ -421,7 +393,7 @@ const VehiclesList = ({
                       className="form-check-input"
                       type="checkbox"
                       checked={selectedVehicles.includes(vehicle.id)}
-                      onChange={() => onSelectVisitor?.(vehicle.id)}
+                      onChange={() => onSelectVehicle?.(vehicle.id)}  // ✅ DÜZELTME
                     />
                   </div>
                 </td>
@@ -477,7 +449,7 @@ const VehiclesList = ({
                       <li>
                         <button
                           className="dropdown-item"
-                          onClick={() => onViewVisitor?.(vehicle)}
+                          onClick={() => onViewVehicle?.(vehicle)}  // ✅ DÜZELTME
                         >
                           <i className="bi bi-eye me-2"></i>Detayları Gör
                         </button>
@@ -485,7 +457,7 @@ const VehiclesList = ({
                       <li>
                         <button
                           className="dropdown-item"
-                          onClick={() => onEditVisitor?.(vehicle)}
+                          onClick={() => onEditVehicle?.(vehicle)}  // ✅ DÜZELTME
                         >
                           <i className="bi bi-pencil me-2"></i>Düzenle
                         </button>
