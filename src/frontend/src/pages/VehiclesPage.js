@@ -222,8 +222,8 @@ const VehiclesPage = () => {
 
   return (
     <div className="vehicles-page">
-      <div className="container-fluid">
-        {/* Page Header */}
+      <div className="container-fluid" >
+        {/* Page Header - Visitors benzeri */}
         <div className="row mb-4">
           <div className="col-12">
             <div className="page-header">
@@ -235,7 +235,7 @@ const VehiclesPage = () => {
           </div>
         </div>
 
-        {/* Error Display */}
+        {/* Error Display - Visitors benzeri */}
         {error && (
           <div className="row mb-4">
             <div className="col-12">
@@ -252,7 +252,7 @@ const VehiclesPage = () => {
           </div>
         )}
 
-        {/* Vehicles List */}
+        {/* Vehicles List - Visitors benzeri */}
         <div className="row">
           <div className="col-12">
             <div className="card h-100">
@@ -267,14 +267,14 @@ const VehiclesPage = () => {
                   onPageChange={handlePageChange}
                   onFilterChange={handleFilterChange}
                   onSort={handleSort}
-                  onSelectVehicle={handleVehicleSelect}
+                  onSelectVisitor={handleVehicleSelect}
                   onSelectAll={handleSelectAll}
                   onClearSelection={handleClearSelection}
-                  onViewVehicle={handleViewVehicle}
-                  onEditVehicle={handleEditVehicle}
-                  onDeleteVehicle={handleDeleteVehicle}
+                  onViewVisitor={handleViewVehicle}
+                  onEditVisitor={handleEditVehicle}
+                  onDeleteVisitor={handleDeleteVehicle}
                   onBulkDelete={handleBulkDelete}
-                  onNewVehicle={() => setShowNewVehicleModal(true)}
+                  onNewVisitor={() => setShowNewVehicleModal(true)}
                   onExport={handleExport}
                   onResetFilters={resetFilters}
                   hasFilters={hasFilters}

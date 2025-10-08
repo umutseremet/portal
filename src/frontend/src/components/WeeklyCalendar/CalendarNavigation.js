@@ -85,7 +85,7 @@ const CalendarNavigation = ({
             
             {/* Filtrele Butonu */}
             <button
-              className={`btn ${hasActiveFilters ? 'btn-primary' : 'btn-outline-secondary'} ${showFilters ? 'btn-primary' : ''} position-relative`}
+              className={`btn ${hasActiveFilters ? 'btn-outline-secondary' : 'btn-outline-secondary'} ${showFilters ? 'btn-outline-secondary' : ''} position-relative`}
               onClick={() => {
                 setShowFilters(!showFilters);
                 if (!showFilters) setShowLegend(false); // Diğerini kapat
