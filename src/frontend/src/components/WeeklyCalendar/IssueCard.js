@@ -19,7 +19,8 @@ const IssueCard = ({ issue }) => {
       'Kaplama': '#34495e',
       'Delik': '#95a5a6',
       'Torna': '#e67e22',
-      'Data Hazırlama': '#16a085'
+      'Data Hazırlama': '#16a085',
+      'Montaj': '#27ae60'  // ✅ YENİ: Yeşil ton
     };
     return colors[type] || '#7f8c8d';
   };
@@ -32,16 +33,16 @@ const IssueCard = ({ issue }) => {
   };
 
   return (
-    <div 
+    <div
       className="issue-card-compact"
-      style={{ 
+      style={{
         borderLeftColor: getProductionTypeColor(issue.productionType),
         backgroundColor: '#f8f9fa', //'#ffeb3b' // ⚠️ GEÇİCİ: SARI ARKA PLAN - GÖRECEKSINIZ
       }}
     >
       {/* Üst Satır: İş Tipi + Tamamlanma */}
       <div className="issue-compact-header">
-        <span 
+        <span
           className="production-badge-compact"
           style={{ backgroundColor: getProductionTypeColor(issue.productionType) }}
         >

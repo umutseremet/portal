@@ -141,7 +141,7 @@ namespace API.Controllers
                     AND cv_proje_kodu.customized_type = 'Project'
                     AND cv_proje_kodu.custom_field_id = 3
                 WHERE i.project_id = @ProjectId
-                    AND t.name = @TrackerName
+                    AND (t.name = @TrackerName or t.name = @TrackerName1)
                     AND cv_pbaslangic.value IS NOT NULL
                     AND cv_pbitis.value IS NOT NULL
                     AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
@@ -153,6 +153,7 @@ namespace API.Controllers
                         command.Parameters.AddWithValue("@Date", targetDate.Date);
                         command.Parameters.AddWithValue("@ProjectId", request.ProjectId);
                         command.Parameters.AddWithValue("@TrackerName", $"Üretim - {request.ProductionType}");
+                        command.Parameters.AddWithValue("@TrackerName1", request.ProductionType);
 
                         using (var reader = await command.ExecuteReaderAsync())
                         {
@@ -399,7 +400,7 @@ namespace API.Controllers
                 ON cv_proje_kodu.customized_id = p.id 
                 AND cv_proje_kodu.customized_type = 'Project'
                 AND cv_proje_kodu.custom_field_id = 3
-            WHERE t.name LIKE N'Üretim -%'
+            WHERE (t.name LIKE N'Üretim -%' or t.name = 'Montaj')
                 AND cv_pbaslangic.value IS NOT NULL
                 AND cv_pbitis.value IS NOT NULL
                 AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
