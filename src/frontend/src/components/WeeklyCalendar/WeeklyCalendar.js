@@ -1,6 +1,6 @@
 // src/frontend/src/components/WeeklyCalendar/WeeklyCalendar.js
-import React, { useState } from 'react'; // useState eklendi
-
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useWeeklyCalendar } from '../../hooks/useWeeklyCalendar';
 import CalendarHeader from './CalendarHeader';
 import CalendarNavigation from './CalendarNavigation';
@@ -8,15 +8,10 @@ import CalendarGrid from './CalendarGrid';
 import { LoadingState, EmptyState } from './LoadingState';
 import './WeeklyCalendar.css';
 
-import IssueDetailsModal from './IssueDetailsModal'; // YENİ satır
-
-
 const WeeklyCalendar = () => {
+  const navigate = useNavigate();
 
-  // Component içine (useWeeklyCalendar'dan önce):
-  const [showModal, setShowModal] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
+  console.log('🔄 WeeklyCalendar component rendered');
 
   const {
     // Data
@@ -48,23 +43,47 @@ const WeeklyCalendar = () => {
     formatDate
   } = useWeeklyCalendar();
 
-  // useWeeklyCalendar'dan sonra (productionTypes tanımından sonra):
+  // Kart tıklama handler - İş tipine göre filtrelenmiş
   const handleCardClick = (group, date) => {
-    setSelectedGroup(group);
-    setSelectedDate(date);
-    setShowModal(true);
+    console.log('🖱️ Card clicked - handleCardClick called:', { group, date });
+    navigate('/production/issue-details', {
+      state: {
+        selectedGroup: group,
+        selectedDate: date,
+        viewType: 'filtered'
+      }
+    });
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedGroup(null);
-    setSelectedDate(null);
+  // Tarih başlığı tıklama handler - O güne ait TÜM işler
+  const handleDateClick = (date) => {
+    console.log('📅 ===== DATE HEADER CLICKED =====');
+    console.log('📅 Date received:', date);
+    console.log('📅 Type of date:', typeof date);
+    console.log('📅 Current location:', window.location.pathname);
+    
+    try {
+      navigate('/production/issue-details', {
+        state: {
+          selectedDate: date,
+          selectedGroup: null,
+          viewType: 'all'
+        }
+      });
+      console.log('✅ Navigation triggered successfully');
+    } catch (error) {
+      console.error('❌ Navigation error:', error);
+    }
   };
+
   const productionTypes = getAllProductionTypes();
   const projectLegend = getProjectLegend();
 
-  // 🐛 DEBUG: Console'da kontrol edelim
-  console.log('🎨 WeeklyCalendar - projectLegend:', projectLegend);
+  console.log('🎨 WeeklyCalendar render props:', {
+    hasCalendarData: !!calendarData,
+    loading,
+    error
+  });
 
   return (
     <div className="weekly-production-calendar">
@@ -89,7 +108,6 @@ const WeeklyCalendar = () => {
           productionTypes={productionTypes}
           onFilterChange={updateFilters}
           onResetFilters={resetFilters}
-          // ✅ BURADA EKSİKTİ - projectLegend prop'u eklendi
           projectLegend={projectLegend}
         />
 
@@ -110,7 +128,8 @@ const WeeklyCalendar = () => {
             <CalendarGrid
               days={calendarData.days}
               formatDate={formatDate}
-              onCardClick={handleCardClick}  // YENİ satır
+              onCardClick={handleCardClick}
+              onDateClick={handleDateClick}
             />
 
             {/* Empty State - if all days have no issues */}
@@ -119,13 +138,6 @@ const WeeklyCalendar = () => {
             ) && <EmptyState />}
           </>
         )}
-
-        <IssueDetailsModal
-          show={showModal}
-          onHide={handleCloseModal}
-          selectedGroup={selectedGroup}
-          selectedDate={selectedDate}
-        />
       </div>
     </div>
   );

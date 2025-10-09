@@ -9,8 +9,9 @@ import DashboardPage from './pages/DashboardPage';
 import ProductionPage from './pages/ProductionPage';
 import VisitorsPage from './pages/VisitorsPage';
 import VehiclesPage from './pages/VehiclesPage';
-import './App.css';
 import WeeklyProductionCalendarPage from './pages/WeeklyProductionCalendarPage';
+import IssueDetailsPage from './pages/IssueDetailsPage'; // YENİ
+import './App.css';
 
 function App() {
   return (
@@ -42,6 +43,19 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* YENİ ROUTE - İş Detayları Sayfası */}
+          <Route
+            path="/production/issue-details"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <IssueDetailsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/vehicles"
             element={

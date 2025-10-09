@@ -2,7 +2,13 @@
 import React from 'react';
 import GroupedIssueCard from './GroupedIssueCard';
 
-const CalendarGrid = ({ days, formatDate, onCardClick }) => {
+const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
+  console.log('🎨 CalendarGrid rendered with props:', { 
+    hasDays: !!days, 
+    hasOnCardClick: !!onCardClick, 
+    hasOnDateClick: !!onDateClick 
+  });
+
   const isToday = (dateInput) => {
     try {
       const today = new Date();
@@ -18,6 +24,19 @@ const CalendarGrid = ({ days, formatDate, onCardClick }) => {
     }
   };
 
+  // Tarih başlığına tıklama handler
+  const handleDateHeaderClick = (date, event) => {
+    event.stopPropagation(); // Event bubbling'i durdur
+    console.log('🖱️ Date header clicked in CalendarGrid:', date);
+    
+    if (onDateClick) {
+      console.log('✅ Calling onDateClick handler');
+      onDateClick(date);
+    } else {
+      console.warn('⚠️ onDateClick handler not provided!');
+    }
+  };
+
   return (
     <div className="calendar-grid">
       {days?.map((day, index) => (
@@ -25,8 +44,19 @@ const CalendarGrid = ({ days, formatDate, onCardClick }) => {
           key={index}
           className={`calendar-day-card ${isToday(day.date) ? 'today' : ''}`}
         >
-          {/* Day Header */}
-          <div className="day-header">
+          {/* Day Header - Tıklanabilir */}
+          <div 
+            className="day-header clickable-date-header"
+            onClick={(e) => handleDateHeaderClick(day.date, e)}
+            role="button"
+            tabIndex={0}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleDateHeaderClick(day.date, e);
+              }
+            }}
+          >
             <div className="day-name">{day.dayName}</div>
             <div className="day-date">{formatDate(day.date)}</div>
             {day.groupedProductions && day.groupedProductions.length > 0 && (
@@ -34,6 +64,10 @@ const CalendarGrid = ({ days, formatDate, onCardClick }) => {
                 {day.groupedProductions.length}
               </span>
             )}
+            {/* Tıklama İpucu İkonu */}
+            <div className="date-click-hint">
+              <i className="bi bi-box-arrow-up-right"></i>
+            </div>
           </div>
 
           {/* Day Issues */}
@@ -43,7 +77,7 @@ const CalendarGrid = ({ days, formatDate, onCardClick }) => {
                 <GroupedIssueCard
                   key={idx}
                   group={group}
-                  onClick={() => onCardClick && onCardClick(group, day.date)}  // YENİ satır
+                  onClick={() => onCardClick && onCardClick(group, day.date)}
                 />
               ))
             ) : (

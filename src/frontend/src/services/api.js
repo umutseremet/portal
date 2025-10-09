@@ -586,6 +586,58 @@ class ApiService {
     }
   }
 
+  // src/services/api.js içine eklenecek yeni method
+// ApiService class'ının içine ekleyin
+
+/**
+ * Get ALL issues by date (without type filter)
+ * @param {string} date - Target date (yyyy-MM-dd)
+ * @returns {Promise<Object>} Issues list response
+ */
+async getIssuesByDate(date) {
+  try {
+    console.log('📋 API getIssuesByDate request:', date);
+
+    const response = await this.get(`/RedmineWeeklyCalendar/GetIssuesByDate?date=${date}`);
+
+    console.log('📋 API getIssuesByDate raw response:', response);
+
+    // Response formatını düzenle (camelCase'e çevir)
+    const mappedResponse = {
+      date: response.date || response.Date,
+      totalCount: response.totalCount || response.TotalCount || 0,
+      issues: (response.issues || response.Issues || []).map(issue => ({
+        issueId: issue.issueId || issue.IssueId,
+        projectId: issue.projectId || issue.ProjectId,
+        projectName: issue.projectName || issue.ProjectName || '',
+        projectCode: issue.projectCode || issue.ProjectCode || '',
+        subject: issue.subject || issue.Subject || '',
+        trackerName: issue.trackerName || issue.TrackerName || '',
+        completionPercentage: issue.completionPercentage ?? issue.CompletionPercentage ?? 0,
+        estimatedHours: issue.estimatedHours ?? issue.EstimatedHours ?? null,
+        statusName: issue.statusName || issue.StatusName || '',
+        isClosed: issue.isClosed ?? issue.IsClosed ?? false,
+        priorityName: issue.priorityName || issue.PriorityName || '',
+        assignedTo: issue.assignedTo || issue.AssignedTo || '',
+        plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
+        plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
+        productionType: issue.productionType || issue.ProductionType || 
+                       (issue.trackerName || issue.TrackerName || '').replace('Üretim - ', '').trim()
+      }))
+    };
+
+    console.log('📋 Mapped all issues response:', mappedResponse);
+    return mappedResponse;
+  } catch (error) {
+    console.error('❌ getIssuesByDate error:', error);
+    throw error;
+  }
+}
+
+// ========================================
+// NOT: Bu fonksiyonu mevcut getIssuesByDateAndType fonksiyonundan sonra ekleyin
+// ========================================
+
   // ========================================
   // NOT: Bu fonksiyonu ApiService class'ının içine ekleyin
   // ve class'ın sonundaki export kısmına da ekleyin

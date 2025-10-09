@@ -998,3 +998,39 @@
     font-size: 0.7rem;
   }
 }
+
+/* Tarihe tıklama hover efekti */
+.clickable-date-header {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.clickable-date-header:hover {
+  background: linear-gradient(135deg, #FF8E53, #FFB088) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.clickable-date-header:active {
+  transform: translateY(0);
+}
+
+/* Tıklama İpucu İkonu */
+.date-click-hint {
+  position: absolute;
+  bottom: 5px;
+  right: 10px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  font-size: 0.75rem;
+}
+
+.clickable-date-header:hover .date-click-hint {
+  opacity: 0.8;
+}
+
+/* Bugün olan kartın header'ı için özel hover */
+.calendar-day-card.today .clickable-date-header:hover {
+  background: linear-gradient(135deg, #c0392b, #e74c3c) !important;
+}

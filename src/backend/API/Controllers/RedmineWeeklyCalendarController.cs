@@ -225,6 +225,150 @@ namespace API.Controllers
             }
         }
 
+        // API/Controllers/RedmineWeeklyCalendarController.cs içine eklenecek yeni endpoint
+
+        /// <summary>
+        /// Belirli bir tarihteki TÜM işleri getirir (iş tipine göre filtreleme YOK)
+        /// </summary>
+        [HttpGet("GetIssuesByDate")]
+#if DEBUG
+        [AllowAnonymous]
+#endif
+        public async Task<IActionResult> GetIssuesByDate([FromQuery] string date)
+        {
+            try
+            {
+                _logger.LogInformation("Getting ALL issues for date: {Date}", date);
+
+                if (!DateTime.TryParse(date, out DateTime targetDate))
+                {
+                    return BadRequest(new ErrorResponse { Message = "Geçersiz tarih formatı" });
+                }
+
+                var connectionString = _configuration.GetConnectionString("DefaultConnection")
+                    ?? throw new InvalidOperationException("Database connection string is not configured.");
+
+                var issues = new List<ProductionIssueData>();
+
+                // SQL sorgusu - İş tipine göre filtreleme YOK
+                var sql = @"
+            SELECT 
+                i.id AS issue_id,
+                p.id AS project_id,
+                p.name AS project_name,
+                COALESCE(p.identifier, '') AS project_code,
+                i.subject,
+                t.name AS tracker_name,
+                i.done_ratio AS completion_percentage,
+                i.estimated_hours,
+                s.name AS status_name,
+                s.is_closed,
+                pr.name AS priority_name,
+                COALESCE(u.firstname + ' ' + u.lastname, 'Atanmamış') AS assigned_to,
+                (SELECT TOP 1 value 
+                 FROM custom_values cv 
+                 WHERE cv.customized_id = i.id 
+                   AND cv.customized_type = 'Issue' 
+                   AND cv.custom_field_id = 9) AS planned_start_date,
+                (SELECT TOP 1 value 
+                 FROM custom_values cv 
+                 WHERE cv.customized_id = i.id 
+                   AND cv.customized_type = 'Issue' 
+                   AND cv.custom_field_id = 10) AS planned_end_date
+            FROM issues i
+            INNER JOIN projects p ON i.project_id = p.id
+            INNER JOIN trackers t ON i.tracker_id = t.id
+            INNER JOIN issue_statuses s ON i.status_id = s.id
+            INNER JOIN enumerations pr ON i.priority_id = pr.id
+            LEFT JOIN users u ON i.assigned_to_id = u.id
+            WHERE t.name LIKE 'Üretim%'
+              AND (
+                  (SELECT TOP 1 value 
+                   FROM custom_values cv 
+                   WHERE cv.customized_id = i.id 
+                     AND cv.customized_type = 'Issue' 
+                     AND cv.custom_field_id = 9) = @TargetDate
+                  OR
+                  (SELECT TOP 1 value 
+                   FROM custom_values cv 
+                   WHERE cv.customized_id = i.id 
+                     AND cv.customized_type = 'Issue' 
+                     AND cv.custom_field_id = 10) = @TargetDate
+              )
+            ORDER BY p.name, t.name, i.id";
+
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = new SqlCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@TargetDate", targetDate.ToString("yyyy-MM-dd"));
+
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                DateTime? plannedStart = null;
+                                DateTime? plannedEnd = null;
+
+                                if (!reader.IsDBNull(reader.GetOrdinal("planned_start_date")))
+                                {
+                                    var startStr = reader.GetString(reader.GetOrdinal("planned_start_date"));
+                                    if (DateTime.TryParse(startStr, out var parsedStart))
+                                        plannedStart = parsedStart;
+                                }
+
+                                if (!reader.IsDBNull(reader.GetOrdinal("planned_end_date")))
+                                {
+                                    var endStr = reader.GetString(reader.GetOrdinal("planned_end_date"));
+                                    if (DateTime.TryParse(endStr, out var parsedEnd))
+                                        plannedEnd = parsedEnd;
+                                }
+
+                                issues.Add(new ProductionIssueData
+                                {
+                                    IssueId = reader.GetInt32(reader.GetOrdinal("issue_id")),
+                                    ProjectId = reader.GetInt32(reader.GetOrdinal("project_id")),
+                                    ProjectName = reader.GetString(reader.GetOrdinal("project_name")),
+                                    ProjectCode = reader.IsDBNull(reader.GetOrdinal("project_code"))
+                                        ? string.Empty : reader.GetString(reader.GetOrdinal("project_code")),
+                                    Subject = reader.GetString(reader.GetOrdinal("subject")),
+                                    TrackerName = reader.GetString(reader.GetOrdinal("tracker_name")),
+                                    CompletionPercentage = reader.GetInt32(reader.GetOrdinal("completion_percentage")),
+                                    EstimatedHours = reader.IsDBNull(reader.GetOrdinal("estimated_hours"))
+                                        ? null : reader.GetDecimal(reader.GetOrdinal("estimated_hours")),
+                                    StatusName = reader.IsDBNull(reader.GetOrdinal("status_name"))
+                                        ? string.Empty : reader.GetString(reader.GetOrdinal("status_name")),
+                                    IsClosed = reader.GetBoolean(reader.GetOrdinal("is_closed")),
+                                    PriorityName = reader.IsDBNull(reader.GetOrdinal("priority_name"))
+                                        ? "Normal" : reader.GetString(reader.GetOrdinal("priority_name")),
+                                    AssignedTo = reader.IsDBNull(reader.GetOrdinal("assigned_to"))
+                                        ? "Atanmamış" : reader.GetString(reader.GetOrdinal("assigned_to")),
+                                    PlannedStartDate = plannedStart,
+                                    PlannedEndDate = plannedEnd
+                                });
+                            }
+                        }
+                    }
+                }
+
+                _logger.LogInformation("Found {Count} total issues for date: {Date}", issues.Count, date);
+
+                return Ok(new
+                {
+                    Date = targetDate,
+                    Issues = issues,
+                    TotalCount = issues.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all issues by date");
+                return StatusCode(500, new ErrorResponse { Message = "İşler getirilirken bir hata oluştu" });
+            }
+        }
+
         #region Private Methods
 
         // 2. GetWeeklyProductionDataAsync metoduna productionType parametresini ekle
