@@ -7,21 +7,32 @@ const IssueDetailsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
+  console.log('🔍 IssueDetailsPage mounted');
+  console.log('🔍 Location state:', location.state);
+  
   // URL'den gelen parametreleri al
-  const { selectedGroup, selectedDate } = location.state || {};
+  const { selectedGroup, selectedDate, viewType } = location.state || {};
+  
+  console.log('🔍 Parsed values:', { selectedGroup, selectedDate, viewType });
   
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (selectedGroup && selectedDate) {
+    console.log('🔍 IssueDetailsPage useEffect triggered');
+    console.log('🔍 selectedDate:', selectedDate);
+    console.log('🔍 selectedGroup:', selectedGroup);
+    
+    if (selectedDate) {
+      console.log('✅ selectedDate exists, calling fetchIssueDetails');
       fetchIssueDetails();
     } else {
+      console.warn('❌ No selectedDate, redirecting to calendar');
       // Eğer state yoksa takvime geri dön
       navigate('/production/weekly-calendar');
     }
-  }, [selectedGroup, selectedDate]);
+  }, [selectedDate]); // Sadece selectedDate'e bağlı
 
   const fetchIssueDetails = async () => {
     setLoading(true);
@@ -36,15 +47,24 @@ const IssueDetailsPage = () => {
         formattedDate = new Date(selectedDate).toISOString().split('T')[0];
       }
 
-      const params = {
-        date: formattedDate,
-        projectId: selectedGroup.projectId,
-        productionType: selectedGroup.productionType
-      };
+      let response;
+      
+      // Eğer selectedGroup varsa (kart tıklandı), iş tipine göre filtrele
+      if (selectedGroup) {
+        const params = {
+          date: formattedDate,
+          projectId: selectedGroup.projectId,
+          productionType: selectedGroup.productionType
+        };
 
-      console.log('📤 Calling API with params:', params);
-
-      const response = await apiService.getIssuesByDateAndType(params);
+        console.log('📤 Calling API with type filter:', params);
+        response = await apiService.getIssuesByDateAndType(params);
+      } 
+      // Eğer selectedGroup yoksa (tarih tıklandı), o tarihteki TÜM işleri getir
+      else {
+        console.log('📤 Calling API for all issues on date:', formattedDate);
+        response = await apiService.getIssuesByDate(formattedDate);
+      }
 
       console.log('📥 API Response:', response);
 
@@ -81,7 +101,7 @@ const IssueDetailsPage = () => {
     navigate('/production/weekly-calendar');
   };
 
-  if (!selectedGroup || !selectedDate) {
+  if (!selectedDate) {
     return null;
   }
 
@@ -98,20 +118,30 @@ const IssueDetailsPage = () => {
             <div>
               <h4 className="mb-2">
                 <i className="bi bi-list-task me-2"></i>
-                İş Detayları
+                {selectedGroup ? 'İş Detayları (Filtrelenmiş)' : 'Günlük İş Listesi'}
               </h4>
               <div className="d-flex align-items-center gap-3 small">
                 <span>
                   <i className="bi bi-calendar3 me-1"></i>
                   {formatDate(selectedDate)}
                 </span>
-                <span>
-                  <i className="bi bi-building me-1"></i>
-                  {selectedGroup?.projectCode}
-                </span>
-                <span className="badge bg-light text-dark">
-                  {selectedGroup?.productionType}
-                </span>
+                {selectedGroup && (
+                  <>
+                    <span>
+                      <i className="bi bi-building me-1"></i>
+                      {selectedGroup.projectCode}
+                    </span>
+                    <span className="badge bg-light text-dark">
+                      {selectedGroup.productionType}
+                    </span>
+                  </>
+                )}
+                {!selectedGroup && (
+                  <span className="badge bg-light text-dark">
+                    <i className="bi bi-funnel me-1"></i>
+                    Tüm İşler
+                  </span>
+                )}
               </div>
             </div>
             <button 
