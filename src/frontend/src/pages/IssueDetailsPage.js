@@ -16,8 +16,24 @@ const IssueDetailsPage = () => {
   console.log('🔍 Parsed values:', { selectedGroup, selectedDate, viewType });
   
   const [issues, setIssues] = useState([]);
+  const [filteredIssues, setFilteredIssues] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Filtre state'leri
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    projectId: '',
+    productionType: 'all',
+    status: 'all',
+    assignedTo: ''
+  });
+
+  // Benzersiz liste değerleri
+  const [projectList, setProjectList] = useState([]);
+  const [productionTypes, setProductionTypes] = useState([]);
+  const [statusList, setStatusList] = useState([]);
+  const [assigneeList, setAssigneeList] = useState([]);
 
   useEffect(() => {
     console.log('🔍 IssueDetailsPage useEffect triggered');
@@ -29,17 +45,70 @@ const IssueDetailsPage = () => {
       fetchIssueDetails();
     } else {
       console.warn('❌ No selectedDate, redirecting to calendar');
-      // Eğer state yoksa takvime geri dön
       navigate('/production/weekly-calendar');
     }
-  }, [selectedDate]); // Sadece selectedDate'e bağlı
+  }, [selectedDate]);
+
+  // İşler değiştiğinde benzersiz listeleri oluştur
+  useEffect(() => {
+    if (issues.length > 0) {
+      // Benzersiz projeler
+      const uniqueProjects = [...new Set(issues.map(i => JSON.stringify({
+        id: i.projectId,
+        name: i.projectName
+      })))].map(str => JSON.parse(str));
+      setProjectList(uniqueProjects);
+
+      // Benzersiz üretim tipleri (API'den gelen productionType alanından)
+      const uniqueTypes = [...new Set(
+        issues
+          .map(i => i.productionType)
+          .filter(Boolean)
+      )];
+      setProductionTypes(uniqueTypes);
+
+      // Benzersiz durumlar
+      const uniqueStatuses = [...new Set(issues.map(i => i.statusName).filter(Boolean))];
+      setStatusList(uniqueStatuses);
+
+      // Benzersiz atananlar
+      const uniqueAssignees = [...new Set(issues.map(i => i.assignedTo).filter(Boolean))];
+      setAssigneeList(uniqueAssignees);
+    }
+  }, [issues]);
+
+  // Filtreleme efekti
+  useEffect(() => {
+    let filtered = [...issues];
+
+    // Proje filtresi
+    if (filters.projectId) {
+      filtered = filtered.filter(i => i.projectId.toString() === filters.projectId);
+    }
+
+    // Üretim tipi filtresi
+    if (filters.productionType !== 'all') {
+      filtered = filtered.filter(i => i.productionType === filters.productionType);
+    }
+
+    // Durum filtresi
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(i => i.statusName === filters.status);
+    }
+
+    // Atanan filtresi
+    if (filters.assignedTo) {
+      filtered = filtered.filter(i => i.assignedTo === filters.assignedTo);
+    }
+
+    setFilteredIssues(filtered);
+  }, [issues, filters]);
 
   const fetchIssueDetails = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Tarih formatını düzelt
       let formattedDate = selectedDate;
       if (selectedDate instanceof Date) {
         formattedDate = selectedDate.toISOString().split('T')[0];
@@ -49,29 +118,24 @@ const IssueDetailsPage = () => {
 
       let response;
       
-      // Eğer selectedGroup varsa (kart tıklandı), iş tipine göre filtrele
       if (selectedGroup) {
         const params = {
           date: formattedDate,
           projectId: selectedGroup.projectId,
           productionType: selectedGroup.productionType
         };
-
         console.log('📤 Calling API with type filter:', params);
         response = await apiService.getIssuesByDateAndType(params);
-      } 
-      // Eğer selectedGroup yoksa (tarih tıklandı), o tarihteki TÜM işleri getir
-      else {
+      } else {
         console.log('📤 Calling API for all issues on date:', formattedDate);
         response = await apiService.getIssuesByDate(formattedDate);
       }
 
       console.log('📥 API Response:', response);
-
       const issuesData = response.issues || [];
-      
       console.log('✅ Issues extracted:', issuesData);
       setIssues(issuesData);
+      setFilteredIssues(issuesData);
     } catch (err) {
       console.error('❌ Error fetching issue details:', err);
       setError(err.message || 'İşler yüklenirken bir hata oluştu');
@@ -79,6 +143,23 @@ const IssueDetailsPage = () => {
       setLoading(false);
     }
   };
+
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      projectId: '',
+      productionType: 'all',
+      status: 'all',
+      assignedTo: ''
+    });
+    setShowFilters(false);
+  };
+
+  const hasActiveFilters = filters.projectId || filters.productionType !== 'all' || 
+                          filters.status !== 'all' || filters.assignedTo;
 
   const getStatusBadgeClass = (statusName, isClosed) => {
     if (isClosed) return 'bg-success';
@@ -155,6 +236,164 @@ const IssueDetailsPage = () => {
         </div>
       </div>
 
+      {/* Filtre Navigasyonu */}
+      <div className="card mb-4">
+        <div className="card-body">
+          <div className="d-flex justify-content-between align-items-center">
+            <div className="d-flex align-items-center gap-2">
+              <h6 className="mb-0">
+                <i className="bi bi-filter me-2"></i>
+                Filtreleme Seçenekleri
+              </h6>
+              {hasActiveFilters && (
+                <span className="badge bg-danger">Aktif Filtre</span>
+              )}
+            </div>
+            <button
+              className={`btn ${showFilters ? 'btn-primary' : 'btn-outline-primary'} position-relative`}
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <i className={`bi bi-funnel${showFilters ? '-fill' : ''} me-2`}></i>
+              {showFilters ? 'Filtreleri Gizle' : 'Filtrele'}
+              {hasActiveFilters && !showFilters && (
+                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                  !
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Filtre Alanı */}
+          {showFilters && (
+            <>
+              <hr className="my-3" />
+              <div className="row g-3">
+                <div className="col-lg-3 col-md-6">
+                  <label className="form-label fw-semibold">
+                    <i className="bi bi-folder me-1"></i>
+                    Proje
+                  </label>
+                  <select
+                    className="form-select"
+                    value={filters.projectId}
+                    onChange={(e) => handleFilterChange('projectId', e.target.value)}
+                  >
+                    <option value="">Tüm Projeler</option>
+                    {projectList.map(project => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="col-lg-3 col-md-6">
+                  <label className="form-label fw-semibold">
+                    <i className="bi bi-gear me-1"></i>
+                    İş Tipi
+                  </label>
+                  <select
+                    className="form-select"
+                    value={filters.productionType}
+                    onChange={(e) => handleFilterChange('productionType', e.target.value)}
+                  >
+                    <option value="all">Tümü</option>
+                    {productionTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="col-lg-3 col-md-6">
+                  <label className="form-label fw-semibold">
+                    <i className="bi bi-flag me-1"></i>
+                    Durum
+                  </label>
+                  <select
+                    className="form-select"
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                  >
+                    <option value="all">Tümü</option>
+                    {statusList.map(status => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="col-lg-3 col-md-6">
+                  <label className="form-label fw-semibold">
+                    <i className="bi bi-person me-1"></i>
+                    Atanan
+                  </label>
+                  <select
+                    className="form-select"
+                    value={filters.assignedTo}
+                    onChange={(e) => handleFilterChange('assignedTo', e.target.value)}
+                  >
+                    <option value="">Tümü</option>
+                    {assigneeList.map(assignee => (
+                      <option key={assignee} value={assignee}>{assignee}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="col-12">
+                  <button
+                    className="btn btn-outline-danger"
+                    onClick={resetFilters}
+                    disabled={!hasActiveFilters}
+                  >
+                    <i className="bi bi-x-circle me-2"></i>
+                    Filtreleri Temizle
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* İstatistikler */}
+      {/* <div className="row mb-4">
+        <div className="col-md-3">
+          <div className="card border-primary">
+            <div className="card-body text-center">
+              <h3 className="mb-0 text-primary">{issues.length}</h3>
+              <small className="text-muted">Toplam İş</small>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="card border-success">
+            <div className="card-body text-center">
+              <h3 className="mb-0 text-success">{filteredIssues.length}</h3>
+              <small className="text-muted">Filtrelenmiş İş</small>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="card border-info">
+            <div className="card-body text-center">
+              <h3 className="mb-0 text-info">
+                {filteredIssues.filter(i => i.completionPercentage === 100 || i.isClosed).length}
+              </h3>
+              <small className="text-muted">Tamamlanan</small>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="card border-warning">
+            <div className="card-body text-center">
+              <h3 className="mb-0 text-warning">
+                {filteredIssues.filter(i => i.completionPercentage < 100 && !i.isClosed).length}
+              </h3>
+              <small className="text-muted">Devam Eden</small>
+            </div>
+          </div>
+        </div>
+      </div> */}
+
       {/* Content */}
       <div className="card">
         <div className="card-body">
@@ -169,29 +408,13 @@ const IssueDetailsPage = () => {
             <div className="alert alert-danger">
               <i className="bi bi-exclamation-triangle me-2"></i>
               {error}
-              <div className="mt-2 small">
-                <strong>Debug Bilgisi:</strong>
-                <br />
-                Proje ID: {selectedGroup?.projectId}
-                <br />
-                İş Tipi: {selectedGroup?.productionType}
-                <br />
-                Tarih: {formatDate(selectedDate)}
-              </div>
             </div>
-          ) : issues.length === 0 ? (
+          ) : filteredIssues.length === 0 ? (
             <div className="text-center py-5">
               <i className="bi bi-inbox fs-1 text-muted"></i>
-              <p className="mt-3 text-muted">Bu tarih ve iş tipi için kayıt bulunamadı</p>
-              <div className="mt-2 small text-muted">
-                <strong>Arama Kriterleri:</strong>
-                <br />
-                Proje ID: {selectedGroup?.projectId}
-                <br />
-                İş Tipi: {selectedGroup?.productionType}
-                <br />
-                Tarih: {formatDate(selectedDate)}
-              </div>
+              <p className="mt-3 text-muted">
+                {hasActiveFilters ? 'Filtrelere uygun kayıt bulunamadı' : 'Bu tarih için kayıt bulunamadı'}
+              </p>
             </div>
           ) : (
             <div className="table-responsive">
@@ -200,6 +423,7 @@ const IssueDetailsPage = () => {
                   <tr>
                     <th style={{ width: '80px' }}>İş No</th>
                     <th>Konu</th>
+                    <th style={{ width: '120px' }}>İş Tipi</th>
                     <th style={{ width: '120px' }}>Planlanan Başlangıç</th>
                     <th style={{ width: '120px' }}>Planlanan Bitiş</th>
                     <th style={{ width: '100px' }}>Durum</th>
@@ -208,72 +432,76 @@ const IssueDetailsPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {issues.map((issue, index) => (
-                    <tr key={issue.issueId || index}>
-                      <td>
-                        <span className="badge bg-secondary">
-                          #{issue.issueId}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="d-flex align-items-start">
-                          <i className={`bi bi-circle-fill me-2 mt-1 ${issue.isClosed ? 
-                            'text-success' : 'text-warning'}`} 
+                  {filteredIssues.map((issue, index) => {
+                    return (
+                      <tr key={issue.issueId || index}>
+                        <td>
+                          <span className="badge bg-secondary">
+                            #{issue.issueId}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="d-flex align-items-start">
+                            <i className={`bi bi-circle-fill me-2 mt-1 ${issue.isClosed ? 'text-success' : 'text-warning'}`} 
                                style={{ fontSize: '8px' }}></i>
-                          <div className="flex-grow-1">
-                            <div className="fw-medium">{issue.subject}</div>
-                            <small className="text-muted">
-                              <i className="bi bi-folder me-1"></i>
-                              {issue.projectName}
-                            </small>
+                            <div className="flex-grow-1">
+                              <div className="fw-medium">{issue.subject}</div>
+                              <small className="text-muted">
+                                <i className="bi bi-folder me-1"></i>
+                                {issue.projectName}
+                              </small>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td>
-                        <small className="text-muted">
-                          <i className="bi bi-calendar-check me-1"></i>
-                          {formatDate(issue.plannedStartDate)}
-                        </small>
-                      </td>
-                      <td>
-                        <small className="text-muted">
-                          <i className="bi bi-calendar-x me-1"></i>
-                          {formatDate(issue.plannedEndDate)}
-                        </small>
-                      </td>
-                      <td>
-                        <span className={`badge ${getStatusBadgeClass(issue.statusName, issue.isClosed)}`}>
-                          {issue.statusName}
-                        </span>
-                      </td>
-                      <td className="text-center">
-                        <div className="d-flex align-items-center gap-2">
-                          <div className="progress flex-grow-1" style={{ height: '8px' }}>
-                            <div 
-                              className={`progress-bar ${
-                                issue.completionPercentage >= 100 ? 'bg-success' :
-                                issue.completionPercentage >= 75 ? 'bg-info' :
-                                issue.completionPercentage >= 50 ? 'bg-warning' :
-                                'bg-danger'
-                              }`}
-                              role="progressbar"
-                              style={{ width: `${issue.completionPercentage}%` }}
-                              aria-valuenow={issue.completionPercentage}
-                              aria-valuemin="0"
-                              aria-valuemax="100"
-                            ></div>
+                        </td>
+                        <td>
+                          <span className="badge bg-primary">{issue.productionType || '-'}</span>
+                        </td>
+                        <td>
+                          <small className="text-muted">
+                            <i className="bi bi-calendar-check me-1"></i>
+                            {formatDate(issue.plannedStartDate)}
+                          </small>
+                        </td>
+                        <td>
+                          <small className="text-muted">
+                            <i className="bi bi-calendar-x me-1"></i>
+                            {formatDate(issue.plannedEndDate)}
+                          </small>
+                        </td>
+                        <td>
+                          <span className={`badge ${getStatusBadgeClass(issue.statusName, issue.isClosed)}`}>
+                            {issue.statusName}
+                          </span>
+                        </td>
+                        <td className="text-center">
+                          <div className="d-flex align-items-center gap-2">
+                            <div className="progress flex-grow-1" style={{ height: '8px' }}>
+                              <div 
+                                className={`progress-bar ${
+                                  issue.completionPercentage >= 100 ? 'bg-success' :
+                                  issue.completionPercentage >= 75 ? 'bg-info' :
+                                  issue.completionPercentage >= 50 ? 'bg-warning' :
+                                  'bg-danger'
+                                }`}
+                                role="progressbar"
+                                style={{ width: `${issue.completionPercentage}%` }}
+                                aria-valuenow={issue.completionPercentage}
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                              ></div>
+                            </div>
+                            <small className="text-muted">{issue.completionPercentage}%</small>
                           </div>
-                          <small className="text-muted">{issue.completionPercentage}%</small>
-                        </div>
-                      </td>
-                      <td>
-                        <small className="text-muted">
-                          <i className="bi bi-person me-1"></i>
-                          {issue.assignedTo || '-'}
-                        </small>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td>
+                          <small className="text-muted">
+                            <i className="bi bi-person me-1"></i>
+                            {issue.assignedTo || '-'}
+                          </small>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -281,7 +509,7 @@ const IssueDetailsPage = () => {
         </div>
       </div>
 
-      {/* Geri Dönme Butonu - Alt Kısım */}
+      {/* Geri Dönme Butonu */}
       <div className="mt-3">
         <button 
           className="btn btn-outline-secondary"
