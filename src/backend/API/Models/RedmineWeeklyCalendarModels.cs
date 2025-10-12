@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// src/backend/API/Models/RedmineWeeklyCalendarModels.cs
+using System.ComponentModel.DataAnnotations;
 
 namespace API.Models
 {
@@ -73,6 +74,9 @@ namespace API.Models
         public DateTime? PlannedStartDate { get; set; }
         public DateTime? PlannedEndDate { get; set; }
 
+        // ✅ YENİ: Kapanma tarihi
+        public DateTime? ClosedOn { get; set; }
+
         // Computed Properties
         public bool IsCompleted => CompletionPercentage >= 100 || IsClosed;
         public string StatusText => IsCompleted ? "Tamamlandı" : "Devam Ediyor";
@@ -81,17 +85,55 @@ namespace API.Models
         /// Üretim tipi (Lazer, Abkant, Kaynak vb.) - TrackerName'den çıkarılır
         /// </summary>
         public string ProductionType => TrackerName.Replace("Üretim - ", "").Trim();
+
+        /// <summary>
+        /// İşin planlanan bitiş tarihine göre gecikip gecikmediğini kontrol eder
+        /// </summary>
+        public bool IsOverdue
+        {
+            get
+            {
+                if (!PlannedEndDate.HasValue) return false;
+
+                // Eğer iş kapanmışsa, kapanma tarihini kontrol et
+                if (IsClosed && ClosedOn.HasValue)
+                {
+                    return ClosedOn.Value.Date > PlannedEndDate.Value.Date;
+                }
+
+                // Eğer iş hala açıksa, bugünün tarihini kontrol et
+                if (!IsClosed)
+                {
+                    return DateTime.Now.Date > PlannedEndDate.Value.Date;
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Gecikme gün sayısı
+        /// </summary>
+        public int OverdueDays
+        {
+            get
+            {
+                if (!IsOverdue || !PlannedEndDate.HasValue) return 0;
+
+                DateTime comparisonDate = IsClosed && ClosedOn.HasValue
+                    ? ClosedOn.Value.Date
+                    : DateTime.Now.Date;
+
+                return (comparisonDate - PlannedEndDate.Value.Date).Days;
+            }
+        }
     }
-
-
-    // API/Models/RedmineWeeklyCalendarModels.cs dosyasının sonuna eklenecek yeni model sınıfları
 
     /// <summary>
     /// Belirli bir tarih ve iş tipine göre detaylı iş listesi isteği
     /// </summary>
     public class GetIssuesByDateAndTypeRequest
     {
-
         /// <summary>
         /// Hedef tarih (yyyy-MM-dd formatında)
         /// </summary>

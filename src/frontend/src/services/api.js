@@ -621,6 +621,7 @@ async getIssuesByDate(date) {
         assignedTo: issue.assignedTo || issue.AssignedTo || '',
         plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
         plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
+        closedOn: issue.closedOn || issue.ClosedOn,  // ✅ EKLENEN
         productionType: issue.productionType || issue.ProductionType || 
                        (issue.trackerName || issue.TrackerName || '').replace('Üretim - ', '').trim()
       }))

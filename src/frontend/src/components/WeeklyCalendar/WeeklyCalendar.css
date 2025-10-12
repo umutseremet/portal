@@ -1034,3 +1034,129 @@
 .calendar-day-card.today .clickable-date-header:hover {
   background: linear-gradient(135deg, #c0392b, #e74c3c) !important;
 }
+
+/* src/frontend/src/components/WeeklyCalendar/WeeklyCalendar.css */
+/* MEVCUT CSS DOSYANIZIN EN SONUNA EKLEYİN */
+
+/* ============================================
+   OVERDUE (GECİKMİŞ) İŞLER - UYARI KARTI
+   ============================================ */
+
+/* Geciken iş kartı */
+.overdue-card {
+  position: relative;
+  border-left-width: 4px !important;
+  border-left-color: #dc3545 !important;
+  background: linear-gradient(135deg, 
+    rgba(220, 53, 69, 0.08) 0%, 
+    rgba(220, 53, 69, 0.15) 100%) !important;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2) !important;
+}
+
+.overdue-card:hover {
+  background: linear-gradient(135deg, 
+    rgba(220, 53, 69, 0.15) 0%, 
+    rgba(220, 53, 69, 0.22) 100%) !important;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3) !important;
+  transform: translateX(3px);
+}
+
+/* Uyarı ikonu container */
+.overdue-warning-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #dc3545;
+  color: white;
+  font-size: 0.75rem;
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4);
+}
+
+/* ✅ YANIP SÖNEN ANİMASYON */
+.blinking {
+  animation: blink-warning 1.5s ease-in-out infinite;
+}
+
+@keyframes blink-warning {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+}
+
+/* Gecikme bilgisi */
+.overdue-info {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+/* Geciken iş badge'i - production type */
+.overdue-card .production-type-badge {
+  background-color: #dc3545 !important;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(220, 53, 69, 0);
+  }
+}
+
+/* Responsive - Mobil cihazlarda animasyonu yavaşlat */
+@media (max-width: 768px) {
+  .blinking {
+    animation-duration: 2s;
+  }
+  
+  .overdue-card .production-type-badge {
+    animation-duration: 2.5s;
+  }
+}
+
+/* ============================================
+   CALENDAR DAY HEADER - Gecikme badge'i için
+   ============================================ */
+
+/* Tarih başlığına gecikme badge'i eklenebilir */
+.day-header {
+  position: relative;
+}
+
+.day-header .badge.bg-danger {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  animation: pulse-danger-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-danger-badge {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0);
+  }
+}
+
+/* Accessibility - Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .blinking,
+  .overdue-card .production-type-badge,
+  .day-header .badge.bg-danger {
+    animation: none;
+  }
+  
+  .overdue-warning-icon {
+    opacity: 1;
+  }
+}
