@@ -7,20 +7,13 @@ const IssueDetailsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  console.log('🔍 IssueDetailsPage mounted');
-  console.log('🔍 Location state:', location.state);
-  
-  // URL'den gelen parametreleri al
   const { selectedGroup, selectedDate, viewType } = location.state || {};
-  
-  console.log('🔍 Parsed values:', { selectedGroup, selectedDate, viewType });
   
   const [issues, setIssues] = useState([]);
   const [filteredIssues, setFilteredIssues] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  // Filtre state'leri
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     projectId: '',
@@ -29,74 +22,46 @@ const IssueDetailsPage = () => {
     assignedTo: ''
   });
 
-  // Benzersiz liste değerleri
   const [projectList, setProjectList] = useState([]);
   const [productionTypes, setProductionTypes] = useState([]);
   const [statusList, setStatusList] = useState([]);
   const [assigneeList, setAssigneeList] = useState([]);
 
   useEffect(() => {
-    console.log('🔍 IssueDetailsPage useEffect triggered');
-    console.log('🔍 selectedDate:', selectedDate);
-    console.log('🔍 selectedGroup:', selectedGroup);
-    
     if (selectedDate) {
-      console.log('✅ selectedDate exists, calling fetchIssueDetails');
       fetchIssueDetails();
-    } else {
-      console.warn('❌ No selectedDate, redirecting to calendar');
-      navigate('/production/weekly-calendar');
     }
-  }, [selectedDate]);
+  }, [selectedDate, selectedGroup]);
 
-  // İşler değiştiğinde benzersiz listeleri oluştur
   useEffect(() => {
     if (issues.length > 0) {
-      // Benzersiz projeler
-      const uniqueProjects = [...new Set(issues.map(i => JSON.stringify({
-        id: i.projectId,
-        name: i.projectName
-      })))].map(str => JSON.parse(str));
-      setProjectList(uniqueProjects);
+      const projects = [...new Set(issues.map(i => i.projectName))];
+      const types = [...new Set(issues.map(i => i.productionType).filter(Boolean))];
+      const statuses = [...new Set(issues.map(i => i.statusName))];
+      const assignees = [...new Set(issues.map(i => i.assignedTo))];
 
-      // Benzersiz üretim tipleri (API'den gelen productionType alanından)
-      const uniqueTypes = [...new Set(
-        issues
-          .map(i => i.productionType)
-          .filter(Boolean)
-      )];
-      setProductionTypes(uniqueTypes);
-
-      // Benzersiz durumlar
-      const uniqueStatuses = [...new Set(issues.map(i => i.statusName).filter(Boolean))];
-      setStatusList(uniqueStatuses);
-
-      // Benzersiz atananlar
-      const uniqueAssignees = [...new Set(issues.map(i => i.assignedTo).filter(Boolean))];
-      setAssigneeList(uniqueAssignees);
+      setProjectList(projects);
+      setProductionTypes(types);
+      setStatusList(statuses);
+      setAssigneeList(assignees);
     }
   }, [issues]);
 
-  // Filtreleme efekti
   useEffect(() => {
     let filtered = [...issues];
 
-    // Proje filtresi
     if (filters.projectId) {
-      filtered = filtered.filter(i => i.projectId.toString() === filters.projectId);
+      filtered = filtered.filter(i => i.projectName === filters.projectId);
     }
 
-    // Üretim tipi filtresi
-    if (filters.productionType !== 'all') {
+    if (filters.productionType && filters.productionType !== 'all') {
       filtered = filtered.filter(i => i.productionType === filters.productionType);
     }
 
-    // Durum filtresi
-    if (filters.status !== 'all') {
+    if (filters.status && filters.status !== 'all') {
       filtered = filtered.filter(i => i.statusName === filters.status);
     }
 
-    // Atanan filtresi
     if (filters.assignedTo) {
       filtered = filtered.filter(i => i.assignedTo === filters.assignedTo);
     }
@@ -124,16 +89,12 @@ const IssueDetailsPage = () => {
           projectId: selectedGroup.projectId,
           productionType: selectedGroup.productionType
         };
-        console.log('📤 Calling API with type filter:', params);
         response = await apiService.getIssuesByDateAndType(params);
       } else {
-        console.log('📤 Calling API for all issues on date:', formattedDate);
         response = await apiService.getIssuesByDate(formattedDate);
       }
 
-      console.log('📥 API Response:', response);
       const issuesData = response.issues || [];
-      console.log('✅ Issues extracted:', issuesData);
       setIssues(issuesData);
       setFilteredIssues(issuesData);
     } catch (err) {
@@ -160,6 +121,26 @@ const IssueDetailsPage = () => {
 
   const hasActiveFilters = filters.projectId || filters.productionType !== 'all' || 
                           filters.status !== 'all' || filters.assignedTo;
+
+  // ✅ GECİKME KONTROLÜ FONKSİYONU
+  const checkIfIssueOverdue = (issue) => {
+    if (!issue.plannedEndDate) return false;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const plannedEnd = new Date(issue.plannedEndDate);
+    plannedEnd.setHours(0, 0, 0, 0);
+    
+    // İş kapanmışsa, kapanma tarihini kontrol et
+    if (issue.isClosed && issue.closedOn) {
+      const closedDate = new Date(issue.closedOn);
+      closedDate.setHours(0, 0, 0, 0);
+      return closedDate > plannedEnd;
+    }
+    
+    // İş açıksa, bugünü kontrol et
+    return today > plannedEnd;
+  };
 
   const getStatusBadgeClass = (statusName, isClosed) => {
     if (isClosed) return 'bg-success';
@@ -195,13 +176,13 @@ const IssueDetailsPage = () => {
         border: 'none'
       }}>
         <div className="card-body">
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
+          <div className="d-flex justify-content-between align-items-center flex-wrap">
+            <div className="mb-2 mb-md-0">
               <h4 className="mb-2">
                 <i className="bi bi-list-task me-2"></i>
                 {selectedGroup ? 'İş Detayları (Filtrelenmiş)' : 'Günlük İş Listesi'}
               </h4>
-              <div className="d-flex align-items-center gap-3 small">
+              <div className="d-flex align-items-center gap-3 small flex-wrap">
                 <span>
                   <i className="bi bi-calendar3 me-1"></i>
                   {formatDate(selectedDate)}
@@ -225,174 +206,99 @@ const IssueDetailsPage = () => {
                 )}
               </div>
             </div>
-            <button 
-              className="btn btn-light"
-              onClick={handleBackToCalendar}
-            >
-              <i className="bi bi-arrow-left me-2"></i>
-              Takvime Dön
-            </button>
+            <div className="d-flex gap-2">
+              <button 
+                className="btn btn-light btn-sm"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <i className="bi bi-funnel me-1"></i>
+                Filtrele
+                {hasActiveFilters && (
+                  <span className="badge bg-danger ms-1">!</span>
+                )}
+              </button>
+              <button 
+                className="btn btn-light btn-sm"
+                onClick={handleBackToCalendar}
+              >
+                <i className="bi bi-arrow-left me-1"></i>
+                Takvime Dön
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Filtre Navigasyonu */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <div className="d-flex justify-content-between align-items-center">
-            <div className="d-flex align-items-center gap-2">
-              <h6 className="mb-0">
-                <i className="bi bi-filter me-2"></i>
-                Filtreleme Seçenekleri
-              </h6>
-              {hasActiveFilters && (
-                <span className="badge bg-danger">Aktif Filtre</span>
-              )}
-            </div>
-            <button
-              className={`btn ${showFilters ? 'btn-primary' : 'btn-outline-primary'} position-relative`}
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <i className={`bi bi-funnel${showFilters ? '-fill' : ''} me-2`}></i>
-              {showFilters ? 'Filtreleri Gizle' : 'Filtrele'}
-              {hasActiveFilters && !showFilters && (
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  !
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* Filtre Alanı */}
-          {showFilters && (
-            <>
-              <hr className="my-3" />
-              <div className="row g-3">
-                <div className="col-lg-3 col-md-6">
-                  <label className="form-label fw-semibold">
-                    <i className="bi bi-folder me-1"></i>
-                    Proje
-                  </label>
-                  <select
-                    className="form-select"
-                    value={filters.projectId}
-                    onChange={(e) => handleFilterChange('projectId', e.target.value)}
-                  >
-                    <option value="">Tüm Projeler</option>
-                    {projectList.map(project => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="col-lg-3 col-md-6">
-                  <label className="form-label fw-semibold">
-                    <i className="bi bi-gear me-1"></i>
-                    İş Tipi
-                  </label>
-                  <select
-                    className="form-select"
-                    value={filters.productionType}
-                    onChange={(e) => handleFilterChange('productionType', e.target.value)}
-                  >
-                    <option value="all">Tümü</option>
-                    {productionTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="col-lg-3 col-md-6">
-                  <label className="form-label fw-semibold">
-                    <i className="bi bi-flag me-1"></i>
-                    Durum
-                  </label>
-                  <select
-                    className="form-select"
-                    value={filters.status}
-                    onChange={(e) => handleFilterChange('status', e.target.value)}
-                  >
-                    <option value="all">Tümü</option>
-                    {statusList.map(status => (
-                      <option key={status} value={status}>{status}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="col-lg-3 col-md-6">
-                  <label className="form-label fw-semibold">
-                    <i className="bi bi-person me-1"></i>
-                    Atanan
-                  </label>
-                  <select
-                    className="form-select"
-                    value={filters.assignedTo}
-                    onChange={(e) => handleFilterChange('assignedTo', e.target.value)}
-                  >
-                    <option value="">Tümü</option>
-                    {assigneeList.map(assignee => (
-                      <option key={assignee} value={assignee}>{assignee}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="col-12">
-                  <button
-                    className="btn btn-outline-danger"
-                    onClick={resetFilters}
-                    disabled={!hasActiveFilters}
-                  >
-                    <i className="bi bi-x-circle me-2"></i>
-                    Filtreleri Temizle
-                  </button>
-                </div>
+      {/* Filters */}
+      {showFilters && (
+        <div className="card mb-4">
+          <div className="card-body">
+            <div className="row g-3">
+              <div className="col-md-3">
+                <label className="form-label small">Proje</label>
+                <select 
+                  className="form-select form-select-sm"
+                  value={filters.projectId}
+                  onChange={(e) => handleFilterChange('projectId', e.target.value)}
+                >
+                  <option value="">Tümü</option>
+                  {projectList.map((project, idx) => (
+                    <option key={idx} value={project}>{project}</option>
+                  ))}
+                </select>
               </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* İstatistikler */}
-      {/* <div className="row mb-4">
-        <div className="col-md-3">
-          <div className="card border-primary">
-            <div className="card-body text-center">
-              <h3 className="mb-0 text-primary">{issues.length}</h3>
-              <small className="text-muted">Toplam İş</small>
+              <div className="col-md-3">
+                <label className="form-label small">İş Tipi</label>
+                <select 
+                  className="form-select form-select-sm"
+                  value={filters.productionType}
+                  onChange={(e) => handleFilterChange('productionType', e.target.value)}
+                >
+                  <option value="all">Tümü</option>
+                  {productionTypes.map((type, idx) => (
+                    <option key={idx} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-3">
+                <label className="form-label small">Durum</label>
+                <select 
+                  className="form-select form-select-sm"
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                >
+                  <option value="all">Tümü</option>
+                  {statusList.map((status, idx) => (
+                    <option key={idx} value={status}>{status}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-3">
+                <label className="form-label small">Atanan</label>
+                <select 
+                  className="form-select form-select-sm"
+                  value={filters.assignedTo}
+                  onChange={(e) => handleFilterChange('assignedTo', e.target.value)}
+                >
+                  <option value="">Tümü</option>
+                  {assigneeList.map((assignee, idx) => (
+                    <option key={idx} value={assignee}>{assignee}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="mt-3">
+              <button 
+                className="btn btn-sm btn-outline-secondary"
+                onClick={resetFilters}
+              >
+                <i className="bi bi-x-circle me-1"></i>
+                Filtreleri Temizle
+              </button>
             </div>
           </div>
         </div>
-        <div className="col-md-3">
-          <div className="card border-success">
-            <div className="card-body text-center">
-              <h3 className="mb-0 text-success">{filteredIssues.length}</h3>
-              <small className="text-muted">Filtrelenmiş İş</small>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card border-info">
-            <div className="card-body text-center">
-              <h3 className="mb-0 text-info">
-                {filteredIssues.filter(i => i.completionPercentage === 100 || i.isClosed).length}
-              </h3>
-              <small className="text-muted">Tamamlanan</small>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card border-warning">
-            <div className="card-body text-center">
-              <h3 className="mb-0 text-warning">
-                {filteredIssues.filter(i => i.completionPercentage < 100 && !i.isClosed).length}
-              </h3>
-              <small className="text-muted">Devam Eden</small>
-            </div>
-          </div>
-        </div>
-      </div> */}
+      )}
 
       {/* Content */}
       <div className="card">
@@ -433,12 +339,32 @@ const IssueDetailsPage = () => {
                 </thead>
                 <tbody>
                   {filteredIssues.map((issue, index) => {
+                    const isOverdue = checkIfIssueOverdue(issue);
+                    
                     return (
-                      <tr key={issue.issueId || index}>
+                      <tr 
+                        key={issue.issueId || index}
+                        className={isOverdue ? 'overdue-row' : ''}
+                        style={isOverdue ? {
+                          backgroundColor: 'rgba(220, 53, 69, 0.05)',
+                          borderLeft: '4px solid #dc3545'
+                        } : {}}
+                      >
                         <td>
-                          <span className="badge bg-secondary">
-                            #{issue.issueId}
-                          </span>
+                          <div className="d-flex align-items-center gap-2">
+                            {/* ✅ ÜNLEM İKONU - Sadece gecikmiş işlerde */}
+                            {isOverdue && (
+                              <div 
+                                className="overdue-indicator blinking"
+                                title="Bu iş planlanan bitiş tarihini aştı!"
+                              >
+                                <i className="bi bi-exclamation-triangle-fill text-danger"></i>
+                              </div>
+                            )}
+                            <span className="badge bg-secondary">
+                              #{issue.issueId}
+                            </span>
+                          </div>
                         </td>
                         <td>
                           <div className="d-flex align-items-start">
@@ -463,9 +389,12 @@ const IssueDetailsPage = () => {
                           </small>
                         </td>
                         <td>
-                          <small className="text-muted">
+                          <small className={isOverdue ? 'text-danger fw-bold' : 'text-muted'}>
                             <i className="bi bi-calendar-x me-1"></i>
                             {formatDate(issue.plannedEndDate)}
+                            {isOverdue && (
+                              <i className="bi bi-exclamation-circle-fill ms-1"></i>
+                            )}
                           </small>
                         </td>
                         <td>
@@ -480,8 +409,7 @@ const IssueDetailsPage = () => {
                                 className={`progress-bar ${
                                   issue.completionPercentage >= 100 ? 'bg-success' :
                                   issue.completionPercentage >= 75 ? 'bg-info' :
-                                  issue.completionPercentage >= 50 ? 'bg-warning' :
-                                  'bg-danger'
+                                  issue.completionPercentage >= 50 ? 'bg-warning' : 'bg-danger'
                                 }`}
                                 role="progressbar"
                                 style={{ width: `${issue.completionPercentage}%` }}
@@ -490,14 +418,11 @@ const IssueDetailsPage = () => {
                                 aria-valuemax="100"
                               ></div>
                             </div>
-                            <small className="text-muted">{issue.completionPercentage}%</small>
+                            <span className="small text-nowrap">{issue.completionPercentage}%</span>
                           </div>
                         </td>
                         <td>
-                          <small className="text-muted">
-                            <i className="bi bi-person me-1"></i>
-                            {issue.assignedTo || '-'}
-                          </small>
+                          <small>{issue.assignedTo}</small>
                         </td>
                       </tr>
                     );
@@ -509,16 +434,45 @@ const IssueDetailsPage = () => {
         </div>
       </div>
 
-      {/* Geri Dönme Butonu */}
-      <div className="mt-3">
-        <button 
-          className="btn btn-outline-secondary"
-          onClick={handleBackToCalendar}
-        >
-          <i className="bi bi-arrow-left me-2"></i>
-          Takvime Geri Dön
-        </button>
-      </div>
+      {/* Summary */}
+      {filteredIssues.length > 0 && (
+        <div className="card mt-4">
+          <div className="card-body">
+            <div className="row text-center">
+              <div className="col-md-3">
+                <div className="p-3">
+                  <h5 className="text-primary mb-1">{filteredIssues.length}</h5>
+                  <small className="text-muted">Toplam İş</small>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="p-3">
+                  <h5 className="text-success mb-1">
+                    {filteredIssues.filter(i => i.isClosed).length}
+                  </h5>
+                  <small className="text-muted">Tamamlanan</small>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="p-3">
+                  <h5 className="text-warning mb-1">
+                    {filteredIssues.filter(i => !i.isClosed).length}
+                  </h5>
+                  <small className="text-muted">Devam Eden</small>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="p-3">
+                  <h5 className="text-danger mb-1">
+                    {filteredIssues.filter(i => checkIfIssueOverdue(i)).length}
+                  </h5>
+                  <small className="text-muted">Gecikmiş</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

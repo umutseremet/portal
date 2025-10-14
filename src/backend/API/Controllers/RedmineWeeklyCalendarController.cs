@@ -1,4 +1,5 @@
-﻿using API.Data;
+﻿// src/backend/API/Controllers/RedmineWeeklyCalendarController.cs
+using API.Data;
 using API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,13 +9,10 @@ using System.Data;
 
 namespace API.Controllers
 {
-    /// <summary>
-    /// Redmine Weekly Calendar API Controller - Haftalık takvim görünümü için üretim işlerini yönetir
-    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
 #if !DEBUG
-    [Authorize] // Sadece Release modda JWT token gerekli
+    [Authorize]
 #endif
     public class RedmineWeeklyCalendarController : ControllerBase
     {
@@ -32,7 +30,6 @@ namespace API.Controllers
             _configuration = configuration;
         }
 
-        // 1. GetWeeklyProductionCalendar metodunu güncelle
         [HttpPost("GetWeeklyProductionCalendar")]
 #if DEBUG
         [AllowAnonymous]
@@ -41,8 +38,7 @@ namespace API.Controllers
         {
             try
             {
-                _logger.LogInformation("Getting weekly production calendar data for parent issue: {ParentIssueId}, StartDate: {StartDate}, ProjectId: {ProjectId}, ProductionType: {ProductionType}",
-                    request.ParentIssueId, request.StartDate, request.ProjectId, request.ProductionType);
+                _logger.LogInformation("Getting weekly production calendar data");
 
                 DateTime weekStart;
                 if (string.IsNullOrEmpty(request.StartDate))
@@ -53,30 +49,22 @@ namespace API.Controllers
                 {
                     if (!DateTime.TryParse(request.StartDate, out weekStart))
                     {
-                        _logger.LogWarning("Invalid date format received: {StartDate}", request.StartDate);
-                        return BadRequest(new ErrorResponse { Message = "Geçersiz tarih formatı. yyyy-MM-dd formatında gönderiniz." });
+                        return BadRequest(new ErrorResponse { Message = "Geçersiz tarih formatı." });
                     }
                     weekStart = GetWeekStart(weekStart);
                 }
 
-                // ProductionType parametresini de geç
                 var result = await GetWeeklyProductionDataAsync(weekStart, request.ParentIssueId, request.ProjectId, request.ProductionType);
 
-                _logger.LogInformation("Weekly production calendar data retrieved successfully for week starting: {WeekStart}", weekStart);
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting weekly production calendar data");
-                return StatusCode(500, new ErrorResponse { Message = $"Haftalık üretim takvimi verileri alınamadı: {ex.Message}" });
+                _logger.LogError(ex, "Error getting weekly production calendar");
+                return StatusCode(500, new ErrorResponse { Message = $"Hata: {ex.Message}" });
             }
         }
 
-        // API/Controllers/RedmineWeeklyCalendarController.cs içine eklenecek yeni method
-
-        /// <summary>
-        /// Belirli bir tarih, proje ve iş tipine göre detaylı iş listesini getirir
-        /// </summary>
         [HttpPost("GetIssuesByDateAndType")]
 #if DEBUG
         [AllowAnonymous]
@@ -85,77 +73,77 @@ namespace API.Controllers
         {
             try
             {
-                _logger.LogInformation("Getting issues for date: {Date}, ProjectId: {ProjectId}, Type: {ProductionType}",
-                    request.Date, request.ProjectId, request.ProductionType);
-
                 if (!DateTime.TryParse(request.Date, out DateTime targetDate))
                 {
                     return BadRequest(new ErrorResponse { Message = "Geçersiz tarih formatı" });
                 }
 
-                var connectionString = _configuration.GetConnectionString("DefaultConnection");
-                if (string.IsNullOrEmpty(connectionString))
-                {
-                    _logger.LogError("Redmine connection string not found");
-                    return StatusCode(500, new ErrorResponse { Message = "Veritabanı bağlantı ayarları bulunamadı" });
-                }
+                var connectionString = _configuration.GetConnectionString("DefaultConnection")
+                    ?? throw new InvalidOperationException("Connection string not found");
 
                 var issues = new List<ProductionIssueData>();
+
+                var sql = @"
+                    SELECT 
+                        i.id, i.project_id,
+                        p.name AS project_name,
+                        cv_proje_kodu.value AS proje_kodu,
+                        i.subject,
+                        t.name AS tracker_name,
+                        i.done_ratio AS completion_percentage,
+                        i.estimated_hours,
+                        i.closed_on,
+                        status.name AS status_name,
+                        status.is_closed,
+                        priority.name AS priority_name,
+                        ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') AS assigned_to,
+                        cv_pbaslangic.value AS planlanan_baslangic,
+                        cv_pbitis.value AS planlanan_bitis
+                    FROM issues i
+                    JOIN trackers t ON i.tracker_id = t.id
+                    LEFT JOIN projects p ON i.project_id = p.id
+                    LEFT JOIN issue_statuses status ON i.status_id = status.id
+                    LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
+                    LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
+                    LEFT JOIN custom_values cv_pbaslangic 
+                        ON cv_pbaslangic.customized_id = i.id 
+                        AND cv_pbaslangic.customized_type = 'Issue'
+                        AND cv_pbaslangic.custom_field_id = 12
+                    LEFT JOIN custom_values cv_pbitis 
+                        ON cv_pbitis.customized_id = i.id 
+                        AND cv_pbitis.customized_type = 'Issue'
+                        AND cv_pbitis.custom_field_id = 4
+                    LEFT JOIN custom_values cv_proje_kodu 
+                        ON cv_proje_kodu.customized_id = p.id 
+                        AND cv_proje_kodu.customized_type = 'Project'
+                        AND cv_proje_kodu.custom_field_id = 3
+                    WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
+                        AND t.name != 'Üretim'
+                        AND i.project_id = @ProjectId
+                        AND t.name = @ProductionType
+                        AND ISNULL(cv_pbaslangic.value,'') != ''
+                        AND ISNULL(cv_pbitis.value,'') != ''
+                        AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
+                        AND (
+                            TRY_CAST(cv_pbitis.value AS DATE) >= @Date
+                            OR
+                            (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date)
+                            OR
+                            (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
+                             TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
+                             @Date <= CAST(i.closed_on AS DATE))
+                        )
+                    ORDER BY i.id";
 
                 using (var connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
 
-                    var sql = @"
-                                SELECT 
-                                    i.id,
-                                    i.project_id,
-                                    p.name AS project_name,
-                                    cv_proje_kodu.value AS proje_kodu,
-                                    i.subject,
-                                    t.name AS tracker_name,
-                                    i.done_ratio AS completion_percentage,
-                                    i.estimated_hours,
-                                    i.closed_on,  -- ✅ EKLENEN
-                                    status.name AS status_name,
-                                    status.is_closed,
-                                    priority.name AS priority_name,
-                                    ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') AS assigned_to,
-                                    cv_pbaslangic.value AS planlanan_baslangic,
-                                    cv_pbitis.value AS planlanan_bitis
-                                FROM issues i
-                                JOIN trackers t ON i.tracker_id = t.id
-                                LEFT JOIN projects p ON i.project_id = p.id
-                                LEFT JOIN issue_statuses status ON i.status_id = status.id
-                                LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
-                                LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
-                                LEFT JOIN custom_values cv_pbaslangic 
-                                    ON cv_pbaslangic.customized_id = i.id 
-                                    AND cv_pbaslangic.customized_type = 'Issue'
-                                    AND cv_pbaslangic.custom_field_id = 12
-                                LEFT JOIN custom_values cv_pbitis 
-                                    ON cv_pbitis.customized_id = i.id 
-                                    AND cv_pbitis.customized_type = 'Issue'
-                                    AND cv_pbitis.custom_field_id = 4
-                                LEFT JOIN custom_values cv_proje_kodu 
-                                    ON cv_proje_kodu.customized_id = p.id 
-                                    AND cv_proje_kodu.customized_type = 'Project'
-                                    AND cv_proje_kodu.custom_field_id = 3
-                                WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
-                                    AND i.project_id = @ProjectId
-                                    --AND t.name = @TrackerName
-                                    AND cv_pbaslangic.value IS NOT NULL
-                                    AND cv_pbitis.value IS NOT NULL
-                                    AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
-                                    AND TRY_CAST(cv_pbitis.value AS DATE) >= @Date
-                                ORDER BY i.id";
-
                     using (var command = new SqlCommand(sql, connection))
                     {
                         command.Parameters.AddWithValue("@Date", targetDate.Date);
                         command.Parameters.AddWithValue("@ProjectId", request.ProjectId);
-                        command.Parameters.AddWithValue("@TrackerName", $"Üretim - {request.ProductionType}");
-                        command.Parameters.AddWithValue("@TrackerName1", request.ProductionType);
+                        command.Parameters.AddWithValue("@ProductionType", request.ProductionType);
 
                         using (var reader = await command.ExecuteReaderAsync())
                         {
@@ -165,23 +153,20 @@ namespace API.Controllers
                                 DateTime? plannedEnd = null;
                                 DateTime? closedOn = null;
 
-
-                                var plannedStartStr = reader.IsDBNull(reader.GetOrdinal("planlanan_baslangic"))
-                                    ? null : reader.GetString(reader.GetOrdinal("planlanan_baslangic"));
-                                var plannedEndStr = reader.IsDBNull(reader.GetOrdinal("planlanan_bitis"))
-                                    ? null : reader.GetString(reader.GetOrdinal("planlanan_bitis"));
-
-                                if (!string.IsNullOrEmpty(plannedStartStr) && DateTime.TryParse(plannedStartStr, out var startDate))
+                                if (!reader.IsDBNull(reader.GetOrdinal("planlanan_baslangic")))
                                 {
-                                    plannedStart = startDate;
+                                    var startValue = reader.GetString(reader.GetOrdinal("planlanan_baslangic"));
+                                    DateTime.TryParse(startValue, out var tempStart);
+                                    plannedStart = tempStart;
                                 }
 
-                                if (!string.IsNullOrEmpty(plannedEndStr) && DateTime.TryParse(plannedEndStr, out var endDate))
+                                if (!reader.IsDBNull(reader.GetOrdinal("planlanan_bitis")))
                                 {
-                                    plannedEnd = endDate;
+                                    var endValue = reader.GetString(reader.GetOrdinal("planlanan_bitis"));
+                                    DateTime.TryParse(endValue, out var tempEnd);
+                                    plannedEnd = tempEnd;
                                 }
 
-                                // ✅ EKLENEN
                                 if (!reader.IsDBNull(reader.GetOrdinal("closed_on")))
                                 {
                                     closedOn = reader.GetDateTime(reader.GetOrdinal("closed_on"));
@@ -218,8 +203,6 @@ namespace API.Controllers
                     }
                 }
 
-                _logger.LogInformation("Found {Count} issues for date: {Date}", issues.Count, request.Date);
-
                 return Ok(new GetIssuesByDateAndTypeResponse
                 {
                     Date = targetDate,
@@ -232,13 +215,10 @@ namespace API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting issues by date and type");
-                return StatusCode(500, new ErrorResponse { Message = "İşler getirilirken bir hata oluştu" });
+                return StatusCode(500, new ErrorResponse { Message = $"Hata: {ex.Message}" });
             }
         }
 
-        /// <summary>
-        /// Belirli bir tarihteki TÜM işleri getirir (iş tipine göre filtreleme YOK)
-        /// </summary>
         [HttpGet("GetIssuesByDate")]
 #if DEBUG
         [AllowAnonymous]
@@ -247,69 +227,65 @@ namespace API.Controllers
         {
             try
             {
-                _logger.LogInformation("🔍 GetIssuesByDate called with date: {Date}", date);
-
-                if (string.IsNullOrEmpty(date))
+                if (string.IsNullOrEmpty(date) || !DateTime.TryParse(date, out DateTime targetDate))
                 {
-                    _logger.LogWarning("❌ Date parameter is null or empty");
-                    return BadRequest(new ErrorResponse { Message = "Tarih parametresi gerekli" });
+                    return BadRequest(new ErrorResponse { Message = "Geçersiz tarih" });
                 }
-
-                if (!DateTime.TryParse(date, out DateTime targetDate))
-                {
-                    _logger.LogWarning("❌ Invalid date format: {Date}", date);
-                    return BadRequest(new ErrorResponse { Message = "Geçersiz tarih formatı" });
-                }
-
-                _logger.LogInformation("✅ Parsed target date: {TargetDate}", targetDate);
 
                 var connectionString = _configuration.GetConnectionString("DefaultConnection")
-                    ?? throw new InvalidOperationException("Database connection string is not configured.");
+                    ?? throw new InvalidOperationException("Connection string not found");
 
                 var issues = new List<ProductionIssueData>();
 
-                // ✅ DOĞRU SQL - Takvim sorgusundaki ile aynı custom_field_id'ler
                 var sql = @"
-                        SELECT 
-                            i.id,
-                            i.project_id,
-                            p.name AS project_name,
-                            cv_proje_kodu.value AS proje_kodu,
-                            i.subject,
-                            t.name AS tracker_name,
-                            i.done_ratio AS completion_percentage,
-                            i.estimated_hours,
-                            i.closed_on,  -- ✅ EKLENEN
-                            status.name AS status_name,
-                            status.is_closed,
-                            priority.name AS priority_name,
-                            ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') AS assigned_to,
-                            cv_pbaslangic.value AS planlanan_baslangic,
-                            cv_pbitis.value AS planlanan_bitis
-                        FROM issues i
-                        JOIN trackers t ON i.tracker_id = t.id
-                        LEFT JOIN projects p ON i.project_id = p.id
-                        LEFT JOIN issue_statuses status ON i.status_id = status.id
-                        LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
-                        LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
-                        LEFT JOIN custom_values cv_pbaslangic 
-                            ON cv_pbaslangic.customized_id = i.id 
-                            AND cv_pbaslangic.customized_type = 'Issue'
-                            AND cv_pbaslangic.custom_field_id = 12
-                        LEFT JOIN custom_values cv_pbitis 
-                            ON cv_pbitis.customized_id = i.id 
-                            AND cv_pbitis.customized_type = 'Issue'
-                            AND cv_pbitis.custom_field_id = 4
-                        LEFT JOIN custom_values cv_proje_kodu 
-                            ON cv_proje_kodu.customized_id = p.id 
-                            AND cv_proje_kodu.customized_type = 'Project'
-                            AND cv_proje_kodu.custom_field_id = 3
-                        WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
-                            AND cv_pbaslangic.value IS NOT NULL
-                            AND cv_pbitis.value IS NOT NULL
-                            AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
-                            AND TRY_CAST(cv_pbitis.value AS DATE) >= @Date
-                        ORDER BY p.name, t.name, i.id";
+                    SELECT 
+                        i.id, i.project_id,
+                        p.name AS project_name,
+                        cv_proje_kodu.value AS proje_kodu,
+                        i.subject,
+                        t.name AS tracker_name,
+                        i.done_ratio AS completion_percentage,
+                        i.estimated_hours,
+                        i.closed_on,
+                        status.name AS status_name,
+                        status.is_closed,
+                        priority.name AS priority_name,
+                        ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') AS assigned_to,
+                        cv_pbaslangic.value AS planlanan_baslangic,
+                        cv_pbitis.value AS planlanan_bitis
+                    FROM issues i
+                    JOIN trackers t ON i.tracker_id = t.id
+                    LEFT JOIN projects p ON i.project_id = p.id
+                    LEFT JOIN issue_statuses status ON i.status_id = status.id
+                    LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
+                    LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
+                    LEFT JOIN custom_values cv_pbaslangic 
+                        ON cv_pbaslangic.customized_id = i.id 
+                        AND cv_pbaslangic.customized_type = 'Issue'
+                        AND cv_pbaslangic.custom_field_id = 12
+                    LEFT JOIN custom_values cv_pbitis 
+                        ON cv_pbitis.customized_id = i.id 
+                        AND cv_pbitis.customized_type = 'Issue'
+                        AND cv_pbitis.custom_field_id = 4
+                    LEFT JOIN custom_values cv_proje_kodu 
+                        ON cv_proje_kodu.customized_id = p.id 
+                        AND cv_proje_kodu.customized_type = 'Project'
+                        AND cv_proje_kodu.custom_field_id = 3
+                    WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
+                        AND t.name != 'Üretim'
+                        AND ISNULL(cv_pbaslangic.value,'') != ''
+                        AND ISNULL(cv_pbitis.value,'') != ''
+                        AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
+                        AND (
+                            TRY_CAST(cv_pbitis.value AS DATE) >= @Date
+                            OR
+                            (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date)
+                            OR
+                            (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
+                             TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
+                             @Date <= CAST(i.closed_on AS DATE))
+                        )
+                    ORDER BY p.name, t.name, i.id";
 
                 using (var connection = new SqlConnection(connectionString))
                 {
@@ -325,34 +301,39 @@ namespace API.Controllers
                             {
                                 DateTime? plannedStart = null;
                                 DateTime? plannedEnd = null;
-                                DateTime? closedOn = null;  // ✅ EKLENEN
+                                DateTime? closedOn = null;
 
-                                var plannedStartStr = reader.IsDBNull(reader.GetOrdinal("planlanan_baslangic"))
-                                    ? null : reader.GetString(reader.GetOrdinal("planlanan_baslangic"));
-                                var plannedEndStr = reader.IsDBNull(reader.GetOrdinal("planlanan_bitis"))
-                                    ? null : reader.GetString(reader.GetOrdinal("planlanan_bitis"));
+                                if (!reader.IsDBNull(reader.GetOrdinal("planlanan_baslangic")))
+                                {
+                                    var startValue = reader.GetString(reader.GetOrdinal("planlanan_baslangic"));
+                                    DateTime.TryParse(startValue, out var tempStart);
+                                    plannedStart = tempStart;
+                                }
 
-                                // ✅ EKLENEN
+                                if (!reader.IsDBNull(reader.GetOrdinal("planlanan_bitis")))
+                                {
+                                    var endValue = reader.GetString(reader.GetOrdinal("planlanan_bitis"));
+                                    DateTime.TryParse(endValue, out var tempEnd);
+                                    plannedEnd = tempEnd;
+                                }
+
                                 if (!reader.IsDBNull(reader.GetOrdinal("closed_on")))
                                 {
                                     closedOn = reader.GetDateTime(reader.GetOrdinal("closed_on"));
                                 }
 
-                                if (!string.IsNullOrEmpty(plannedStartStr) && DateTime.TryParse(plannedStartStr, out var parsedStart))
-                                    plannedStart = parsedStart;
-
-                                if (!string.IsNullOrEmpty(plannedEndStr) && DateTime.TryParse(plannedEndStr, out var parsedEnd))
-                                    plannedEnd = parsedEnd;
-
                                 issues.Add(new ProductionIssueData
                                 {
                                     IssueId = reader.GetInt32(reader.GetOrdinal("id")),
                                     ProjectId = reader.GetInt32(reader.GetOrdinal("project_id")),
-                                    ProjectName = reader.GetString(reader.GetOrdinal("project_name")),
+                                    ProjectName = reader.IsDBNull(reader.GetOrdinal("project_name"))
+                                        ? string.Empty : reader.GetString(reader.GetOrdinal("project_name")),
                                     ProjectCode = reader.IsDBNull(reader.GetOrdinal("proje_kodu"))
                                         ? string.Empty : reader.GetString(reader.GetOrdinal("proje_kodu")),
-                                    Subject = reader.GetString(reader.GetOrdinal("subject")),
-                                    TrackerName = reader.GetString(reader.GetOrdinal("tracker_name")),
+                                    Subject = reader.IsDBNull(reader.GetOrdinal("subject"))
+                                        ? string.Empty : reader.GetString(reader.GetOrdinal("subject")),
+                                    TrackerName = reader.IsDBNull(reader.GetOrdinal("tracker_name"))
+                                        ? string.Empty : reader.GetString(reader.GetOrdinal("tracker_name")),
                                     CompletionPercentage = reader.GetInt32(reader.GetOrdinal("completion_percentage")),
                                     EstimatedHours = reader.IsDBNull(reader.GetOrdinal("estimated_hours"))
                                         ? null : reader.GetDecimal(reader.GetOrdinal("estimated_hours")),
@@ -365,14 +346,12 @@ namespace API.Controllers
                                         ? "Atanmamış" : reader.GetString(reader.GetOrdinal("assigned_to")),
                                     PlannedStartDate = plannedStart,
                                     PlannedEndDate = plannedEnd,
-                                    ClosedOn = closedOn  // ✅ EKLENEN
+                                    ClosedOn = closedOn
                                 });
                             }
                         }
                     }
                 }
-
-                _logger.LogInformation("Found {Count} total issues for date: {Date}", issues.Count, date);
 
                 return Ok(new
                 {
@@ -383,19 +362,18 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting all issues by date");
-                return StatusCode(500, new ErrorResponse { Message = "İşler getirilirken bir hata oluştu" });
+                _logger.LogError(ex, "Error getting issues by date");
+                return StatusCode(500, new ErrorResponse { Message = $"Hata: {ex.Message}" });
             }
         }
 
         #region Private Methods
 
-        // 2. GetWeeklyProductionDataAsync metoduna productionType parametresini ekle
         private async Task<WeeklyProductionCalendarResponse> GetWeeklyProductionDataAsync(
             DateTime weekStart,
             int? parentIssueId,
             int? projectId,
-            string? productionType)  // YENİ PARAMETRE
+            string? productionType)
         {
             var response = new WeeklyProductionCalendarResponse
             {
@@ -405,25 +383,22 @@ namespace API.Controllers
             };
 
             var connectionString = _configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("DefaultConnection string not found");
+                ?? throw new InvalidOperationException("Connection string not found");
 
             using var connection = new SqlConnection(connectionString);
             await connection.OpenAsync();
 
-            // 7 gün için veri çek
             for (int day = 0; day < 7; day++)
             {
                 var currentDate = weekStart.AddDays(day);
 
-                // Ham verileri çek - productionType'ı da geç
                 var rawIssues = await GetProductionIssuesForDateAsync(
                     connection,
                     currentDate,
                     parentIssueId,
                     projectId,
-                    productionType);  // YENİ PARAMETRE
+                    productionType);
 
-                // Proje ve iş tipine göre grupla
                 var groupedData = rawIssues
                     .GroupBy(issue => new
                     {
@@ -458,9 +433,6 @@ namespace API.Controllers
             return response;
         }
 
-        // src/backend/API/Controllers/RedmineWeeklyCalendarController.cs
-        // Bu metodu dosyanızdaki mevcut metod ile değiştirin
-
         private async Task<List<ProductionIssueData>> GetProductionIssuesForDateAsync(
             SqlConnection connection,
             DateTime date,
@@ -474,91 +446,109 @@ namespace API.Controllers
             if (parentIssueId.HasValue)
             {
                 sql = @"
-            WITH RecursiveIssues AS (
-                SELECT id, parent_id FROM issues WHERE id = @ParentIssueId
-                UNION ALL
-                SELECT i.id, i.parent_id FROM issues i
-                INNER JOIN RecursiveIssues ri ON i.parent_id = ri.id
-            )
-            SELECT 
-                i.id, i.project_id, i.subject,
-                i.done_ratio as completion_percentage,
-                i.estimated_hours,
-                i.closed_on,
-                t.name as tracker_name,
-                p.name as project_name,
-                status.name as status_name,
-                status.is_closed,
-                priority.name as priority_name,
-                ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') as assigned_to,
-                cv_pbaslangic.value AS planlanan_baslangic,
-                cv_pbitis.value AS planlanan_bitis,
-                cv_proje_kodu.value AS proje_kodu
-            FROM issues i
-            JOIN trackers t ON i.tracker_id = t.id
-            INNER JOIN RecursiveIssues ri ON i.id = ri.id
-            LEFT JOIN projects p ON i.project_id = p.id
-            LEFT JOIN issue_statuses status ON i.status_id = status.id
-            LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
-            LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
-            LEFT JOIN custom_values cv_pbaslangic 
-                ON cv_pbaslangic.customized_id = i.id 
-                AND cv_pbaslangic.customized_type = 'Issue'
-                AND cv_pbaslangic.custom_field_id = 12
-            LEFT JOIN custom_values cv_pbitis 
-                ON cv_pbitis.customized_id = i.id 
-                AND cv_pbitis.customized_type = 'Issue'
-                AND cv_pbitis.custom_field_id = 4
-            LEFT JOIN custom_values cv_proje_kodu 
-                ON cv_proje_kodu.customized_id = p.id 
-                AND cv_proje_kodu.customized_type = 'Project'
-                AND cv_proje_kodu.custom_field_id = 3
-            WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
-                AND cv_pbaslangic.value IS NOT NULL
-                AND cv_pbitis.value IS NOT NULL
-                AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
-                AND TRY_CAST(cv_pbitis.value AS DATE) >= @Date";
+                    WITH RecursiveIssues AS (
+                        SELECT id, parent_id FROM issues WHERE id = @ParentIssueId
+                        UNION ALL
+                        SELECT i.id, i.parent_id FROM issues i
+                        INNER JOIN RecursiveIssues ri ON i.parent_id = ri.id
+                    )
+                    SELECT 
+                        i.id, i.project_id, i.subject,
+                        i.done_ratio as completion_percentage,
+                        i.estimated_hours,
+                        i.closed_on,
+                        t.name as tracker_name,
+                        p.name as project_name,
+                        status.name as status_name,
+                        status.is_closed,
+                        priority.name as priority_name,
+                        ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') as assigned_to,
+                        cv_pbaslangic.value AS planlanan_baslangic,
+                        cv_pbitis.value AS planlanan_bitis,
+                        cv_proje_kodu.value AS proje_kodu
+                    FROM issues i
+                    JOIN trackers t ON i.tracker_id = t.id
+                    INNER JOIN RecursiveIssues ri ON i.id = ri.id
+                    LEFT JOIN projects p ON i.project_id = p.id
+                    LEFT JOIN issue_statuses status ON i.status_id = status.id
+                    LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
+                    LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
+                    LEFT JOIN custom_values cv_pbaslangic 
+                        ON cv_pbaslangic.customized_id = i.id 
+                        AND cv_pbaslangic.customized_type = 'Issue'
+                        AND cv_pbaslangic.custom_field_id = 12
+                    LEFT JOIN custom_values cv_pbitis 
+                        ON cv_pbitis.customized_id = i.id 
+                        AND cv_pbitis.customized_type = 'Issue'
+                        AND cv_pbitis.custom_field_id = 4
+                    LEFT JOIN custom_values cv_proje_kodu 
+                        ON cv_proje_kodu.customized_id = p.id 
+                        AND cv_proje_kodu.customized_type = 'Project'
+                        AND cv_proje_kodu.custom_field_id = 3
+                    WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
+                        AND t.name != 'Üretim'
+                        AND ISNULL(cv_pbaslangic.value,'') != ''
+                        AND ISNULL(cv_pbitis.value,'') != ''
+                        AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
+                        AND (
+                            TRY_CAST(cv_pbitis.value AS DATE) >= @Date
+                            OR
+                            (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date)
+                            OR
+                            (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
+                             TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
+                             @Date <= CAST(i.closed_on AS DATE))
+                        )";
             }
             else
             {
                 sql = @"
-            SELECT 
-                i.id, i.project_id, i.subject,
-                i.done_ratio as completion_percentage,
-                i.estimated_hours,
-                i.closed_on,
-                t.name as tracker_name,
-                p.name as project_name,
-                status.name as status_name,
-                status.is_closed,
-                priority.name as priority_name,
-                ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') as assigned_to,
-                cv_pbaslangic.value AS planlanan_baslangic,
-                cv_pbitis.value AS planlanan_bitis,
-                cv_proje_kodu.value AS proje_kodu
-            FROM issues i
-            JOIN trackers t ON i.tracker_id = t.id
-            LEFT JOIN projects p ON i.project_id = p.id
-            LEFT JOIN issue_statuses status ON i.status_id = status.id
-            LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
-            LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
-            LEFT JOIN custom_values cv_pbaslangic 
-                ON cv_pbaslangic.customized_id = i.id 
-                AND cv_pbaslangic.customized_type = 'Issue'
-                AND cv_pbaslangic.custom_field_id = 12
-            LEFT JOIN custom_values cv_pbitis 
-                ON cv_pbitis.customized_id = i.id 
-                AND cv_pbitis.customized_type = 'Issue'
-                AND cv_pbitis.custom_field_id = 4
-            LEFT JOIN custom_values cv_proje_kodu 
-                ON cv_proje_kodu.customized_id = p.id 
-                AND cv_proje_kodu.customized_type = 'Project'
-                AND cv_proje_kodu.custom_field_id = 3
-            WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
-                AND cv_pbaslangic.value IS NOT NULL
-                AND cv_pbitis.value IS NOT NULL
-                AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
-                AND TRY_CAST(cv_pbitis.value AS DATE) >= @Date";
+                    SELECT 
+                        i.id, i.project_id, i.subject,
+                        i.done_ratio as completion_percentage,
+                        i.estimated_hours,
+                        i.closed_on,
+                        t.name as tracker_name,
+                        p.name as project_name,
+                        status.name as status_name,
+                        status.is_closed,
+                        priority.name as priority_name,
+                        ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') as assigned_to,
+                        cv_pbaslangic.value AS planlanan_baslangic,
+                        cv_pbitis.value AS planlanan_bitis,
+                        cv_proje_kodu.value AS proje_kodu
+                    FROM issues i
+                    JOIN trackers t ON i.tracker_id = t.id
+                    LEFT JOIN projects p ON i.project_id = p.id
+                    LEFT JOIN issue_statuses status ON i.status_id = status.id
+                    LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
+                    LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
+                    LEFT JOIN custom_values cv_pbaslangic 
+                        ON cv_pbaslangic.customized_id = i.id 
+                        AND cv_pbaslangic.customized_type = 'Issue'
+                        AND cv_pbaslangic.custom_field_id = 12
+                    LEFT JOIN custom_values cv_pbitis 
+                        ON cv_pbitis.customized_id = i.id 
+                        AND cv_pbitis.customized_type = 'Issue'
+                        AND cv_pbitis.custom_field_id = 4
+                    LEFT JOIN custom_values cv_proje_kodu 
+                        ON cv_proje_kodu.customized_id = p.id 
+                        AND cv_proje_kodu.customized_type = 'Project'
+                        AND cv_proje_kodu.custom_field_id = 3
+                    WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj') 
+                        AND t.name != 'Üretim'
+                        AND ISNULL(cv_pbaslangic.value,'') != ''
+                        AND ISNULL(cv_pbitis.value,'') != ''
+                        AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
+                        AND (
+                            TRY_CAST(cv_pbitis.value AS DATE) >= @Date
+                            OR
+                            (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date)
+                            OR
+                            (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
+                             TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
+                             @Date <= CAST(i.closed_on AS DATE))
+                        )";
             }
 
             if (projectId.HasValue)
