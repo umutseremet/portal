@@ -1,7 +1,8 @@
 ﻿// src/frontend/src/components/Vehicles/VehiclesList.js
-// DÜZELTİLMİŞ VERSİYON - filterSummary object render hatası çözüldü
+// Excel Import özelliği eklenmiş versiyon
 
 import React, { useState } from 'react';
+import FuelPurchaseImportModal from './FuelPurchaseImportModal';
 
 const VehiclesList = ({
   vehicles = [],
@@ -23,6 +24,7 @@ const VehiclesList = ({
   onNewVisitor,
   onExport,
   onResetFilters,
+  onRefresh,
   hasFilters = false,
   isEmpty = false,
   selectedCount = 0,
@@ -30,6 +32,7 @@ const VehiclesList = ({
   filterSummary = {}
 }) => {
   const [showFilters, setShowFilters] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [localFilters, setLocalFilters] = useState({
     fromDate: filters.fromDate || '',
     toDate: filters.toDate || '',
@@ -84,10 +87,7 @@ const VehiclesList = ({
 
   // Handle sort
   const handleSort = (column) => {
-    console.log('Sorting by:', column, 'Current sort:', filters.sortBy, filters.sortOrder);
-
     const newOrder = filters.sortBy === column && filters.sortOrder === 'desc' ? 'asc' : 'desc';
-
     if (onSort) {
       onSort(column, newOrder);
     }
@@ -104,85 +104,43 @@ const VehiclesList = ({
   // Get sort button class helper
   const getSortButtonClass = (column) => {
     const baseClass = "btn btn-link text-decoration-none p-0 fw-medium d-flex align-items-center";
-    const activeClass = filters.sortBy === column ? "text-primary" : "text-dark";
-    return `${baseClass} ${activeClass}`;
+    const activeClass = filters.sortBy === column ? " text-danger" : " text-dark";
+    return baseClass + activeClass;
   };
 
-  // Format date display
-  const formatDisplayDate = (dateString) => {
-    if (!dateString) return '-';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('tr-TR');
-    } catch {
-      return dateString;
-    }
-  };
-
-  // Get ownership type badge class
-  const getOwnershipTypeBadge = (type) => {
-    switch (type) {
-      case 'company': return 'bg-success';
-      case 'rental': return 'bg-warning';
-      case 'personal': return 'bg-info';
-      default: return 'bg-secondary';
-    }
-  };
-
-  // Get ownership type text
-  const getOwnershipTypeText = (type) => {
-    switch (type) {
-      case 'company': return 'Şirket';
-      case 'rental': return 'Kiralık';
-      case 'personal': return 'Kişisel';
-      default: return type || 'Belirtilmemiş';
-    }
-  };
-
-  // DÜZELTİLDİ: filterSummary'yi string'e çevir
-  const getFilterSummaryText = () => {
-    if (!filterSummary || typeof filterSummary !== 'object') {
-      return '';
+  // Handle import success
+  const handleImportSuccess = (result) => {
+    setShowImportModal(false);
+    
+    // Show success message
+    if (result.successCount > 0) {
+      alert(`Başarıyla ${result.successCount} yakıt alım kaydı içe aktarıldı!`);
     }
 
-    const activeFilters = [];
-
-    if (filterSummary.search) activeFilters.push(`Arama: "${filterSummary.search}"`);
-    if (filterSummary.brand) activeFilters.push(`Marka: "${filterSummary.brand}"`);
-    if (filterSummary.model) activeFilters.push(`Model: "${filterSummary.model}"`);
-    if (filterSummary.licensePlate) activeFilters.push(`Plaka: "${filterSummary.licensePlate}"`);
-    if (filterSummary.companyName) activeFilters.push(`Şirket: "${filterSummary.companyName}"`);
-    if (filterSummary.ownershipType) activeFilters.push(`Tip: "${getOwnershipTypeText(filterSummary.ownershipType)}"`);
-
-    const activeCount = filterSummary.activeCount || activeFilters.length;
-
-    if (activeCount === 0) return '';
-
-    return `${activeCount} filtre aktif`;
+    // Refresh the vehicle list
+    if (onRefresh) {
+      onRefresh();
+    }
   };
 
   // Loading state
-  if (loading && (!vehicles || vehicles.length === 0)) {
+  if (loading && vehicles.length === 0) {
     return (
-      <div className="d-flex justify-content-center align-items-center py-5">
-        <div className="text-center">
-          <div className="spinner-border text-danger mb-3">
-            <span className="visually-hidden">Yükleniyor...</span>
-          </div>
-          <p className="text-muted">Araçlar yükleniyor...</p>
+      <div className="text-center py-5">
+        <div className="spinner-border text-danger mb-3" role="status">
+          <span className="visually-hidden">Yükleniyor...</span>
         </div>
+        <p className="text-muted">Araçlar yükleniyor...</p>
       </div>
     );
   }
 
   // Empty state
-  if (!loading && (!vehicles || vehicles.length === 0)) {
+  if (isEmpty && !loading) {
     return (
       <div className="text-center py-5">
-        <div className="mb-4">
-          <i className="bi bi-car-front display-1 text-muted"></i>
-        </div>
-        <h5 className="text-muted mb-3">
+        <i className="bi bi-car-front display-1 text-muted mb-3"></i>
+        <h5 className="text-muted mb-2">
           {hasFilters ? 'Filtrelere uygun araç bulunamadı' : 'Henüz araç kaydı bulunmuyor'}
         </h5>
         <p className="text-muted">
@@ -206,7 +164,7 @@ const VehiclesList = ({
       {/* Header with Actions */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          {/* Sol taraf boş - ziyaretçiler gibi */}
+          {/* Sol taraf boş */}
         </div>
         <div className="d-flex gap-2">
           <button
@@ -217,13 +175,24 @@ const VehiclesList = ({
             Filtrele
             {hasFilters && <span className="badge bg-danger ms-1 rounded-pill">!</span>}
           </button>
+          
+          {/* YENİ - Excel'den Yükle Butonu */}
+          <button
+            className="btn btn-outline-success btn-sm"
+            onClick={() => setShowImportModal(true)}
+          >
+            <i className="bi bi-file-earmark-arrow-up me-1"></i>
+            Excel'den Yükle
+          </button>
+
           <button
             className="btn btn-outline-secondary btn-sm"
             onClick={onExport}
           >
             <i className="bi bi-download me-1"></i>
-            Excel
+            Excel İndir
           </button>
+
           <button
             className="btn btn-danger btn-sm"
             onClick={onNewVisitor}
@@ -294,8 +263,7 @@ const VehiclesList = ({
                   <option value="personal">Kişisel</option>
                 </select>
               </div>
-              <div className="row mt-3">
-              <div className="col-12">
+              <div className="col-12 mt-3">
                 <div className="d-flex gap-2">
                   <button 
                     className="btn btn-primary btn-sm"
@@ -321,7 +289,6 @@ const VehiclesList = ({
                 </div>
               </div>
             </div>
-            </div>
           </div>
         </div>
       )}
@@ -335,14 +302,12 @@ const VehiclesList = ({
             </span>
           )}
         </div>
-
       </div>
-
 
       {/* Vehicles Table */}
       <div className="table-responsive">
         <table className="table table-hover">
-          <thead >
+          <thead>
             <tr>
               <th width="50">
                 <div className="form-check">
@@ -442,64 +407,52 @@ const VehiclesList = ({
                 <td>
                   {vehicle.assignedUserName ? (
                     <div>
-                      <div className="small fw-medium">{vehicle.assignedUserName}</div>
-                      {vehicle.assignedUserPhone && (
-                        <div className="small text-muted">{vehicle.assignedUserPhone}</div>
-                      )}
+                      <div className="small">{vehicle.assignedUserName}</div>
+                      <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                        {vehicle.assignedUserPhone}
+                      </div>
                     </div>
                   ) : (
-                    <span className="text-muted small">Atanmamış</span>
+                    <span className="text-muted">-</span>
                   )}
                 </td>
                 <td>
                   {vehicle.currentMileage ? (
-                    <span className="badge bg-info text-dark">
-                      {vehicle.currentMileage.toLocaleString()} km
-                    </span>
-                  ) : '-'}
+                    <span>{vehicle.currentMileage.toLocaleString()} km</span>
+                  ) : (
+                    <span className="text-muted">-</span>
+                  )}
                 </td>
                 <td>
-                  <small className="text-muted">
-                    {formatDisplayDate(vehicle.createdAt)}
-                  </small>
+                  {vehicle.createdAt ? (
+                    <small>{new Date(vehicle.createdAt).toLocaleDateString('tr-TR')}</small>
+                  ) : (
+                    <span className="text-muted">-</span>
+                  )}
                 </td>
                 <td>
-                  <div className="dropdown">
+                  <div className="btn-group btn-group-sm">
                     <button
-                      className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                      type="button"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
+                      className="btn btn-outline-secondary"
+                      onClick={() => onViewVisitor?.(vehicle)}
+                      title="Görüntüle"
                     >
-                      <i className="bi bi-three-dots-vertical"></i>
+                      <i className="bi bi-eye"></i>
                     </button>
-                    <ul className="dropdown-menu">
-                      <li>
-                        <button
-                          className="dropdown-item"
-                          onClick={() => onViewVisitor?.(vehicle)}
-                        >
-                          <i className="bi bi-eye me-2"></i>Detayları Gör
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          className="dropdown-item"
-                          onClick={() => onEditVisitor?.(vehicle)}
-                        >
-                          <i className="bi bi-pencil me-2"></i>Düzenle
-                        </button>
-                      </li>
-                      <li><hr className="dropdown-divider" /></li>
-                      <li>
-                        <button
-                          className="dropdown-item text-danger"
-                          onClick={() => handleDeleteClick(vehicle)}
-                        >
-                          <i className="bi bi-trash me-2"></i>Sil
-                        </button>
-                      </li>
-                    </ul>
+                    <button
+                      className="btn btn-outline-primary"
+                      onClick={() => onEditVisitor?.(vehicle)}
+                      title="Düzenle"
+                    >
+                      <i className="bi bi-pencil"></i>
+                    </button>
+                    <button
+                      className="btn btn-outline-danger"
+                      onClick={() => handleDeleteClick(vehicle)}
+                      title="Sil"
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -509,11 +462,10 @@ const VehiclesList = ({
       </div>
 
       {/* Pagination */}
-      {pagination.totalPages > 1 && (
+      {pagination && pagination.totalPages > 1 && (
         <div className="d-flex justify-content-between align-items-center mt-4">
-          <div className="small text-muted">
+          <div className="text-muted small">
             Sayfa {pagination.currentPage} / {pagination.totalPages}
-            (Toplam {pagination.totalCount} kayıt)
           </div>
           <nav>
             <ul className="pagination pagination-sm mb-0">
@@ -527,20 +479,32 @@ const VehiclesList = ({
                 </button>
               </li>
 
-              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                const pageNum = Math.max(1, pagination.currentPage - 2) + i;
-                if (pageNum > pagination.totalPages) return null;
-
-                return (
-                  <li key={pageNum} className={`page-item ${pageNum === pagination.currentPage ? 'active' : ''}`}>
-                    <button
-                      className="page-link"
-                      onClick={() => onPageChange?.(pageNum)}
-                    >
-                      {pageNum}
-                    </button>
-                  </li>
-                );
+              {[...Array(pagination.totalPages)].map((_, index) => {
+                const pageNum = index + 1;
+                const currentPage = pagination.currentPage;
+                
+                if (
+                  pageNum === 1 ||
+                  pageNum === pagination.totalPages ||
+                  (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                ) {
+                  return (
+                    <li key={pageNum} className={`page-item ${pageNum === currentPage ? 'active' : ''}`}>
+                      <button
+                        className="page-link"
+                        onClick={() => onPageChange?.(pageNum)}
+                      >
+                        {pageNum}
+                      </button>
+                    </li>
+                  );
+                }
+                
+                if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                  return <li key={pageNum} className="page-item disabled"><span className="page-link">...</span></li>;
+                }
+                
+                return null;
               })}
 
               <li className={`page-item ${!pagination.hasNextPage ? 'disabled' : ''}`}>
@@ -563,6 +527,13 @@ const VehiclesList = ({
           <small className="text-muted">Yükleniyor...</small>
         </div>
       )}
+
+      {/* YENİ - Excel Import Modal */}
+      <FuelPurchaseImportModal
+        show={showImportModal}
+        onHide={() => setShowImportModal(false)}
+        onSuccess={handleImportSuccess}
+      />
     </>
   );
 };

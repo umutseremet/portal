@@ -1,4 +1,5 @@
 // src/frontend/src/pages/VehiclesPage.js
+// Excel Import için refresh özelliği eklenmiş
 
 import React, { useState } from 'react';
 import VehiclesList from '../components/Vehicles/VehiclesList';
@@ -46,6 +47,11 @@ const VehiclesPage = () => {
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [viewingVehicle, setViewingVehicle] = useState(null);
 
+  // YENİ - Refresh function for Excel import
+  const handleRefresh = () => {
+    loadVehicles();
+  };
+
   // Handle sort
   const handleSort = (column, order) => {
     try {
@@ -90,15 +96,11 @@ const VehiclesPage = () => {
   };
 
   // Handle select all
-  const handleSelectAll = (isSelected) => {
+  const handleSelectAll = () => {
     try {
-      if (isSelected) {
-        selectAllVehicles();
-      } else {
-        clearSelection();
-      }
+      selectAllVehicles();
     } catch (error) {
-      console.error('Error selecting all vehicles:', error);
+      console.error('Error selecting all:', error);
     }
   };
 
@@ -132,182 +134,166 @@ const VehiclesPage = () => {
 
   // Handle delete vehicle
   const handleDeleteVehicle = async (vehicle) => {
-    if (window.confirm(`${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate}) aracını silmek istediğinizden emin misiniz?`)) {
-      try {
+    try {
+      if (window.confirm(`${vehicle.licensePlate} plakalı aracı silmek istediğinize emin misiniz?`)) {
         await deleteVehicle(vehicle.id);
-        console.log('Vehicle deleted successfully');
-      } catch (error) {
-        console.error('Failed to delete vehicle:', error);
       }
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
     }
   };
 
   // Handle bulk delete
   const handleBulkDelete = async () => {
-    if (selectedVehicles.length === 0) return;
-    
-    if (window.confirm(`${selectedCount} aracı silmek istediğinizden emin misiniz?`)) {
-      try {
-        await deleteSelectedVehicles();
-        console.log('Bulk delete completed');
-      } catch (error) {
-        console.error('Bulk delete failed:', error);
-      }
-    }
-  };
-
-  // Handle save vehicle (create/edit)
-  const handleSaveVehicle = async (vehicleData) => {
     try {
-      console.log('Saving vehicle:', { editingVehicle, vehicleData });
-
-      if (editingVehicle) {
-        // Update
-        const result = await updateVehicle(editingVehicle.id, vehicleData);
-        console.log('Update result:', result);
-
-        if (result.success) {
-          console.log('✅ Vehicle updated successfully');
-          handleCloseModal();
-        }
-      } else {
-        // Create
-        const result = await createVehicle(vehicleData);
-        console.log('Create result:', result);
-
-        if (result.success) {
-          console.log('✅ Vehicle created successfully');
-          handleCloseModal();
-        }
+      if (window.confirm(`${selectedCount} aracı silmek istediğinize emin misiniz?`)) {
+        await deleteSelectedVehicles();
       }
     } catch (error) {
-      console.error('❌ Save vehicle failed:', error);
-      throw error; // Re-throw to let modal handle the error
+      console.error('Error bulk deleting:', error);
     }
-  };
-
-  // Handle export
-  const handleExport = () => {
-    exportVehicles();
   };
 
   // Handle close modal
   const handleCloseModal = () => {
-    console.log('Closing modal');
     setShowNewVehicleModal(false);
     setEditingVehicle(null);
   };
 
+  // Handle save vehicle
+  const handleSaveVehicle = async (vehicleData) => {
+    try {
+      if (editingVehicle) {
+        await updateVehicle(editingVehicle.id, vehicleData);
+      } else {
+        await createVehicle(vehicleData);
+      }
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error saving vehicle:', error);
+    }
+  };
+
+  // Handle close detail modal
   const handleCloseDetailModal = () => {
     setViewingVehicle(null);
   };
 
-  // Handle delete from detail modal
-  const handleDeleteFromDetail = async (vehicle) => {
+  // Handle edit from detail
+  const handleEditFromDetail = () => {
+    setEditingVehicle(viewingVehicle);
+    setViewingVehicle(null);
+    setShowNewVehicleModal(true);
+  };
+
+  // Handle delete from detail
+  const handleDeleteFromDetail = async () => {
     try {
-      await deleteVehicle(vehicle.id);
-      console.log('Vehicle deleted successfully from detail modal');
-      handleCloseDetailModal(); // Close detail modal after delete
+      await handleDeleteVehicle(viewingVehicle);
+      setViewingVehicle(null);
     } catch (error) {
-      console.error('Failed to delete vehicle from detail modal:', error);
+      console.error('Error deleting from detail:', error);
     }
   };
 
-  // Handle edit from detail modal
-  const handleEditFromDetail = (vehicle) => {
-    setViewingVehicle(null); // Close detail modal
-    setEditingVehicle(vehicle);
-    setShowNewVehicleModal(true); // Open edit modal
+  // Handle export
+  const handleExport = async () => {
+    try {
+      await exportVehicles();
+    } catch (error) {
+      console.error('Error exporting:', error);
+    }
   };
 
   return (
-    <div className="vehicles-page">
-      <div className="container-fluid" >
-        {/* Page Header - Visitors benzeri */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <div className="page-header">
-              <h2 className="page-title mb-2">Araçlar</h2>
-              <p className="page-subtitle text-muted">
-                Tüm araç kayıtlarını görüntüleyin ve yönetin
+    <div className="container-fluid py-4">
+      <div className="row">
+        <div className="col-12">
+          {/* Page Header */}
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2 className="mb-1">Araç Yönetimi</h2>
+              <p className="text-muted mb-0">
+                Araç filosunu yönetin ve takip edin
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Error Display - Visitors benzeri */}
-        {error && (
-          <div className="row mb-4">
+          {/* Error Alert */}
+          {error && (
+            <div className="row mb-4">
+              <div className="col-12">
+                <div className="alert alert-danger alert-dismissible fade show">
+                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                  <strong>Hata!</strong> {error}
+                  <button 
+                    type="button" 
+                    className="btn-close" 
+                    onClick={clearError}
+                  ></button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Vehicles List */}
+          <div className="row">
             <div className="col-12">
-              <div className="alert alert-danger alert-dismissible fade show" role="alert">
-                <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                <strong>Hata!</strong> {error}
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={clearError}
-                ></button>
+              <div className="card h-100">
+                <div className="card-body">
+                  <VehiclesList
+                    vehicles={vehicles}
+                    loading={loading}
+                    pagination={pagination}
+                    filters={filters}
+                    sorting={{ field: filters.sortBy, direction: filters.sortOrder }}
+                    selectedVehicles={selectedVehicles}
+                    onPageChange={handlePageChange}
+                    onFilterChange={handleFilterChange}
+                    onSort={handleSort}
+                    onSelectVisitor={handleVehicleSelect}
+                    onSelectAll={handleSelectAll}
+                    onClearSelection={handleClearSelection}
+                    onViewVisitor={handleViewVehicle}
+                    onEditVisitor={handleEditVehicle}
+                    onDeleteVisitor={handleDeleteVehicle}
+                    onBulkDelete={handleBulkDelete}
+                    onNewVisitor={() => setShowNewVehicleModal(true)}
+                    onExport={handleExport}
+                    onResetFilters={resetFilters}
+                    onRefresh={handleRefresh}
+                    hasFilters={hasFilters}
+                    isEmpty={isEmpty}
+                    selectedCount={selectedCount}
+                    isAllSelected={isAllSelected}
+                    filterSummary={filterSummary}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Vehicles List - Visitors benzeri */}
-        <div className="row">
-          <div className="col-12">
-            <div className="card h-100">
-              <div className="card-body">
-                <VehiclesList
-                  vehicles={vehicles}
-                  loading={loading}
-                  pagination={pagination}
-                  filters={filters}
-                  sorting={{ field: filters.sortBy, direction: filters.sortOrder }}
-                  selectedVehicles={selectedVehicles}
-                  onPageChange={handlePageChange}
-                  onFilterChange={handleFilterChange}
-                  onSort={handleSort}
-                  onSelectVisitor={handleVehicleSelect}
-                  onSelectAll={handleSelectAll}
-                  onClearSelection={handleClearSelection}
-                  onViewVisitor={handleViewVehicle}
-                  onEditVisitor={handleEditVehicle}
-                  onDeleteVisitor={handleDeleteVehicle}
-                  onBulkDelete={handleBulkDelete}
-                  onNewVisitor={() => setShowNewVehicleModal(true)}
-                  onExport={handleExport}
-                  onResetFilters={resetFilters}
-                  hasFilters={hasFilters}
-                  isEmpty={isEmpty}
-                  selectedCount={selectedCount}
-                  isAllSelected={isAllSelected}
-                  filterSummary={filterSummary}
-                />
-              </div>
-            </div>
-          </div>
+          {/* Modals */}
+          
+          {/* New/Edit Vehicle Modal */}
+          <VehicleModal
+            show={showNewVehicleModal}
+            onHide={handleCloseModal}
+            onSave={handleSaveVehicle}
+            vehicle={editingVehicle}
+            loading={loading}
+          />
+
+          {/* Vehicle Detail Modal */}
+          <VehicleDetailModal
+            show={!!viewingVehicle}
+            onHide={handleCloseDetailModal}
+            vehicle={viewingVehicle}
+            onEdit={handleEditFromDetail}
+            onDelete={handleDeleteFromDetail}
+            loading={loading}
+          />
         </div>
-
-        {/* Modals */}
-        
-        {/* New/Edit Vehicle Modal */}
-        <VehicleModal
-          show={showNewVehicleModal}
-          onHide={handleCloseModal}
-          onSave={handleSaveVehicle}
-          vehicle={editingVehicle}
-          loading={loading}
-        />
-
-        {/* Vehicle Detail Modal */}
-        <VehicleDetailModal
-          show={!!viewingVehicle}
-          onHide={handleCloseDetailModal}
-          vehicle={viewingVehicle}
-          onEdit={handleEditFromDetail}
-          onDelete={handleDeleteFromDetail}
-          loading={loading}
-        />
       </div>
     </div>
   );

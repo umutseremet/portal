@@ -20,6 +20,8 @@ namespace API.Data
         public DbSet<ItemGroup> ItemGroups { get; set; }
         public DbSet<Item> Items { get; set; }
 
+        public DbSet<VehicleFuelPurchase> VehicleFuelPurchases { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -156,6 +158,66 @@ namespace API.Data
                 entity.HasIndex(e => e.GroupId).HasDatabaseName("IX_Items_GroupId");
                 entity.HasIndex(e => e.Code).HasDatabaseName("IX_Items_Code");
                 entity.HasIndex(e => e.Number).HasDatabaseName("IX_Items_Number");
+            });
+
+            // VehicleFuelPurchase entity configuration
+            modelBuilder.Entity<VehicleFuelPurchase>(entity =>
+            {
+                entity.ToTable("VehicleFuelPurchases");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                // String properties
+                entity.Property(e => e.Code).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.FleetCodeName).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Fleet).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.City).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Station).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.StationCode).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.DeviceGroups).HasMaxLength(100);
+                entity.Property(e => e.LicensePlate).HasMaxLength(20).IsRequired();
+                entity.Property(e => e.FuelType).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.SalesType).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.UTTS).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.DiscountType).HasMaxLength(20).IsRequired();
+                entity.Property(e => e.VATRate).HasMaxLength(10).IsRequired();
+                entity.Property(e => e.Distributor).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.TransactionNumber).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.InvoiceNumber).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.SalesRepresentative).HasMaxLength(200).IsRequired();
+
+                // Decimal properties
+                entity.Property(e => e.Quantity).HasColumnType("decimal(10,2)").IsRequired();
+                entity.Property(e => e.GrossAmount).HasColumnType("decimal(10,2)").IsRequired();
+                entity.Property(e => e.NetAmount).HasColumnType("decimal(10,2)").IsRequired();
+                entity.Property(e => e.Discount).HasColumnType("decimal(5,2)").IsRequired();
+                entity.Property(e => e.UnitPrice).HasColumnType("decimal(10,2)").IsRequired();
+
+                // Audit fields
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // Foreign key relationship
+                entity.HasOne(e => e.Vehicle)
+                      .WithMany()
+                      .HasForeignKey(e => e.VehicleId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_VehicleFuelPurchases_Vehicles");
+
+                // Indexes for performance
+                entity.HasIndex(e => e.VehicleId)
+                      .HasDatabaseName("IX_VehicleFuelPurchases_VehicleId");
+                entity.HasIndex(e => e.LicensePlate)
+                      .HasDatabaseName("IX_VehicleFuelPurchases_LicensePlate");
+                entity.HasIndex(e => e.PurchaseDate)
+                      .HasDatabaseName("IX_VehicleFuelPurchases_PurchaseDate");
+                entity.HasIndex(e => e.TransactionNumber)
+                      .HasDatabaseName("IX_VehicleFuelPurchases_TransactionNumber");
+                entity.HasIndex(e => e.InvoiceNumber)
+                      .HasDatabaseName("IX_VehicleFuelPurchases_InvoiceNumber");
+
+                // Composite index for common queries
+                entity.HasIndex(e => new { e.VehicleId, e.PurchaseDate })
+                      .HasDatabaseName("IX_VehicleFuelPurchases_VehicleId_PurchaseDate");
             });
         }
 

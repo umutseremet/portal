@@ -574,7 +574,8 @@ class ApiService {
           assignedTo: issue.assignedTo || issue.AssignedTo || '',
           plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
           plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
-          productionType: issue.productionType || issue.ProductionType || ''
+          productionType: issue.productionType || issue.ProductionType || '',
+          closedOn: issue.closedOn || issue.ClosedOn,  // ✅ EKLENEN
         }))
       };
 
@@ -587,57 +588,57 @@ class ApiService {
   }
 
   // src/services/api.js içine eklenecek yeni method
-// ApiService class'ının içine ekleyin
+  // ApiService class'ının içine ekleyin
 
-/**
- * Get ALL issues by date (without type filter)
- * @param {string} date - Target date (yyyy-MM-dd)
- * @returns {Promise<Object>} Issues list response
- */
-async getIssuesByDate(date) {
-  try {
-    console.log('📋 API getIssuesByDate request:', date);
+  /**
+   * Get ALL issues by date (without type filter)
+   * @param {string} date - Target date (yyyy-MM-dd)
+   * @returns {Promise<Object>} Issues list response
+   */
+  async getIssuesByDate(date) {
+    try {
+      console.log('📋 API getIssuesByDate request:', date);
 
-    const response = await this.get(`/RedmineWeeklyCalendar/GetIssuesByDate?date=${date}`);
+      const response = await this.get(`/RedmineWeeklyCalendar/GetIssuesByDate?date=${date}`);
 
-    console.log('📋 API getIssuesByDate raw response:', response);
+      console.log('📋 API getIssuesByDate raw response:', response);
 
-    // Response formatını düzenle (camelCase'e çevir)
-    const mappedResponse = {
-      date: response.date || response.Date,
-      totalCount: response.totalCount || response.TotalCount || 0,
-      issues: (response.issues || response.Issues || []).map(issue => ({
-        issueId: issue.issueId || issue.IssueId,
-        projectId: issue.projectId || issue.ProjectId,
-        projectName: issue.projectName || issue.ProjectName || '',
-        projectCode: issue.projectCode || issue.ProjectCode || '',
-        subject: issue.subject || issue.Subject || '',
-        trackerName: issue.trackerName || issue.TrackerName || '',
-        completionPercentage: issue.completionPercentage ?? issue.CompletionPercentage ?? 0,
-        estimatedHours: issue.estimatedHours ?? issue.EstimatedHours ?? null,
-        statusName: issue.statusName || issue.StatusName || '',
-        isClosed: issue.isClosed ?? issue.IsClosed ?? false,
-        priorityName: issue.priorityName || issue.PriorityName || '',
-        assignedTo: issue.assignedTo || issue.AssignedTo || '',
-        plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
-        plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
-        closedOn: issue.closedOn || issue.ClosedOn,  // ✅ EKLENEN
-        productionType: issue.productionType || issue.ProductionType || 
-                       (issue.trackerName || issue.TrackerName || '').replace('Üretim - ', '').trim()
-      }))
-    };
+      // Response formatını düzenle (camelCase'e çevir)
+      const mappedResponse = {
+        date: response.date || response.Date,
+        totalCount: response.totalCount || response.TotalCount || 0,
+        issues: (response.issues || response.Issues || []).map(issue => ({
+          issueId: issue.issueId || issue.IssueId,
+          projectId: issue.projectId || issue.ProjectId,
+          projectName: issue.projectName || issue.ProjectName || '',
+          projectCode: issue.projectCode || issue.ProjectCode || '',
+          subject: issue.subject || issue.Subject || '',
+          trackerName: issue.trackerName || issue.TrackerName || '',
+          completionPercentage: issue.completionPercentage ?? issue.CompletionPercentage ?? 0,
+          estimatedHours: issue.estimatedHours ?? issue.EstimatedHours ?? null,
+          statusName: issue.statusName || issue.StatusName || '',
+          isClosed: issue.isClosed ?? issue.IsClosed ?? false,
+          priorityName: issue.priorityName || issue.PriorityName || '',
+          assignedTo: issue.assignedTo || issue.AssignedTo || '',
+          plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
+          plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
+          closedOn: issue.closedOn || issue.ClosedOn,  // ✅ EKLENEN
+          productionType: issue.productionType || issue.ProductionType ||
+            (issue.trackerName || issue.TrackerName || '').replace('Üretim - ', '').trim()
+        }))
+      };
 
-    console.log('📋 Mapped all issues response:', mappedResponse);
-    return mappedResponse;
-  } catch (error) {
-    console.error('❌ getIssuesByDate error:', error);
-    throw error;
+      console.log('📋 Mapped all issues response:', mappedResponse);
+      return mappedResponse;
+    } catch (error) {
+      console.error('❌ getIssuesByDate error:', error);
+      throw error;
+    }
   }
-}
 
-// ========================================
-// NOT: Bu fonksiyonu mevcut getIssuesByDateAndType fonksiyonundan sonra ekleyin
-// ========================================
+  // ========================================
+  // NOT: Bu fonksiyonu mevcut getIssuesByDateAndType fonksiyonundan sonra ekleyin
+  // ========================================
 
   // ========================================
   // NOT: Bu fonksiyonu ApiService class'ının içine ekleyin
@@ -647,6 +648,272 @@ async getIssuesByDate(date) {
   // ===== EXPORT =====
   // Mevcut export satırınızın sonuna bu fonksiyonu ekleyin:
   // getWeeklyProductionCalendar: this.getWeeklyProductionCalendar.bind(this),
+
+
+  // api.js dosyanıza eklenecek metodlar
+  // Mevcut metodların SONUNA ekleyin
+
+  // ===== FUEL PURCHASE ENDPOINTS =====
+
+  /**
+   * Validate Excel file before import
+   * @param {File} file - Excel file to validate
+   * @returns {Promise} Validation result
+   */
+  async validateFuelPurchaseExcel(file) {
+    if (!file) {
+      throw new Error('File is required');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const url = `${this.baseURL}/fuelpurchaseimport/validate`;
+
+    console.log(`🔄 API Call: POST ${url}`);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.getAuthToken()}`
+          // Content-Type automatically set by browser for FormData
+        },
+        body: formData
+      });
+
+      console.log(`📡 API Response: ${response.status} ${response.statusText}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ API Error ${response.status}:`, errorText);
+
+        if (response.status === 401) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          throw new Error('Oturum süresi doldu. Lütfen tekrar giriş yapın.');
+        }
+
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('📄 Validation Data:', data);
+      return data;
+    } catch (error) {
+      console.error('🚨 Validation failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Import fuel purchases from Excel
+   * @param {File} file - Excel file to import
+   * @param {Function} onProgress - Progress callback (optional)
+   * @returns {Promise} Import result
+   */
+  async importFuelPurchaseExcel(file, onProgress = null) {
+    if (!file) {
+      throw new Error('File is required');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const url = `${this.baseURL}/fuelpurchaseimport`;
+
+    console.log(`🔄 API Call: POST ${url}`);
+
+    try {
+      // Use XMLHttpRequest for progress tracking
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        // Progress event
+        if (onProgress) {
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const percentComplete = Math.round((e.loaded * 100) / e.total);
+              onProgress(percentComplete);
+            }
+          });
+        }
+
+        // Load event
+        xhr.addEventListener('load', () => {
+          console.log(`📡 API Response: ${xhr.status} ${xhr.statusText}`);
+
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              console.log('📄 Import Data:', data);
+              resolve(data);
+            } catch (e) {
+              console.error('Error parsing response:', e);
+              reject(new Error('Invalid response format'));
+            }
+          } else {
+            console.error(`❌ API Error ${xhr.status}:`, xhr.responseText);
+
+            if (xhr.status === 401) {
+              localStorage.removeItem('authToken');
+              localStorage.removeItem('user');
+              reject(new Error('Oturum süresi doldu. Lütfen tekrar giriş yapın.'));
+            } else {
+              reject(new Error(`API Error: ${xhr.status} - ${xhr.responseText}`));
+            }
+          }
+        });
+
+        // Error event
+        xhr.addEventListener('error', () => {
+          console.error('🚨 Import failed: Network error');
+          reject(new Error('Network error'));
+        });
+
+        // Abort event
+        xhr.addEventListener('abort', () => {
+          console.error('🚨 Import aborted');
+          reject(new Error('Upload aborted'));
+        });
+
+        xhr.open('POST', url);
+        xhr.setRequestHeader('Authorization', `Bearer ${this.getAuthToken()}`);
+        xhr.send(formData);
+      });
+    } catch (error) {
+      console.error('🚨 Import failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get fuel purchase template information
+   * @returns {Promise} Template info
+   */
+  async getFuelPurchaseTemplate() {
+    return this.get('/fuelpurchaseimport/template');
+  }
+
+  /**
+   * Get all fuel purchases with filters
+   * @param {Object} params - Query parameters
+   * @returns {Promise} Fuel purchases list
+   */
+  async getFuelPurchases(params = {}) {
+    const queryParams = new URLSearchParams();
+
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryParams.append(key, params[key]);
+      }
+    });
+
+    const endpoint = queryParams.toString()
+      ? `/vehiclefuelpurchases?${queryParams.toString()}`
+      : '/vehiclefuelpurchases';
+
+    return this.get(endpoint);
+  }
+
+  /**
+   * Get single fuel purchase by ID
+   * @param {number} id - Fuel purchase ID
+   * @returns {Promise} Fuel purchase details
+   */
+  async getFuelPurchase(id) {
+    if (!id) {
+      throw new Error('Fuel purchase ID is required');
+    }
+    return this.get(`/vehiclefuelpurchases/${id}`);
+  }
+
+  /**
+   * Get fuel purchases for a specific vehicle
+   * @param {number} vehicleId - Vehicle ID
+   * @param {Object} params - Query parameters
+   * @returns {Promise} Vehicle fuel purchases
+   */
+  async getVehicleFuelPurchases(vehicleId, params = {}) {
+    if (!vehicleId) {
+      throw new Error('Vehicle ID is required');
+    }
+
+    const queryParams = new URLSearchParams();
+
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryParams.append(key, params[key]);
+      }
+    });
+
+    const endpoint = queryParams.toString()
+      ? `/vehiclefuelpurchases/vehicle/${vehicleId}?${queryParams.toString()}`
+      : `/vehiclefuelpurchases/vehicle/${vehicleId}`;
+
+    return this.get(endpoint);
+  }
+
+  /**
+   * Get fuel purchase statistics
+   * @param {Object} params - Query parameters (vehicleId, fromDate, toDate)
+   * @returns {Promise} Statistics data
+   */
+  async getFuelPurchaseStats(params = {}) {
+    const queryParams = new URLSearchParams();
+
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryParams.append(key, params[key]);
+      }
+    });
+
+    const endpoint = queryParams.toString()
+      ? `/vehiclefuelpurchases/stats?${queryParams.toString()}`
+      : '/vehiclefuelpurchases/stats';
+
+    return this.get(endpoint);
+  }
+
+  /**
+   * Create new fuel purchase
+   * @param {Object} purchaseData - Fuel purchase data
+   * @returns {Promise} Created fuel purchase
+   */
+  async createFuelPurchase(purchaseData) {
+    if (!purchaseData) {
+      throw new Error('Fuel purchase data is required');
+    }
+    return this.post('/vehiclefuelpurchases', purchaseData);
+  }
+
+  /**
+   * Update fuel purchase
+   * @param {number} id - Fuel purchase ID
+   * @param {Object} purchaseData - Updated data
+   * @returns {Promise} Updated fuel purchase
+   */
+  async updateFuelPurchase(id, purchaseData) {
+    if (!id) {
+      throw new Error('Fuel purchase ID is required');
+    }
+    if (!purchaseData) {
+      throw new Error('Fuel purchase data is required');
+    }
+    return this.put(`/vehiclefuelpurchases/${id}`, purchaseData);
+  }
+
+  /**
+   * Delete fuel purchase
+   * @param {number} id - Fuel purchase ID
+   * @returns {Promise} Delete result
+   */
+  async deleteFuelPurchase(id) {
+    if (!id) {
+      throw new Error('Fuel purchase ID is required');
+    }
+    return this.delete(`/vehiclefuelpurchases/${id}`);
+  }
 }
 
 // Create a single instance
