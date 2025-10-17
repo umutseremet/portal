@@ -118,7 +118,7 @@ namespace API.Controllers
                         AND cv_proje_kodu.customized_type = 'Project'
                         AND cv_proje_kodu.custom_field_id = 3
                         WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
-                            AND t.name != 'Üretim'
+                            --AND t.name != 'Üretim'
                             AND i.project_id = @ProjectId
                             AND t.name LIKE @ProductionType
                             AND ISNULL(cv_pbaslangic.value,'') != ''
@@ -130,7 +130,7 @@ namespace API.Controllers
                             (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date)
                             OR
                             (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
-                             TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.due_date AS DATE) AND
+                             TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
                              @Date <= CAST(i.closed_on AS DATE))
                         )
                     ORDER BY i.id";
@@ -272,7 +272,7 @@ namespace API.Controllers
                         AND cv_proje_kodu.customized_type = 'Project'
                         AND cv_proje_kodu.custom_field_id = 3
                     WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
-                        AND t.name != 'Üretim'
+                        --AND t.name != 'Üretim'
                         AND ISNULL(cv_pbaslangic.value,'') != ''
                         AND ISNULL(cv_pbitis.value,'') != ''
                         AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
@@ -486,7 +486,7 @@ namespace API.Controllers
                         AND cv_proje_kodu.customized_type = 'Project'
                         AND cv_proje_kodu.custom_field_id = 3
                     WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
-                        AND t.name != 'Üretim'
+                       -- AND t.name != 'Üretim'
                         AND ISNULL(cv_pbaslangic.value,'') != ''
                         AND ISNULL(cv_pbitis.value,'') != ''
                         AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
@@ -536,7 +536,7 @@ namespace API.Controllers
                         AND cv_proje_kodu.customized_type = 'Project'
                         AND cv_proje_kodu.custom_field_id = 3
                     WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj') 
-                        AND t.name != 'Üretim'
+                        --AND t.name != 'Üretim'
                         AND ISNULL(cv_pbaslangic.value,'') != ''
                         AND ISNULL(cv_pbitis.value,'') != ''
                         AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date

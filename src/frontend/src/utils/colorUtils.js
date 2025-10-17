@@ -3,8 +3,7 @@
 /**
  * Proje bazlı renk paleti
  */
-const PROJECT_COLORS = [
-  '#e74c3c', // Kırmızı
+const PROJECT_COLORS = [ 
   '#3498db', // Mavi
   '#2ecc71', // Yeşil
   '#f39c12', // Turuncu
@@ -13,7 +12,6 @@ const PROJECT_COLORS = [
   '#e67e22', // Koyu Turuncu
   '#34495e', // Koyu Gri
   '#16a085', // Koyu Turkuaz
-  '#c0392b', // Koyu Kırmızı
   '#27ae60', // Koyu Yeşil
   '#2980b9', // Koyu Mavi
   '#8e44ad', // Koyu Mor
