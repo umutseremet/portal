@@ -11,7 +11,7 @@ const Login = () => {
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/production/weekly-calendar" replace />;
   }
 
   // Clear error when component mounts or credentials change

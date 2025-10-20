@@ -389,6 +389,16 @@ const IssueDetailsPage = () => {
                                                         {formatDate(issue.plannedStartDate)}
                                                     </small>
                                                 </td>
+                                                
+                                                <td>
+                                                    <small className={isOverdue ? 'text-danger fw-bold' : 'text-muted'}>
+                                                        <i className="bi bi-calendar-x me-1"></i>
+                                                        {formatDate(issue.plannedEndDate)}
+                                                        {isOverdue && (
+                                                            <i className="bi bi-exclamation-circle-fill ms-1"></i>
+                                                        )}
+                                                    </small>
+                                                </td>
                                                 {/* ✅ YENİ KOLON - Kapanış Tarihi */}
                                                 <td>
                                                     {issue.closedOn ? (
@@ -398,15 +408,6 @@ const IssueDetailsPage = () => {
                                                     ) : (
                                                         <small className="text-muted">-</small>
                                                     )}
-                                                </td>
-                                                <td>
-                                                    <small className={isOverdue ? 'text-danger fw-bold' : 'text-muted'}>
-                                                        <i className="bi bi-calendar-x me-1"></i>
-                                                        {formatDate(issue.plannedEndDate)}
-                                                        {isOverdue && (
-                                                            <i className="bi bi-exclamation-circle-fill ms-1"></i>
-                                                        )}
-                                                    </small>
                                                 </td>
                                                 <td>
                                                     <span className={`badge ${getStatusBadgeClass(issue.statusName, issue.isClosed)}`}>

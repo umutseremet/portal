@@ -103,30 +103,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // Add CORS - EXISTING (enhanced)
+// Add CORS - ENHANCED
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        // Allow all origins in development
-        if (builder.Environment.IsDevelopment())
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
-        else
-        {
-            // Only specific origins in production
-            policy.WithOrigins(
-                      "http://localhost:3000",
-                      "http://localhost:3003",
-                      "http://127.0.0.1:5500",
-                      "http://localhost:5500"
-                  )
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        }
+        policy.WithOrigins(
+                  "http://localhost:3000",
+                  "http://localhost:3003",
+                  "http://localhost:5500",
+                  "http://127.0.0.1:5500",
+                  "http://192.168.1.17",
+                  "http://192.168.1.17:3000",
+                  "http://192.168.1.17:3003",
+                  "http://192.168.1.17:5500",
+                  "https://192.168.1.17",
+                  "https://192.168.1.17:3003"
+              )
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials()
+              .SetIsOriginAllowedToAllowWildcardSubdomains();
     });
 });
 
@@ -207,15 +204,38 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure pipeline - EXISTING
-if (app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseSwagger();
+//    app.UseSwaggerUI(c =>
+//    {
+//        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Vervo Portal API V1");
+//        c.RoutePrefix = "swagger"; // Open Swagger at /swagger
+//    });
+//}
+
+
+app.UseSwagger(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
+    // IIS sub-application için path düzeltmesi
+    c.PreSerializeFilters.Add((swagger, httpReq) =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Vervo Portal API V1");
-        c.RoutePrefix = "swagger"; // Open Swagger at /swagger
+        swagger.Servers = new List<Microsoft.OpenApi.Models.OpenApiServer>
+            {
+                new Microsoft.OpenApi.Models.OpenApiServer {
+                    Url = $"{httpReq.Scheme}://{httpReq.Host.Value}/PortalAPI"
+                }
+            };
     });
-}
+});
+
+app.UseSwaggerUI(c =>
+{
+    // IIS'de alt uygulama için tam path belirtin
+    c.SwaggerEndpoint("/PortalAPI/swagger/v1/swagger.json", "Vervo Portal API V1");
+    c.RoutePrefix = "swagger";
+});
+
 
 app.UseHttpsRedirection();
 

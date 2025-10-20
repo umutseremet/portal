@@ -90,8 +90,8 @@ function App() {
           />
 
           {/* Redirect routes */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/production/weekly-calendar" replace />} />
+          <Route path="*" element={<Navigate to="/production/weekly-calendar" replace />} />
         </Routes>
       </AuthProvider>
     </div>
