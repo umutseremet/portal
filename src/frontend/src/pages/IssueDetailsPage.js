@@ -68,10 +68,20 @@ const IssueDetailsPage = () => {
 
         try {
             let formattedDate = selectedDate;
+
             if (selectedDate instanceof Date) {
-                formattedDate = selectedDate.toISOString().split('T')[0];
+                // ✅ TIMEZONE-SAFE DÖNÜŞÜM
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.getDate()).padStart(2, '0');
+                formattedDate = `${year}-${month}-${day}`;
             } else if (typeof selectedDate === 'string') {
-                formattedDate = new Date(selectedDate).toISOString().split('T')[0];
+                // ✅ String ise direkt split yap (timezone-safe)
+                if (selectedDate.includes('T')) {
+                    formattedDate = selectedDate.split('T')[0];
+                } else {
+                    formattedDate = selectedDate;
+                }
             }
 
             console.log('📅 Formatted date for API:', formattedDate);
@@ -121,7 +131,7 @@ const IssueDetailsPage = () => {
 
         if (otherDate) {
             const otherDateFormatted = formatDateForInput(otherDate);
-            
+
             if (field === 'plannedStartDate' && tempDate > otherDateFormatted) {
                 alert('Başlangıç tarihi, bitiş tarihinden sonra olamaz!');
                 setEditingDateCell(null);
@@ -138,9 +148,9 @@ const IssueDetailsPage = () => {
         setSavingDate(true);
 
         try {
-            console.log('💾 Saving date:', { 
-                issueId: issue.issueId, 
-                field, 
+            console.log('💾 Saving date:', {
+                issueId: issue.issueId,
+                field,
                 tempDate,
                 tempDateType: typeof tempDate,
                 originalDate: formatDateForInput(issue[field])
@@ -153,7 +163,7 @@ const IssueDetailsPage = () => {
                 plannedEndDate: field === 'plannedEndDate' ? tempDate : null,
                 updatedBy: 'User'
             };
-            
+
             console.log('📤 API Request:', requestData);
 
             const response = await apiService.updateIssueDates(requestData);
@@ -208,20 +218,20 @@ const IssueDetailsPage = () => {
     };
 
     const formatDateForInput = (dateString) => {
-    if (!dateString) return '';
-    try {
-        // Date nesnesi kullan ama getFullYear/getMonth/getDate ile al
-        // (Bu local timezone'u kullanır)
-        const date = new Date(dateString);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    } catch (e) {
-        console.error('Date format error:', e);
-        return '';
-    }
-};
+        if (!dateString) return '';
+        try {
+            // Date nesnesi kullan ama getFullYear/getMonth/getDate ile al
+            // (Bu local timezone'u kullanır)
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        } catch (e) {
+            console.error('Date format error:', e);
+            return '';
+        }
+    };
 
     // ✅ INLINE DÜZENLENEBILIR TARİH HÜCRESİ RENDER
     const renderEditableDateCell = (issue, field, icon, color) => {
@@ -356,8 +366,8 @@ const IssueDetailsPage = () => {
     const formatDate = (dateString) => {
         if (!dateString) return '-';
         try {
-            // ✅ yyyy-MM-dd formatındaki string'i direkt parse et
-            const [year, month, day] = dateString.split('T')[0].split('-');
+            const dateOnly = dateString.split('T')[0];
+            const [year, month, day] = dateOnly.split('-');
             return `${day}.${month}.${year}`;
         } catch (e) {
             console.error('Date format error:', e);
@@ -529,11 +539,11 @@ const IssueDetailsPage = () => {
                                         <th style={{ width: '120px' }}>İş Tipi</th>
                                         <th style={{ width: '130px' }}>
                                             <i className="bi bi-calendar-check text-primary me-1"></i>
-                                            Planlanan Başlangıç
+                                            Pln Bşl Tarihi
                                         </th>
                                         <th style={{ width: '130px' }}>
                                             <i className="bi bi-calendar-x text-danger me-1"></i>
-                                            Planlanan Bitiş
+                                            Pln Bit Tarihi
                                         </th>
                                         <th style={{ width: '100px' }}>Durum</th>
                                         <th style={{ width: '80px' }} className="text-center">İlerleme</th>
@@ -609,18 +619,7 @@ const IssueDetailsPage = () => {
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div className="d-flex align-items-center">
-                                                        <div
-                                                            className="rounded-circle d-flex align-items-center justify-content-center text-white me-2"
-                                                            style={{
-                                                                width: '28px',
-                                                                height: '28px',
-                                                                backgroundColor: '#6c757d',
-                                                                fontSize: '0.75rem'
-                                                            }}
-                                                        >
-                                                            {issue.assignedTo?.charAt(0)?.toUpperCase() || '?'}
-                                                        </div>
+                                                    <div className="d-flex align-items-center"> 
                                                         <span className="small">{issue.assignedTo}</span>
                                                     </div>
                                                 </td>
