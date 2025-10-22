@@ -1,13 +1,25 @@
 // src/frontend/src/hooks/useWeeklyCalendar.js
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom'; // ✅ EKLE
 import apiService from '../services/api';
 import { getProjectColor } from '../utils/colorUtils';
+
 export const useWeeklyCalendar = () => {
+  const location = useLocation(); // ✅ EKLE
+  
   // State
   const [calendarData, setCalendarData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [currentWeek, setCurrentWeek] = useState(new Date());
+  
+  // ✅ GÜNCELLE - Location state'den gelen hafta bilgisini kullan
+  const [currentWeek, setCurrentWeek] = useState(() => {
+    if (location.state?.currentWeek) {
+      return new Date(location.state.currentWeek);
+    }
+    return new Date();
+  });
+  
   const [filters, setFilters] = useState({
     parentIssueId: '',
     projectId: '',
@@ -23,7 +35,7 @@ export const useWeeklyCalendar = () => {
     return new Date(d.setDate(diff));
   }, []);
 
-  // Tarih formatlama fonksiyonu - GÜNCELLENMİŞ
+  // Tarih formatlama fonksiyonu
   const formatDate = useCallback((dateInput) => {
     try {
       // Eğer zaten string ise Date objesine çevir
@@ -58,7 +70,8 @@ export const useWeeklyCalendar = () => {
         startDate: weekStart.toISOString().split('T')[0],
         parentIssueId: filters.parentIssueId ? parseInt(filters.parentIssueId) : null,
         projectId: filters.projectId ? parseInt(filters.projectId) : null,
-        productionType: filters.productionType && filters.productionType !== 'all' ? filters.productionType : null  // YENİ
+        productionType: filters.productionType && filters.productionType !== 'all' ? 
+          filters.productionType : null
       };
 
       console.log('📅 Fetching calendar data:', requestBody);
@@ -178,7 +191,7 @@ export const useWeeklyCalendar = () => {
     calendarData,
     projectList,
     filters,
-    currentWeek,
+    currentWeek, // ✅ currentWeek'i export et
 
     // State
     loading,

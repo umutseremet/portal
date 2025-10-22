@@ -7,7 +7,13 @@ const IssueDetailsPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const { selectedGroup, selectedDate, viewType } = location.state || {};
+    // ✅ GÜNCELLE - currentWeek'i de al
+    const { 
+        selectedGroup, 
+        selectedDate, 
+        viewType,
+        currentWeek // ✅ Hafta bilgisini al
+    } = location.state || {};
 
     const [issues, setIssues] = useState([]);
     const [filteredIssues, setFilteredIssues] = useState([]);
@@ -75,11 +81,25 @@ const IssueDetailsPage = () => {
 
         try {
             let formattedDate = selectedDate;
+            
+            // ✅ DÜZELTME: Timezone problemi çözümü
             if (selectedDate instanceof Date) {
-                formattedDate = selectedDate.toISOString().split('T')[0];
+                // Date objesinden direkt YYYY-MM-DD formatını al (timezone offset olmadan)
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.getDate()).padStart(2, '0');
+                formattedDate = `${year}-${month}-${day}`;
             } else if (typeof selectedDate === 'string') {
-                formattedDate = new Date(selectedDate).toISOString().split('T')[0];
+                // String ise, eğer ISO format varsa sadece tarih kısmını al
+                if (selectedDate.includes('T')) {
+                    formattedDate = selectedDate.split('T')[0];
+                } else {
+                    // Eğer zaten YYYY-MM-DD formatındaysa doğrudan kullan
+                    formattedDate = selectedDate;
+                }
             }
+
+            console.log('📅 Formatted date for API:', formattedDate);
 
             let response;
 
@@ -159,8 +179,13 @@ const IssueDetailsPage = () => {
         }
     };
 
+    // ✅ GÜNCELLE - Hafta bilgisini geri gönder
     const handleBackToCalendar = () => {
-        navigate('/production/weekly-calendar');
+        navigate('/production/weekly-calendar', {
+            state: {
+                currentWeek: currentWeek // ✅ Hafta bilgisini geri gönder
+            }
+        });
     };
 
     if (!selectedDate) {
@@ -180,31 +205,15 @@ const IssueDetailsPage = () => {
                         <div className="mb-2 mb-md-0">
                             <h4 className="mb-2">
                                 <i className="bi bi-list-task me-2"></i>
-                                {selectedGroup ? 'İş Detayları (Filtrelenmiş)' : 'Günlük İş Listesi'}
+                                {selectedGroup ?
+                                    `${selectedGroup.projectName} - ${selectedGroup.productionType}` :
+                                    'Tüm İşler'
+                                }
                             </h4>
-                            <div className="d-flex align-items-center gap-3 small flex-wrap">
-                                <span>
-                                    <i className="bi bi-calendar3 me-1"></i>
-                                    {formatDate(selectedDate)}
-                                </span>
-                                {selectedGroup && (
-                                    <>
-                                        <span>
-                                            <i className="bi bi-building me-1"></i>
-                                            {selectedGroup.projectCode}
-                                        </span>
-                                        <span className="badge bg-light text-dark">
-                                            {selectedGroup.productionType}
-                                        </span>
-                                    </>
-                                )}
-                                {!selectedGroup && (
-                                    <span className="badge bg-light text-dark">
-                                        <i className="bi bi-funnel me-1"></i>
-                                        Tüm İşler
-                                    </span>
-                                )}
-                            </div>
+                            <p className="mb-0 opacity-75">
+                                <i className="bi bi-calendar-event me-2"></i>
+                                {formatDate(selectedDate)}
+                            </p>
                         </div>
                         <div className="d-flex gap-2">
                             <button
@@ -286,21 +295,18 @@ const IssueDetailsPage = () => {
                                     ))}
                                 </select>
                             </div>
-                        </div>
-                        <div className="mt-3">
-                            <button
-                                className="btn btn-sm btn-outline-secondary"
-                                onClick={resetFilters}
-                            >
-                                <i className="bi bi-x-circle me-1"></i>
-                                Filtreleri Temizle
-                            </button>
+                            <div className="col-12">
+                                <button className="btn btn-secondary btn-sm" onClick={resetFilters}>
+                                    <i className="bi bi-x-circle me-1"></i>
+                                    Filtreleri Temizle
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Content */}
+            {/* Issues Table */}
             <div className="card">
                 <div className="card-body">
                     {loading ? (
@@ -308,7 +314,6 @@ const IssueDetailsPage = () => {
                             <div className="spinner-border text-danger" role="status">
                                 <span className="visually-hidden">Yükleniyor...</span>
                             </div>
-                            <p className="mt-3 text-muted">İşler yükleniyor...</p>
                         </div>
                     ) : error ? (
                         <div className="alert alert-danger">
@@ -318,96 +323,76 @@ const IssueDetailsPage = () => {
                     ) : filteredIssues.length === 0 ? (
                         <div className="text-center py-5">
                             <i className="bi bi-inbox fs-1 text-muted"></i>
-                            <p className="mt-3 text-muted">
-                                {hasActiveFilters ? 'Filtrelere uygun kayıt bulunamadı' : 'Bu tarih için kayıt bulunamadı'}
-                            </p>
+                            <p className="mt-3 text-muted">İş bulunamadı</p>
                         </div>
                     ) : (
                         <div className="table-responsive">
-                            <table className="table table-hover mb-0">
+                            <table className="table table-hover">
                                 <thead className="table-light">
                                     <tr>
-                                        <th style={{ width: '80px' }}>İş No</th>
+                                        <th style={{ width: '60px' }}>İş No</th>
+                                        <th>Proje</th>
                                         <th>Konu</th>
                                         <th style={{ width: '120px' }}>İş Tipi</th>
-                                        <th style={{ width: '120px' }}>Planlanan Başlangıç</th>
-                                        <th style={{ width: '120px' }}>Planlanan Bitiş</th>
-                                        <th style={{ width: '120px' }}>Kapatılma T.</th>  {/* ✅ YENİ KOLON */}
+                                        <th style={{ width: '110px' }}>Planlanan Bitiş</th>
                                         <th style={{ width: '100px' }}>Durum</th>
                                         <th style={{ width: '80px' }} className="text-center">İlerleme</th>
                                         <th style={{ width: '120px' }}>Atanan</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredIssues.map((issue, index) => {
+                                    {filteredIssues.map((issue) => {
                                         const isOverdue = checkIfIssueOverdue(issue);
-
                                         return (
-                                            <tr
-                                                key={issue.issueId || index}
-                                                className={isOverdue ? 'overdue-row' : ''}
-                                                style={isOverdue ? {
-                                                    backgroundColor: 'rgba(220, 53, 69, 0.05)',
-                                                    borderLeft: '4px solid #dc3545'
-                                                } : {}}
-                                            >
+                                            <tr key={issue.issueId} className={isOverdue ? 'overdue-row' : ''}>
                                                 <td>
-                                                    <div className="d-flex align-items-center gap-2">
-                                                        {/* ✅ ÜNLEM İKONU - Sadece gecikmiş işlerde */}
-                                                        {isOverdue && (
-                                                            <div
-                                                                className="overdue-indicator blinking"
-                                                                title="Bu iş planlanan bitiş tarihini aştı!"
-                                                            >
-                                                                <i className="bi bi-exclamation-triangle-fill text-danger"></i>
+                                                    <span className="badge bg-secondary">#{issue.issueId}</span>
+                                                </td>
+                                                <td>
+                                                    <div className="d-flex align-items-center">
+                                                        <div
+                                                            style={{
+                                                                width: '8px',
+                                                                height: '30px',
+                                                                borderRadius: '4px',
+                                                                marginRight: '8px',
+                                                                backgroundColor: `var(--project-${issue.projectId % 10})`
+                                                            }}
+                                                        />
+                                                        <div>
+                                                            <div className="fw-medium small">{issue.projectCode}</div>
+                                                            <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                                                {issue.projectName}
                                                             </div>
-                                                        )}
-                                                        <span className="badge bg-secondary">
-                                                            #{issue.issueId}
-                                                        </span>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td>
                                                     <div className="d-flex align-items-start">
                                                         <i className={`bi bi-circle-fill me-2 mt-1 ${issue.isClosed ? 'text-success' : 'text-warning'}`}
-                                                            style={{ fontSize: '8px' }}></i>
-                                                        <div className="flex-grow-1">
+                                                            style={{ fontSize: '0.5rem' }}></i>
+                                                        <div>
                                                             <div className="fw-medium">{issue.subject}</div>
-                                                            <small className="text-muted">
-                                                                <i className="bi bi-folder me-1"></i>
-                                                                {issue.projectName}
-                                                            </small>
+                                                            <small className="text-muted">{issue.trackerName}</small>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <span className="badge bg-primary">{issue.productionType || '-'}</span>
+                                                    <span className="badge production-type-badge" style={{ fontSize: '0.7rem' }}>
+                                                        {issue.productionType || '-'}
+                                                    </span>
                                                 </td>
                                                 <td>
-                                                    <small className="text-muted">
-                                                        <i className="bi bi-calendar-check me-1"></i>
-                                                        {formatDate(issue.plannedStartDate)}
-                                                    </small>
-                                                </td>
-                                                
-                                                <td>
-                                                    <small className={isOverdue ? 'text-danger fw-bold' : 'text-muted'}>
-                                                        <i className="bi bi-calendar-x me-1"></i>
-                                                        {formatDate(issue.plannedEndDate)}
+                                                    <div className="d-flex align-items-center">
                                                         {isOverdue && (
-                                                            <i className="bi bi-exclamation-circle-fill ms-1"></i>
+                                                            <span className="overdue-indicator blinking me-2" title="Gecikmiş">
+                                                                <i className="bi bi-exclamation-triangle-fill text-danger"></i>
+                                                            </span>
                                                         )}
-                                                    </small>
-                                                </td>
-                                                {/* ✅ YENİ KOLON - Kapanış Tarihi */}
-                                                <td>
-                                                    {issue.closedOn ? (
-                                                        <small className={issue.isClosed && checkIfIssueOverdue(issue) ? 'text-danger fw-bold' : 'text-success'}>
-                                                            {formatDate(issue.closedOn)}
-                                                        </small>
-                                                    ) : (
-                                                        <small className="text-muted">-</small>
-                                                    )}
+                                                        <span className={isOverdue ? 'text-danger fw-medium' : ''}>
+                                                            {formatDate(issue.plannedEndDate)}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <span className={`badge ${getStatusBadgeClass(issue.statusName, issue.isClosed)}`}>
@@ -415,21 +400,17 @@ const IssueDetailsPage = () => {
                                                     </span>
                                                 </td>
                                                 <td className="text-center">
-                                                    <div className="d-flex align-items-center gap-2">
-                                                        <div className="progress flex-grow-1" style={{ height: '8px' }}>
-                                                            <div
-                                                                className={`progress-bar ${issue.completionPercentage >= 100 ? 'bg-success' :
-                                                                        issue.completionPercentage >= 75 ? 'bg-info' :
-                                                                            issue.completionPercentage >= 50 ? 'bg-warning' : 'bg-danger'
-                                                                    }`}
-                                                                role="progressbar"
-                                                                style={{ width: `${issue.completionPercentage}%` }}
-                                                                aria-valuenow={issue.completionPercentage}
-                                                                aria-valuemin="0"
-                                                                aria-valuemax="100"
-                                                            ></div>
+                                                    <div className="progress" style={{ height: '20px' }}>
+                                                        <div
+                                                            className={`progress-bar ${issue.completionPercentage === 100 ? 'bg-success' : 'bg-info'}`}
+                                                            role="progressbar"
+                                                            style={{ width: `${issue.completionPercentage}%` }}
+                                                            aria-valuenow={issue.completionPercentage}
+                                                            aria-valuemin="0"
+                                                            aria-valuemax="100"
+                                                        >
+                                                            <small>{issue.completionPercentage}%</small>
                                                         </div>
-                                                        <span className="small text-nowrap">{issue.completionPercentage}%</span>
                                                     </div>
                                                 </td>
                                                 <td>

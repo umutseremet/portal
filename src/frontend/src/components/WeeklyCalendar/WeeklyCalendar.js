@@ -18,6 +18,7 @@ const WeeklyCalendar = () => {
     calendarData,
     projectList,
     filters,
+    currentWeek, // ✅ Hook'tan currentWeek'i al
 
     // State
     loading,
@@ -43,19 +44,20 @@ const WeeklyCalendar = () => {
     formatDate
   } = useWeeklyCalendar();
 
-  // Kart tıklama handler - İş tipine göre filtrelenmiş
+  // ✅ Kart tıklama handler - Hafta bilgisini de gönder
   const handleCardClick = (group, date) => {
     console.log('🖱️ Card clicked - handleCardClick called:', { group, date });
     navigate('/production/issue-details', {
       state: {
         selectedGroup: group,
         selectedDate: date,
-        viewType: 'filtered'
+        viewType: 'filtered',
+        currentWeek: currentWeek.toISOString() // ✅ Hafta bilgisini gönder
       }
     });
   };
 
-  // Tarih başlığı tıklama handler - O güne ait TÜM işler
+  // ✅ Tarih başlığı tıklama handler - Hafta bilgisini de gönder
   const handleDateClick = (date) => {
     console.log('📅 ===== DATE HEADER CLICKED =====');
     console.log('📅 Date received:', date);
@@ -67,7 +69,8 @@ const WeeklyCalendar = () => {
         state: {
           selectedDate: date,
           selectedGroup: null,
-          viewType: 'all'
+          viewType: 'all',
+          currentWeek: currentWeek.toISOString() // ✅ Hafta bilgisini gönder
         }
       });
       console.log('✅ Navigation triggered successfully');

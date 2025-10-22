@@ -206,12 +206,12 @@ using (var scope = app.Services.CreateScope())
 // Configure pipeline - EXISTING
 //if (app.Environment.IsDevelopment())
 //{
-//    app.UseSwagger();
-//    app.UseSwaggerUI(c =>
-//    {
-//        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Vervo Portal API V1");
-//        c.RoutePrefix = "swagger"; // Open Swagger at /swagger
-//    });
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Vervo Portal API V1");
+    c.RoutePrefix = "swagger"; // Open Swagger at /swagger
+});
 //}
 
 
