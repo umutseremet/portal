@@ -887,6 +887,59 @@ class ApiService {
     return this.post('/vehiclefuelpurchases', purchaseData);
   }
 
+
+
+  // src/frontend/src/services/api.js
+  // ✅ Mevcut dosyanıza bu metodu EKLEYIN (ApiService class'ının içine)
+
+  /**
+   * Update issue dates (planned start and end dates)
+   * @param {Object} data - Update request data
+   * @param {number} data.issueId - Issue ID
+   * @param {string} data.plannedStartDate - New planned start date (yyyy-MM-dd) or null
+   * @param {string} data.plannedEndDate - New planned end date (yyyy-MM-dd) or null
+   * @param {string} data.updatedBy - User making the update
+   * @returns {Promise<Object>} Update response
+   */
+  async updateIssueDates(data) {
+    try {
+      console.log('📅 API updateIssueDates request:', data);
+
+      // ✅ Tarihleri AYNEN gönder - herhangi bir dönüşüm yapma
+      const requestBody = {
+        issueId: data.issueId,
+        plannedStartDate: data.plannedStartDate || null,
+        plannedEndDate: data.plannedEndDate || null,
+        updatedBy: data.updatedBy || 'System'
+      };
+
+      console.log('📤 Sending to backend:', requestBody);
+
+      const response = await this.post('/RedmineWeeklyCalendar/UpdateIssueDates', requestBody);
+
+      console.log('📅 API updateIssueDates response:', response);
+
+      // Response formatını düzenle (camelCase'e çevir)
+      const mappedResponse = {
+        success: response.success ?? response.Success ?? false,
+        message: response.message || response.Message || '',
+        issueId: response.issueId || response.IssueId,
+        oldPlannedStartDate: response.oldPlannedStartDate || response.OldPlannedStartDate,
+        oldPlannedEndDate: response.oldPlannedEndDate || response.OldPlannedEndDate,
+        newPlannedStartDate: response.newPlannedStartDate || response.NewPlannedStartDate,
+        newPlannedEndDate: response.newPlannedEndDate || response.NewPlannedEndDate,
+        updatedAt: response.updatedAt || response.UpdatedAt
+      };
+
+      console.log('✅ Mapped response:', mappedResponse);
+
+      return mappedResponse;
+    } catch (error) {
+      console.error('❌ updateIssueDates error:', error);
+      throw error;
+    }
+  }
+
   /**
    * Update fuel purchase
    * @param {number} id - Fuel purchase ID

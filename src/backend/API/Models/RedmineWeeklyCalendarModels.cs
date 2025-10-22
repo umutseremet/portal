@@ -165,4 +165,52 @@ namespace API.Models
         public List<ProductionIssueData> Issues { get; set; } = new();
         public int TotalCount { get; set; }
     }
+
+    // src/backend/API/Models/RedmineWeeklyCalendarModels.cs dosyasına eklenecek
+
+    /// <summary>
+    /// İş tarih güncelleme isteği
+    /// </summary>
+    public class UpdateIssueDatesRequest
+    {
+        /// <summary>
+        /// İş ID'si
+        /// </summary>
+        [Required]
+        public int IssueId { get; set; }
+
+        /// <summary>
+        /// Yeni planlanan başlangıç tarihi (yyyy-MM-dd formatında)
+        /// Null ise değiştirilmez
+        /// </summary>
+        [DataType(DataType.Date)]
+        public string? PlannedStartDate { get; set; }
+
+        /// <summary>
+        /// Yeni planlanan bitiş tarihi (yyyy-MM-dd formatında)
+        /// Null ise değiştirilmez
+        /// </summary>
+        [DataType(DataType.Date)]
+        public string? PlannedEndDate { get; set; }
+
+        /// <summary>
+        /// Güncellemeyi yapan kullanıcı adı
+        /// </summary>
+        public string? UpdatedBy { get; set; }
+    }
+
+    /// <summary>
+    /// İş tarih güncelleme yanıtı
+    /// </summary>
+    public class UpdateIssueDatesResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public int IssueId { get; set; }
+        public DateTime? OldPlannedStartDate { get; set; }
+        public DateTime? OldPlannedEndDate { get; set; }
+        public DateTime? NewPlannedStartDate { get; set; }
+        public DateTime? NewPlannedEndDate { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
 }

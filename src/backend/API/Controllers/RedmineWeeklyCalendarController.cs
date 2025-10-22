@@ -367,6 +367,174 @@ namespace API.Controllers
             }
         }
 
+        // src/backend/API/Controllers/RedmineWeeklyCalendarController.cs
+        // ✅ DÜZELTME: UpdateIssueDates endpoint'i - Timezone ve format sorunları çözüldü
+
+        /// <summary>
+        /// İşin planlanan tarihlerini günceller
+        /// </summary>
+        [HttpPost("UpdateIssueDates")]
+#if DEBUG
+        [AllowAnonymous]
+#endif
+        public async Task<IActionResult> UpdateIssueDates([FromBody] UpdateIssueDatesRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Updating issue dates for Issue #{IssueId}", request.IssueId);
+
+                var connectionString = _configuration.GetConnectionString("DefaultConnection")
+                    ?? throw new InvalidOperationException("Database connection string not configured");
+
+                // Önce mevcut tarihleri al
+                DateTime? oldStartDate = null;
+                DateTime? oldEndDate = null;
+                // Tarihleri güncelle
+                DateTime? newStartDate = null;
+                DateTime? newEndDate = null;
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    // Mevcut tarihleri oku
+                    var selectQuery = @"
+                SELECT 
+                    cf_start.value as PlannedStartDate,
+                    cf_end.value as PlannedEndDate
+                FROM issues i
+                LEFT JOIN custom_values cf_start ON cf_start.customized_id = i.id 
+                    AND cf_start.customized_type = 'Issue' 
+                    AND cf_start.custom_field_id = 12
+                LEFT JOIN custom_values cf_end ON cf_end.customized_id = i.id 
+                    AND cf_end.customized_type = 'Issue' 
+                    AND cf_end.custom_field_id = 4
+                WHERE i.id = @IssueId";
+
+                    using (var selectCommand = new SqlCommand(selectQuery, connection))
+                    {
+                        selectCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
+
+                        using (var reader = await selectCommand.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                // ✅ String olarak saklanan tarihleri parse et
+                                if (!reader.IsDBNull(reader.GetOrdinal("PlannedStartDate")))
+                                {
+                                    var startValue = reader.GetString(reader.GetOrdinal("PlannedStartDate"));
+                                    if (DateTime.TryParse(startValue, out DateTime tempStart))
+                                    {
+                                        oldStartDate = tempStart;
+                                    }
+                                }
+                                if (!reader.IsDBNull(reader.GetOrdinal("PlannedEndDate")))
+                                {
+                                    var endValue = reader.GetString(reader.GetOrdinal("PlannedEndDate"));
+                                    if (DateTime.TryParse(endValue, out DateTime tempEnd))
+                                    {
+                                        oldEndDate = tempEnd;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    
+
+                    if (!string.IsNullOrEmpty(request.PlannedStartDate))
+                    {
+                        if (DateTime.TryParse(request.PlannedStartDate, out DateTime parsedStart))
+                        {
+                            newStartDate = parsedStart;
+
+                            // ✅ Sadece tarihi kaydet (saat 00:00:00)
+                            var dateOnlyString = newStartDate.Value.ToString("yyyy-MM-dd");
+
+                            // custom_field_id = 8 (Planlanan Başlangıç)
+                            var updateStartQuery = @"
+                        MERGE INTO custom_values AS target
+                        USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 12 AS custom_field_id) AS source
+                        ON target.customized_id = source.customized_id 
+                            AND target.customized_type = source.customized_type 
+                            AND target.custom_field_id = source.custom_field_id
+                        WHEN MATCHED THEN
+                            UPDATE SET value = @NewDate
+                        WHEN NOT MATCHED THEN
+                            INSERT (customized_type, customized_id, custom_field_id, value)
+                            VALUES ('Issue', @IssueId, 12, @NewDate);";
+
+                            using (var updateCommand = new SqlCommand(updateStartQuery, connection))
+                            {
+                                updateCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
+                                updateCommand.Parameters.AddWithValue("@NewDate", dateOnlyString);
+                                await updateCommand.ExecuteNonQueryAsync();
+                            }
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(request.PlannedEndDate))
+                    {
+                        if (DateTime.TryParse(request.PlannedEndDate, out DateTime parsedEnd))
+                        {
+                            newEndDate = parsedEnd;
+
+                            // ✅ Sadece tarihi kaydet (saat 00:00:00)
+                            var dateOnlyString = newEndDate.Value.ToString("yyyy-MM-dd");
+
+                            // custom_field_id = 9 (Planlanan Bitiş)
+                            var updateEndQuery = @"
+                        MERGE INTO custom_values AS target
+                        USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 4 AS custom_field_id) AS source
+                        ON target.customized_id = source.customized_id 
+                            AND target.customized_type = source.customized_type 
+                            AND target.custom_field_id = source.custom_field_id
+                        WHEN MATCHED THEN
+                            UPDATE SET value = @NewDate
+                        WHEN NOT MATCHED THEN
+                            INSERT (customized_type, customized_id, custom_field_id, value)
+                            VALUES ('Issue', @IssueId, 4, @NewDate);";
+
+                            using (var updateCommand = new SqlCommand(updateEndQuery, connection))
+                            {
+                                updateCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
+                                updateCommand.Parameters.AddWithValue("@NewDate", dateOnlyString);
+                                await updateCommand.ExecuteNonQueryAsync();
+                            }
+                        }
+                    }
+
+                    // İşin güncelleme tarihini güncelle
+                    var updateIssueQuery = @"UPDATE issues SET updated_on = GETDATE() WHERE id = @IssueId";
+                    using (var updateIssueCommand = new SqlCommand(updateIssueQuery, connection))
+                    {
+                        updateIssueCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
+                        await updateIssueCommand.ExecuteNonQueryAsync();
+                    }
+                }
+
+                _logger.LogInformation("Successfully updated dates for Issue #{IssueId}", request.IssueId);
+
+                return Ok(new UpdateIssueDatesResponse
+                {
+                    Success = true,
+                    Message = "Tarihler başarıyla güncellendi",
+                    IssueId = request.IssueId,
+                    OldPlannedStartDate = oldStartDate,
+                    OldPlannedEndDate = oldEndDate,
+                    NewPlannedStartDate = newStartDate ?? oldStartDate,
+                    NewPlannedEndDate = newEndDate ?? oldEndDate,
+                    UpdatedAt = DateTime.Now
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating issue dates for Issue #{IssueId}", request.IssueId);
+                return StatusCode(500, new ErrorResponse
+                {
+                    Message = $"Tarihler güncellenirken hata oluştu: {ex.Message}"
+                });
+            }
+        }
         #region Private Methods
 
         private async Task<WeeklyProductionCalendarResponse> GetWeeklyProductionDataAsync(
