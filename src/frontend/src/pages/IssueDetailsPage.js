@@ -545,6 +545,11 @@ const IssueDetailsPage = () => {
                                             <i className="bi bi-calendar-x text-danger me-1"></i>
                                             Pln Bit Tarihi
                                         </th>
+                                        {/* ✅ YENİ KOLON */}
+                                        <th style={{ width: '130px' }}>
+                                            <i className="bi bi-calendar-check-fill text-success me-1"></i>
+                                            Kap. Tarihi
+                                        </th>
                                         <th style={{ width: '100px' }}>Durum</th>
                                         <th style={{ width: '80px' }} className="text-center">İlerleme</th>
                                         <th style={{ width: '120px' }}>Atanan</th>
@@ -600,6 +605,18 @@ const IssueDetailsPage = () => {
                                                 </td>
                                                 {renderEditableDateCell(issue, 'plannedStartDate', 'bi-calendar-check', 'primary')}
                                                 {renderEditableDateCell(issue, 'plannedEndDate', 'bi-calendar-x', 'danger')}
+
+                                                {/* ✅ YENİ KOLON - Kapanma Tarihi (sadece okunabilir) */}
+                                                <td>
+                                                    {issue.closedOn ? (
+                                                        <div className="d-flex align-items-center">
+                                                            <i className="bi bi-calendar-check-fill text-success me-2"></i>
+                                                            <span className="text-success fw-medium">{formatDate(issue.closedOn)}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-muted">-</span>
+                                                    )}
+                                                </td>
                                                 <td>
                                                     <span className={`badge ${getStatusBadgeClass(issue.statusName, issue.isClosed)}`}>
                                                         {issue.statusName}
@@ -619,7 +636,7 @@ const IssueDetailsPage = () => {
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div className="d-flex align-items-center"> 
+                                                    <div className="d-flex align-items-center">
                                                         <span className="small">{issue.assignedTo}</span>
                                                     </div>
                                                 </td>
