@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace API.Models
 {
@@ -118,6 +119,10 @@ namespace API.Models
         [Required]
         [MaxLength(200)]
         public string SalesRepresentative { get; set; } = string.Empty;
+
+
+        [MaxLength(500)]
+        public string? DeviceDescription { get; set; } 
     }
 
     // Update DTO
@@ -200,6 +205,8 @@ namespace API.Models
         public string SalesRepresentative { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        [MaxLength(500)]
+        public string? DeviceDescription { get; set; }
     }
 
     // List Request with Filters

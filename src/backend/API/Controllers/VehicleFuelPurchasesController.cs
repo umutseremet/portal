@@ -1,7 +1,6 @@
 ﻿using API.Data;
 using API.Data.Entities;
 using API.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -11,6 +10,7 @@ namespace API.Controllers
 #if !DEBUG
     [Authorize]
 #endif
+
     [Route("api/[controller]")]
     [ApiController]
     public class VehicleFuelPurchasesController : ControllerBase
@@ -128,7 +128,8 @@ namespace API.Controllers
                         SalesRepresentativeId = f.SalesRepresentativeId,
                         SalesRepresentative = f.SalesRepresentative,
                         CreatedAt = f.CreatedAt,
-                        UpdatedAt = f.UpdatedAt
+                        UpdatedAt = f.UpdatedAt,
+                        DeviceDescription = f.DeviceDescription,
                     })
                     .ToListAsync();
 
@@ -181,6 +182,7 @@ namespace API.Controllers
                         Station = f.Station,
                         StationCode = f.StationCode,
                         DeviceGroups = f.DeviceGroups,
+                        DeviceDescription = f.DeviceDescription,
                         LicensePlate = f.LicensePlate,
                         FuelType = f.FuelType,
                         SalesType = f.SalesType,
@@ -274,6 +276,7 @@ namespace API.Controllers
                         Fleet = f.Fleet,
                         StationCode = f.StationCode,
                         DeviceGroups = f.DeviceGroups,
+                        DeviceDescription = f.DeviceDescription,
                         SalesType = f.SalesType,
                         UTTS = f.UTTS,
                         GrossAmount = f.GrossAmount,
@@ -373,7 +376,8 @@ namespace API.Controllers
                     ReflectionDate = dto.ReflectionDate,
                     SalesRepresentativeId = dto.SalesRepresentativeId,
                     SalesRepresentative = dto.SalesRepresentative.Trim(),
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    DeviceDescription = dto.DeviceDescription
                 };
 
                 _context.VehicleFuelPurchases.Add(purchase);

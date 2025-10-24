@@ -134,5 +134,8 @@ namespace API.Data.Entities
         // Navigation Property
         [ForeignKey("VehicleId")]
         public virtual Vehicle? Vehicle { get; set; }
+
+        [MaxLength(500)]
+        public string? DeviceDescription { get; internal set; }
     }
 }

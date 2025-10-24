@@ -403,7 +403,7 @@ const FuelPurchaseImportModal = ({ show, onHide, onSuccess }) => {
                     Bilgilendirme
                   </h6>
                   <ul className="mb-0 small">
-                    <li>Excel dosyanızda 31 kolon olmalıdır</li>
+                    <li>Excel dosyanızda 32 kolon olmalıdır</li>
                     <li>Plaka kolonu Vehicles tablosundaki plakalarla eşleşmelidir</li>
                     <li>İşlem Numarası benzersiz olmalıdır (duplicate kayıtlar atlanır)</li>
                     <li>Maksimum dosya boyutu: 10MB</li>

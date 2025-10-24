@@ -86,7 +86,7 @@ namespace API.Controllers
                             {
                                 // Read Excel columns (adjust column indices based on your Excel structure)
                                 var licensePlate = worksheet.Cells[row, 11].Text.Trim().ToUpper(); // Plaka column
-                                var transactionNumber = worksheet.Cells[row, 26].Text.Trim(); // İşlem Numarası
+                                var transactionNumber = worksheet.Cells[row, 27].Text.Trim(); // İşlem Numarası
 
                                 // Skip if already exists
                                 if (existingTransactions.Contains(transactionNumber))
@@ -107,24 +107,24 @@ namespace API.Controllers
                                 // Parse dates with error handling
                                 DateTime purchaseDate, period, invoiceDate, reflectionDate;
 
-                                if (!DateTime.TryParse(worksheet.Cells[row, 24].Text, out purchaseDate))
+                                if (!DateTime.TryParse(worksheet.Cells[row, 25].Text, out purchaseDate))
                                 {
                                     failCount++;
                                     errors.Add($"Row {row}: Invalid purchase date format.");
                                     continue;
                                 }
 
-                                if (!DateTime.TryParse(worksheet.Cells[row, 25].Text, out period))
+                                if (!DateTime.TryParse(worksheet.Cells[row, 26].Text, out period))
                                 {
                                     period = purchaseDate; // Default to purchase date
                                 }
 
-                                if (!DateTime.TryParse(worksheet.Cells[row, 27].Text, out invoiceDate))
+                                if (!DateTime.TryParse(worksheet.Cells[row, 28].Text, out invoiceDate))
                                 {
                                     invoiceDate = purchaseDate; // Default to purchase date
                                 }
 
-                                if (!DateTime.TryParse(worksheet.Cells[row, 29].Text, out reflectionDate))
+                                if (!DateTime.TryParse(worksheet.Cells[row, 30].Text, out reflectionDate))
                                 {
                                     reflectionDate = purchaseDate; // Default to purchase date
                                 }
@@ -135,14 +135,14 @@ namespace API.Controllers
                                     purchaseId = 0;
                                 }
 
-                                if (!decimal.TryParse(worksheet.Cells[row, 15].Text, out decimal quantity))
+                                if (!decimal.TryParse(worksheet.Cells[row, 16].Text, out decimal quantity))
                                 {
                                     failCount++;
                                     errors.Add($"Row {row}: Invalid quantity value.");
                                     continue;
                                 }
 
-                                if (!decimal.TryParse(worksheet.Cells[row, 17].Text, out decimal netAmount))
+                                if (!decimal.TryParse(worksheet.Cells[row, 18].Text, out decimal netAmount))
                                 {
                                     netAmount = 0;
                                 }
@@ -162,26 +162,26 @@ namespace API.Controllers
                                     StationCode = worksheet.Cells[row, 9].Text.Trim(),
                                     DeviceGroups = worksheet.Cells[row, 10].Text.Trim(),
                                     LicensePlate = licensePlate,
-                                    FuelType = worksheet.Cells[row, 12].Text.Trim(),
-                                    SalesType = worksheet.Cells[row, 13].Text.Trim(),
-                                    UTTS = worksheet.Cells[row, 14].Text.Trim(),
+                                    FuelType = worksheet.Cells[row, 13].Text.Trim(),
+                                    SalesType = worksheet.Cells[row, 14].Text.Trim(),
+                                    UTTS = worksheet.Cells[row, 15].Text.Trim(),
                                     Quantity = quantity,
-                                    GrossAmount = decimal.TryParse(worksheet.Cells[row, 16].Text, out decimal gross) ? gross : 0,
+                                    GrossAmount = decimal.TryParse(worksheet.Cells[row, 17].Text, out decimal gross) ? gross : 0,
                                     NetAmount = netAmount,
-                                    Discount = decimal.TryParse(worksheet.Cells[row, 18].Text, out decimal discount) ? discount : 0,
-                                    DiscountType = worksheet.Cells[row, 19].Text.Trim(),
-                                    UnitPrice = decimal.TryParse(worksheet.Cells[row, 20].Text, out decimal unitPrice) ? unitPrice : 0,
-                                    VATRate = worksheet.Cells[row, 21].Text.Trim(),
-                                    Mileage = int.TryParse(worksheet.Cells[row, 22].Text, out int mileage) ? mileage : 0,
-                                    Distributor = worksheet.Cells[row, 23].Text.Trim(),
+                                    Discount = decimal.TryParse(worksheet.Cells[row, 19].Text, out decimal discount) ? discount : 0,
+                                    DiscountType = worksheet.Cells[row, 20].Text.Trim(),
+                                    UnitPrice = decimal.TryParse(worksheet.Cells[row, 21].Text, out decimal unitPrice) ? unitPrice : 0,
+                                    VATRate = worksheet.Cells[row, 22].Text.Trim(),
+                                    Mileage = int.TryParse(worksheet.Cells[row, 23].Text, out int mileage) ? mileage : 0,
+                                    Distributor = worksheet.Cells[row, 24].Text.Trim(),
                                     PurchaseDate = purchaseDate,
                                     Period = period,
                                     TransactionNumber = transactionNumber,
                                     InvoiceDate = invoiceDate,
-                                    InvoiceNumber = worksheet.Cells[row, 28].Text.Trim(),
+                                    InvoiceNumber = worksheet.Cells[row, 29].Text.Trim(),
                                     ReflectionDate = reflectionDate,
-                                    SalesRepresentativeId = long.TryParse(worksheet.Cells[row, 30].Text, out long salesRepId) ? salesRepId : 0,
-                                    SalesRepresentative = worksheet.Cells[row, 31].Text.Trim(),
+                                    SalesRepresentativeId = long.TryParse(worksheet.Cells[row, 31].Text, out long salesRepId) ? salesRepId : 0,
+                                    SalesRepresentative = worksheet.Cells[row, 32].Text.Trim(),
                                     CreatedAt = DateTime.UtcNow
                                 };
 
@@ -278,35 +278,36 @@ namespace API.Controllers
                             { 9, "İstasyon Kodu" },
                             { 10, "Cihaz Grupları" },
                             { 11, "Plaka" },
-                            { 12, "Tip" },
-                            { 13, "Satış Tipi" },
-                            { 14, "UTTS" },
-                            { 15, "Miktar" },
-                            { 16, "Brüt Tutar" },
-                            { 17, "Net Tutar" },
-                            { 18, "İskonto" },
-                            { 19, "İskonto Tipi" },
-                            { 20, "Birim Fiyatı" },
-                            { 21, "KDV Oranı" },
-                            { 22, "Kilometre" },
-                            { 23, "Distribütör" },
-                            { 24, "Tarih" },
-                            { 25, "Dönem" },
-                            { 26, "İşlem Numarası" },
-                            { 27, "Fatura Tarihi" },
-                            { 28, "Fatura Numarası" },
-                            { 29, "Yansıma Tarihi" },
-                            { 30, "Satış Temsilcisi ID" },
-                            { 31, "Satış Temsilcisi" }
+                            {12, "Cihaz Açıklaması" },
+                            { 13, "Tip" },
+                            { 14, "Satış Tipi" },
+                            { 15, "UTTS" },
+                            { 16, "Miktar" },
+                            { 17, "Brüt Tutar" },
+                            { 18, "Net Tutar" },
+                            { 19, "İskonto" },
+                            { 20, "İskonto Tipi" },
+                            { 21, "Birim Fiyatı" },
+                            { 22, "KDV Oranı" },
+                            { 23, "Kilometre" },
+                            { 24, "Distribütör" },
+                            { 25, "Tarih" },
+                            { 26, "Dönem" },
+                            { 27, "İşlem Numarası" },
+                            { 28, "Fatura Tarihi" },
+                            { 29, "Fatura Numarası" },
+                            { 30, "Yansıma Tarihi" },
+                            { 31, "Satış Temsilcisi ID" },
+                            { 32, "Satış Temsilcisi" }
                         };
 
                         var validationErrors = new List<string>();
                         var validationWarnings = new List<string>();
 
                         // Check column count
-                        if (colCount < 31)
+                        if (colCount < 32)
                         {
-                            validationErrors.Add($"Expected 31 columns, found {colCount}");
+                            validationErrors.Add($"Expected 32 columns, found {colCount}");
                         }
 
                         // Validate header row
