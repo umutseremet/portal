@@ -67,9 +67,10 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
 
                   // İş kapalıysa, kapanma tarihini kontrol et
                   if (issue.isClosed && issue.closedOn) {
-                    // ✅ FIX: Sadece tarih kısmını al (timezone problemi önlenir)
+                    // ✅ KESIN ÇÖZÜM: Manuel tarih parse - timezone tamamen bypass
                     const closedDateStr = issue.closedOn.split('T')[0]; // "2025-10-23"
-                    const closedDate = new Date(closedDateStr + 'T00:00:00'); // Local midnight
+                    const [year, month, day] = closedDateStr.split('-').map(Number);
+                    const closedDate = new Date(year, month - 1, day); // Local timezone, month 0-indexed
                     closedDate.setHours(0, 0, 0, 0);
 
                     const isOverdue = closedDate > plannedEnd;
