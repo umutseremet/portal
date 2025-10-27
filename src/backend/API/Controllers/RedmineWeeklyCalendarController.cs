@@ -126,8 +126,8 @@ namespace API.Controllers
                             AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
                             AND (
                                 TRY_CAST(cv_pbitis.value AS DATE) >= @Date
-                                --OR
-                            --(status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date)
+                                OR
+                            (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date AND @Date <= GETDATE())
                             OR
                             (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
                              TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
@@ -278,8 +278,8 @@ namespace API.Controllers
                         AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
                         AND (
                             TRY_CAST(cv_pbitis.value AS DATE) >= @Date
-                            --OR
-                            --(status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date)
+                            OR
+                            (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date AND @Date <= GETDATE())
                             OR
                             (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
                              TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
@@ -660,8 +660,8 @@ namespace API.Controllers
                         AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
                         AND (
                             TRY_CAST(cv_pbitis.value AS DATE) >= @Date
-                            --OR
-                            --(status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date)
+                            OR
+                            (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date AND @Date <= GETDATE())
                             OR
                             (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
                              TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
@@ -710,8 +710,8 @@ namespace API.Controllers
                         AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
                         AND (
                             TRY_CAST(cv_pbitis.value AS DATE) >= @Date
-                            --OR
-                            --(status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date)
+                            OR
+                            (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date AND @Date <= GETDATE())
                             OR
                             (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
                              TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
