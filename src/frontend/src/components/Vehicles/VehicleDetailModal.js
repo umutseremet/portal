@@ -1,6 +1,7 @@
 // src/frontend/src/components/Vehicles/VehicleDetailModal.js
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const VehicleDetailModal = ({
   show = false,
@@ -10,6 +11,8 @@ const VehicleDetailModal = ({
   onDelete,
   loading = false
 }) => {
+  const navigate = useNavigate();
+
   if (!show || !vehicle) return null;
 
   const formatDate = (dateString) => {
@@ -74,9 +77,15 @@ const VehicleDetailModal = ({
     onHide();
   };
 
+  // YENİ - Yakıt Alım Bilgileri sayfasına yönlendir
+  const handleViewFuelPurchases = () => {
+    onHide(); // Modal'ı kapat
+    navigate('/vehicles/fuel-purchases', { state: { vehicle } });
+  };
+
   return (
     <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="modal-dialog modal-lg modal-dialog-centered">
+      <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div className="modal-content">
           <div className="modal-header bg-light">
             <div className="d-flex align-items-center">
@@ -137,10 +146,6 @@ const VehicleDetailModal = ({
                   <div className="card-body">
                     <div className="row g-2">
                       <div className="col-6">
-                        <small className="text-muted">Plaka</small>
-                        <div className="fw-bold text-primary">{vehicle.licensePlate}</div>
-                      </div>
-                      <div className="col-6">
                         <small className="text-muted">Marka</small>
                         <div>{vehicle.brand}</div>
                       </div>
@@ -149,40 +154,20 @@ const VehicleDetailModal = ({
                         <div>{vehicle.model}</div>
                       </div>
                       <div className="col-6">
+                        <small className="text-muted">Plaka</small>
+                        <div className="badge bg-primary">{vehicle.licensePlate}</div>
+                      </div>
+                      <div className="col-6">
                         <small className="text-muted">Yıl</small>
                         <div>{vehicle.year}</div>
                       </div>
                       <div className="col-12">
-                        <small className="text-muted">VIN Numarası</small>
-                        <div className="font-monospace small">{vehicle.vin || 'Belirtilmemiş'}</div>
+                        <small className="text-muted">Renk</small>
+                        <div>{vehicle.color || 'Belirtilmemiş'}</div>
                       </div>
                       <div className="col-12">
-                        <small className="text-muted">Sahiplik Türü</small>
-                        <div>
-                          <span className={`badge ${getOwnershipTypeBadge(vehicle.ownershipType)}`}>
-                            {getOwnershipTypeText(vehicle.ownershipType)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Company & Location */}
-              <div className="col-md-6">
-                <div className="card h-100">
-                  <div className="card-header">
-                    <h6 className="card-title mb-0">
-                      <i className="bi bi-building me-2"></i>
-                      Şirket & Konum
-                    </h6>
-                  </div>
-                  <div className="card-body">
-                    <div className="row g-2">
-                      <div className="col-12">
-                        <small className="text-muted">Şirket Adı</small>
-                        <div className="fw-medium">{vehicle.companyName || 'Belirtilmemiş'}</div>
+                        <small className="text-muted">Şirket</small>
+                        <div>{vehicle.companyName || 'Belirtilmemiş'}</div>
                       </div>
                       <div className="col-12">
                         <small className="text-muted">Konum</small>
@@ -218,7 +203,7 @@ const VehicleDetailModal = ({
                       </div>
                       <div className="col-6">
                         <small className="text-muted">Yakıt Tüketimi</small>
-                        <div>{vehicle.fuelConsumption + 'L/100km'}</div>
+                        <div>{vehicle.fuelConsumption + ' L/100km'}</div>
                       </div>
                       <div className="col-12">
                         <small className="text-muted">Lastik Durumu</small>
@@ -229,58 +214,13 @@ const VehicleDetailModal = ({
                         </div>
                       </div>
                       <div className="col-12">
-                        <small className="text-muted">Son Servis</small>
-                        <div>{formatDate(vehicle.lastServiceDate)}</div>
+                        <small className="text-muted">Notlar</small>
+                        <div>{vehicle.notes || 'Belirtilmemiş'}</div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Insurance & Inspection */}
-              <div className="col-md-6">
-                <div className="card h-100">
-                  <div className="card-header">
-                    <h6 className="card-title mb-0">
-                      <i className="bi bi-shield-check me-2"></i>
-                      Sigorta & Muayene
-                    </h6>
-                  </div>
-                  <div className="card-body">
-                    <div className="row g-2">
-                      <div className="col-12">
-                        <small className="text-muted">Sigorta Şirketi</small>
-                        <div>{vehicle.insurance || 'Belirtilmemiş'}</div>
-                      </div>
-                      <div className="col-6">
-                        <small className="text-muted">Sigorta Bitiş</small>
-                        <div>{formatDate(vehicle.insuranceExpiryDate)}</div>
-                      </div>
-                      <div className="col-6">
-                        <small className="text-muted">Muayene Tarihi</small>
-                        <div>{formatDate(vehicle.inspectionDate)}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Registration Information */}
-              {vehicle.registrationInfo && (
-                <div className="col-12">
-                  <div className="card">
-                    <div className="card-header">
-                      <h6 className="card-title mb-0">
-                        <i className="bi bi-file-earmark-text me-2"></i>
-                        Ruhsat Bilgileri
-                      </h6>
-                    </div>
-                    <div className="card-body">
-                      <p className="mb-0">{vehicle.registrationInfo}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* System Information */}
               <div className="col-12">
@@ -323,6 +263,16 @@ const VehicleDetailModal = ({
               Kapat
             </button>
             <div className="d-flex gap-2">
+              {/* YENİ BUTON - Yakıt Alım Bilgileri */}
+              <button
+                type="button"
+                className="btn btn-info"
+                onClick={handleViewFuelPurchases}
+                disabled={loading}
+              >
+                <i className="bi bi-fuel-pump-fill me-1"></i>
+                Yakıt Alım Bilgileri
+              </button>
               <button
                 type="button"
                 className="btn btn-outline-primary"

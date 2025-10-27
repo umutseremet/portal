@@ -9,8 +9,10 @@ import DashboardPage from './pages/DashboardPage';
 import ProductionPage from './pages/ProductionPage';
 import VisitorsPage from './pages/VisitorsPage';
 import VehiclesPage from './pages/VehiclesPage';
+import VehicleDetailPage from './pages/VehicleDetailPage'; // YENİ
+import VehicleFuelPurchasesPage from './pages/VehicleFuelPurchasesPage'; // YENİ
 import WeeklyProductionCalendarPage from './pages/WeeklyProductionCalendarPage';
-import IssueDetailsPage from './pages/IssueDetailsPage'; // YENİ
+import IssueDetailsPage from './pages/IssueDetailsPage';
 import './App.css';
 
 function App() {
@@ -44,7 +46,6 @@ function App() {
             }
           />
 
-          {/* YENİ ROUTE - İş Detayları Sayfası */}
           <Route
             path="/production/issue-details"
             element={
@@ -62,6 +63,30 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <VehiclesPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* YENİ ROUTE - Araç Detay Sayfası */}
+          <Route
+            path="/vehicles/detail"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <VehicleDetailPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* YENİ ROUTE - Araç Yakıt Alım Bilgileri Sayfası */}
+          <Route
+            path="/vehicles/fuel-purchases"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <VehicleFuelPurchasesPage />
                 </Layout>
               </ProtectedRoute>
             }

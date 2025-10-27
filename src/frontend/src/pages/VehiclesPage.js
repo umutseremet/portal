@@ -1,14 +1,17 @@
 // src/frontend/src/pages/VehiclesPage.js
-// Excel Import için refresh özelliği eklenmiş
+// Modal yerine sayfa yönlendirmesi yapan versiyon
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import VehiclesList from '../components/Vehicles/VehiclesList';
 import VehicleModal from '../components/Vehicles/VehicleModal';
-import VehicleDetailModal from '../components/Vehicles/VehicleDetailModal';
-import DeleteConfirmModal from '../components/common/DeleteConfirmModal';
 import { useVehicles } from '../hooks/useVehicles';
+// 1. Import ekle (dosyanın başına)
+import { exportVehiclesToExcel } from '../utils/excelExport';
 
 const VehiclesPage = () => {
+  const navigate = useNavigate();
+
   // Use the vehicles hook
   const {
     // Data
@@ -45,11 +48,24 @@ const VehiclesPage = () => {
   // Modal states
   const [showNewVehicleModal, setShowNewVehicleModal] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
-  const [viewingVehicle, setViewingVehicle] = useState(null);
 
-  // YENİ - Refresh function for Excel import
+  // Refresh function for Excel import
   const handleRefresh = () => {
     loadVehicles();
+  };
+
+  // 2. Export handler ekle (diğer handler'larla birlikte)
+  const handleExport = () => {
+    try {
+      if (!vehicles || vehicles.length === 0) {
+        alert('Dışa aktarılacak araç bulunamadı!');
+        return;
+      }
+      exportVehiclesToExcel(vehicles, 'Araclar');
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Excel dışa aktarma sırasında hata oluştu');
+    }
   };
 
   // Handle sort
@@ -113,10 +129,10 @@ const VehiclesPage = () => {
     }
   };
 
-  // Handle view vehicle
+  // YENİ - Handle view vehicle - Sayfaya yönlendir
   const handleViewVehicle = (vehicle) => {
     try {
-      setViewingVehicle(vehicle);
+      navigate('/vehicles/detail', { state: { vehicle } });
     } catch (error) {
       console.error('Error viewing vehicle:', error);
     }
@@ -174,65 +190,22 @@ const VehiclesPage = () => {
     }
   };
 
-  // Handle close detail modal
-  const handleCloseDetailModal = () => {
-    setViewingVehicle(null);
-  };
-
-  // Handle edit from detail
-  const handleEditFromDetail = () => {
-    setEditingVehicle(viewingVehicle);
-    setViewingVehicle(null);
-    setShowNewVehicleModal(true);
-  };
-
-  // Handle delete from detail
-  const handleDeleteFromDetail = async () => {
-    try {
-      await handleDeleteVehicle(viewingVehicle);
-      setViewingVehicle(null);
-    } catch (error) {
-      console.error('Error deleting from detail:', error);
-    }
-  };
-
-  // Handle export
-  const handleExport = async () => {
-    try {
-      await exportVehicles();
-    } catch (error) {
-      console.error('Error exporting:', error);
-    }
-  };
 
   return (
     <div className="container-fluid py-4">
       <div className="row">
         <div className="col-12">
-          {/* Page Header */}
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <div>
-              <h2 className="mb-1">Araç Yönetimi</h2>
-              <p className="text-muted mb-0">
-                Araç filosunu yönetin ve takip edin
-              </p>
-            </div>
-          </div>
-
           {/* Error Alert */}
           {error && (
-            <div className="row mb-4">
-              <div className="col-12">
-                <div className="alert alert-danger alert-dismissible fade show">
-                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                  <strong>Hata!</strong> {error}
-                  <button 
-                    type="button" 
-                    className="btn-close" 
-                    onClick={clearError}
-                  ></button>
-                </div>
-              </div>
+            <div className="alert alert-danger alert-dismissible fade show" role="alert">
+              <i className="bi bi-exclamation-triangle me-2"></i>
+              {error}
+              <button
+                type="button"
+                className="btn-close"
+                onClick={clearError}
+                aria-label="Close"
+              ></button>
             </div>
           )}
 
@@ -273,24 +246,12 @@ const VehiclesPage = () => {
             </div>
           </div>
 
-          {/* Modals */}
-          
           {/* New/Edit Vehicle Modal */}
           <VehicleModal
             show={showNewVehicleModal}
             onHide={handleCloseModal}
             onSave={handleSaveVehicle}
             vehicle={editingVehicle}
-            loading={loading}
-          />
-
-          {/* Vehicle Detail Modal */}
-          <VehicleDetailModal
-            show={!!viewingVehicle}
-            onHide={handleCloseDetailModal}
-            vehicle={viewingVehicle}
-            onEdit={handleEditFromDetail}
-            onDelete={handleDeleteFromDetail}
             loading={loading}
           />
         </div>
