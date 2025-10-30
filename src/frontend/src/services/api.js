@@ -967,6 +967,438 @@ class ApiService {
     }
     return this.delete(`/vehiclefuelpurchases/${id}`);
   }
+
+
+  // ===== BOM API METODLARI - GERÇEK BACKEND ENDPOINT'LERİNE GÖRE =====
+  // Bu metodları api.js dosyanızın SONUNA (export satırından önce) ekleyin
+
+  /**
+   * Get all BOM works with pagination and search
+   * Backend: POST /api/BomWorks/list
+   */
+  async getBOMWorks(params = {}) {
+    console.log('📦 API getBOMWorks call:', params);
+
+    try {
+      // Backend POST /api/BomWorks/list bekliyor
+      const requestBody = {
+        page: params.page || 1,
+        pageSize: params.pageSize || 10,
+        searchTerm: params.searchTerm || null
+      };
+
+      const response = await this.post('/BomWorks/list', requestBody);
+      console.log('📦 API getBOMWorks raw response:', response);
+
+      // Backend response format mapping
+      const mappedResponse = {
+        works: response.works || response.Works || response.data || response.Data || [],
+        totalCount: response.totalCount || response.TotalCount || 0,
+        page: response.page || response.Page || 1,
+        pageSize: response.pageSize || response.PageSize || 10,
+        totalPages: response.totalPages || response.TotalPages || 0,
+        hasNextPage: response.hasNextPage || response.HasNextPage || false,
+        hasPreviousPage: response.hasPreviousPage || response.HasPreviousPage || false
+      };
+
+      console.log('✅ API getBOMWorks mapped response:', mappedResponse);
+      return mappedResponse;
+    } catch (error) {
+      console.error('❌ API getBOMWorks error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a single BOM work by ID
+   * Backend: GET /api/BomWorks/{id}
+   */
+  async getBOMWork(id) {
+    if (!id) {
+      throw new Error('BOM work ID is required');
+    }
+
+    console.log('📦 API getBOMWork call:', { id });
+
+    try {
+      const response = await this.get(`/BomWorks/${id}`);
+      console.log('✅ API getBOMWork response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API getBOMWork error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new BOM work
+   * Backend: POST /api/BomWorks
+   */
+  async createBOMWork(workData) {
+    if (!workData) {
+      throw new Error('BOM work data is required');
+    }
+
+    if (!workData.projectId || !workData.projectName || !workData.workName) {
+      throw new Error('ProjectId, ProjectName and WorkName are required');
+    }
+
+    console.log('📦 API createBOMWork call:', workData);
+
+    try {
+      const response = await this.post('/BomWorks', workData);
+      console.log('✅ API createBOMWork response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API createBOMWork error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a BOM work
+   * Backend: PUT /api/BomWorks/{id}
+   */
+  async updateBOMWork(id, workData) {
+    if (!id) {
+      throw new Error('BOM work ID is required');
+    }
+
+    if (!workData) {
+      throw new Error('BOM work data is required');
+    }
+
+    console.log('📦 API updateBOMWork call:', { id, workData });
+
+    try {
+      const response = await this.put(`/BomWorks/${id}`, workData);
+      console.log('✅ API updateBOMWork response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API updateBOMWork error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a BOM work (soft delete)
+   * Backend: DELETE /api/BomWorks/{id}
+   */
+  async deleteBOMWork(id) {
+    if (!id) {
+      throw new Error('BOM work ID is required');
+    }
+
+    console.log('📦 API deleteBOMWork call:', { id });
+
+    try {
+      const response = await this.delete(`/BomWorks/${id}`);
+      console.log('✅ API deleteBOMWork response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API deleteBOMWork error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently delete a BOM work
+   * Backend: DELETE /api/BomWorks/{id}/permanent
+   */
+  async permanentDeleteBOMWork(id) {
+    if (!id) {
+      throw new Error('BOM work ID is required');
+    }
+
+    console.log('📦 API permanentDeleteBOMWork call:', { id });
+
+    try {
+      const response = await this.delete(`/BomWorks/${id}/permanent`);
+      console.log('✅ API permanentDeleteBOMWork response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API permanentDeleteBOMWork error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get BOM items list
+   * Backend: POST /api/BomItems/list
+   */
+  async getBOMItems(params = {}) {
+    console.log('📦 API getBOMItems call:', params);
+
+    try {
+      const requestBody = {
+        page: params.page || 1,
+        pageSize: params.pageSize || 50,
+        workId: params.workId || null,
+        excelId: params.excelId || null,
+        searchTerm: params.searchTerm || null
+      };
+
+      const response = await this.post('/BomItems/list', requestBody);
+      console.log('📦 API getBOMItems raw response:', response);
+
+      const mappedResponse = {
+        items: response.items || response.Items || response.data || response.Data || [],
+        totalCount: response.totalCount || response.TotalCount || 0,
+        page: response.page || response.Page || 1,
+        pageSize: response.pageSize || response.PageSize || 50,
+        totalPages: response.totalPages || response.TotalPages || 0
+      };
+
+      console.log('✅ API getBOMItems mapped response:', mappedResponse);
+      return mappedResponse;
+    } catch (error) {
+      console.error('❌ API getBOMItems error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a single BOM item by ID
+   * Backend: GET /api/BomItems/{id}
+   */
+  async getBOMItem(id) {
+    if (!id) {
+      throw new Error('BOM item ID is required');
+    }
+
+    console.log('📦 API getBOMItem call:', { id });
+
+    try {
+      const response = await this.get(`/BomItems/${id}`);
+      console.log('✅ API getBOMItem response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API getBOMItem error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a BOM item
+   * Backend: PUT /api/BomItems/{id}
+   */
+  async updateBOMItem(id, itemData) {
+    if (!id) {
+      throw new Error('BOM item ID is required');
+    }
+
+    if (!itemData) {
+      throw new Error('BOM item data is required');
+    }
+
+    console.log('📦 API updateBOMItem call:', { id, itemData });
+
+    try {
+      const response = await this.put(`/BomItems/${id}`, itemData);
+      console.log('✅ API updateBOMItem response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API updateBOMItem error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a BOM item
+   * Backend: DELETE /api/BomItems/{id}
+   */
+  async deleteBOMItem(id) {
+    if (!id) {
+      throw new Error('BOM item ID is required');
+    }
+
+    console.log('📦 API deleteBOMItem call:', { id });
+
+    try {
+      const response = await this.delete(`/BomItems/${id}`);
+      console.log('✅ API deleteBOMItem response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API deleteBOMItem error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete all BOM items from an Excel file
+   * Backend: DELETE /api/BomItems/excel/{excelId}/all
+   */
+  async deleteAllBOMItemsFromExcel(excelId) {
+    if (!excelId) {
+      throw new Error('Excel ID is required');
+    }
+
+    console.log('📦 API deleteAllBOMItemsFromExcel call:', { excelId });
+
+    try {
+      const response = await this.delete(`/BomItems/excel/${excelId}/all`);
+      console.log('✅ API deleteAllBOMItemsFromExcel response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API deleteAllBOMItemsFromExcel error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get BOM item usage information
+   * Backend: GET /api/BomItems/item/{itemId}/usage
+   */
+  async getBOMItemUsage(itemId) {
+    if (!itemId) {
+      throw new Error('Item ID is required');
+    }
+
+    console.log('📦 API getBOMItemUsage call:', { itemId });
+
+    try {
+      const response = await this.get(`/BomItems/item/${itemId}/usage`);
+      console.log('✅ API getBOMItemUsage response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API getBOMItemUsage error:', error);
+      throw error;
+    }
+  }
+
+  // ===== YARDIMCI METODLAR (Excel dosyası varsa) =====
+
+  /**
+   * Get Excel files for a BOM work
+   * NOT: Bu endpoint backend'de görünmüyor, eğer varsa kullanın
+   */
+  async getBOMExcels(workId) {
+    if (!workId) {
+      throw new Error('BOM work ID is required');
+    }
+
+    console.log('📦 API getBOMExcels call:', { workId });
+
+    try {
+      // Backend'de bu endpoint yoksa, getBOMWork ile birlikte gelebilir
+      const work = await this.getBOMWork(workId);
+      return work.excelFiles || work.ExcelFiles || [];
+    } catch (error) {
+      console.error('❌ API getBOMExcels error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload Excel file to a BOM work
+   * NOT: Bu endpoint backend'de görünmüyor, eğer eklendiyse kullanın
+   */
+  async uploadBOMExcel(workId, file) {
+    if (!workId) {
+      throw new Error('BOM work ID is required');
+    }
+
+    if (!file) {
+      throw new Error('Excel file is required');
+    }
+
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      throw new Error('Only Excel files (.xlsx, .xls) are allowed');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Backend'de Excel upload endpoint'i varsa bu URL'i kullanın
+    const url = `${this.baseURL}/BomWorks/${workId}/excel`;
+
+    console.log(`📦 API uploadBOMExcel: POST ${url}`);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.getAuthToken()}`
+        },
+        body: formData
+      });
+
+      console.log(`📡 API Response: ${response.status} ${response.statusText}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ API Error ${response.status}:`, errorText);
+
+        if (response.status === 401) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          throw new Error('Oturum süresi doldu. Lütfen tekrar giriş yapın.');
+        }
+
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ API uploadBOMExcel response:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ API uploadBOMExcel error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an Excel file
+   * NOT: Bu endpoint backend'de görünmüyor
+   * Bunun yerine deleteAllBOMItemsFromExcel kullanabilirsiniz
+   */
+  async deleteBOMExcel(excelId) {
+    if (!excelId) {
+      throw new Error('Excel ID is required');
+    }
+
+    console.log('📦 API deleteBOMExcel call - Using deleteAllBOMItemsFromExcel:', { excelId });
+
+    try {
+      // Excel silme endpoint'i yoksa, item'ları sil
+      const response = await this.deleteAllBOMItemsFromExcel(excelId);
+      console.log('✅ API deleteBOMExcel response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API deleteBOMExcel error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get items from an Excel file
+   * Backend: POST /api/BomItems/list with excelId filter
+   */
+  async getBOMExcelItems(excelId, params = {}) {
+    if (!excelId) {
+      throw new Error('Excel ID is required');
+    }
+
+    console.log('📦 API getBOMExcelItems call:', { excelId, params });
+
+    try {
+      // BomItems/list endpoint'ini excelId ile kullan
+      const response = await this.getBOMItems({
+        ...params,
+        excelId: excelId,
+        page: params.page || 1,
+        pageSize: params.pageSize || 50
+      });
+
+      console.log('✅ API getBOMExcelItems response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API getBOMExcelItems error:', error);
+      throw error;
+    }
+  }
+
+  // ===== BOM METODLARI SONU =====
 }
 
 // Create a single instance

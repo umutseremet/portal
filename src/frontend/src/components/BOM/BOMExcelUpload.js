@@ -3,13 +3,22 @@
 import React, { useState } from 'react';
 import { Upload, FileText, Eye, Trash2 } from 'lucide-react';
 
-const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDetails, selectedExcel }) => {
+const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDetails, selectedExcel, uploading, loading }) => {
   const [isDragging, setIsDragging] = useState(false);
 
   const handleFileSelect = (e) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      onFileUpload(files);
+      // Sadece Excel dosyalarını filtrele
+      const excelFiles = Array.from(files).filter(file => 
+        file.name.endsWith('.xlsx') || file.name.endsWith('.xls')
+      );
+      
+      if (excelFiles.length > 0) {
+        onFileUpload(excelFiles);
+      } else {
+        alert('Lütfen sadece Excel dosyaları (.xlsx, .xls) seçin.');
+      }
     }
     e.target.value = '';
   };
@@ -45,6 +54,22 @@ const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDet
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('tr-TR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
   return (
     <div className="row mb-4">
       <div className="col-12">
@@ -52,15 +77,30 @@ const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDet
           <div className="card-header d-flex justify-content-between align-items-center">
             <div className="d-flex align-items-center">
               <FileText size={20} className="text-info me-2" />
-              <h5 className="card-title mb-0">Excel Dosyaları</h5>
+              <h5 className="card-title mb-0">
+                Excel Dosyaları
+                {uploadedExcels.length > 0 && (
+                  <span className="badge bg-info ms-2">{uploadedExcels.length}</span>
+                )}
+              </h5>
             </div>
             
             <button
               onClick={() => document.getElementById('excel-file-input').click()}
               className="btn btn-danger btn-sm"
+              disabled={uploading || loading}
             >
-              <Upload size={16} className="me-1" />
-              Excel Ekle
+              {uploading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                  Yükleniyor...
+                </>
+              ) : (
+                <>
+                  <Upload size={16} className="me-1" />
+                  Excel Ekle
+                </>
+              )}
             </button>
             <input
               id="excel-file-input"
@@ -69,11 +109,19 @@ const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDet
               multiple
               style={{ display: 'none' }}
               onChange={handleFileSelect}
+              disabled={uploading || loading}
             />
           </div>
 
           <div className="card-body">
-            {uploadedExcels.length > 0 ? (
+            {loading ? (
+              <div className="text-center py-5">
+                <div className="spinner-border text-danger" role="status">
+                  <span className="visually-hidden">Yükleniyor...</span>
+                </div>
+                <p className="text-muted mt-2">Excel dosyaları yükleniyor...</p>
+              </div>
+            ) : uploadedExcels.length > 0 ? (
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
                   <thead className="table-light">
@@ -97,8 +145,13 @@ const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDet
                           <i className="bi bi-file-earmark-spreadsheet me-2 text-success"></i>
                           {excel.fileName}
                         </td>
-                        <td className="text-muted small">{excel.uploadDate}</td>
-                        <td className="text-center fw-medium">{excel.rowCount}</td>
+                        <td className="text-muted small">
+                          <i className="bi bi-calendar me-1"></i>
+                          {formatDate(excel.uploadDate)}
+                        </td>
+                        <td className="text-center">
+                          <span className="badge bg-info">{excel.rowCount || 0}</span>
+                        </td>
                         <td className="text-center text-muted small">{excel.size}</td>
                         <td>
                           <div className="d-flex gap-2 justify-content-center">
@@ -106,6 +159,7 @@ const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDet
                               onClick={() => onViewDetails(excel)}
                               className="btn btn-sm btn-info text-white"
                               title="Detayları Gör"
+                              disabled={uploading || loading}
                             >
                               <Eye size={14} className="me-1" />
                               Detay
@@ -114,6 +168,7 @@ const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDet
                               onClick={() => onDeleteExcel(excel.id)}
                               className="btn btn-sm btn-danger"
                               title="Dosyayı Sil"
+                              disabled={uploading || loading}
                             >
                               <Trash2 size={14} className="me-1" />
                               Sil
@@ -130,11 +185,11 @@ const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDet
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                onClick={() => document.getElementById('excel-file-input').click()}
+                onClick={() => !uploading && !loading && document.getElementById('excel-file-input').click()}
                 className={`text-center py-5 border-3 border-dashed rounded ${
                   isDragging ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary'
                 }`}
-                style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+                style={{ cursor: uploading || loading ? 'not-allowed' : 'pointer', transition: 'all 0.3s ease' }}
               >
                 <Upload 
                   size={64} 

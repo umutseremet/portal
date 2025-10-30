@@ -1,42 +1,36 @@
 // src/frontend/src/components/BOM/BOMWorkList.js
 
 import React, { useState } from 'react';
-import { Search, Plus, FolderOpen, Trash2 } from 'lucide-react';
+import { Search, FolderOpen } from 'lucide-react';
 import BOMNewWorkForm from './BOMNewWorkForm';
 import BOMWorkListTable from './BOMWorkListTable';
 
-const BOMWorkList = ({ existingWorks, onOpenWork, onDeleteWork, onCreateWork }) => {
+const BOMWorkList = ({ existingWorks, onOpenWork, onDeleteWork, onCreateWork, onSearch, loading }) => {
   const [showNewWorkForm, setShowNewWorkForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Örnek proje listesi
+  // Örnek proje listesi (gerçek uygulamada API'den gelmeli)
   const projects = [
     { id: 1, name: 'Proje Alpha - Web Geliştirme' },
     { id: 2, name: 'Proje Beta - Mobil Uygulama' },
     { id: 3, name: 'Proje Gamma - ERP Sistemi' },
-    { id: 4, name: 'Proje Delta - CRM Entegrasyonu' }
+    { id: 4, name: 'Proje Delta - CRM Entegrasyonu' },
+    { id: 5, name: 'Proje Epsilon - IoT Sistemi' },
+    { id: 6, name: 'Proje Zeta - Cloud Migration' }
   ];
 
-  // Filtreleme
-  const filteredWorks = existingWorks.filter(work => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      work.workName.toLowerCase().includes(searchLower) ||
-      work.projectName.toLowerCase().includes(searchLower)
-    );
-  });
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Debounce için timeout kullanabilirsiniz
+    if (onSearch) {
+      onSearch(value);
+    }
+  };
 
-  const handleCreateNewWork = (selectedProject, workName) => {
-    const newWork = {
-      id: Date.now(),
-      projectId: parseInt(selectedProject),
-      projectName: projects.find(p => p.id === parseInt(selectedProject))?.name,
-      workName: workName,
-      createdAt: new Date().toLocaleString('tr-TR'),
-      excelCount: 0,
-      totalRows: 0
-    };
-    onCreateWork(newWork);
+  const handleCreateNewWork = (projectId, projectName, workName) => {
+    onCreateWork(projectId, projectName, workName);
     setShowNewWorkForm(false);
   };
 
@@ -56,6 +50,7 @@ const BOMWorkList = ({ existingWorks, onOpenWork, onDeleteWork, onCreateWork }) 
               <button
                 onClick={() => setShowNewWorkForm(!showNewWorkForm)}
                 className="btn btn-danger"
+                disabled={loading}
               >
                 <i className="bi bi-plus-lg me-1"></i>
                 Yeni Çalışma
@@ -83,7 +78,10 @@ const BOMWorkList = ({ existingWorks, onOpenWork, onDeleteWork, onCreateWork }) 
         <div className="col-12">
           <div className="card">
             <div className="card-header d-flex justify-content-between align-items-center">
-              <h5 className="card-title mb-0">Mevcut Çalışmalar</h5>
+              <h5 className="card-title mb-0">
+                Mevcut Çalışmalar 
+                {!loading && <span className="badge bg-primary ms-2">{existingWorks.length}</span>}
+              </h5>
               
               <div className="position-relative" style={{ width: '320px' }}>
                 <Search 
@@ -101,17 +99,25 @@ const BOMWorkList = ({ existingWorks, onOpenWork, onDeleteWork, onCreateWork }) 
                   type="text"
                   placeholder="Çalışma veya proje ara..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={handleSearchChange}
                   className="form-control form-control-sm"
                   style={{ paddingLeft: '40px' }}
+                  disabled={loading}
                 />
               </div>
             </div>
 
             <div className="card-body">
-              {filteredWorks.length > 0 ? (
+              {loading ? (
+                <div className="text-center py-5">
+                  <div className="spinner-border text-danger" role="status">
+                    <span className="visually-hidden">Yükleniyor...</span>
+                  </div>
+                  <p className="text-muted mt-2">Çalışmalar yükleniyor...</p>
+                </div>
+              ) : existingWorks.length > 0 ? (
                 <BOMWorkListTable
-                  works={filteredWorks}
+                  works={existingWorks}
                   onOpenWork={onOpenWork}
                   onDeleteWork={onDeleteWork}
                 />
