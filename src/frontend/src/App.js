@@ -14,6 +14,7 @@ import VehicleFuelPurchasesPage from './pages/VehicleFuelPurchasesPage'; // YENÄ
 import WeeklyProductionCalendarPage from './pages/WeeklyProductionCalendarPage';
 import IssueDetailsPage from './pages/IssueDetailsPage';
 import './App.css';
+import BOMTransferPage from './pages/BOMTransferPage';
 
 function App() {
   return (
@@ -63,6 +64,19 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <VehiclesPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+
+          Routes iÃ§inde
+          <Route
+            path="/production/bom-transfer"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <BOMTransferPage />
                 </Layout>
               </ProtectedRoute>
             }
