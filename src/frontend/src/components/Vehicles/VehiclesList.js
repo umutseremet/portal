@@ -182,7 +182,7 @@ const VehiclesList = ({
             onClick={() => setShowImportModal(true)}
           >
             <i className="bi bi-file-earmark-arrow-up me-1"></i>
-            Excel'den Yükle
+            Excel'den Yakıt Alımları Yükle
           </button>
 
           <button
