@@ -22,14 +22,68 @@ namespace API.Data
 
         public DbSet<VehicleFuelPurchase> VehicleFuelPurchases { get; set; }
 
+        public DbSet<BomWork> BomWorks { get; set; }
+        public DbSet<BomExcel> BomExcels { get; set; }
+        public DbSet<BomItem> BomItems { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<BomWork>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.HasIndex(e => e.ProjectId);
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => e.IsActive);
+            });
+
+            // BOM Excel konfigürasyonu - EKLE
+            modelBuilder.Entity<BomExcel>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.UploadedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.IsProcessed).HasDefaultValue(false);
+                entity.Property(e => e.RowCount).HasDefaultValue(0);
+                entity.HasIndex(e => e.WorkId);
+                entity.HasIndex(e => e.UploadedAt);
+
+                entity.HasOne(e => e.BomWork)
+                    .WithMany(w => w.BomExcels)
+                    .HasForeignKey(e => e.WorkId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // BOM Item konfigürasyonu - REVÝZE EDÝLDÝ (ItemId ile Items tablosuna referans)
+            modelBuilder.Entity<BomItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.HasIndex(e => e.ExcelId);
+                entity.HasIndex(e => e.ItemId);
+                entity.HasIndex(e => e.RowNumber);
+
+                // Composite index for Excel + Item
+                entity.HasIndex(e => new { e.ExcelId, e.ItemId });
+
+                // BomExcel ile iliþki (Cascade Delete)
+                entity.HasOne(e => e.BomExcel)
+                    .WithMany(ex => ex.BomItems)
+                    .HasForeignKey(e => e.ExcelId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Items tablosu ile iliþki (Restrict Delete - Item silindiðinde BomItem'ý silme)
+                entity.HasOne(e => e.Item)
+                    .WithMany()
+                    .HasForeignKey(e => e.ItemId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
             // EXISTING - Visitor entity configuration
             modelBuilder.Entity<Visitor>(entity =>
             {
-                entity.ToTable("visitors");
+                entity.ToTable("Visitors");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
                 entity.Property(e => e.Date).HasColumnType("date");
@@ -109,7 +163,7 @@ namespace API.Data
             // NEW - ItemGroup entity configuration
             modelBuilder.Entity<ItemGroup>(entity =>
             {
-                entity.ToTable("item_groups");
+                entity.ToTable("ItemGroups");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
@@ -129,7 +183,7 @@ namespace API.Data
             // NEW - Item entity configuration
             modelBuilder.Entity<Item>(entity =>
             {
-                entity.ToTable("items");
+                entity.ToTable("Items");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
@@ -152,7 +206,7 @@ namespace API.Data
                       .WithMany(g => g.Items)
                       .HasForeignKey(e => e.GroupId)
                       .OnDelete(DeleteBehavior.Cascade)
-                      .HasConstraintName("FK_items_item_groups");
+                      .HasConstraintName("FK_Items_ItemGroups");
 
                 // Indexes for performance
                 entity.HasIndex(e => e.GroupId).HasDatabaseName("IX_Items_GroupId");

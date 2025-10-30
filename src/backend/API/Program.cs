@@ -1,6 +1,7 @@
 using API.Data;
 using API.Services; // NEW - Import for VehicleLogService
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -65,6 +66,15 @@ builder.Services.AddHttpClient<RedmineService>();
 
 // NEW - Add VehicleLogService for Vehicle Management functionality
 builder.Services.AddScoped<IVehicleLogService, VehicleLogService>();
+
+builder.Services.AddScoped<BomExcelParserService>();
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10MB
+    options.ValueLengthLimit = int.MaxValue;
+    options.MultipartHeadersLengthLimit = int.MaxValue;
+});
 
 // Add Entity Framework Core - EXISTING (enhanced)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -244,6 +254,10 @@ app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Static files için BOM uploads klasörünü servis et (EKLE)
+var bomUploadsPath = Path.Combine(builder.Environment.ContentRootPath, "Uploads", "BOM");
+Directory.CreateDirectory(bomUploadsPath);
 
 // Request logging middleware - EXISTING
 app.Use(async (context, next) =>

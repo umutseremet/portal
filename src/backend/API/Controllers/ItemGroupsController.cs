@@ -9,6 +9,9 @@ namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+#if !DEBUG
+    [Authorize]
+#endif
     public class ItemGroupsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

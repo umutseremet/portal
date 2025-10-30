@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace API.Data.Entities
 {
-    [Table("visitors")]
+    [Table("Visitors")]
     public class Visitor
     {
         [Key]
