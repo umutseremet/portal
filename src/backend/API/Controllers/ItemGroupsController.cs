@@ -142,7 +142,7 @@ namespace API.Controllers
                 {
                     Name = request.Name.Trim(),
                     Cancelled = false,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 };
 
                 _context.ItemGroups.Add(itemGroup);
@@ -201,7 +201,7 @@ namespace API.Controllers
 
                 itemGroup.Name = request.Name.Trim();
                 itemGroup.Cancelled = request.Cancelled;
-                itemGroup.UpdatedAt = DateTime.UtcNow;
+                itemGroup.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
 
@@ -243,7 +243,7 @@ namespace API.Controllers
 
                 // Soft delete - sadece cancelled flag'ini true yap
                 itemGroup.Cancelled = true;
-                itemGroup.UpdatedAt = DateTime.UtcNow;
+                itemGroup.UpdatedAt = DateTime.Now;
 
                 // Bu gruba ait ürünleri de cancelled yap
                 if (itemGroup.Items != null)
@@ -251,7 +251,7 @@ namespace API.Controllers
                     foreach (var item in itemGroup.Items)
                     {
                         item.Cancelled = true;
-                        item.UpdatedAt = DateTime.UtcNow;
+                        item.UpdatedAt = DateTime.Now;
                     }
                 }
 

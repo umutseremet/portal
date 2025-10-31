@@ -265,14 +265,14 @@ app.Use(async (context, next) =>
     var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
 
     // Request start
-    var startTime = DateTime.UtcNow;
+    var startTime = DateTime.Now;
     logger.LogInformation("HTTP {Method} {Path} started at {StartTime}",
         context.Request.Method, context.Request.Path, startTime);
 
     await next();
 
     // Request end
-    var duration = DateTime.UtcNow - startTime;
+    var duration = DateTime.Now - startTime;
     logger.LogInformation("HTTP {Method} {Path} completed in {Duration}ms with status {StatusCode}",
         context.Request.Method, context.Request.Path, duration.TotalMilliseconds, context.Response.StatusCode);
 });
@@ -285,14 +285,14 @@ app.MapGet("/", () => new {
     Message = "Vervo Portal API is running",
     Version = "1.0.0",
     Environment = app.Environment.EnvironmentName,
-    Timestamp = DateTime.UtcNow,
+    Timestamp = DateTime.Now,
     SwaggerUrl = app.Environment.IsDevelopment() ? "/swagger" : null,
     Features = new[] { "Visitor Management", "Vehicle Management", "Redmine Integration", "JWT Authentication" }
 });
 
 app.MapGet("/health", () => new {
     Status = "Healthy",
-    Timestamp = DateTime.UtcNow
+    Timestamp = DateTime.Now
 });
 
 // Configuration test endpoint - EXISTING
@@ -313,7 +313,7 @@ app.MapGet("/api/test/vehicles", async (ApplicationDbContext context) =>
         return Results.Ok(new { 
             Message = "Vehicle Management API is working", 
             VehicleCount = count,
-            Timestamp = DateTime.UtcNow 
+            Timestamp = DateTime.Now 
         });
     }
     catch (Exception ex)

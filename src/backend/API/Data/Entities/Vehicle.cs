@@ -73,7 +73,7 @@ namespace API.Data.Entities
         public string? VehicleImageUrl { get; set; }
         
         // Audit fields
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
         
         // Navigation properties

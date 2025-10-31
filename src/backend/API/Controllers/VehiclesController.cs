@@ -186,7 +186,7 @@ namespace API.Controllers
                     AssignedUserPhone = vehicleDto.AssignedUserPhone.Trim(),
                     Location = vehicleDto.Location.Trim(),
                     VehicleImageUrl = vehicleDto.VehicleImageUrl?.Trim(),
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 };
 
                 _context.Vehicles.Add(vehicle);
@@ -278,7 +278,7 @@ namespace API.Controllers
                 existingVehicle.AssignedUserPhone = vehicle.AssignedUserPhone?.Trim() ?? existingVehicle.AssignedUserPhone;
                 existingVehicle.Location = vehicle.Location?.Trim() ?? existingVehicle.Location;
                 existingVehicle.VehicleImageUrl = vehicle.VehicleImageUrl?.Trim();
-                existingVehicle.UpdatedAt = DateTime.UtcNow;
+                existingVehicle.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
 
@@ -362,7 +362,7 @@ namespace API.Controllers
                 // Update only user information
                 vehicle.AssignedUserName = userDto.AssignedUserName.Trim();
                 vehicle.AssignedUserPhone = userDto.AssignedUserPhone.Trim();
-                vehicle.UpdatedAt = DateTime.UtcNow;
+                vehicle.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
 
@@ -454,7 +454,7 @@ namespace API.Controllers
                 vehicle.OwnershipType = vehicleDto.OwnershipType.Trim();
                 vehicle.Location = vehicleDto.Location.Trim();
                 vehicle.VehicleImageUrl = vehicleDto.VehicleImageUrl?.Trim();
-                vehicle.UpdatedAt = DateTime.UtcNow;
+                vehicle.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
 

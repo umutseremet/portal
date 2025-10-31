@@ -80,7 +80,7 @@ namespace API.Services
                             Miktar = rowData.Miktar,
                             RowNumber = row - headerRow, // Excel'deki gerçek satır numarası
                             Notes = rowData.Notes,
-                            CreatedAt = DateTime.UtcNow
+                            CreatedAt = DateTime.Now
                         };
 
                         _context.BomItems.Add(bomItem);
@@ -259,7 +259,7 @@ namespace API.Services
                 itemGroup = new ItemGroup
                 {
                     Name = groupName,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 };
                 _context.ItemGroups.Add(itemGroup);
                 await _context.SaveChangesAsync();
@@ -276,7 +276,7 @@ namespace API.Services
                 X = rowData.X,
                 Y = rowData.Y,
                 Z = rowData.Z,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 Cancelled = false,
                 SupplierCode = rowData.EskiKod ?? "",
                 Price = 0,

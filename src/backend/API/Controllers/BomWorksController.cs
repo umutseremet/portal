@@ -174,7 +174,7 @@ namespace API.Controllers
                     WorkName = request.WorkName,
                     Description = request.Description,
                     CreatedBy = username,
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.Now,
                     IsActive = true
                 };
 
@@ -230,7 +230,7 @@ namespace API.Controllers
 
                 work.WorkName = request.WorkName;
                 work.Description = request.Description;
-                work.UpdatedAt = DateTime.UtcNow;
+                work.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
 
@@ -280,7 +280,7 @@ namespace API.Controllers
 
                 // Soft delete
                 work.IsActive = false;
-                work.UpdatedAt = DateTime.UtcNow;
+                work.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
 

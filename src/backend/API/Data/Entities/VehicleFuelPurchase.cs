@@ -128,7 +128,7 @@ namespace API.Data.Entities
         public string SalesRepresentative { get; set; } = string.Empty; // Satış Temsilcisi
 
         // Audit Fields
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 
         // Navigation Property

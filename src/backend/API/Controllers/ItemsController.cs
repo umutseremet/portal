@@ -205,7 +205,7 @@ namespace API.Controllers
                     Z = request.Z,
                     ImageUrl = request.ImageUrl?.Trim(),
                     Cancelled = false,
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.Now,
                     SupplierCode = request.SupplierCode,
                     Supplier = request.Supplier,
                     Unit = request.Unit,
@@ -304,7 +304,7 @@ namespace API.Controllers
                 item.Price = request.Price;
                 item.ImageUrl = request.ImageUrl?.Trim();
                 item.Cancelled = request.Cancelled;
-                item.UpdatedAt = DateTime.UtcNow;
+                item.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
 
@@ -359,7 +359,7 @@ namespace API.Controllers
 
                 // Soft delete - sadece cancelled flag'ini true yap
                 item.Cancelled = true;
-                item.UpdatedAt = DateTime.UtcNow;
+                item.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
 

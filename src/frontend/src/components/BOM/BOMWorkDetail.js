@@ -7,11 +7,12 @@ import BOMExcelUpload from './BOMExcelUpload';
 import BOMExcelDetails from './BOMExcelDetails';
 import apiService from '../../services/api';
 
-const BOMWorkDetail = ({ currentWork, onBackToList }) => {
+const BOMWorkDetail = ({ currentWork, onBackToList, onWorkUpdate }) => {
   const [uploadedExcels, setUploadedExcels] = useState([]);
   const [selectedExcel, setSelectedExcel] = useState(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [workInfo, setWorkInfo] = useState(currentWork);
 
   // Excel dosyalarını yükle
   const fetchExcels = async () => {
@@ -22,6 +23,8 @@ const BOMWorkDetail = ({ currentWork, onBackToList }) => {
       const excels = await apiService.getBOMExcels(currentWork.id);
       setUploadedExcels(Array.isArray(excels) ? excels : []);
       console.log('✅ Excels loaded:', excels.length);
+      
+      await refreshWorkInfo();
     } catch (err) {
       console.error('❌ Error loading excels:', err);
       alert('Excel dosyaları yüklenirken hata oluştu: ' + err.message);
@@ -30,9 +33,28 @@ const BOMWorkDetail = ({ currentWork, onBackToList }) => {
     }
   };
 
+  // Work bilgisini yeniden yükle (totalRows güncellemesi için)
+  const refreshWorkInfo = async () => {
+    if (!currentWork?.id) return;
+
+    try {
+      const updatedWork = await apiService.getBOMWork(currentWork.id);
+      setWorkInfo(updatedWork);
+      
+      if (onWorkUpdate) {
+        onWorkUpdate(updatedWork);
+      }
+      
+      console.log('✅ Work info refreshed:', updatedWork);
+    } catch (err) {
+      console.error('❌ Error refreshing work info:', err);
+    }
+  };
+
   // İlk yüklemede excel dosyalarını getir
   useEffect(() => {
     if (currentWork?.id) {
+      setWorkInfo(currentWork);
       fetchExcels();
     }
   }, [currentWork?.id]);
@@ -45,22 +67,29 @@ const BOMWorkDetail = ({ currentWork, onBackToList }) => {
 
     setUploading(true);
 
-    // Her dosyayı sırayla yükle
+    let successCount = 0;
+    let errorCount = 0;
+
     for (const file of Array.from(files)) {
       try {
         console.log('📤 Uploading file:', file.name);
         const result = await apiService.uploadBOMExcel(currentWork.id, file);
         console.log('✅ File uploaded:', result);
+        successCount++;
       } catch (err) {
         console.error('❌ Error uploading file:', err);
         alert(`${file.name} yüklenirken hata oluştu: ${err.message}`);
+        errorCount++;
       }
     }
 
     setUploading(false);
     
-    // Listeyi yenile
-    fetchExcels();
+    if (successCount > 0) {
+      alert(`${successCount} dosya başarıyla yüklendi.${errorCount > 0 ? ` ${errorCount} dosya yüklenemedi.` : ''}`);
+    }
+    
+    await fetchExcels();
   };
 
   const handleDeleteExcel = async (excelId) => {
@@ -72,19 +101,68 @@ const BOMWorkDetail = ({ currentWork, onBackToList }) => {
       setLoading(true);
       await apiService.deleteBOMExcel(excelId);
       
-      // Listeyi güncelle
       setUploadedExcels(uploadedExcels.filter(excel => excel.id !== excelId));
       
-      // Seçili excel silinirse seçimi kaldır
       if (selectedExcel?.id === excelId) {
         setSelectedExcel(null);
       }
 
       console.log('✅ Excel deleted:', excelId);
       alert('Excel dosyası başarıyla silindi.');
+      
+      await refreshWorkInfo();
     } catch (err) {
       console.error('❌ Error deleting excel:', err);
       alert('Excel dosyası silinirken hata oluştu: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ YENİ: Toplu Excel Silme
+  const handleDeleteMultiple = async (excelIds) => {
+    if (!excelIds || excelIds.length === 0) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Her excel'i sırayla sil
+      for (const excelId of excelIds) {
+        try {
+          await apiService.deleteBOMExcel(excelId);
+          successCount++;
+          console.log(`✅ Excel ${excelId} deleted`);
+        } catch (err) {
+          errorCount++;
+          console.error(`❌ Error deleting excel ${excelId}:`, err);
+        }
+      }
+
+      // Listeyi güncelle
+      setUploadedExcels(prev => prev.filter(excel => !excelIds.includes(excel.id)));
+      
+      // Seçili excel silinmişse seçimi kaldır
+      if (selectedExcel && excelIds.includes(selectedExcel.id)) {
+        setSelectedExcel(null);
+      }
+
+      // Bildirim göster
+      if (successCount > 0) {
+        alert(`${successCount} Excel dosyası silindi.${errorCount > 0 ? ` ${errorCount} dosya silinemedi.` : ''}`);
+      } else {
+        alert('Hiçbir dosya silinemedi.');
+      }
+
+      // Work bilgisini yenile
+      await refreshWorkInfo();
+    } catch (err) {
+      console.error('❌ Error in bulk delete:', err);
+      alert('Excel dosyaları silinirken hata oluştu: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -134,7 +212,7 @@ const BOMWorkDetail = ({ currentWork, onBackToList }) => {
                 <h2 className="page-title mb-0">BOM Listesi Aktarımı</h2>
               </div>
               <p className="page-subtitle text-muted">
-                {currentWork ? `${currentWork.projectName} - ${currentWork.workName}` : 'Proje bazlı BOM çalışmaları'}
+                {workInfo ? `${workInfo.projectName} - ${workInfo.workName}` : 'Proje bazlı BOM çalışmaları'}
               </p>
             </div>
           </div>
@@ -143,18 +221,16 @@ const BOMWorkDetail = ({ currentWork, onBackToList }) => {
 
       {/* Work Info Card */}
       <BOMWorkInfo 
-        currentWork={currentWork} 
+        currentWork={workInfo} 
         excelCount={uploadedExcels.length} 
       />
 
       {/* Excel Upload Section */}
       <BOMExcelUpload
-        uploadedExcels={uploadedExcels.map(excel => ({
-    ...excel,
-    size: formatFileSize(excel.fileSize)
-  }))}
+        uploadedExcels={uploadedExcels}
         onFileUpload={handleFileUpload}
         onDeleteExcel={handleDeleteExcel}
+        onDeleteMultiple={handleDeleteMultiple} // ✅ YENİ: Toplu silme prop'u
         onViewDetails={handleViewDetails}
         selectedExcel={selectedExcel}
         uploading={uploading}

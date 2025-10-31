@@ -182,7 +182,7 @@ namespace API.Controllers
                                     ReflectionDate = reflectionDate,
                                     SalesRepresentativeId = long.TryParse(worksheet.Cells[row, 31].Text, out long salesRepId) ? salesRepId : 0,
                                     SalesRepresentative = worksheet.Cells[row, 32].Text.Trim(),
-                                    CreatedAt = DateTime.UtcNow
+                                    CreatedAt = DateTime.Now
                                 };
 
                                 _context.VehicleFuelPurchases.Add(purchase);

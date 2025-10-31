@@ -27,7 +27,7 @@ namespace API.Data.Entities
 
         public int RowCount { get; set; }
 
-        public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UploadedAt { get; set; } = DateTime.Now;
 
         [StringLength(100)]
         public string UploadedBy { get; set; } = string.Empty;

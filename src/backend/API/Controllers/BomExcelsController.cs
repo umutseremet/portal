@@ -188,7 +188,7 @@ namespace API.Controllers
                     FilePath = filePath,
                     FileSize = file.Length,
                     RowCount = 0,
-                    UploadedAt = DateTime.UtcNow,
+                    UploadedAt = DateTime.Now,
                     UploadedBy = username,
                     IsProcessed = false
                 };

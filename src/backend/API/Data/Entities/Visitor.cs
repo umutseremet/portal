@@ -26,7 +26,7 @@ namespace API.Data.Entities
         public string? Description { get; set; }
 
         // Audit fields (opsiyonel - gelecekte kullanılabilir)
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
     }
 }

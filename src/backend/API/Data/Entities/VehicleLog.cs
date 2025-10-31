@@ -32,7 +32,7 @@ namespace API.Data.Entities
         [MaxLength(50)]
         public string IpAddress { get; set; } = string.Empty;
         
-        public DateTime OperationDate { get; set; } = DateTime.UtcNow;
+        public DateTime OperationDate { get; set; } = DateTime.Now;
         
         // Navigation property
         [ForeignKey("VehicleId")]

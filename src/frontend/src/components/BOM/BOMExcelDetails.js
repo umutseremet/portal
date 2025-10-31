@@ -11,6 +11,7 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filteredItems, setFilteredItems] = useState([]);
   const pageSize = 50;
 
   // Excel içeriğini yükle
@@ -25,12 +26,13 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
       });
 
       setItems(response.items || []);
+      setFilteredItems(response.items || []); // ✅ Filtered items'ı da başlat
       setTotalCount(response.totalCount || 0);
       setTotalPages(response.totalPages || 0);
       setCurrentPage(page);
 
       console.log('✅ Excel items loaded:', response.items?.length);
-      console.log('📊 First item sample:', response.items?.[0]); // Debug için
+      console.log('📊 First item sample:', response.items?.[0]);
     } catch (err) {
       console.error('❌ Error loading excel items:', err);
       alert('Excel içeriği yüklenirken hata oluştu: ' + err.message);
@@ -43,19 +45,41 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
   useEffect(() => {
     if (selectedExcel?.id) {
       setCurrentPage(1);
+      setSearchTerm(''); // ✅ Arama terimini sıfırla
       fetchItems(1);
     }
   }, [selectedExcel?.id]);
 
+  // ✅ Arama işlevi - frontend'de filtreleme
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredItems(items);
+      return;
+    }
+
+    const searchLower = searchTerm.toLowerCase().trim();
+    const filtered = items.filter(item => {
+      // Parça no, doküman no, malzeme grubu, öğe no'da arama yap
+      return (
+        item.itemCode?.toLowerCase().includes(searchLower) ||
+        item.itemDocNumber?.toLowerCase().includes(searchLower) ||
+        item.itemGroupName?.toLowerCase().includes(searchLower) ||
+        item.ogeNo?.toLowerCase().includes(searchLower)
+      );
+    });
+
+    setFilteredItems(filtered);
+  }, [searchTerm, items]);
+
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       fetchItems(newPage);
+      setSearchTerm(''); // ✅ Sayfa değiştiğinde aramayı sıfırla
     }
   };
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
-    // TODO: Backend'de arama implementasyonu olduğunda kullanılabilir
   };
 
   // Pagination için sayfa numaralarını oluştur
@@ -113,6 +137,7 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
               <div className="text-muted small">
                 <i className="bi bi-file-earmark-spreadsheet me-1"></i>
                 {selectedExcel.fileName} - {totalCount} kayıt
+                {searchTerm && ` (${filteredItems.length} sonuç)`}
               </div>
             )}
           </div>
@@ -126,11 +151,27 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Parça no, malzeme ara..."
+                placeholder="Parça no, malzeme grubu, doküman no, öğe no ara..."
                 value={searchTerm}
                 onChange={handleSearch}
               />
+              {searchTerm && (
+                <button
+                  className="btn btn-outline-secondary"
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  title="Aramayı temizle"
+                >
+                  <i className="bi bi-x-lg"></i>
+                </button>
+              )}
             </div>
+            {searchTerm && (
+              <div className="mt-2 text-muted small">
+                <i className="bi bi-info-circle me-1"></i>
+                {filteredItems.length} sonuç bulundu
+              </div>
+            )}
           </div>
 
           {/* Table */}
@@ -142,35 +183,34 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                 </div>
                 <p className="text-muted mt-2">Excel içeriği yükleniyor...</p>
               </div>
-            ) : items.length > 0 ? (
+            ) : filteredItems.length > 0 ? (
               <div className="table-responsive">
                 <table className="table table-hover table-sm mb-0 align-middle">
                   <thead className="table-light sticky-top">
                     <tr>
-                      <th style={{ width: '60px' }}>Öğe No</th>
-                      {/* ✅ DEĞİŞİKLİK: Parça No kolonu genişletildi */}
+                      {/* ✅ DEĞİŞİKLİK: Öğe No kolonuna padding-left eklendi */}
+                      <th style={{ width: '80px', paddingLeft: '1rem' }}>Öğe No</th>
                       <th style={{ width: '180px' }}>Parça No</th>
                       <th style={{ width: '120px' }}>Doküman No</th>
-                      {/* ✅ DEĞİŞİKLİK: Malzeme → Malzeme Grubu */}
                       <th style={{ width: '150px' }}>Malzeme Grubu</th>
                       <th className="text-center" style={{ width: '80px' }}>Miktar</th>
                       <th className="text-center" style={{ width: '70px' }}>X Yönü</th>
                       <th className="text-center" style={{ width: '70px' }}>Y Yönü</th>
                       <th className="text-center" style={{ width: '70px' }}>Z Yönü</th>
-                      {/* ✅ DEĞİŞİKLİK: Grup kolonu kaldırıldı */}
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((item) => (
+                    {filteredItems.map((item) => (
                       <tr key={item.id}>
-                        <td className="fw-medium">{item.ogeNo || item.rowNumber || '-'}</td>
+                        {/* ✅ DEĞİŞİKLİK: Öğe No kolonuna padding-left eklendi */}
+                        <td className="fw-medium" style={{ paddingLeft: '1rem' }}>
+                          {item.ogeNo || item.rowNumber || '-'}
+                        </td>
 
-                        {/* ✅ Parça No - daha geniş */}
                         <td className="fw-medium text-primary">{item.itemCode || '-'}</td>
 
                         <td className="small">{item.itemDocNumber || '-'}</td>
 
-                        {/* ✅ Malzeme Grubu (itemGroupName) */}
                         <td className="small text-muted">{item.itemGroupName || '-'}</td>
 
                         <td className="text-center">{item.miktar || '-'}</td>
@@ -178,8 +218,6 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                         <td className="text-center text-muted small">{item.itemX || '-'}</td>
                         <td className="text-center text-muted small">{item.itemY || '-'}</td>
                         <td className="text-center text-muted small">{item.itemZ || '-'}</td>
-
-                        {/* ✅ Grup kolonu kaldırıldı */}
                       </tr>
                     ))}
                   </tbody>
@@ -188,13 +226,25 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
             ) : (
               <div className="text-center py-5">
                 <i className="bi bi-inbox fs-1 text-muted mb-3"></i>
-                <p className="text-muted">Bu Excel dosyasında kayıt bulunmuyor.</p>
+                {searchTerm ? (
+                  <>
+                    <p className="text-muted">Arama sonucu bulunamadı.</p>
+                    <button
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => setSearchTerm('')}
+                    >
+                      Aramayı Temizle
+                    </button>
+                  </>
+                ) : (
+                  <p className="text-muted">Bu Excel dosyasında kayıt bulunmuyor.</p>
+                )}
               </div>
             )}
           </div>
 
           {/* Pagination Footer */}
-          {!loading && items.length > 0 && totalPages > 1 && (
+          {!loading && items.length > 0 && totalPages > 1 && !searchTerm && (
             <div className="card-footer d-flex justify-content-between align-items-center">
               <div className="text-muted small">
                 {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalCount)} arası gösteriliyor (toplam {totalCount} kayıt)

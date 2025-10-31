@@ -53,7 +53,7 @@ public class AuthController : ControllerBase
 
             // JWT token oluştur
             var token = GenerateJwtToken(user);
-            var expiresAt = DateTime.UtcNow.AddMinutes(_configuration.GetValue<int>("JwtSettings:ExpiryMinutes", 60));
+            var expiresAt = DateTime.Now.AddMinutes(_configuration.GetValue<int>("JwtSettings:ExpiryMinutes", 60));
 
             _logger.LogInformation("User logged in successfully: {Username}", request.Username);
 
@@ -100,7 +100,7 @@ public class AuthController : ControllerBase
                 DatabaseConnectionString = !string.IsNullOrEmpty(_configuration.GetConnectionString("DefaultConnection")) ? "Configured" : "Not configured",
                 JwtConfiguration = !string.IsNullOrEmpty(_configuration["JwtSettings:Secret"]) ? "Configured" : "Not configured",
                 Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.Now
             });
         }
         catch (Exception ex)
@@ -128,7 +128,7 @@ public class AuthController : ControllerBase
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(_configuration.GetValue<int>("JwtSettings:ExpiryMinutes", 60)),
+            Expires = DateTime.Now.AddMinutes(_configuration.GetValue<int>("JwtSettings:ExpiryMinutes", 60)),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
 

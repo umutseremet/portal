@@ -298,10 +298,10 @@ namespace API.Data
                 switch (entry.State)
                 {
                     case EntityState.Added:
-                        entry.Entity.CreatedAt = DateTime.UtcNow;
+                        entry.Entity.CreatedAt = DateTime.Now;
                         break;
                     case EntityState.Modified:
-                        entry.Entity.UpdatedAt = DateTime.UtcNow;
+                        entry.Entity.UpdatedAt = DateTime.Now;
                         break;
                 }
             }
@@ -312,10 +312,10 @@ namespace API.Data
                 switch (entry.State)
                 {
                     case EntityState.Added:
-                        entry.Entity.CreatedAt = DateTime.UtcNow;
+                        entry.Entity.CreatedAt = DateTime.Now;
                         break;
                     case EntityState.Modified:
-                        entry.Entity.UpdatedAt = DateTime.UtcNow;
+                        entry.Entity.UpdatedAt = DateTime.Now;
                         // Don't modify CreatedAt
                         entry.Property(x => x.CreatedAt).IsModified = false;
                         break;

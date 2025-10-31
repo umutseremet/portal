@@ -376,7 +376,7 @@ namespace API.Controllers
                     ReflectionDate = dto.ReflectionDate,
                     SalesRepresentativeId = dto.SalesRepresentativeId,
                     SalesRepresentative = dto.SalesRepresentative.Trim(),
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.Now,
                     DeviceDescription = dto.DeviceDescription
                 };
 
@@ -464,7 +464,7 @@ namespace API.Controllers
                 if (!string.IsNullOrEmpty(dto.InvoiceNumber)) purchase.InvoiceNumber = dto.InvoiceNumber.Trim();
                 if (!string.IsNullOrEmpty(dto.SalesRepresentative)) purchase.SalesRepresentative = dto.SalesRepresentative.Trim();
 
-                purchase.UpdatedAt = DateTime.UtcNow;
+                purchase.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
 

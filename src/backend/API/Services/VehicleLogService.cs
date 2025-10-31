@@ -40,7 +40,7 @@ namespace API.Services
                     NewValues = newValues != null ? JsonSerializer.Serialize(newValues, new JsonSerializerOptions { WriteIndented = true }) : null,
                     UserName = userName,
                     IpAddress = ipAddress,
-                    OperationDate = DateTime.UtcNow
+                    OperationDate = DateTime.Now
                 };
 
                 _context.VehicleLogs.Add(log);

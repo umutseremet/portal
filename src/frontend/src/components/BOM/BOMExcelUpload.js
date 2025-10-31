@@ -1,10 +1,20 @@
 // src/frontend/src/components/BOM/BOMExcelUpload.js
 
 import React, { useState } from 'react';
-import { Upload, FileText, Eye, Trash2 } from 'lucide-react';
+import { Upload, FileText, Eye, Trash2, CheckSquare, Square } from 'lucide-react';
 
-const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDetails, selectedExcel, uploading, loading }) => {
+const BOMExcelUpload = ({ 
+  uploadedExcels, 
+  onFileUpload, 
+  onDeleteExcel, 
+  onDeleteMultiple, // ✅ Yeni prop - toplu silme
+  onViewDetails, 
+  selectedExcel, 
+  uploading, 
+  loading 
+}) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedExcelIds, setSelectedExcelIds] = useState([]); // ✅ Seçili excel'lerin ID'leri
 
   const handleFileSelect = (e) => {
     const files = e.target.files;
@@ -57,25 +67,71 @@ const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDet
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     try {
+      // ✅ UTC'den local time'a çevir
       const date = new Date(dateString);
       return date.toLocaleString('tr-TR', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        timeZone: 'Europe/Istanbul' // ✅ Türkiye saat dilimi
       });
     } catch {
       return dateString;
     }
   };
 
-  // ✅ Dosya boyutunu MB cinsinden formatlama fonksiyonu
   const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '-';
     const mb = bytes / (1024 * 1024);
     return `${mb.toFixed(2)} MB`;
   };
+
+  // ✅ Tek bir excel'i seç/kaldır
+  const handleToggleSelect = (excelId) => {
+    setSelectedExcelIds(prev => {
+      if (prev.includes(excelId)) {
+        return prev.filter(id => id !== excelId);
+      } else {
+        return [...prev, excelId];
+      }
+    });
+  };
+
+  // ✅ Tümünü seç/kaldır
+  const handleToggleSelectAll = () => {
+    if (selectedExcelIds.length === uploadedExcels.length) {
+      setSelectedExcelIds([]);
+    } else {
+      setSelectedExcelIds(uploadedExcels.map(excel => excel.id));
+    }
+  };
+
+  // ✅ Seçili excel'leri toplu sil
+  const handleDeleteSelected = async () => {
+    if (selectedExcelIds.length === 0) {
+      alert('Lütfen silmek istediğiniz dosyaları seçin.');
+      return;
+    }
+
+    const message = `${selectedExcelIds.length} Excel dosyasını silmek istediğinizden emin misiniz?`;
+    if (!window.confirm(message)) {
+      return;
+    }
+
+    // Parent component'e toplu silme isteği gönder
+    if (onDeleteMultiple) {
+      await onDeleteMultiple(selectedExcelIds);
+      setSelectedExcelIds([]); // Seçimleri temizle
+    }
+  };
+
+  // ✅ Tüm checkbox'lar seçili mi?
+  const isAllSelected = uploadedExcels.length > 0 && selectedExcelIds.length === uploadedExcels.length;
+
+  // ✅ Bazı checkbox'lar seçili mi?
+  const isSomeSelected = selectedExcelIds.length > 0 && selectedExcelIds.length < uploadedExcels.length;
 
   return (
     <div className="row mb-4">
@@ -92,23 +148,39 @@ const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDet
               </h5>
             </div>
             
-            <button
-              onClick={() => document.getElementById('excel-file-input').click()}
-              className="btn btn-danger btn-sm"
-              disabled={uploading || loading}
-            >
-              {uploading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                  Yükleniyor...
-                </>
-              ) : (
-                <>
-                  <Upload size={16} className="me-1" />
-                  Excel Ekle
-                </>
+            <div className="d-flex gap-2">
+              {/* ✅ Toplu Silme Butonu */}
+              {selectedExcelIds.length > 0 && (
+                <button
+                  onClick={handleDeleteSelected}
+                  className="btn btn-danger btn-sm"
+                  disabled={uploading || loading}
+                >
+                  <Trash2 size={16} className="me-1" />
+                  Seçilenleri Sil ({selectedExcelIds.length})
+                </button>
               )}
-            </button>
+
+              {/* Excel Ekle Butonu */}
+              <button
+                onClick={() => document.getElementById('excel-file-input').click()}
+                className="btn btn-danger btn-sm"
+                disabled={uploading || loading}
+              >
+                {uploading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Yükleniyor...
+                  </>
+                ) : (
+                  <>
+                    <Upload size={16} className="me-1" />
+                    Excel Ekle
+                  </>
+                )}
+              </button>
+            </div>
+
             <input
               id="excel-file-input"
               type="file"
@@ -128,95 +200,133 @@ const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDet
                 </div>
                 <p className="text-muted mt-2">Excel dosyaları yükleniyor...</p>
               </div>
-            ) : uploadedExcels.length > 0 ? (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th style={{ width: '50px' }}>#</th>
-                      <th>Dosya Adı</th>
-                      <th style={{ width: '180px' }}>Yükleme Tarihi</th>
-                      <th className="text-center" style={{ width: '120px' }}>Satır Sayısı</th>
-                      <th className="text-center" style={{ width: '100px' }}>Boyut</th>
-                      <th className="text-center" style={{ width: '200px' }}>İşlemler</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {uploadedExcels.map((excel, index) => (
-                      <tr 
-                        key={excel.id}
-                        className={selectedExcel?.id === excel.id ? 'table-warning' : ''}
-                      >
-                        <td className="text-muted small">{index + 1}</td>
-                        <td className="fw-medium">
-                          <i className="bi bi-file-earmark-spreadsheet me-2 text-success"></i>
-                          {excel.fileName}
-                        </td>
-                        <td className="text-muted small">
-                          <i className="bi bi-calendar me-1"></i>
-                          {/* ✅ uploadDate yerine uploadedAt kullan */}
-                          {formatDate(excel.uploadedAt)}
-                        </td>
-                        <td className="text-center">
-                          <span className="badge bg-info">{excel.rowCount || 0}</span>
-                        </td>
-                        <td className="text-center text-muted small">
-                          {/* ✅ size yerine fileSize kullan ve formatla */}
-                          {formatFileSize(excel.fileSize)}
-                        </td>
-                        <td>
-                          <div className="d-flex gap-2 justify-content-center">
-                            <button
-                              onClick={() => onViewDetails(excel)}
-                              className="btn btn-sm btn-info text-white"
-                              title="Detayları Gör"
-                              disabled={uploading || loading}
-                            >
-                              <Eye size={14} className="me-1" />
-                              Detay
-                            </button>
-                            <button
-                              onClick={() => onDeleteExcel(excel.id)}
-                              className="btn btn-sm btn-danger"
-                              title="Dosyayı Sil"
-                              disabled={uploading || loading}
-                            >
-                              <Trash2 size={14} className="me-1" />
-                              Sil
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
             ) : (
-              <div 
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => !uploading && !loading && document.getElementById('excel-file-input').click()}
-                className={`text-center py-5 border-3 border-dashed rounded ${
-                  isDragging ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary'
-                }`}
-                style={{ cursor: uploading || loading ? 'not-allowed' : 'pointer', transition: 'all 0.3s ease' }}
-              >
-                <Upload 
-                  size={64} 
-                  className={`mb-3 ${isDragging ? 'text-primary' : 'text-secondary'}`}
-                />
-                <h5 className={isDragging ? 'text-primary' : 'text-dark'}>
-                  {isDragging ? 'Dosyaları buraya bırakın' : 'Excel dosyalarını sürükleyip bırakın'}
-                </h5>
-                <p className="text-muted mb-1">
-                  veya tıklayarak dosya seçin
-                </p>
-                <p className="text-muted small mb-0">
-                  <i className="bi bi-file-earmark-spreadsheet me-1"></i>
-                  Desteklenen formatlar: .xlsx, .xls | Birden fazla dosya seçebilirsiniz
-                </p>
-              </div>
+              <>
+                {/* ✅ Sürükle-bırak alanı her zaman görünür */}
+                <div 
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => !uploading && !loading && document.getElementById('excel-file-input').click()}
+                  className={`text-center py-4 border-3 border-dashed rounded mb-4 ${
+                    isDragging ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary'
+                  }`}
+                  style={{ cursor: uploading || loading ? 'not-allowed' : 'pointer', transition: 'all 0.3s ease' }}
+                >
+                  <Upload 
+                    size={48} 
+                    className={`mb-2 ${isDragging ? 'text-primary' : 'text-secondary'}`}
+                  />
+                  <h6 className={isDragging ? 'text-primary mb-1' : 'text-dark mb-1'}>
+                    {isDragging ? 'Dosyaları buraya bırakın' : 'Excel dosyalarını sürükleyip bırakın'}
+                  </h6>
+                  <p className="text-muted small mb-0">
+                    veya tıklayarak dosya seçin (.xlsx, .xls)
+                  </p>
+                </div>
+
+                {/* ✅ Yüklü excel'ler tablosu */}
+                {uploadedExcels.length > 0 && (
+                  <div className="table-responsive">
+                    <table className="table table-hover align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          {/* ✅ Tümünü Seç Checkbox */}
+                          <th style={{ width: '50px' }}>
+                            <div 
+                              className="form-check"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                checked={isAllSelected}
+                                onChange={handleToggleSelectAll}
+                                disabled={uploading || loading}
+                                style={{ cursor: 'pointer' }}
+                                ref={input => {
+                                  if (input) {
+                                    input.indeterminate = isSomeSelected;
+                                  }
+                                }}
+                              />
+                            </div>
+                          </th>
+                          <th style={{ width: '50px' }}>#</th>
+                          <th>Dosya Adı</th>
+                          <th style={{ width: '180px' }}>Yükleme Tarihi</th>
+                          <th className="text-center" style={{ width: '120px' }}>Satır Sayısı</th>
+                          <th className="text-center" style={{ width: '100px' }}>Boyut</th>
+                          <th className="text-center" style={{ width: '200px' }}>İşlemler</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {uploadedExcels.map((excel, index) => (
+                          <tr 
+                            key={excel.id}
+                            className={`
+                              ${selectedExcel?.id === excel.id ? 'table-warning' : ''}
+                              ${selectedExcelIds.includes(excel.id) ? 'table-active' : ''}
+                            `}
+                          >
+                            {/* ✅ Seçim Checkbox */}
+                            <td onClick={(e) => e.stopPropagation()}>
+                              <div className="form-check">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  checked={selectedExcelIds.includes(excel.id)}
+                                  onChange={() => handleToggleSelect(excel.id)}
+                                  disabled={uploading || loading}
+                                  style={{ cursor: 'pointer' }}
+                                />
+                              </div>
+                            </td>
+
+                            <td className="text-muted small">{index + 1}</td>
+                            <td className="fw-medium">
+                              <i className="bi bi-file-earmark-spreadsheet me-2 text-success"></i>
+                              {excel.fileName}
+                            </td>
+                            <td className="text-muted small">
+                              <i className="bi bi-calendar me-1"></i>
+                              {formatDate(excel.uploadedAt)}
+                            </td>
+                            <td className="text-center">
+                              <span className="badge bg-info">{excel.rowCount || 0}</span>
+                            </td>
+                            <td className="text-center text-muted small">
+                              {formatFileSize(excel.fileSize)}
+                            </td>
+                            <td>
+                              <div className="d-flex gap-2 justify-content-center">
+                                <button
+                                  onClick={() => onViewDetails(excel)}
+                                  className="btn btn-sm btn-info text-white"
+                                  title="Detayları Gör"
+                                  disabled={uploading || loading}
+                                >
+                                  <Eye size={14} className="me-1" />
+                                  Detay
+                                </button>
+                                <button
+                                  onClick={() => onDeleteExcel(excel.id)}
+                                  className="btn btn-sm btn-danger"
+                                  title="Dosyayı Sil"
+                                  disabled={uploading || loading}
+                                >
+                                  <Trash2 size={14} className="me-1" />
+                                  Sil
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
