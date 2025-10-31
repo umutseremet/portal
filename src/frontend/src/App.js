@@ -15,6 +15,9 @@ import WeeklyProductionCalendarPage from './pages/WeeklyProductionCalendarPage';
 import IssueDetailsPage from './pages/IssueDetailsPage';
 import './App.css';
 import BOMTransferPage from './pages/BOMTransferPage';
+import ItemsPage from './pages/ItemsPage';
+import ItemGroupsPage from './pages/ItemGroupsPage';
+
 
 function App() {
   return (
@@ -31,6 +34,29 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <DashboardPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Items Management Routes */}
+          <Route
+            path="/definitions/items"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ItemsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/definitions/item-groups"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ItemGroupsPage />
                 </Layout>
               </ProtectedRoute>
             }

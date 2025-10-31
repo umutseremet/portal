@@ -1455,6 +1455,117 @@ class ApiService {
 
   // ===== BOM METODLARI SONU =====
 
+
+  // ===== ITEM GROUPS ENDPOINTS =====
+
+  async getItemGroups(params = {}) {
+    const queryParams = new URLSearchParams();
+
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryParams.append(key, params[key]);
+      }
+    });
+
+    const endpoint = queryParams.toString()
+      ? `/ItemGroups?${queryParams.toString()}` : '/ItemGroups';
+
+    try {
+      const response = await this.get(endpoint);
+
+      const mappedResponse = {
+        itemGroups: response.itemGroups || response.ItemGroups || [],
+        totalCount: response.totalCount || response.TotalCount || 0,
+        page: response.page || response.Page || 1,
+        pageSize: response.pageSize || response.PageSize || 10,
+        totalPages: response.totalPages || response.TotalPages || 0,
+        hasNextPage: response.hasNextPage || response.HasNextPage || false,
+        hasPreviousPage: response.hasPreviousPage || response.HasPreviousPage || false
+      };
+
+      return mappedResponse;
+    } catch (error) {
+      console.error('API getItemGroups error:', error);
+      throw error;
+    }
+  }
+
+  async getItemGroup(id) {
+    if (!id) throw new Error('ItemGroup ID is required');
+    return this.get(`/ItemGroups/${id}`);
+  }
+
+  async createItemGroup(itemGroupData) {
+    if (!itemGroupData) throw new Error('ItemGroup data is required');
+    return this.post('/ItemGroups', itemGroupData);
+  }
+
+  async updateItemGroup(id, itemGroupData) {
+    if (!id) throw new Error('ItemGroup ID is required');
+    if (!itemGroupData) throw new Error('ItemGroup data is required');
+    return this.put(`/ItemGroups/${id}`, itemGroupData);
+  }
+
+  async deleteItemGroup(id) {
+    if (!id) throw new Error('ItemGroup ID is required');
+    return this.delete(`/ItemGroups/${id}`);
+  }
+
+  // ===== ITEMS ENDPOINTS =====
+
+  async getItems(params = {}) {
+    const queryParams = new URLSearchParams();
+
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryParams.append(key, params[key]);
+      }
+    });
+
+    const endpoint = queryParams.toString()
+      ? `/Items?${queryParams.toString()}` : '/Items';
+
+    try {
+      const response = await this.get(endpoint);
+
+      const mappedResponse = {
+        items: response.items || response.Items || [],
+        totalCount: response.totalCount || response.TotalCount || 0,
+        page: response.page || response.Page || 1,
+        pageSize: response.pageSize || response.PageSize || 10,
+        totalPages: response.totalPages || response.TotalPages || 0,
+        hasNextPage: response.hasNextPage || response.HasNextPage || false,
+        hasPreviousPage: response.hasPreviousPage || response.HasPreviousPage || false
+      };
+
+      return mappedResponse;
+    } catch (error) {
+      console.error('API getItems error:', error);
+      throw error;
+    }
+  }
+
+  async getItem(id) {
+    if (!id) throw new Error('Item ID is required');
+    return this.get(`/Items/${id}`);
+  }
+
+  async createItem(itemData) {
+    if (!itemData) throw new Error('Item data is required');
+    return this.post('/Items', itemData);
+  }
+
+  async updateItem(id, itemData) {
+    if (!id) throw new Error('Item ID is required');
+    if (!itemData) throw new Error('Item data is required');
+    return this.put(`/Items/${id}`, itemData);
+  }
+
+  async deleteItem(id) {
+    if (!id) throw new Error('Item ID is required');
+    return this.delete(`/Items/${id}`);
+  }
+
   // src/frontend/src/services/api.js
   // API METODLARINA EKLENECEK KISIM
 
