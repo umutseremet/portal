@@ -196,14 +196,35 @@ namespace API.Controllers
                 _context.BomExcels.Add(bomExcel);
                 await _context.SaveChangesAsync();
 
+
                 // Excel'i otomatik parse et
                 _logger.LogInformation("Starting automatic Excel parsing for {ExcelId}", bomExcel.Id);
-                var parseResult = await _parserService.ParseAndSaveExcelAsync(bomExcel.Id, filePath);
 
-                if (!parseResult.Success)
+                try
                 {
-                    _logger.LogWarning("Excel parsing failed: {Error}", parseResult.ErrorMessage);
-                    bomExcel.ProcessingNotes = $"Parse hatası: {parseResult.ErrorMessage}";
+                    var parseResult = await _parserService.ParseAndSaveExcelAsync(bomExcel.Id, filePath);
+
+                    if (!parseResult.Success)
+                    {
+                        _logger.LogWarning("Excel parsing failed: {Error}", parseResult.ErrorMessage);
+                        bomExcel.ProcessingNotes = $"Parse hatası: {parseResult.ErrorMessage}";
+                        bomExcel.IsProcessed = false;
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Excel parsed successfully. Items: {Count}", parseResult.ProcessedRows);
+                        bomExcel.RowCount = parseResult.ProcessedRows;
+                        bomExcel.IsProcessed = true;
+                        bomExcel.ProcessingNotes = $"{parseResult.ProcessedRows} satır işlendi";
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception parseEx)
+                {
+                    _logger.LogError(parseEx, "Parse exception for Excel {ExcelId}", bomExcel.Id);
+                    bomExcel.ProcessingNotes = $"Parse hatası: {parseEx.Message}";
+                    bomExcel.IsProcessed = false;
                     await _context.SaveChangesAsync();
                 }
 

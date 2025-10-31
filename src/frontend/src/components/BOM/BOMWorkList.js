@@ -9,16 +9,6 @@ const BOMWorkList = ({ existingWorks, onOpenWork, onDeleteWork, onCreateWork, on
   const [showNewWorkForm, setShowNewWorkForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Örnek proje listesi (gerçek uygulamada API'den gelmeli)
-  const projects = [
-    { id: 1, name: 'Proje Alpha - Web Geliştirme' },
-    { id: 2, name: 'Proje Beta - Mobil Uygulama' },
-    { id: 3, name: 'Proje Gamma - ERP Sistemi' },
-    { id: 4, name: 'Proje Delta - CRM Entegrasyonu' },
-    { id: 5, name: 'Proje Epsilon - IoT Sistemi' },
-    { id: 6, name: 'Proje Zeta - Cloud Migration' }
-  ];
-
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -65,7 +55,6 @@ const BOMWorkList = ({ existingWorks, onOpenWork, onDeleteWork, onCreateWork, on
         <div className="row mb-4">
           <div className="col-12">
             <BOMNewWorkForm
-              projects={projects}
               onClose={() => setShowNewWorkForm(false)}
               onCreate={handleCreateNewWork}
             />

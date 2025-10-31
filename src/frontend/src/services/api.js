@@ -1267,10 +1267,9 @@ class ApiService {
   }
 
   // ===== YARDIMCI METODLAR (Excel dosyası varsa) =====
-
   /**
    * Get Excel files for a BOM work
-   * NOT: Bu endpoint backend'de görünmüyor, eğer varsa kullanın
+   * Backend: POST /api/BomExcels/list
    */
   async getBOMExcels(workId) {
     if (!workId) {
@@ -1280,9 +1279,21 @@ class ApiService {
     console.log('📦 API getBOMExcels call:', { workId });
 
     try {
-      // Backend'de bu endpoint yoksa, getBOMWork ile birlikte gelebilir
-      const work = await this.getBOMWork(workId);
-      return work.excelFiles || work.ExcelFiles || [];
+      // Backend: POST /api/BomExcels/list
+      const requestBody = {
+        workId: workId,
+        page: 1,
+        pageSize: 100
+      };
+
+      const response = await this.post('/BomExcels/list', requestBody);
+      console.log('📦 API getBOMExcels raw response:', response);
+
+      // Response mapping
+      const excels = response.excels || response.Excels || response.data || response.Data || [];
+
+      console.log('✅ API getBOMExcels mapped:', excels);
+      return excels;
     } catch (error) {
       console.error('❌ API getBOMExcels error:', error);
       throw error;
@@ -1290,9 +1301,10 @@ class ApiService {
   }
 
   /**
-   * Upload Excel file to a BOM work
-   * NOT: Bu endpoint backend'de görünmüyor, eğer eklendiyse kullanın
-   */
+ * Upload Excel file to a BOM work
+ * Backend: POST /api/BomExcels/upload
+ * Form Data: workId + file
+ */
   async uploadBOMExcel(workId, file) {
     if (!workId) {
       throw new Error('BOM work ID is required');
@@ -1306,13 +1318,16 @@ class ApiService {
       throw new Error('Only Excel files (.xlsx, .xls) are allowed');
     }
 
+    console.log(`📦 uploadBOMExcel: workId=${workId}, file=${file.name}`);
+
     const formData = new FormData();
+    formData.append('workId', workId);  // ← EKLENEN!
     formData.append('file', file);
 
-    // Backend'de Excel upload endpoint'i varsa bu URL'i kullanın
-    const url = `${this.baseURL}/BomWorks/${workId}/excel`;
+    // ✅ DOĞRU URL
+    const url = `${this.baseURL}/BomExcels/upload`;
 
-    console.log(`📦 API uploadBOMExcel: POST ${url}`);
+    console.log(`📦 POST ${url}`);
 
     try {
       const response = await fetch(url, {
@@ -1323,49 +1338,69 @@ class ApiService {
         body: formData
       });
 
-      console.log(`📡 API Response: ${response.status} ${response.statusText}`);
+      console.log(`📡 Response: ${response.status}`);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`❌ API Error ${response.status}:`, errorText);
+        console.error(`❌ Error ${response.status}:`, errorText);
 
         if (response.status === 401) {
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
-          throw new Error('Oturum süresi doldu. Lütfen tekrar giriş yapın.');
+          throw new Error('Oturum süresi doldu');
         }
 
-        throw new Error(`API Error: ${response.status} - ${errorText}`);
+        throw new Error(`API Error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('✅ API uploadBOMExcel response:', data);
+      console.log('✅ Upload success:', data);
       return data;
     } catch (error) {
-      console.error('❌ API uploadBOMExcel error:', error);
+      console.error('❌ Upload failed:', error);
       throw error;
     }
   }
 
   /**
-   * Delete an Excel file
-   * NOT: Bu endpoint backend'de görünmüyor
-   * Bunun yerine deleteAllBOMItemsFromExcel kullanabilirsiniz
-   */
+ * Delete an Excel file
+ * Backend: DELETE /api/BomExcels/{id}
+ */
   async deleteBOMExcel(excelId) {
     if (!excelId) {
       throw new Error('Excel ID is required');
     }
 
-    console.log('📦 API deleteBOMExcel call - Using deleteAllBOMItemsFromExcel:', { excelId });
+    console.log('📦 API deleteBOMExcel call:', { excelId });
 
     try {
-      // Excel silme endpoint'i yoksa, item'ları sil
-      const response = await this.deleteAllBOMItemsFromExcel(excelId);
+      const response = await this.delete(`/BomExcels/${excelId}`);
       console.log('✅ API deleteBOMExcel response:', response);
       return response;
     } catch (error) {
       console.error('❌ API deleteBOMExcel error:', error);
+      throw error;
+    }
+  }
+
+
+  /**
+   * Reprocess an Excel file (parse again)
+   * Backend: POST /api/BomExcels/{id}/reprocess
+   */
+  async reprocessBOMExcel(excelId) {
+    if (!excelId) {
+      throw new Error('Excel ID is required');
+    }
+
+    console.log('📦 API reprocessBOMExcel call:', { excelId });
+
+    try {
+      const response = await this.post(`/BomExcels/${excelId}/reprocess`, {});
+      console.log('✅ API reprocessBOMExcel response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API reprocessBOMExcel error:', error);
       throw error;
     }
   }
@@ -1399,6 +1434,89 @@ class ApiService {
   }
 
   // ===== BOM METODLARI SONU =====
+
+  // src/frontend/src/services/api.js
+  // API METODLARINA EKLENECEK KISIM
+
+  /**
+   * Get projects from Redmine
+   * Backend: POST /api/Projects
+   * NOT: Artık Redmine şifresi göndermeye gerek yok, backend JWT token'dan alacak
+   */
+  async getProjects(params = {}) {
+    console.log('📦 API getProjects call:', params);
+
+    try {
+      const requestBody = {
+        status: params.status || 1, // 1 = active projects
+        name: params.name || null,
+        limit: params.limit || 100,
+        offset: params.offset || 0
+        // ŞİFRE ARTIK GÖNDERİLMİYOR - Backend JWT token'dan alacak
+      };
+
+      const response = await this.post('/Projects', requestBody);
+      console.log('📦 API getProjects raw response:', response);
+
+      // Response'u frontend formatına çevir
+      const projects = (response || []).map(project => ({
+        id: project.id,
+        name: project.name,
+        identifier: project.identifier,
+        description: project.description,
+        status: project.status,
+        isPublic: project.isPublic,
+        createdOn: project.createdOn,
+        updatedOn: project.updatedOn,
+        parent: project.parent
+      }));
+
+      console.log('✅ API getProjects mapped response:', projects);
+      return projects;
+    } catch (error) {
+      console.error('❌ API getProjects error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get user projects from Redmine
+   * Backend: POST /api/Projects/user/{userId}
+   * NOT: Artık Redmine şifresi göndermeye gerek yok, backend JWT token'dan alacak
+   */
+  async getUserProjects(userId, params = {}) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    console.log('📦 API getUserProjects call:', { userId, params });
+
+    try {
+      const requestBody = {};
+      // ŞİFRE ARTIK GÖNDERİLMİYOR - Backend JWT token'dan alacak
+
+      const response = await this.post(`/Projects/user/${userId}`, requestBody);
+      console.log('📦 API getUserProjects raw response:', response);
+
+      const projects = (response || []).map(project => ({
+        id: project.id,
+        name: project.name,
+        identifier: project.identifier,
+        description: project.description,
+        status: project.status,
+        isPublic: project.isPublic,
+        createdOn: project.createdOn,
+        updatedOn: project.updatedOn,
+        parent: project.parent
+      }));
+
+      console.log('✅ API getUserProjects mapped response:', projects);
+      return projects;
+    } catch (error) {
+      console.error('❌ API getUserProjects error:', error);
+      throw error;
+    }
+  }
 }
 
 // Create a single instance

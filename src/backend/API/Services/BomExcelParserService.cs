@@ -47,7 +47,7 @@ namespace API.Services
                 }
 
                 // Kolon başlıklarını bul (1. satır)
-                var headerRow = 1;
+                var headerRow = 2;
                 var columns = FindColumnIndexes(worksheet, headerRow);
 
                 // Veri satırlarını işle (2. satırdan başla)

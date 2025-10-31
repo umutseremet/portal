@@ -225,10 +225,7 @@ public class RedmineService
     public async Task<ProjectsResult?> GetProjectsAsync(
         string username,
         string password,
-        int? status = null,
-        string? name = null,
-        int limit = 25,
-        int offset = 0)
+        int? status = null )
     {
         try
         {
@@ -238,20 +235,10 @@ public class RedmineService
 
             // Query parametreleri
             var queryParams = new List<string>
-        {
-            $"limit={limit}",
-            $"offset={offset}"
+        { 
         };
 
-            if (status.HasValue)
-            {
-                queryParams.Add($"status={status.Value}");
-            }
-
-            if (!string.IsNullOrEmpty(name))
-            {
-                queryParams.Add($"name={Uri.EscapeDataString(name)}");
-            }
+          
 
             // Farklı configuration key'lerini deneyelim
             var redmineBaseUrl = _configuration["RedmineSettings:BaseUrl"]
@@ -371,7 +358,7 @@ public class RedmineService
         string password,
         int limit = 100)
     {
-        return await GetProjectsAsync(username, password, 1, null, limit, 0); // status 1 = Active
+        return await GetProjectsAsync(username, password, 1); // status 1 = Active
     }
 
     /// <summary>
