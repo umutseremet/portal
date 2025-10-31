@@ -224,7 +224,6 @@ namespace API.Services
         /// </summary>
         private async Task<Item> FindOrCreateItemAsync(ExcelRowData rowData)
         {
-            // Code alanını ParcaNo'dan oluştur
             var code = rowData.ParcaNo?.Trim() ?? "";
             if (string.IsNullOrEmpty(code))
             {
@@ -242,32 +241,38 @@ namespace API.Services
             }
 
             // Yoksa yeni ürün oluştur
-            // Number için Items tablosundaki en yüksek Number'ı bul
             var maxNumber = await _context.Items.MaxAsync(i => (int?)i.Number) ?? 0;
 
-            // Default ItemGroup (varsayılan grup ID'si 1 - gerekirse değiştirilebilir)
-            var defaultGroupId = 1;
-
-            // Eğer grup yoksa oluştur
-            var defaultGroup = await _context.ItemGroups.FindAsync(defaultGroupId);
-            if (defaultGroup == null)
+            // ✅ DEĞİŞİKLİK: Excel'deki Malzeme kolonunu ItemGroup olarak kullan
+            var groupName = rowData.Malzeme?.Trim();
+            if (string.IsNullOrEmpty(groupName))
             {
-                defaultGroup = new ItemGroup
+                groupName = "Tanımsız Grup";
+            }
+
+            // ✅ DEĞİŞİKLİK: İlgili grubu bul veya oluştur
+            var itemGroup = await _context.ItemGroups
+                .FirstOrDefaultAsync(g => g.Name == groupName);
+
+            if (itemGroup == null)
+            {
+                itemGroup = new ItemGroup
                 {
-                    Name = "BOM Ürünleri",
+                    Name = groupName,
                     CreatedAt = DateTime.UtcNow
                 };
-                _context.ItemGroups.Add(defaultGroup);
+                _context.ItemGroups.Add(itemGroup);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Yeni ürün grubu oluşturuldu: {GroupName}", groupName);
             }
 
             var newItem = new Item
             {
                 Number = maxNumber + 1,
                 Code = code,
-                Name = rowData.Malzeme ?? "Bilinmeyen Malzeme",
+                Name = groupName, // Malzeme adını ürün adı olarak kullan
                 DocNumber = rowData.DokumanNo ?? "",
-                GroupId = defaultGroup.Id,
+                GroupId = itemGroup.Id, // ✅ Artık dinamik grup ID kullanılıyor
                 X = rowData.X,
                 Y = rowData.Y,
                 Z = rowData.Z,
@@ -282,7 +287,8 @@ namespace API.Services
             _context.Items.Add(newItem);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Yeni ürün oluşturuldu: {Code} - {Name}", code, newItem.Name);
+            _logger.LogInformation("Yeni ürün oluşturuldu: {Code} - {Name} (Grup: {Group})",
+                code, newItem.Name, groupName);
 
             return newItem;
         }

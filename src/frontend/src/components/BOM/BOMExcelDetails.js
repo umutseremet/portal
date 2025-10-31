@@ -28,7 +28,7 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
       setTotalCount(response.totalCount || 0);
       setTotalPages(response.totalPages || 0);
       setCurrentPage(page);
-      
+
       console.log('✅ Excel items loaded:', response.items?.length);
       console.log('📊 First item sample:', response.items?.[0]); // Debug için
     } catch (err) {
@@ -148,41 +148,38 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                   <thead className="table-light sticky-top">
                     <tr>
                       <th style={{ width: '60px' }}>Öğe No</th>
-                      <th style={{ width: '100px' }}>Parça No</th>
+                      {/* ✅ DEĞİŞİKLİK: Parça No kolonu genişletildi */}
+                      <th style={{ width: '180px' }}>Parça No</th>
                       <th style={{ width: '120px' }}>Doküman No</th>
-                      <th>Malzeme</th>
+                      {/* ✅ DEĞİŞİKLİK: Malzeme → Malzeme Grubu */}
+                      <th style={{ width: '150px' }}>Malzeme Grubu</th>
                       <th className="text-center" style={{ width: '80px' }}>Miktar</th>
                       <th className="text-center" style={{ width: '70px' }}>X Yönü</th>
                       <th className="text-center" style={{ width: '70px' }}>Y Yönü</th>
                       <th className="text-center" style={{ width: '70px' }}>Z Yönü</th>
-                      <th style={{ width: '120px' }}>Grup</th>
+                      {/* ✅ DEĞİŞİKLİK: Grup kolonu kaldırıldı */}
                     </tr>
                   </thead>
                   <tbody>
                     {items.map((item) => (
                       <tr key={item.id}>
-                        {/* ✅ Backend: ogeNo */}
                         <td className="fw-medium">{item.ogeNo || item.rowNumber || '-'}</td>
-                        
-                        {/* ✅ Backend: itemCode (Parça No) */}
+
+                        {/* ✅ Parça No - daha geniş */}
                         <td className="fw-medium text-primary">{item.itemCode || '-'}</td>
-                        
-                        {/* ✅ Backend: itemDocNumber (Doküman No) */}
+
                         <td className="small">{item.itemDocNumber || '-'}</td>
-                        
-                        {/* ✅ Backend: itemName (Malzeme/Ürün Adı) */}
-                        <td className="small">{item.itemName || '-'}</td>
-                        
-                        {/* ✅ Backend: miktar */}
+
+                        {/* ✅ Malzeme Grubu (itemGroupName) */}
+                        <td className="small text-muted">{item.itemGroupName || '-'}</td>
+
                         <td className="text-center">{item.miktar || '-'}</td>
-                        
-                        {/* ✅ Backend: itemX, itemY, itemZ */}
+
                         <td className="text-center text-muted small">{item.itemX || '-'}</td>
                         <td className="text-center text-muted small">{item.itemY || '-'}</td>
                         <td className="text-center text-muted small">{item.itemZ || '-'}</td>
-                        
-                        {/* ✅ Backend: itemGroupName */}
-                        <td className="text-muted small">{item.itemGroupName || '-'}</td>
+
+                        {/* ✅ Grup kolonu kaldırıldı */}
                       </tr>
                     ))}
                   </tbody>
@@ -213,10 +210,10 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                       <ChevronLeft size={14} />
                     </button>
                   </li>
-                  
+
                   {getPageNumbers().map((page, index) => (
-                    <li 
-                      key={index} 
+                    <li
+                      key={index}
                       className={`page-item ${page === currentPage ? 'active' : ''} ${page === '...' ? 'disabled' : ''}`}
                     >
                       {page === '...' ? (
@@ -231,7 +228,7 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                       )}
                     </li>
                   ))}
-                  
+
                   <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
                     <button
                       className="page-link"
