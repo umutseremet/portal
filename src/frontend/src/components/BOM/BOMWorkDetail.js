@@ -150,9 +150,9 @@ const BOMWorkDetail = ({ currentWork, onBackToList }) => {
       {/* Excel Upload Section */}
       <BOMExcelUpload
         uploadedExcels={uploadedExcels.map(excel => ({
-          ...excel,
-          size: formatFileSize(excel.fileSize)
-        }))}
+    ...excel,
+    size: formatFileSize(excel.fileSize)
+  }))}
         onFileUpload={handleFileUpload}
         onDeleteExcel={handleDeleteExcel}
         onViewDetails={handleViewDetails}

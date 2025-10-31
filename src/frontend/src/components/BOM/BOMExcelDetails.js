@@ -30,6 +30,7 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
       setCurrentPage(page);
       
       console.log('✅ Excel items loaded:', response.items?.length);
+      console.log('📊 First item sample:', response.items?.[0]); // Debug için
     } catch (err) {
       console.error('❌ Error loading excel items:', err);
       alert('Excel içeriği yüklenirken hata oluştu: ' + err.message);
@@ -98,45 +99,42 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
   };
 
   return (
-    <div className="row">
+    <div className="row mb-4">
       <div className="col-12">
         <div className="card">
           <div className="card-header d-flex justify-content-between align-items-center">
             <div className="d-flex align-items-center">
               <Eye size={20} className="text-success me-2" />
-              <div>
-                <h5 className="card-title mb-0">Excel Detayları</h5>
-                <p className="card-text text-muted small mb-0">
-                  {selectedExcel.fileName} - {totalCount} kayıt
-                </p>
-              </div>
+              <h5 className="card-title mb-0">
+                Excel Detayları
+              </h5>
             </div>
-            
-            <div className="position-relative" style={{ width: '280px' }}>
-              <Search 
-                size={16} 
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#6c757d',
-                  zIndex: 1
-                }}
-              />
+            {selectedExcel && (
+              <div className="text-muted small">
+                <i className="bi bi-file-earmark-spreadsheet me-1"></i>
+                {selectedExcel.fileName} - {totalCount} kayıt
+              </div>
+            )}
+          </div>
+
+          {/* Search Bar */}
+          <div className="card-body border-bottom">
+            <div className="input-group">
+              <span className="input-group-text bg-white">
+                <Search size={16} className="text-muted" />
+              </span>
               <input
                 type="text"
+                className="form-control"
                 placeholder="Parça no, malzeme ara..."
                 value={searchTerm}
                 onChange={handleSearch}
-                className="form-control form-control-sm"
-                style={{ paddingLeft: '40px' }}
-                disabled={loading}
               />
             </div>
           </div>
 
-          <div className="card-body p-0">
+          {/* Table */}
+          <div className="card-body p-0" style={{ maxHeight: '600px', overflow: 'auto' }}>
             {loading ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-danger" role="status">
@@ -150,30 +148,41 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                   <thead className="table-light sticky-top">
                     <tr>
                       <th style={{ width: '60px' }}>Öğe No</th>
-                      <th style={{ width: '80px' }}>Parça No</th>
-                      <th>Doküman No</th>
+                      <th style={{ width: '100px' }}>Parça No</th>
+                      <th style={{ width: '120px' }}>Doküman No</th>
                       <th>Malzeme</th>
-                      <th className="text-center" style={{ width: '70px' }}>Mikt. 1</th>
-                      <th className="text-center" style={{ width: '70px' }}>Mikt. 2</th>
+                      <th className="text-center" style={{ width: '80px' }}>Miktar</th>
                       <th className="text-center" style={{ width: '70px' }}>X Yönü</th>
                       <th className="text-center" style={{ width: '70px' }}>Y Yönü</th>
                       <th className="text-center" style={{ width: '70px' }}>Z Yönü</th>
-                      <th>Eski Kod</th>
+                      <th style={{ width: '120px' }}>Grup</th>
                     </tr>
                   </thead>
                   <tbody>
                     {items.map((item) => (
                       <tr key={item.id}>
-                        <td className="fw-medium">{item.ogeNo}</td>
-                        <td className="fw-medium text-primary">{item.parcaNo}</td>
-                        <td className="small">{item.dokumanNo || '-'}</td>
-                        <td className="small">{item.malzeme || '-'}</td>
-                        <td className="text-center">{item.miktar1 || '-'}</td>
-                        <td className="text-center">{item.miktar2 || '-'}</td>
-                        <td className="text-center text-muted small">{item.xYonu || '-'}</td>
-                        <td className="text-center text-muted small">{item.yYonu || '-'}</td>
-                        <td className="text-center text-muted small">{item.zYonu || '-'}</td>
-                        <td className="text-muted small">{item.eskiKod || '-'}</td>
+                        {/* ✅ Backend: ogeNo */}
+                        <td className="fw-medium">{item.ogeNo || item.rowNumber || '-'}</td>
+                        
+                        {/* ✅ Backend: itemCode (Parça No) */}
+                        <td className="fw-medium text-primary">{item.itemCode || '-'}</td>
+                        
+                        {/* ✅ Backend: itemDocNumber (Doküman No) */}
+                        <td className="small">{item.itemDocNumber || '-'}</td>
+                        
+                        {/* ✅ Backend: itemName (Malzeme/Ürün Adı) */}
+                        <td className="small">{item.itemName || '-'}</td>
+                        
+                        {/* ✅ Backend: miktar */}
+                        <td className="text-center">{item.miktar || '-'}</td>
+                        
+                        {/* ✅ Backend: itemX, itemY, itemZ */}
+                        <td className="text-center text-muted small">{item.itemX || '-'}</td>
+                        <td className="text-center text-muted small">{item.itemY || '-'}</td>
+                        <td className="text-center text-muted small">{item.itemZ || '-'}</td>
+                        
+                        {/* ✅ Backend: itemGroupName */}
+                        <td className="text-muted small">{item.itemGroupName || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -181,6 +190,7 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
               </div>
             ) : (
               <div className="text-center py-5">
+                <i className="bi bi-inbox fs-1 text-muted mb-3"></i>
                 <p className="text-muted">Bu Excel dosyasında kayıt bulunmuyor.</p>
               </div>
             )}
@@ -195,8 +205,8 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
               <nav>
                 <ul className="pagination pagination-sm mb-0">
                   <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                    <button 
-                      className="page-link" 
+                    <button
+                      className="page-link"
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                     >
@@ -204,24 +214,27 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                     </button>
                   </li>
                   
-                  {getPageNumbers().map((page, idx) => (
+                  {getPageNumbers().map((page, index) => (
                     <li 
-                      key={idx} 
+                      key={index} 
                       className={`page-item ${page === currentPage ? 'active' : ''} ${page === '...' ? 'disabled' : ''}`}
                     >
-                      <button 
-                        className="page-link" 
-                        onClick={() => page !== '...' && handlePageChange(page)}
-                        disabled={page === '...'}
-                      >
-                        {page}
-                      </button>
+                      {page === '...' ? (
+                        <span className="page-link">...</span>
+                      ) : (
+                        <button
+                          className="page-link"
+                          onClick={() => handlePageChange(page)}
+                        >
+                          {page}
+                        </button>
+                      )}
                     </li>
                   ))}
                   
                   <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                    <button 
-                      className="page-link" 
+                    <button
+                      className="page-link"
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
                     >

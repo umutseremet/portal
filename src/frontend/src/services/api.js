@@ -1129,27 +1129,45 @@ class ApiService {
   async getBOMItems(params = {}) {
     console.log('📦 API getBOMItems call:', params);
 
+    // ExcelId kontrolü - Backend'de required!
+    if (!params.excelId) {
+      throw new Error('ExcelId is required for getBOMItems');
+    }
+
     try {
+      // ✅ Backend'in beklediği formatta request body
       const requestBody = {
-        page: params.page || 1,
-        pageSize: params.pageSize || 50,
-        workId: params.workId || null,
-        excelId: params.excelId || null,
-        searchTerm: params.searchTerm || null
+        ExcelId: params.excelId,  // ✅ PascalCase ve required
+        SearchTerm: params.searchTerm || null,
+        Page: params.page || 1,
+        PageSize: params.pageSize || 50,
+        SortBy: params.sortBy || "RowNumber",
+        SortOrder: params.sortOrder || "asc"
       };
+
+      console.log('📤 Sending request body:', requestBody);
 
       const response = await this.post('/BomItems/list', requestBody);
       console.log('📦 API getBOMItems raw response:', response);
 
+      // ✅ TotalPages hesaplaması
+      const pageSize = response.pageSize || response.PageSize || requestBody.PageSize;
+      const totalCount = response.totalCount || response.TotalCount || 0;
+      const totalPages = Math.ceil(totalCount / pageSize);
+
+      // ✅ Response mapping
       const mappedResponse = {
-        items: response.items || response.Items || response.data || response.Data || [],
-        totalCount: response.totalCount || response.TotalCount || 0,
+        items: response.items || response.Items || [],
+        totalCount: totalCount,
         page: response.page || response.Page || 1,
-        pageSize: response.pageSize || response.PageSize || 50,
-        totalPages: response.totalPages || response.TotalPages || 0
+        pageSize: pageSize,
+        totalPages: totalPages,
+        excelFileName: response.excelFileName || response.ExcelFileName || ''
       };
 
       console.log('✅ API getBOMItems mapped response:', mappedResponse);
+      console.log(`📊 Items: ${mappedResponse.items.length}, Total: ${totalCount}, Pages: ${totalPages}`);
+
       return mappedResponse;
     } catch (error) {
       console.error('❌ API getBOMItems error:', error);
@@ -1417,12 +1435,14 @@ class ApiService {
     console.log('📦 API getBOMExcelItems call:', { excelId, params });
 
     try {
-      // BomItems/list endpoint'ini excelId ile kullan
+      // ✅ Düzeltilmiş getBOMItems'ı çağır
       const response = await this.getBOMItems({
-        ...params,
-        excelId: excelId,
+        excelId: excelId,  // ← Bu getBOMItems içinde ExcelId'ye dönüşecek
         page: params.page || 1,
-        pageSize: params.pageSize || 50
+        pageSize: params.pageSize || 50,
+        searchTerm: params.searchTerm || null,
+        sortBy: params.sortBy || "RowNumber",
+        sortOrder: params.sortOrder || "asc"
       });
 
       console.log('✅ API getBOMExcelItems response:', response);

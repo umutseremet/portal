@@ -70,6 +70,13 @@ const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDet
     }
   };
 
+  // ✅ Dosya boyutunu MB cinsinden formatlama fonksiyonu
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return '-';
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(2)} MB`;
+  };
+
   return (
     <div className="row mb-4">
       <div className="col-12">
@@ -147,12 +154,16 @@ const BOMExcelUpload = ({ uploadedExcels, onFileUpload, onDeleteExcel, onViewDet
                         </td>
                         <td className="text-muted small">
                           <i className="bi bi-calendar me-1"></i>
-                          {formatDate(excel.uploadDate)}
+                          {/* ✅ uploadDate yerine uploadedAt kullan */}
+                          {formatDate(excel.uploadedAt)}
                         </td>
                         <td className="text-center">
                           <span className="badge bg-info">{excel.rowCount || 0}</span>
                         </td>
-                        <td className="text-center text-muted small">{excel.size}</td>
+                        <td className="text-center text-muted small">
+                          {/* ✅ size yerine fileSize kullan ve formatla */}
+                          {formatFileSize(excel.fileSize)}
+                        </td>
                         <td>
                           <div className="d-flex gap-2 justify-content-center">
                             <button
