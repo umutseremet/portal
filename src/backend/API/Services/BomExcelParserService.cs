@@ -270,7 +270,7 @@ namespace API.Services
             {
                 Number = maxNumber + 1,
                 Code = code,
-                Name = groupName, // Malzeme adını ürün adı olarak kullan
+                Name = code, // Malzeme adını ürün adı olarak kullan
                 DocNumber = rowData.DokumanNo ?? "",
                 GroupId = itemGroup.Id, // ✅ Artık dinamik grup ID kullanılıyor
                 X = rowData.X,

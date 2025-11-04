@@ -286,7 +286,8 @@ app.MapGet("/", () => new {
     Version = "1.0.0",
     Environment = app.Environment.EnvironmentName,
     Timestamp = DateTime.Now,
-    SwaggerUrl = app.Environment.IsDevelopment() ? "/swagger" : null,
+    //SwaggerUrl = app.Environment.IsDevelopment() ? "/swagger" : null,
+    SwaggerUrl =  "/swagger" ,
     Features = new[] { "Visitor Management", "Vehicle Management", "Redmine Integration", "JWT Authentication" }
 });
 

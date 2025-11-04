@@ -976,16 +976,42 @@ class ApiService {
    * Get all BOM works with pagination and search
    * Backend: POST /api/BomWorks/list
    */
+  /**
+ * Get all BOM works with pagination and search
+ * Backend: POST /api/BomWorks/list
+ */
   async getBOMWorks(params = {}) {
     console.log('📦 API getBOMWorks call:', params);
 
     try {
-      // Backend POST /api/BomWorks/list bekliyor
+      // ✅ Kullanıcı credentials'larını localStorage'dan al
+      const userStr = localStorage.getItem('user');
+      let redmineUsername = '';
+      let redminePassword = '';
+
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          redmineUsername = user.login || user.username || user.email || '';
+          redminePassword = user.password || '';
+        } catch (e) {
+          console.warn('User bilgisi parse edilemedi:', e);
+        }
+      }
+
+      // ✅ Backend POST /api/BomWorks/list bekliyor + credentials
       const requestBody = {
         page: params.page || 1,
         pageSize: params.pageSize || 10,
-        searchTerm: params.searchTerm || null
+        searchTerm: params.searchTerm || null,
+        redmineUsername,
+        redminePassword
       };
+
+      console.log('📦 API getBOMWorks with credentials:', {
+        ...requestBody,
+        redminePassword: redminePassword ? '***' : 'empty'
+      });
 
       const response = await this.post('/BomWorks/list', requestBody);
       console.log('📦 API getBOMWorks raw response:', response);
@@ -1008,11 +1034,14 @@ class ApiService {
       throw error;
     }
   }
-
   /**
    * Get a single BOM work by ID
    * Backend: GET /api/BomWorks/{id}
    */
+  /**
+ * Get a single BOM work by ID
+ * Backend: GET /api/BomWorks/{id}
+ */
   async getBOMWork(id) {
     if (!id) {
       throw new Error('BOM work ID is required');
@@ -1021,7 +1050,31 @@ class ApiService {
     console.log('📦 API getBOMWork call:', { id });
 
     try {
-      const response = await this.get(`/BomWorks/${id}`);
+      // ✅ Kullanıcı credentials'larını localStorage'dan al
+      const userStr = localStorage.getItem('user');
+      let redmineUsername = '';
+      let redminePassword = '';
+
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          redmineUsername = user.login || user.username || user.email || '';
+          redminePassword = user.password || '';
+        } catch (e) {
+          console.warn('User bilgisi parse edilemedi:', e);
+        }
+      }
+
+      // ✅ Query parameter olarak credentials gönder
+      const queryParams = new URLSearchParams();
+      if (redmineUsername) queryParams.append('redmineUsername', redmineUsername);
+      if (redminePassword) queryParams.append('redminePassword', redminePassword);
+
+      const url = `/BomWorks/${id}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+
+      console.log('📦 API getBOMWork URL:', url.replace(redminePassword, '***'));
+
+      const response = await this.get(url);
       console.log('✅ API getBOMWork response:', response);
       return response;
     } catch (error) {
@@ -1034,6 +1087,27 @@ class ApiService {
    * Create a new BOM work
    * Backend: POST /api/BomWorks
    */
+
+  getCurrentUserCredentials() {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return {
+          username: user.login || user.username || user.email,
+          password: user.password || '' // Login sırasında kaydedilmiş olmalı
+        };
+      }
+    } catch (error) {
+      console.error('Error getting user credentials:', error);
+    }
+    return { username: '', password: '' };
+  }
+
+  /**
+ * Create a new BOM work
+ * Backend: POST /api/BomWorks
+ */
   async createBOMWork(workData) {
     if (!workData) {
       throw new Error('BOM work data is required');
@@ -1046,7 +1120,34 @@ class ApiService {
     console.log('📦 API createBOMWork call:', workData);
 
     try {
-      const response = await this.post('/BomWorks', workData);
+      // ✅ Kullanıcı credentials'larını localStorage'dan al
+      const userStr = localStorage.getItem('user');
+      let redmineUsername = '';
+      let redminePassword = '';
+
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          redmineUsername = user.login || user.username || user.email || '';
+          redminePassword = user.password || '';
+        } catch (e) {
+          console.warn('User bilgisi parse edilemedi:', e);
+        }
+      }
+
+      // ✅ Request body'ye credentials ekle
+      const requestBody = {
+        ...workData,
+        redmineUsername,
+        redminePassword
+      };
+
+      console.log('📦 API createBOMWork with credentials:', {
+        ...requestBody,
+        redminePassword: redminePassword ? '***' : 'empty'
+      });
+
+      const response = await this.post('/BomWorks', requestBody);
       console.log('✅ API createBOMWork response:', response);
       return response;
     } catch (error) {
@@ -1135,10 +1236,15 @@ class ApiService {
     }
 
     try {
+
+      const credentials = this.getCurrentUserCredentials();
+
       // ✅ Backend'in beklediği formatta request body
       const requestBody = {
         ExcelId: params.excelId,  // ✅ PascalCase ve required
         SearchTerm: params.searchTerm || null,
+        redmineUsername: credentials.username,
+        redminePassword: credentials.password,
         Page: params.page || 1,
         PageSize: params.pageSize || 50,
         SortBy: params.sortBy || "RowNumber",
@@ -1565,7 +1671,6 @@ class ApiService {
     if (!id) throw new Error('Item ID is required');
     return this.delete(`/Items/${id}`);
   }
-
   // src/frontend/src/services/api.js
   // API METODLARINA EKLENECEK KISIM
 

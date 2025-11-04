@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ItemsList from '../components/Items/ItemsList';
 import ItemModal from '../components/Items/ItemModal';
-import ItemDetail from '../components/Items/ItemDetail';
 import apiService from '../services/api';
 import '../assets/css/Items.css';
 
@@ -19,9 +18,7 @@ const ItemsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showNewItemModal, setShowNewItemModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [viewingItem, setViewingItem] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
   
   // Filters
@@ -132,8 +129,7 @@ const ItemsPage = () => {
   };
 
   const handleViewItem = (item) => {
-    setViewingItem(item);
-    setShowDetailModal(true);
+    navigate('/definitions/items/detail', { state: { item } });
   };
 
   const handleEditItem = (item) => {
@@ -206,9 +202,7 @@ const ItemsPage = () => {
 
   const handleCloseModal = () => {
     setShowNewItemModal(false);
-    setShowDetailModal(false);
     setEditingItem(null);
-    setViewingItem(null);
   };
 
   const resetFilters = () => {
@@ -343,29 +337,6 @@ const ItemsPage = () => {
             itemGroups={itemGroups}
             loading={loading}
           />
-
-          {/* Item Detail Modal */}
-          {showDetailModal && viewingItem && (
-            <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-              <div className="modal-dialog modal-lg modal-dialog-centered">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title">Ürün Detayı</h5>
-                    <button type="button" className="btn-close" onClick={handleCloseModal}></button>
-                  </div>
-                  <div className="modal-body">
-                    <ItemDetail
-                      item={viewingItem}
-                      itemGroups={itemGroups}
-                      loading={loading}
-                      onEdit={handleEditItem}
-                      onDelete={handleDeleteItem}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

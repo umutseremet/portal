@@ -6,15 +6,21 @@ namespace API.Models
 
     public class CreateBomWorkRequest
     {
-        [Required(ErrorMessage = "Proje ID gerekli")]
+        [Required]
         public int ProjectId { get; set; }
 
-        [Required(ErrorMessage = "Çalışma adı gerekli")]
-        [StringLength(200, ErrorMessage = "Çalışma adı en fazla 200 karakter olabilir")]
+        [Required]
+        public string ProjectName { get; set; } = string.Empty;
+
+        [Required]
         public string WorkName { get; set; } = string.Empty;
 
-        [StringLength(500, ErrorMessage = "Açıklama en fazla 500 karakter olabilir")]
         public string? Description { get; set; }
+
+        // ✅ Geçici - sadece development için
+        public string? RedmineUsername { get; set; }
+
+        public string? RedminePassword { get; set; }
     }
 
     public class UpdateBomWorkRequest
@@ -51,6 +57,8 @@ namespace API.Models
         public int PageSize { get; set; } = 10;
         public string? SortBy { get; set; } = "CreatedAt";
         public string? SortOrder { get; set; } = "desc";
+        public string? RedmineUsername { get; set; }
+        public string? RedminePassword { get; set; }
     }
 
     public class GetBomWorksResponse
@@ -81,6 +89,7 @@ namespace API.Models
     {
         [Required]
         public int WorkId { get; set; }
+
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
     }
@@ -108,6 +117,7 @@ namespace API.Models
 
         // Items tablosundan gelen bilgiler
         public int ItemNumber { get; set; }
+
         public string ItemCode { get; set; } = string.Empty;
         public string ItemName { get; set; } = string.Empty;
         public string ItemDocNumber { get; set; } = string.Empty;
@@ -118,6 +128,7 @@ namespace API.Models
 
         // Excel'e özel alanlar
         public string? OgeNo { get; set; }
+
         public int? Miktar { get; set; }
         public int RowNumber { get; set; }
         public string? Notes { get; set; }
@@ -128,6 +139,7 @@ namespace API.Models
     {
         [Required]
         public int ExcelId { get; set; }
+
         public string? SearchTerm { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;

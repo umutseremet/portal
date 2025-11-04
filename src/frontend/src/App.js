@@ -17,7 +17,7 @@ import './App.css';
 import BOMTransferPage from './pages/BOMTransferPage';
 import ItemsPage from './pages/ItemsPage';
 import ItemGroupsPage from './pages/ItemGroupsPage';
-
+import ItemDetailPage from './pages/ItemDetailPage';
 
 function App() {
   return (
@@ -27,6 +27,9 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
 
+          <Route path="/definitions/items/detail" element={
+            <ProtectedRoute><Layout><ItemDetailPage /></Layout></ProtectedRoute>
+          } />
           {/* Protected Routes */}
           <Route
             path="/dashboard"

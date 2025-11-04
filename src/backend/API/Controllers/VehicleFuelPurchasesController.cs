@@ -4,15 +4,17 @@ using API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API.Controllers
 {
-#if !DEBUG
-    [Authorize]
-#endif
+
 
     [Route("api/[controller]")]
     [ApiController]
+#if !DEBUG
+    [Authorize]
+#endif
     public class VehicleFuelPurchasesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

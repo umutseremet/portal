@@ -22,9 +22,16 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       children: [
         { id: 'bom-transfer', label: 'BOM Listesi Aktarımı', path: '/production/bom-transfer' },
         { id: 'data-cam', label: 'Data / CAM Hazırlama', path: '/production/data-cam' },
-        { id: 'production-planning', label: 'Üretim Planlama', path: '/production/planning' },
-        { id: 'production-tracking', label: 'Üretim Takip', path: '/production/tracking' },
-        { id: 'reports', label: 'Raporlar', path: '/production/reports' }
+        // { id: 'production-planning', label: 'Üretim Planlama', path: '/production/planning' },
+        // { id: 'production-tracking', label: 'Üretim Takip', path: '/production/tracking' },
+        // { id: 'reports', label: 'Raporlar', path: '/production/reports' }
+
+        {
+          id: 'weekly-calendar',
+          label: 'Haftalık Üretim Planı',
+          icon: 'bi-calendar3',
+          path: '/production/weekly-calendar'
+        }
       ]
     },
     {
@@ -47,12 +54,6 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       label: 'Ziyaretçi Takip',
       icon: 'bi-people-fill',
       path: '/visitors'
-    },
-    {
-      id: 'weekly-calendar',
-      label: 'Haftalık Üretim Planı',
-      icon: 'bi-calendar3',
-      path: '/production/weekly-calendar'
     }
   ];
 

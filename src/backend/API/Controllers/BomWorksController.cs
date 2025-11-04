@@ -16,18 +16,18 @@ namespace API.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<BomWorksController> _logger;
+        private readonly RedmineService _redmineService; // ← EKLE
 
         public BomWorksController(
-            ApplicationDbContext context,
-            ILogger<BomWorksController> logger)
+        ApplicationDbContext context,
+        ILogger<BomWorksController> logger,
+        RedmineService redmineService) // ← EKLE
         {
             _context = context;
             _logger = logger;
+            _redmineService = redmineService; // ← EKLE
         }
 
-        /// <summary>
-        /// BOM çalışmalarını listeler
-        /// </summary>
         [HttpPost("list")]
         public async Task<ActionResult<GetBomWorksResponse>> GetBomWorks([FromBody] GetBomWorksRequest request)
         {
@@ -41,27 +41,18 @@ namespace API.Controllers
                     .ThenInclude(e => e.BomItems)
                     .AsQueryable();
 
-                // Filtreleme
-                if (request.ProjectId.HasValue)
+                // Search filter
+                if (!string.IsNullOrWhiteSpace(request.SearchTerm))
                 {
-                    query = query.Where(w => w.ProjectId == request.ProjectId.Value);
+                    query = query.Where(w =>
+                        w.WorkName.Contains(request.SearchTerm) ||
+                        w.Description.Contains(request.SearchTerm));
                 }
 
-                if (!string.IsNullOrEmpty(request.SearchTerm))
-                {
-                    query = query.Where(w => w.WorkName.Contains(request.SearchTerm));
-                }
-
-                if (!request.IncludeInactive)
-                {
-                    query = query.Where(w => w.IsActive);
-                }
-
-                // Toplam kayıt sayısı
                 var totalCount = await query.CountAsync();
 
-                // Sıralama
-                query = request.SortBy?.ToLower() switch
+                // Sorting
+                query = (request.SortBy?.ToLower()) switch
                 {
                     "workname" => request.SortOrder?.ToLower() == "desc"
                         ? query.OrderByDescending(w => w.WorkName)
@@ -74,31 +65,49 @@ namespace API.Controllers
                         : query.OrderBy(w => w.CreatedAt)
                 };
 
-                // Sayfalama
+                // Pagination
                 var works = await query
                     .Skip((request.Page - 1) * request.PageSize)
                     .Take(request.PageSize)
-                    .Select(w => new BomWorkResponse
-                    {
-                        Id = w.Id,
-                        ProjectId = w.ProjectId,
-                        ProjectName = $"Proje {w.ProjectId}", // TODO: Redmine'dan proje adı çekilebilir
-                        WorkName = w.WorkName,
-                        Description = w.Description,
-                        CreatedAt = w.CreatedAt,
-                        UpdatedAt = w.UpdatedAt,
-                        CreatedBy = w.CreatedBy,
-                        IsActive = w.IsActive,
-                        ExcelCount = w.BomExcels.Count,
-                        TotalRows = w.BomExcels.Sum(e => e.RowCount)
-                    })
                     .ToListAsync();
 
-                _logger.LogInformation("Found {Count} BOM works", works.Count);
+                // ✅ Tüm unique project ID'leri topla
+                var projectIds = works.Select(w => w.ProjectId).Distinct().ToList();
+
+                // ✅ Proje adlarını cache'e al (tek seferde)
+                var projectNames = new Dictionary<int, string>();
+                foreach (var projectId in projectIds)
+                {
+                    var projectName = await GetProjectNameAsync(
+                        projectId,
+                        request.RedmineUsername,
+                        request.RedminePassword);
+                    projectNames[projectId] = projectName;
+                }
+
+                // ✅ Response oluştur
+                var response = works.Select(w => new BomWorkResponse
+                {
+                    Id = w.Id,
+                    ProjectId = w.ProjectId,
+                    ProjectName = projectNames.ContainsKey(w.ProjectId)
+                        ? projectNames[w.ProjectId]
+                        : $"Proje {w.ProjectId}",
+                    WorkName = w.WorkName,
+                    Description = w.Description,
+                    CreatedAt = w.CreatedAt,
+                    UpdatedAt = w.UpdatedAt,
+                    CreatedBy = w.CreatedBy,
+                    IsActive = w.IsActive,
+                    ExcelCount = w.BomExcels.Count,
+                    TotalRows = w.BomExcels.Sum(e => e.RowCount)
+                }).ToList();
+
+                _logger.LogInformation("Found {Count} BOM works", response.Count);
 
                 return Ok(new GetBomWorksResponse
                 {
-                    Works = works,
+                    Works = response,
                     TotalCount = totalCount,
                     Page = request.Page,
                     PageSize = request.PageSize
@@ -110,12 +119,11 @@ namespace API.Controllers
                 return StatusCode(500, new ErrorResponse { Message = "BOM çalışmaları alınırken hata oluştu" });
             }
         }
-
-        /// <summary>
-        /// BOM çalışma detayını getirir
-        /// </summary>
         [HttpGet("{id}")]
-        public async Task<ActionResult<BomWorkResponse>> GetBomWork(int id)
+        public async Task<ActionResult<BomWorkResponse>> GetBomWork(
+                     int id,
+                     [FromQuery] string? redmineUsername = null,
+                     [FromQuery] string? redminePassword = null)
         {
             try
             {
@@ -132,11 +140,17 @@ namespace API.Controllers
                     return NotFound(new ErrorResponse { Message = "BOM çalışması bulunamadı" });
                 }
 
+                // ✅ Query parameter'dan gelen credentials ile proje adını al
+                var projectName = await GetProjectNameAsync(
+                    work.ProjectId,
+                    redmineUsername,
+                    redminePassword);
+
                 var response = new BomWorkResponse
                 {
                     Id = work.Id,
                     ProjectId = work.ProjectId,
-                    ProjectName = $"Proje {work.ProjectId}", // TODO: Redmine'dan proje adı çekilebilir
+                    ProjectName = projectName, // ✅ DEĞİŞTİ
                     WorkName = work.WorkName,
                     Description = work.Description,
                     CreatedAt = work.CreatedAt,
@@ -155,10 +169,6 @@ namespace API.Controllers
                 return StatusCode(500, new ErrorResponse { Message = "BOM çalışması alınırken hata oluştu" });
             }
         }
-
-        /// <summary>
-        /// Yeni BOM çalışması oluşturur
-        /// </summary>
         [HttpPost]
         public async Task<ActionResult<BomWorkResponse>> CreateBomWork([FromBody] CreateBomWorkRequest request)
         {
@@ -167,6 +177,12 @@ namespace API.Controllers
                 var username = User.FindFirst("username")?.Value ?? "Unknown";
                 _logger.LogInformation("Creating BOM work for project {ProjectId} by user: {Username}",
                     request.ProjectId, username);
+
+                // ✅ Frontend'den gelen credentials ile proje adını al
+                var projectName = await GetProjectNameAsync(
+                    request.ProjectId,
+                    request.RedmineUsername,
+                    request.RedminePassword);
 
                 var work = new BomWork
                 {
@@ -185,7 +201,7 @@ namespace API.Controllers
                 {
                     Id = work.Id,
                     ProjectId = work.ProjectId,
-                    ProjectName = $"Proje {work.ProjectId}", // TODO: Redmine'dan proje adı çekilebilir
+                    ProjectName = projectName, // ✅ DEĞİŞTİ
                     WorkName = work.WorkName,
                     Description = work.Description,
                     CreatedAt = work.CreatedAt,
@@ -197,7 +213,6 @@ namespace API.Controllers
                 };
 
                 _logger.LogInformation("BOM work created with ID: {Id}", work.Id);
-
                 return CreatedAtAction(nameof(GetBomWork), new { id = work.Id }, response);
             }
             catch (Exception ex)
@@ -206,7 +221,6 @@ namespace API.Controllers
                 return StatusCode(500, new ErrorResponse { Message = "BOM çalışması oluşturulurken hata oluştu" });
             }
         }
-
         /// <summary>
         /// BOM çalışmasını günceller
         /// </summary>
@@ -238,7 +252,7 @@ namespace API.Controllers
                 {
                     Id = work.Id,
                     ProjectId = work.ProjectId,
-                    ProjectName = $"Proje {work.ProjectId}",
+                    ProjectName = await GetProjectNameAsync(work.ProjectId),
                     WorkName = work.WorkName,
                     Description = work.Description,
                     CreatedAt = work.CreatedAt,
@@ -260,6 +274,52 @@ namespace API.Controllers
             }
         }
 
+        /// <summary>
+        /// Redmine'dan proje adını getirir
+        /// </summary>
+        private async Task<string> GetProjectNameAsync(int projectId, string? redmineUsername = null, string? redminePassword = null)
+        {
+            try
+            {
+                // JWT token'dan kullanıcı bilgilerini al
+                var jwtUsername = User.FindFirst("username")?.Value;
+
+                // ProjectsController gibi: DEBUG modunda frontend'den, Production'da JWT'den al
+#if DEBUG
+                var username = redmineUsername ?? jwtUsername;
+                var password = redminePassword ?? string.Empty;
+#else
+        var username = User.FindFirst("redmine_username")?.Value ?? jwtUsername;
+        var password = User.FindFirst("redmine_password")?.Value ?? string.Empty;
+#endif
+
+                if (string.IsNullOrEmpty(username))
+                {
+                    _logger.LogWarning("Kullanıcı bilgileri bulunamadı, varsayılan proje adı kullanılıyor");
+                    return $"Proje {projectId}";
+                }
+
+                _logger.LogInformation("Redmine'dan proje bilgisi alınıyor: ProjectId={ProjectId}, Username={Username}",
+                    projectId, username);
+
+                // Redmine'dan proje bilgisini al
+                var project = await _redmineService.GetProjectByIdAsync(username, password, projectId);
+
+                if (project != null && !string.IsNullOrEmpty(project.Name))
+                {
+                    _logger.LogInformation("Proje adı bulundu: {ProjectName}", project.Name);
+                    return project.Name;
+                }
+
+                _logger.LogWarning("Proje {ProjectId} Redmine'da bulunamadı", projectId);
+                return $"Proje {projectId}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Proje adı alınırken hata: ProjectId={ProjectId}", projectId);
+                return $"Proje {projectId}";
+            }
+        }
         /// <summary>
         /// BOM çalışmasını siler (soft delete)
         /// </summary>
