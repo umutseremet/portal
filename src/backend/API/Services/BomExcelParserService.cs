@@ -2,6 +2,8 @@
 using API.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
+using OfficeOpenXml.Drawing;
+using System.Drawing;
 
 namespace API.Services
 {
@@ -9,13 +11,16 @@ namespace API.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<BomExcelParserService> _logger;
+        private readonly IWebHostEnvironment _environment;
 
         public BomExcelParserService(
             ApplicationDbContext context,
-            ILogger<BomExcelParserService> logger)
+            ILogger<BomExcelParserService> logger,
+            IWebHostEnvironment environment)
         {
             _context = context;
             _logger = logger;
+            _environment = environment;
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         }
 
@@ -46,11 +51,14 @@ namespace API.Services
                     return result;
                 }
 
-                // Kolon başlıklarını bul (1. satır)
+                // ✅ RESİMLERİ İŞLE VE KAYDET
+                var imageMap = await ProcessAndSaveImagesAsync(worksheet, excelId);
+
+                // Kolon başlıklarını bul (2. satır)
                 var headerRow = 2;
                 var columns = FindColumnIndexes(worksheet, headerRow);
 
-                // Veri satırlarını işle (2. satırdan başla)
+                // Veri satırlarını işle (3. satırdan başla)
                 var rowCount = worksheet.Dimension?.Rows ?? 0;
                 var processedRows = 0;
                 var skippedRows = 0;
@@ -68,8 +76,11 @@ namespace API.Services
                             continue;
                         }
 
-                        // Items tablosunda ürünü bul veya oluştur
-                        var item = await FindOrCreateItemAsync(rowData);
+                        // ✅ Bu satır için resim var mı kontrol et
+                        var imageInfo = GetImageForRow(imageMap, row);
+
+                        // Items tablosunda ürünü bul veya oluştur (resim bilgisi ile)
+                        var item = await FindOrCreateItemAsync(rowData, imageInfo.ImagePath);
 
                         // BomItem oluştur
                         var bomItem = new BomItem
@@ -96,7 +107,7 @@ namespace API.Services
                 // Excel'in row count'unu güncelle
                 excel.RowCount = processedRows;
                 excel.IsProcessed = true;
-                excel.ProcessingNotes = $"{processedRows} satır işlendi, {skippedRows} satır atlandı";
+                excel.ProcessingNotes = $"{processedRows} satır işlendi, {skippedRows} satır atlandı. {imageMap.Count} resim kaydedildi.";
 
                 await _context.SaveChangesAsync();
 
@@ -105,8 +116,8 @@ namespace API.Services
                 result.SkippedRows = skippedRows;
                 result.NewItemsCreated = result.NewItemsCreated;
 
-                _logger.LogInformation("Excel {ExcelId} başarıyla işlendi: {Processed} satır",
-                    excelId, processedRows);
+                _logger.LogInformation("Excel {ExcelId} başarıyla işlendi: {Processed} satır, {Images} resim",
+                    excelId, processedRows, imageMap.Count);
 
                 return result;
             }
@@ -117,6 +128,162 @@ namespace API.Services
                 result.ErrorMessage = ex.Message;
                 return result;
             }
+        }
+
+        /// <summary>
+        /// Excel'deki resimleri işler ve kaydeder
+        /// </summary>
+        private async Task<Dictionary<int, (string ImagePath, int ImageRow, int ImageCol)>> ProcessAndSaveImagesAsync(
+            ExcelWorksheet worksheet, int excelId)
+        {
+            var imageMap = new Dictionary<int, (string, int, int)>();
+
+            if (worksheet.Drawings.Count == 0)
+            {
+                _logger.LogInformation("Excel'de resim bulunamadı");
+                return imageMap;
+            }
+
+            // Resim klasörünü oluştur: Uploads/BOM/Images/{excelId}/
+            var imageFolder = Path.Combine(_environment.ContentRootPath, "Uploads", "BOM", "Images", excelId.ToString());
+            if (!Directory.Exists(imageFolder))
+            {
+                Directory.CreateDirectory(imageFolder);
+                _logger.LogInformation("Resim klasörü oluşturuldu: {Folder}", imageFolder);
+            }
+
+            int imageIndex = 0;
+            _logger.LogInformation("Excel'de toplam {Count} resim bulundu", worksheet.Drawings.Count);
+
+            foreach (var drawing in worksheet.Drawings)
+            {
+                if (drawing is ExcelPicture picture)
+                {
+                    try
+                    {
+                        imageIndex++;
+                        int imageRow = picture.From.Row + 1; // EPPlus sıfır indeksli, biz 1 indeksli
+                        int imageCol = picture.From.Column + 1;
+
+                        // Güvenli dosya adı oluştur
+                        string fileName = $"image_{imageIndex:D3}_{SanitizeFileName(picture.Name ?? "unnamed")}.png";
+                        string filePath = Path.Combine(imageFolder, fileName);
+
+                        // Resmi kaydet
+                        if (picture.Image?.ImageBytes != null)
+                        {
+                            File.WriteAllBytes(filePath, picture.Image.ImageBytes);
+                            _logger.LogInformation("Resim kaydedildi: {FileName} (Pozisyon: R{Row}C{Col})",
+                                fileName, imageRow, imageCol);
+
+                            // Resmin hangi veri satırına ait olduğunu belirle
+                            int dataRowForImage = FindDataRowForImage(worksheet, imageRow, imageCol);
+
+                            if (dataRowForImage > 0)
+                            {
+                                // Web'den erişilebilir relative path oluştur
+                                string relativePath = $"/Uploads/BOM/Images/{excelId}/{fileName}";
+                                imageMap[dataRowForImage] = (relativePath, imageRow, imageCol);
+                                _logger.LogInformation("Resim eşleştirildi: {FileName} -> Veri Satır: {DataRow}",
+                                    fileName, dataRowForImage);
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Resim {FileName} için veri satırı bulunamadı", fileName);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Resim {Index} kaydedilirken hata", imageIndex);
+                    }
+                }
+            }
+
+            _logger.LogInformation("Toplam {Count} resim başarıyla eşleştirildi", imageMap.Count);
+            return imageMap;
+        }
+
+        /// <summary>
+        /// Resmin hangi veri satırına ait olduğunu bulur
+        /// </summary>
+        private int FindDataRowForImage(ExcelWorksheet worksheet, int imageRow, int imageCol)
+        {
+            // A kolonundaki (imageCol == 1) resimler için en yakın veri satırını bul
+            if (imageCol != 1) return 0; // Sadece A kolonundaki resimlerle ilgileniyoruz
+
+            // Veri satırları 3'ten başlıyor (başlık 1-2. satırlar)
+            int startDataRow = 3;
+            int maxRows = worksheet.Dimension?.Rows ?? 0;
+
+            // Resmin pozisyonuna en yakın VERİ DOLU satırı bul
+            int closestDataRow = 0;
+            int minDistance = int.MaxValue;
+
+            for (int dataRow = startDataRow; dataRow <= maxRows; dataRow++)
+            {
+                // Bu satırda veri var mı kontrol et (B kolonu - Parça No)
+                var parcaNo = worksheet.Cells[dataRow, 3].Value?.ToString()?.Trim(); // C kolonu - Parça Numarası
+
+                // Boş satırları atla
+                if (string.IsNullOrEmpty(parcaNo))
+                    continue;
+
+                // Bu veri satırının resim pozisyonuna olan mesafesini hesapla
+                int distance = Math.Abs(dataRow - imageRow);
+
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    closestDataRow = dataRow;
+                }
+
+                // Eğer tam aynı satırdaysa, direkt döndür
+                if (distance == 0)
+                {
+                    return dataRow;
+                }
+
+                // Eğer resim, veri satırından çok yukarıdaysa dur
+                if (imageRow < dataRow && distance > 5)
+                {
+                    break;
+                }
+            }
+
+            // En yakın mesafe 10'dan büyükse eşleştirme yapma
+            return minDistance <= 10 ? closestDataRow : 0;
+        }
+
+        /// <summary>
+        /// Satır için resim bilgisini döndürür
+        /// </summary>
+        private (string ImagePath, int Row, int Column) GetImageForRow(
+            Dictionary<int, (string, int, int)> imageMap,
+            int currentDataRow)
+        {
+            // Direkt bu satır için resim var mı kontrol et
+            if (imageMap.ContainsKey(currentDataRow))
+            {
+                return imageMap[currentDataRow];
+            }
+
+            // Resim yok
+            return (null, 0, 0);
+        }
+
+        /// <summary>
+        /// Dosya adını güvenli hale getirir
+        /// </summary>
+        private string SanitizeFileName(string fileName)
+        {
+            // Dosya adında geçersiz karakterleri temizle
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+            foreach (char c in invalidChars)
+            {
+                fileName = fileName.Replace(c, '_');
+            }
+            return fileName.Replace(" ", "_").Replace("-", "_");
         }
 
         /// <summary>
@@ -222,7 +389,7 @@ namespace API.Services
         /// Items tablosunda ürünü bulur veya yeni oluşturur
         /// Aynı Code'a sahip ürün varsa onu döndürür, yoksa yeni ürün oluşturur
         /// </summary>
-        private async Task<Item> FindOrCreateItemAsync(ExcelRowData rowData)
+        private async Task<Item> FindOrCreateItemAsync(ExcelRowData rowData, string? imagePath)
         {
             var code = rowData.ParcaNo?.Trim() ?? "";
             if (string.IsNullOrEmpty(code))
@@ -236,6 +403,15 @@ namespace API.Services
 
             if (existingItem != null)
             {
+                // ✅ Mevcut ürüne resim yoksa ve yeni resim varsa, güncelle
+                if (string.IsNullOrEmpty(existingItem.ImageUrl) && !string.IsNullOrEmpty(imagePath))
+                {
+                    existingItem.ImageUrl = imagePath;
+                    existingItem.UpdatedAt = DateTime.Now;
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Ürün resmi güncellendi: {Code} -> {Image}", code, imagePath);
+                }
+
                 _logger.LogDebug("Ürün bulundu: {Code}", code);
                 return existingItem;
             }
@@ -243,14 +419,14 @@ namespace API.Services
             // Yoksa yeni ürün oluştur
             var maxNumber = await _context.Items.MaxAsync(i => (int?)i.Number) ?? 0;
 
-            // ✅ DEĞİŞİKLİK: Excel'deki Malzeme kolonunu ItemGroup olarak kullan
+            // Malzeme kolonunu ItemGroup olarak kullan
             var groupName = rowData.Malzeme?.Trim();
             if (string.IsNullOrEmpty(groupName))
             {
                 groupName = "Tanımsız Grup";
             }
 
-            // ✅ DEĞİŞİKLİK: İlgili grubu bul veya oluştur
+            // İlgili grubu bul veya oluştur
             var itemGroup = await _context.ItemGroups
                 .FirstOrDefaultAsync(g => g.Name == groupName);
 
@@ -272,10 +448,11 @@ namespace API.Services
                 Code = code,
                 Name = code, // Malzeme adını ürün adı olarak kullan
                 DocNumber = rowData.DokumanNo ?? "",
-                GroupId = itemGroup.Id, // ✅ Artık dinamik grup ID kullanılıyor
+                GroupId = itemGroup.Id,
                 X = rowData.X,
                 Y = rowData.Y,
                 Z = rowData.Z,
+                ImageUrl = imagePath, // ✅ Resim yolu eklendi
                 CreatedAt = DateTime.Now,
                 Cancelled = false,
                 SupplierCode = rowData.EskiKod ?? "",
@@ -287,8 +464,8 @@ namespace API.Services
             _context.Items.Add(newItem);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Yeni ürün oluşturuldu: {Code} - {Name} (Grup: {Group})",
-                code, newItem.Name, groupName);
+            _logger.LogInformation("Yeni ürün oluşturuldu: {Code} - {Name} (Grup: {Group}) {Image}",
+                code, newItem.Name, groupName, !string.IsNullOrEmpty(imagePath) ? $"[Resimli]" : "");
 
             return newItem;
         }

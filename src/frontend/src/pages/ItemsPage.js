@@ -3,8 +3,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ItemsList from '../components/Items/ItemsList';
 import ItemModal from '../components/Items/ItemModal';
+import ItemDetailModal from '../components/Items/ItemDetailModal';
 import apiService from '../services/api';
 import '../assets/css/Items.css';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const ItemsPage = () => {
   const location = useLocation();
@@ -18,7 +21,9 @@ const ItemsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showNewItemModal, setShowNewItemModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [viewingItem, setViewingItem] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
   
   // Filters
@@ -128,8 +133,9 @@ const ItemsPage = () => {
     setSelectedItems([]);
   };
 
-  const handleViewItem = (item) => {
-    navigate('/definitions/items/detail', { state: { item } });
+  const handleViewDetails = (item) => {
+    setViewingItem(item);
+    setShowDetailModal(true);
   };
 
   const handleEditItem = (item) => {
@@ -137,14 +143,17 @@ const ItemsPage = () => {
     setShowNewItemModal(true);
   };
 
-  const handleDeleteItem = async (item) => {
+  const handleDeleteItem = async (itemId) => {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
     if (!window.confirm(`"${item.name}" ürününü silmek istediğinizden emin misiniz?`)) {
       return;
     }
 
     try {
       setLoading(true);
-      await apiService.deleteItem(item.id);
+      await apiService.deleteItem(itemId);
       await loadItems();
       alert('Ürün başarıyla silindi');
     } catch (err) {
@@ -157,21 +166,21 @@ const ItemsPage = () => {
 
   const handleBulkDelete = async () => {
     if (selectedItems.length === 0) return;
-    
+
     if (!window.confirm(`${selectedItems.length} ürünü silmek istediğinizden emin misiniz?`)) {
       return;
     }
 
     try {
       setLoading(true);
-      await Promise.all(
-        selectedItems.map(id => apiService.deleteItem(id))
-      );
-      setSelectedItems([]);
+      for (const id of selectedItems) {
+        await apiService.deleteItem(id);
+      }
       await loadItems();
-      alert('Seçili ürünler başarıyla silindi');
+      setSelectedItems([]);
+      alert(`${selectedItems.length} ürün başarıyla silindi`);
     } catch (err) {
-      console.error('❌ Error bulk deleting:', err);
+      console.error('❌ Error deleting items:', err);
       alert(err.message || 'Ürünler silinirken bir hata oluştu');
     } finally {
       setLoading(false);
@@ -181,7 +190,6 @@ const ItemsPage = () => {
   const handleSaveItem = async (itemData) => {
     try {
       setLoading(true);
-      
       if (editingItem) {
         await apiService.updateItem(editingItem.id, itemData);
         alert('Ürün başarıyla güncellendi');
@@ -189,9 +197,9 @@ const ItemsPage = () => {
         await apiService.createItem(itemData);
         alert('Ürün başarıyla oluşturuldu');
       }
-      
-      handleCloseModal();
       await loadItems();
+      setShowNewItemModal(false);
+      setEditingItem(null);
     } catch (err) {
       console.error('❌ Error saving item:', err);
       throw err;
@@ -205,140 +213,161 @@ const ItemsPage = () => {
     setEditingItem(null);
   };
 
-  const resetFilters = () => {
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setViewingItem(null);
+  };
+
+  const handleEditFromDetail = (item) => {
+    setShowDetailModal(false);
+    setViewingItem(null);
+    setEditingItem(item);
+    setShowNewItemModal(true);
+  };
+
+  const handleDeleteFromDetail = async (itemId) => {
+    await handleDeleteItem(itemId);
+    setShowDetailModal(false);
+    setViewingItem(null);
+  };
+
+  const handleResetFilters = () => {
     setFilters({
       name: '',
       code: '',
-      groupId: null,
+      groupId: groupFilter || null,
       includeCancelled: false,
       page: 1,
       pageSize: 10,
       sortBy: 'Name',
       sortOrder: 'asc'
     });
-    // Clear location state
-    navigate(location.pathname, { replace: true, state: {} });
   };
 
   const handleRefresh = () => {
     loadItems();
   };
 
-  const handleBackToGroups = () => {
-    navigate('/definitions/item-groups');
-  };
-
-  // Computed values
-  const hasFilters = filters.name || filters.code || filters.groupId || filters.includeCancelled;
+  const hasFilters = filters.name || filters.code || (filters.groupId && !groupFilter) || filters.includeCancelled;
   const isEmpty = !loading && items.length === 0;
   const selectedCount = selectedItems.length;
-  const isAllSelected = selectedItems.length === items.length && items.length > 0;
+  const isAllSelected = items.length > 0 && selectedItems.length === items.length;
 
-  const filterSummary = hasFilters ? [
-    filters.name && `Ad: "${filters.name}"`,
+  const filterSummary = [
+    filters.name && `İsim: "${filters.name}"`,
     filters.code && `Kod: "${filters.code}"`,
-    filters.groupId && `Grup: ${itemGroups.find(g => g.id === filters.groupId)?.name || 'Bilinmiyor'}`,
-    filters.includeCancelled && 'İptal edilenler dahil'
-  ].filter(Boolean).join(', ') : null;
+    filters.groupId && `Grup: "${itemGroups.find(g => g.id === filters.groupId)?.name}"`,
+    filters.includeCancelled && 'İptal edilmiş dahil'
+  ].filter(Boolean).join(', ');
 
   return (
     <div className="items-page">
       <div className="container-fluid">
-        <div className="content-wrapper">
-          {/* Page Header */}
-          <div className="page-header mb-4">
+        {/* Page Header */}
+        <div className="row mb-4">
+          <div className="col-12">
             <div className="d-flex justify-content-between align-items-center">
               <div>
-                <div className="d-flex align-items-center gap-2 mb-2">
-                  {groupName && (
-                    <button 
-                      className="btn btn-sm btn-outline-secondary"
-                      onClick={handleBackToGroups}
-                    >
-                      <i className="bi bi-arrow-left me-1"></i>
-                      Geri
-                    </button>
-                  )}
-                  <h1 className="mb-0">
-                    {groupName ? `${groupName} - Ürünler` : 'Ürünler'}
-                  </h1>
-                </div>
+                <h2 className="mb-2">
+                  {groupName ? `${groupName} - Ürünler` : 'Ürünler'}
+                </h2>
                 <p className="text-muted mb-0">
-                  Ürün tanımlarını yönetin
+                  {pagination.totalCount} ürün bulundu
                 </p>
               </div>
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={() => setShowNewItemModal(true)}
                 disabled={loading}
               >
-                <i className="bi bi-plus-circle me-2"></i>
+                <i className="bi bi-plus-lg me-2"></i>
                 Yeni Ürün
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Error Alert */}
-          {error && (
-            <div className="alert alert-danger alert-dismissible fade show" role="alert">
-              <i className="bi bi-exclamation-triangle me-2"></i>
-              {error}
-              <button 
-                type="button" 
-                className="btn-close" 
-                onClick={() => setError(null)}
-              ></button>
-            </div>
-          )}
-
-          {/* Main Content */}
-          <div className="row">
+        {/* Error Display */}
+        {error && (
+          <div className="row mb-4">
             <div className="col-12">
-              <div className="card h-100">
-                <div className="card-body">
-                  <ItemsList
-                    items={items}
-                    itemGroups={itemGroups}
-                    loading={loading}
-                    pagination={pagination}
-                    filters={filters}
-                    sorting={{ field: filters.sortBy, direction: filters.sortOrder }}
-                    selectedItems={selectedItems}
-                    onPageChange={handlePageChange}
-                    onFilterChange={handleFilterChange}
-                    onSort={handleSort}
-                    onSelectItem={handleItemSelect}
-                    onSelectAll={handleSelectAll}
-                    onClearSelection={handleClearSelection}
-                    onViewItem={handleViewItem}
-                    onEditItem={handleEditItem}
-                    onDeleteItem={handleDeleteItem}
-                    onBulkDelete={handleBulkDelete}
-                    onNewItem={() => setShowNewItemModal(true)}
-                    onResetFilters={resetFilters}
-                    onRefresh={handleRefresh}
-                    hasFilters={hasFilters}
-                    isEmpty={isEmpty}
-                    selectedCount={selectedCount}
-                    isAllSelected={isAllSelected}
-                    filterSummary={filterSummary}
-                  />
-                </div>
+              <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Hata!</strong> {error}
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => setError(null)}
+                ></button>
               </div>
             </div>
           </div>
+        )}
 
-          {/* New/Edit Item Modal */}
-          <ItemModal
-            show={showNewItemModal}
-            onHide={handleCloseModal}
-            onSave={handleSaveItem}
-            item={editingItem}
-            itemGroups={itemGroups}
-            loading={loading}
-          />
+        {/* Items List with Image Support */}
+        <div className="row">
+          <div className="col-12">
+            <div className="card">
+              <div className="card-body">
+                <ItemsList
+                  items={items}
+                  itemGroups={itemGroups}
+                  loading={loading}
+                  pagination={pagination}
+                  filters={filters}
+                  sorting={{ field: filters.sortBy, direction: filters.sortOrder }}
+                  selectedItems={selectedItems}
+                  onPageChange={handlePageChange}
+                  onFilterChange={handleFilterChange}
+                  onSort={handleSort}
+                  onSelectItem={handleItemSelect}
+                  onSelectAll={handleSelectAll}
+                  onClearSelection={handleClearSelection}
+                  onViewItem={handleViewDetails}
+                  onEditItem={handleEditItem}
+                  onDeleteItem={handleDeleteItem}
+                  onBulkDelete={handleBulkDelete}
+                  onNewItem={() => setShowNewItemModal(true)}
+                  onResetFilters={handleResetFilters}
+                  onRefresh={handleRefresh}
+                  hasFilters={hasFilters}
+                  isEmpty={isEmpty}
+                  selectedCount={selectedCount}
+                  isAllSelected={isAllSelected}
+                  filterSummary={filterSummary}
+                  apiBaseUrl={API_BASE_URL}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Item Modal */}
+      {showNewItemModal && (
+        <ItemModal
+          show={showNewItemModal}
+          onHide={handleCloseModal}
+          onSave={handleSaveItem}
+          item={editingItem}
+          itemGroups={itemGroups}
+          loading={loading}
+        />
+      )}
+
+      {/* Item Detail Modal */}
+      {showDetailModal && viewingItem && (
+        <ItemDetailModal
+          show={showDetailModal}
+          onHide={handleCloseDetailModal}
+          item={viewingItem}
+          itemGroups={itemGroups}
+          loading={loading}
+          onEdit={handleEditFromDetail}
+          onDelete={handleDeleteFromDetail}
+          apiBaseUrl={API_BASE_URL}
+        />
+      )}
     </div>
   );
 };

@@ -133,6 +133,8 @@ namespace API.Models
         public int RowNumber { get; set; }
         public string? Notes { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        public string? ItemImageUrl { get; set; }
     }
 
     public class GetBomItemsRequest

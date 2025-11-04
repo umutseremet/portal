@@ -108,7 +108,7 @@ namespace API.Controllers
                         ItemY = i.Item.Y,
                         ItemZ = i.Item.Z,
                         ItemGroupName = i.Item.ItemGroup != null ? i.Item.ItemGroup.Name : null,
-
+                        ItemImageUrl = i.Item.ImageUrl,
                         // Excel'e özel alanlar
                         OgeNo = i.OgeNo,
                         Miktar = i.Miktar,
@@ -170,7 +170,7 @@ namespace API.Controllers
                     ItemY = item.Item.Y,
                     ItemZ = item.Item.Z,
                     ItemGroupName = item.Item.ItemGroup?.Name,
-
+                    ItemImageUrl = item.Item.ImageUrl,
                     // Excel'e özel alanlar
                     OgeNo = item.OgeNo,
                     Miktar = item.Miktar,
@@ -232,7 +232,7 @@ namespace API.Controllers
                     ItemY = item.Item.Y,
                     ItemZ = item.Item.Z,
                     ItemGroupName = item.Item.ItemGroup?.Name,
-
+                    ItemImageUrl = item.Item.ImageUrl,
                     // Excel'e özel alanlar
                     OgeNo = item.OgeNo,
                     Miktar = item.Miktar,

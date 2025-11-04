@@ -1,5 +1,6 @@
 // src/frontend/src/components/Items/ItemsList.js
 import React, { useState } from 'react';
+import { Image as ImageIcon } from 'lucide-react';
 
 const ItemsList = ({
   items = [],
@@ -26,7 +27,8 @@ const ItemsList = ({
   isEmpty,
   selectedCount,
   isAllSelected,
-  filterSummary
+  filterSummary,
+  apiBaseUrl = ''
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [localFilters, setLocalFilters] = useState({
@@ -107,79 +109,60 @@ const ItemsList = ({
                 onClick={onBulkDelete}
               >
                 <i className="bi bi-trash me-1"></i>
-                Seçili {selectedCount} Ürünü Sil
+                Seçilenleri Sil ({selectedCount})
               </button>
               <button 
                 className="btn btn-outline-secondary btn-sm"
                 onClick={onClearSelection}
               >
-                <i className="bi bi-x me-1"></i>
+                <i className="bi bi-x-circle me-1"></i>
                 Seçimi Temizle
               </button>
             </>
           )}
         </div>
 
-        <div className="d-flex gap-2">
-          <button 
-            className="btn btn-outline-secondary btn-sm"
-            onClick={onRefresh}
-            disabled={loading}
-          >
-            <i className="bi bi-arrow-clockwise me-1"></i>
-            Yenile
-          </button>
-        </div>
+        <button 
+          className="btn btn-outline-secondary btn-sm"
+          onClick={onRefresh}
+          disabled={loading}
+        >
+          <i className="bi bi-arrow-clockwise me-1"></i>
+          Yenile
+        </button>
       </div>
 
-      {/* Active Filters Summary */}
-      {hasFilters && (
-        <div className="alert alert-info alert-dismissible fade show" role="alert">
-          <i className="bi bi-info-circle me-2"></i>
-          <strong>Aktif Filtreler:</strong> {filterSummary}
-          <button 
-            type="button" 
-            className="btn-close" 
-            onClick={handleResetFilters}
-          ></button>
-        </div>
-      )}
-
-      {/* Filters Panel */}
+      {/* Filter Panel */}
       {showFilters && (
         <div className="card mb-3">
           <div className="card-body">
-            <h6 className="card-title mb-3">
-              <i className="bi bi-funnel me-2"></i>
-              Filtrele
-            </h6>
             <div className="row g-3">
-              <div className="col-md-4">
-                <label className="form-label">Ürün Adı</label>
+              <div className="col-md-3">
+                <label className="form-label">İsim</label>
                 <input
                   type="text"
-                  className="form-control"
-                  placeholder="Ürün adı ile ara..."
+                  className="form-control form-control-sm"
+                  placeholder="Ürün adı"
                   value={localFilters.name}
                   onChange={(e) => handleLocalFilterChange('name', e.target.value)}
                 />
               </div>
-              <div className="col-md-4">
-                <label className="form-label">Ürün Kodu</label>
+              <div className="col-md-3">
+                <label className="form-label">Kod</label>
                 <input
                   type="text"
-                  className="form-control"
-                  placeholder="Ürün kodu ile ara..."
+                  className="form-control form-control-sm"
+                  placeholder="Ürün kodu"
                   value={localFilters.code}
                   onChange={(e) => handleLocalFilterChange('code', e.target.value)}
                 />
               </div>
-              <div className="col-md-4">
+              <div className="col-md-3">
                 <label className="form-label">Grup</label>
                 <select
-                  className="form-select"
+                  className="form-select form-select-sm"
                   value={localFilters.groupId}
-                  onChange={(e) => handleLocalFilterChange('groupId', e.target.value ? parseInt(e.target.value) : '')}
+                  onChange={(e) => handleLocalFilterChange('groupId', e.target.value)}
                 >
                   <option value="">Tüm Gruplar</option>
                   {itemGroups.map(group => (
@@ -189,11 +172,11 @@ const ItemsList = ({
                   ))}
                 </select>
               </div>
-              <div className="col-md-12">
-                <div className="form-check form-switch">
+              <div className="col-md-3 d-flex align-items-end">
+                <div className="form-check">
                   <input
-                    className="form-check-input"
                     type="checkbox"
+                    className="form-check-input"
                     id="includeCancelled"
                     checked={localFilters.includeCancelled}
                     onChange={(e) => handleLocalFilterChange('includeCancelled', e.target.checked)}
@@ -204,68 +187,67 @@ const ItemsList = ({
                 </div>
               </div>
             </div>
-            <div className="mt-3">
-              <div className="d-flex gap-2">
-                <button 
-                  className="btn btn-primary btn-sm"
-                  onClick={handleApplyFilters}
-                >
-                  <i className="bi bi-search me-1"></i>
-                  Filtrele
-                </button>
-                <button 
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={handleResetFilters}
-                >
-                  <i className="bi bi-arrow-clockwise me-1"></i>
-                  Temizle
-                </button>
-                <button 
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => setShowFilters(false)}
-                >
-                  <i className="bi bi-x me-1"></i>
-                  Kapat
-                </button>
-              </div>
+            <div className="mt-3 d-flex gap-2">
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={handleApplyFilters}
+              >
+                <i className="bi bi-search me-1"></i>
+                Filtrele
+              </button>
+              <button 
+                className="btn btn-outline-secondary btn-sm"
+                onClick={handleResetFilters}
+              >
+                <i className="bi bi-x-circle me-1"></i>
+                Temizle
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div className="text-muted small">
-          Toplam {pagination.totalCount || items.length} ürün
-          {selectedItems.length > 0 && (
-            <span className="ms-2 text-primary">
-              ({selectedItems.length} seçili)
-            </span>
-          )}
+      {/* Filter Summary */}
+      {hasFilters && filterSummary && (
+        <div className="alert alert-info alert-dismissible fade show" role="alert">
+          <i className="bi bi-funnel-fill me-2"></i>
+          <strong>Aktif Filtreler:</strong> {filterSummary}
+          <button 
+            type="button" 
+            className="btn-close" 
+            onClick={onResetFilters}
+          ></button>
         </div>
-      </div>
+      )}
 
       {/* Items Table */}
       <div className="table-responsive">
-        <table className="table table-hover">
+        <table className="table table-hover align-middle">
           <thead>
             <tr>
-              <th width="50">
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    checked={isAllSelected}
-                    onChange={onSelectAll}
-                  />
-                </div>
+              <th style={{ width: '40px' }}>
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={isAllSelected}
+                  onChange={onSelectAll}
+                />
               </th>
-              <th>
+              <th style={{ width: '60px' }} className="text-center">Resim</th>
+              <th style={{ width: '80px' }}>
+                <button
+                  className={getSortButtonClass('Number')}
+                  onClick={() => onSort?.('Number')}
+                >
+                  Numara <i className={`bi ${getSortIcon('Number')}`}></i>
+                </button>
+              </th>
+              <th style={{ width: '150px' }}>
                 <button
                   className={getSortButtonClass('Code')}
                   onClick={() => onSort?.('Code')}
                 >
-                  Kod
-                  <i className={`bi ${getSortIcon('Code')} ms-1`}></i>
+                  Kod <i className={`bi ${getSortIcon('Code')}`}></i>
                 </button>
               </th>
               <th>
@@ -273,89 +255,103 @@ const ItemsList = ({
                   className={getSortButtonClass('Name')}
                   onClick={() => onSort?.('Name')}
                 >
-                  Ürün Adı
-                  <i className={`bi ${getSortIcon('Name')} ms-1`}></i>
+                  İsim <i className={`bi ${getSortIcon('Name')}`}></i>
                 </button>
               </th>
-              <th>
-                <button
-                  className={getSortButtonClass('GroupId')}
-                  onClick={() => onSort?.('GroupId')}
-                >
-                  Grup
-                  <i className={`bi ${getSortIcon('GroupId')} ms-1`}></i>
-                </button>
-              </th>
-              <th>Fiyat</th>
-              <th>Durum</th>
-              <th width="150">İşlemler</th>
+              <th style={{ width: '120px' }}>Doküman No</th>
+              <th style={{ width: '150px' }}>Grup</th>
+              <th style={{ width: '100px' }}>X-Y-Z</th>
+              <th style={{ width: '100px' }}>Durum</th>
+              <th style={{ width: '100px' }} className="text-end">İşlemler</th>
             </tr>
           </thead>
           <tbody>
-            {isEmpty ? (
+            {items.length === 0 ? (
               <tr>
-                <td colSpan="7" className="text-center py-5">
+                <td colSpan="10" className="text-center py-5">
                   <i className="bi bi-inbox display-4 text-muted d-block mb-3"></i>
-                  <p className="text-muted">
-                    {hasFilters ? 'Filtrelere uygun ürün bulunamadı' : 'Henüz ürün eklenmemiş'}
+                  <p className="text-muted mb-0">
+                    {hasFilters ? 'Filtreye uygun ürün bulunamadı' : 'Henüz ürün bulunmuyor'}
                   </p>
-                  {hasFilters ? (
-                    <button className="btn btn-sm btn-outline-primary" onClick={handleResetFilters}>
-                      <i className="bi bi-arrow-clockwise me-1"></i>
-                      Filtreleri Temizle
-                    </button>
-                  ) : (
-                    <button className="btn btn-sm btn-primary" onClick={onNewItem}>
-                      <i className="bi bi-plus-circle me-1"></i>
-                      Yeni Ürün Ekle
-                    </button>
-                  )}
                 </td>
               </tr>
             ) : (
               items.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    <div className="form-check">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        checked={selectedItems.includes(item.id)}
-                        onChange={() => onSelectItem?.(item.id)}
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      checked={selectedItems.includes(item.id)}
+                      onChange={() => onSelectItem?.(item.id)}
+                    />
+                  </td>
+                  
+                  {/* Resim Kolonu */}
+                  <td className="text-center">
+                    {item.imageUrl ? (
+                      <img 
+                        src={apiBaseUrl + item.imageUrl} 
+                        alt={item.code}
+                        className="img-thumbnail"
+                        style={{ 
+                          width: '40px', 
+                          height: '40px', 
+                          objectFit: 'cover',
+                          cursor: 'pointer',
+                          border: '2px solid #e9ecef'
+                        }}
+                        onClick={() => onViewItem?.(item)}
+                        title="Detayları görüntüle"
+                        onError={(e) => { 
+                          e.target.style.display = 'none'; 
+                        }}
                       />
-                    </div>
+                    ) : (
+                      <div 
+                        className="d-flex align-items-center justify-content-center rounded"
+                        style={{ 
+                          width: '40px', 
+                          height: '40px',
+                          background: '#f0f0f0',
+                          border: '2px solid #e9ecef'
+                        }}
+                      >
+                        <ImageIcon size={16} className="text-muted opacity-50" />
+                      </div>
+                    )}
                   </td>
-                  <td>
-                    <span className="badge bg-light text-dark">{item.code}</span>
-                  </td>
+                  
+                  <td className="fw-medium">{item.number}</td>
+                  
                   <td>
                     <button
-                      className="btn btn-link text-start p-0 text-decoration-none"
+                      className="btn btn-link p-0 text-start text-decoration-none"
                       onClick={() => onViewItem?.(item)}
+                      title="Detayları görüntüle"
                     >
-                      <span className="fw-bold text-primary">{item.name}</span>
+                      <span className="badge bg-light text-dark">{item.code}</span>
                     </button>
                   </td>
+                  
+                  <td>{item.name}</td>
+                  <td className="text-muted small">{item.docNumber || '-'}</td>
                   <td>
                     <span className="badge bg-info text-dark">
                       {getGroupName(item.groupId)}
                     </span>
                   </td>
-                  <td>
-                    {item.price ? (
-                      <span>{item.price.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</span>
-                    ) : (
-                      <span className="text-muted">-</span>
-                    )}
+                  <td className="text-muted small">
+                    {item.x || 0} x {item.y || 0} x {item.z || 0}
                   </td>
                   <td>
                     {item.cancelled ? (
-                      <span className="badge bg-danger">İptal Edilmiş</span>
+                      <span className="badge bg-danger">İptal</span>
                     ) : (
                       <span className="badge bg-success">Aktif</span>
                     )}
                   </td>
-                  <td>
+                  <td className="text-end">
                     <div className="btn-group btn-group-sm">
                       <button
                         className="btn btn-outline-secondary"
@@ -373,7 +369,7 @@ const ItemsList = ({
                       </button>
                       <button
                         className="btn btn-outline-danger"
-                        onClick={() => onDeleteItem?.(item)}
+                        onClick={() => onDeleteItem?.(item.id)}
                         title="Sil"
                       >
                         <i className="bi bi-trash"></i>
@@ -388,10 +384,11 @@ const ItemsList = ({
       </div>
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="d-flex justify-content-between align-items-center mt-4">
+      {pagination.totalPages > 1 && (
+        <div className="d-flex justify-content-between align-items-center mt-3">
           <div className="text-muted small">
-            Sayfa {pagination.currentPage} / {pagination.totalPages}
+            Sayfa {pagination.currentPage} / {pagination.totalPages} 
+            (Toplam: {pagination.totalCount} ürün)
           </div>
           <nav>
             <ul className="pagination pagination-sm mb-0">

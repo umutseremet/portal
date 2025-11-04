@@ -124,6 +124,7 @@ builder.Services.AddCors(options =>
                   "http://localhost:5500",
                   "http://127.0.0.1:5500",
                   "http://192.168.1.17",
+                  "http://192.168.1.17:80",
                   "http://192.168.1.17:3000",
                   "http://192.168.1.17:3003",
                   "http://192.168.1.17:5500",
@@ -224,7 +225,6 @@ app.UseSwaggerUI(c =>
 });
 //}
 
-
 app.UseSwagger(c =>
 {
     // IIS sub-application için path düzeltmesi
@@ -246,6 +246,27 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
+// ✅ CORS'tan SONRA, Authentication'dan ÖNCE ekleyin:
+
+// Static files için Uploads klasörünü servis et
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "Uploads");
+Directory.CreateDirectory(uploadsPath);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    RequestPath = "/Uploads",
+    OnPrepareResponse = ctx =>
+    {
+        // Cache control headers
+        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=3600");
+    }
+});
+
+// NOT: Yukarıdaki kodu Program.cs içinde şu bölüme ekleyin:
+// app.UseCors("AllowFrontend"); ← BUNDAN SONRA
+// ↑↑↑ BURAYA EKLE ↑↑↑
+// app.UseAuthentication(); ← BUNDAN ÖNCE
 
 app.UseHttpsRedirection();
 
@@ -280,24 +301,27 @@ app.Use(async (context, next) =>
 app.MapControllers();
 
 // Health check endpoint - EXISTING (enhanced)
-app.MapGet("/", () => new {
+app.MapGet("/", () => new
+{
     Status = "OK",
     Message = "Vervo Portal API is running",
     Version = "1.0.0",
     Environment = app.Environment.EnvironmentName,
     Timestamp = DateTime.Now,
     //SwaggerUrl = app.Environment.IsDevelopment() ? "/swagger" : null,
-    SwaggerUrl =  "/swagger" ,
+    SwaggerUrl = "/swagger",
     Features = new[] { "Visitor Management", "Vehicle Management", "Redmine Integration", "JWT Authentication" }
 });
 
-app.MapGet("/health", () => new {
+app.MapGet("/health", () => new
+{
     Status = "Healthy",
     Timestamp = DateTime.Now
 });
 
 // Configuration test endpoint - EXISTING
-app.MapGet("/config", (IConfiguration config) => new {
+app.MapGet("/config", (IConfiguration config) => new
+{
     RedmineBaseUrl = config["RedmineSettings:BaseUrl"] ?? config["Redmine:BaseUrl"],
     RedmineApiKey = !string.IsNullOrEmpty(config["RedmineSettings:ApiKey"]) ? "Configured" : "Not configured",
     ConnectionString = !string.IsNullOrEmpty(config.GetConnectionString("DefaultConnection")) ? "Configured" : "Not configured",
@@ -306,15 +330,16 @@ app.MapGet("/config", (IConfiguration config) => new {
 });
 
 // NEW - Vehicle Management API endpoints quick test
-app.MapGet("/api/test/vehicles", async (ApplicationDbContext context) => 
+app.MapGet("/api/test/vehicles", async (ApplicationDbContext context) =>
 {
-    try 
+    try
     {
         var count = await context.Vehicles.CountAsync();
-        return Results.Ok(new { 
-            Message = "Vehicle Management API is working", 
+        return Results.Ok(new
+        {
+            Message = "Vehicle Management API is working",
             VehicleCount = count,
-            Timestamp = DateTime.Now 
+            Timestamp = DateTime.Now
         });
     }
     catch (Exception ex)
