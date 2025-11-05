@@ -64,12 +64,6 @@ const ItemGroupsList = ({
     setShowFilters(false);
   };
 
-  const handleDeleteClick = (itemGroup) => {
-    if (window.confirm(`"${itemGroup.name}" grubunu silmek istediğinizden emin misiniz?`)) {
-      onDeleteItemGroup?.(itemGroup);
-    }
-  };
-
   // Loading state
   if (loading && itemGroups.length === 0) {
     return (
@@ -93,7 +87,7 @@ const ItemGroupsList = ({
           >
             <i className="bi bi-funnel me-1"></i>
             Filtreler
-            {hasFilters && <span className="badge bg-primary ms-2">{hasFilters}</span>}
+            {hasFilters && <span className="badge bg-primary ms-2">!</span>}
           </button>
           
           {selectedCount > 0 && (
@@ -103,19 +97,19 @@ const ItemGroupsList = ({
                 onClick={onBulkDelete}
               >
                 <i className="bi bi-trash me-1"></i>
-                Seçili {selectedCount} Grubu Sil
+                Seçilenleri Sil ({selectedCount})
               </button>
               <button 
                 className="btn btn-outline-secondary btn-sm"
                 onClick={onClearSelection}
               >
-                <i className="bi bi-x me-1"></i>
+                <i className="bi bi-x-circle me-1"></i>
                 Seçimi Temizle
               </button>
             </>
           )}
         </div>
-
+        
         <div className="d-flex gap-2">
           <button 
             className="btn btn-outline-secondary btn-sm"
@@ -128,10 +122,10 @@ const ItemGroupsList = ({
         </div>
       </div>
 
-      {/* Active Filters Summary */}
-      {hasFilters && (
-        <div className="alert alert-info alert-dismissible fade show" role="alert">
-          <i className="bi bi-info-circle me-2"></i>
+      {/* Filter Summary */}
+      {hasFilters && filterSummary && (
+        <div className="alert alert-info alert-dismissible fade show mb-3" role="alert">
+          <i className="bi bi-funnel-fill me-2"></i>
           <strong>Aktif Filtreler:</strong> {filterSummary}
           <button 
             type="button" 
@@ -145,83 +139,59 @@ const ItemGroupsList = ({
       {showFilters && (
         <div className="card mb-3">
           <div className="card-body">
-            <h6 className="card-title mb-3">
-              <i className="bi bi-funnel me-2"></i>
-              Filtrele
-            </h6>
             <div className="row g-3">
               <div className="col-md-6">
                 <label className="form-label">Grup Adı</label>
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Grup adı ile ara..."
                   value={localFilters.name}
                   onChange={(e) => handleLocalFilterChange('name', e.target.value)}
+                  placeholder="Grup adı ara..."
                 />
               </div>
               <div className="col-md-6">
-                <label className="form-label">Durum</label>
-                <div className="form-check form-switch">
+                <label className="form-label d-block">Durum</label>
+                <div className="form-check form-check-inline mt-2">
                   <input
-                    className="form-check-input"
                     type="checkbox"
+                    className="form-check-input"
                     id="includeCancelled"
                     checked={localFilters.includeCancelled}
                     onChange={(e) => handleLocalFilterChange('includeCancelled', e.target.checked)}
                   />
                   <label className="form-check-label" htmlFor="includeCancelled">
-                    İptal edilmiş grupları göster
+                    İptal edilenleri göster
                   </label>
                 </div>
               </div>
             </div>
-            <div className="mt-3">
-              <div className="d-flex gap-2">
-                <button 
-                  className="btn btn-primary btn-sm"
-                  onClick={handleApplyFilters}
-                >
-                  <i className="bi bi-search me-1"></i>
-                  Filtrele
-                </button>
-                <button 
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={handleResetFilters}
-                >
-                  <i className="bi bi-arrow-clockwise me-1"></i>
-                  Temizle
-                </button>
-                <button 
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => setShowFilters(false)}
-                >
-                  <i className="bi bi-x me-1"></i>
-                  Kapat
-                </button>
-              </div>
+            <div className="d-flex gap-2 mt-3">
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={handleApplyFilters}
+              >
+                <i className="bi bi-check-circle me-1"></i>
+                Uygula
+              </button>
+              <button 
+                className="btn btn-outline-secondary btn-sm"
+                onClick={handleResetFilters}
+              >
+                <i className="bi bi-x-circle me-1"></i>
+                Temizle
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div className="text-muted small">
-          Toplam {pagination.totalCount || itemGroups.length} grup
-          {selectedItemGroups.length > 0 && (
-            <span className="ms-2 text-primary">
-              ({selectedItemGroups.length} seçili)
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Item Groups Table */}
+      {/* Table */}
       <div className="table-responsive">
         <table className="table table-hover">
           <thead>
             <tr>
-              <th width="50">
+              <th width="40">
                 <div className="form-check">
                   <input
                     className="form-check-input"
@@ -240,15 +210,7 @@ const ItemGroupsList = ({
                   <i className={`bi ${getSortIcon('Name')} ms-1`}></i>
                 </button>
               </th>
-              <th>
-                <button
-                  className={getSortButtonClass('ItemCount')}
-                  onClick={() => onSort?.('ItemCount')}
-                >
-                  Ürün Sayısı
-                  <i className={`bi ${getSortIcon('ItemCount')} ms-1`}></i>
-                </button>
-              </th>
+              <th>Ürün Sayısı</th>
               <th>
                 <button
                   className={getSortButtonClass('CreatedAt')}
@@ -316,22 +278,22 @@ const ItemGroupsList = ({
                   </td>
                   <td>
                     {itemGroup.cancelled ? (
-                      <span className="badge bg-danger">İptal Edilmiş</span>
+                      <span className="badge bg-danger">İptal</span>
                     ) : (
                       <span className="badge bg-success">Aktif</span>
                     )}
                   </td>
                   <td>
-                    <div className="btn-group btn-group-sm">
+                    <div className="btn-group btn-group-sm" role="group">
                       <button
-                        className="btn btn-outline-secondary"
+                        className="btn btn-outline-primary"
                         onClick={() => onViewItemGroup?.(itemGroup)}
                         title="Ürünleri Görüntüle"
                       >
                         <i className="bi bi-eye"></i>
                       </button>
                       <button
-                        className="btn btn-outline-primary"
+                        className="btn btn-outline-secondary"
                         onClick={() => onEditItemGroup?.(itemGroup)}
                         title="Düzenle"
                       >
@@ -339,7 +301,7 @@ const ItemGroupsList = ({
                       </button>
                       <button
                         className="btn btn-outline-danger"
-                        onClick={() => handleDeleteClick(itemGroup)}
+                        onClick={() => onDeleteItemGroup?.(itemGroup)}
                         title="Sil"
                       >
                         <i className="bi bi-trash"></i>
@@ -354,8 +316,8 @@ const ItemGroupsList = ({
       </div>
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="d-flex justify-content-between align-items-center mt-4">
+      {pagination.totalPages > 1 && (
+        <div className="d-flex justify-content-between align-items-center mt-3">
           <div className="text-muted small">
             Sayfa {pagination.currentPage} / {pagination.totalPages}
           </div>
@@ -371,8 +333,8 @@ const ItemGroupsList = ({
                 </button>
               </li>
               
-              {[...Array(pagination.totalPages)].map((_, index) => {
-                const page = index + 1;
+              {[...Array(pagination.totalPages)].map((_, i) => {
+                const page = i + 1;
                 if (
                   page === 1 ||
                   page === pagination.totalPages ||
@@ -389,14 +351,10 @@ const ItemGroupsList = ({
                     </li>
                   );
                 } else if (
-                  (page === pagination.currentPage - 2 && page > 1) ||
-                  (page === pagination.currentPage + 2 && page < pagination.totalPages)
+                  page === pagination.currentPage - 2 ||
+                  page === pagination.currentPage + 2
                 ) {
-                  return (
-                    <li key={page} className="page-item disabled">
-                      <span className="page-link">...</span>
-                    </li>
-                  );
+                  return <li key={page} className="page-item disabled"><span className="page-link">...</span></li>;
                 }
                 return null;
               })}

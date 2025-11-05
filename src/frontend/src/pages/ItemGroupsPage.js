@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ItemGroupsList from '../components/ItemGroups/ItemGroupsList';
-import ItemGroupModal from '../components/ItemGroups/ItemGroupModal';
+import ItemGroupForm from '../components/ItemGroups/ItemGroupForm';
 import apiService from '../services/api';
 import '../assets/css/ItemGroups.css';
 
@@ -13,7 +13,7 @@ const ItemGroupsPage = () => {
   const [itemGroups, setItemGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [showNewItemGroupModal, setShowNewItemGroupModal] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingItemGroup, setEditingItemGroup] = useState(null);
   const [selectedItemGroups, setSelectedItemGroups] = useState([]);
   
@@ -59,6 +59,7 @@ const ItemGroupsPage = () => {
     } catch (err) {
       console.error('❌ Error loading item groups:', err);
       setError(err.message || 'Ürün grupları yüklenirken bir hata oluştu');
+      setItemGroups([]);
     } finally {
       setLoading(false);
     }
@@ -68,19 +69,33 @@ const ItemGroupsPage = () => {
     loadItemGroups();
   }, [loadItemGroups]);
 
-  // Handlers
-  const handlePageChange = (newPage) => {
-    setFilters(prev => ({ ...prev, page: newPage }));
-  };
-
+  // Filter handlers
   const handleFilterChange = (newFilters) => {
     setFilters(prev => ({
       ...prev,
       ...newFilters,
-      page: 1
+      page: 1 // Reset to first page on filter change
     }));
   };
 
+  const handleResetFilters = () => {
+    setFilters({
+      name: '',
+      includeCancelled: false,
+      page: 1,
+      pageSize: 10,
+      sortBy: 'Name',
+      sortOrder: 'asc'
+    });
+  };
+
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    setFilters(prev => ({ ...prev, page: newPage }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Sort handler
   const handleSort = (field) => {
     setFilters(prev => ({
       ...prev,
@@ -90,6 +105,7 @@ const ItemGroupsPage = () => {
     }));
   };
 
+  // Selection handlers
   const handleItemGroupSelect = (id) => {
     setSelectedItemGroups(prev => 
       prev.includes(id) ? prev.filter(itemGroupId => itemGroupId !== id) : [...prev, id]
@@ -108,13 +124,32 @@ const ItemGroupsPage = () => {
     setSelectedItemGroups([]);
   };
 
+  // CRUD handlers
   const handleViewItemGroup = (itemGroup) => {
-    navigate('/definitions/items', { state: { groupId: itemGroup.id, groupName: itemGroup.name } });
+    navigate('/definitions/items', { 
+      state: { 
+        groupId: itemGroup.id, 
+        groupName: itemGroup.name 
+      } 
+    });
+  };
+
+  const handleNewItemGroup = () => {
+    setEditingItemGroup(null);
+    setShowForm(true);
+    // Scroll to form
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   const handleEditItemGroup = (itemGroup) => {
     setEditingItemGroup(itemGroup);
-    setShowNewItemGroupModal(true);
+    setShowForm(true);
+    // Scroll to form
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   const handleDeleteItemGroup = async (itemGroup) => {
@@ -170,7 +205,7 @@ const ItemGroupsPage = () => {
         alert('Ürün grubu başarıyla oluşturuldu');
       }
       
-      handleCloseModal();
+      handleCancelForm();
       await loadItemGroups();
     } catch (err) {
       console.error('❌ Error saving item group:', err);
@@ -180,20 +215,9 @@ const ItemGroupsPage = () => {
     }
   };
 
-  const handleCloseModal = () => {
-    setShowNewItemGroupModal(false);
+  const handleCancelForm = () => {
+    setShowForm(false);
     setEditingItemGroup(null);
-  };
-
-  const resetFilters = () => {
-    setFilters({
-      name: '',
-      includeCancelled: false,
-      page: 1,
-      pageSize: 10,
-      sortBy: 'Name',
-      sortOrder: 'asc'
-    });
   };
 
   const handleRefresh = () => {
@@ -221,13 +245,13 @@ const ItemGroupsPage = () => {
               <div>
                 <h1>Ürün Grupları</h1>
                 <p className="text-muted mb-0">
-                  Ürün grubu tanımlarını yönetin
+                  {pagination.totalCount} ürün grubu bulundu
                 </p>
               </div>
               <button 
                 className="btn btn-primary"
-                onClick={() => setShowNewItemGroupModal(true)}
-                disabled={loading}
+                onClick={handleNewItemGroup}
+                disabled={loading || showForm}
               >
                 <i className="bi bi-plus-circle me-2"></i>
                 Yeni Grup
@@ -238,8 +262,8 @@ const ItemGroupsPage = () => {
           {/* Error Alert */}
           {error && (
             <div className="alert alert-danger alert-dismissible fade show" role="alert">
-              <i className="bi bi-exclamation-triangle me-2"></i>
-              {error}
+              <i className="bi bi-exclamation-triangle-fill me-2"></i>
+              <strong>Hata!</strong> {error}
               <button 
                 type="button" 
                 className="btn-close" 
@@ -248,10 +272,20 @@ const ItemGroupsPage = () => {
             </div>
           )}
 
-          {/* Main Content */}
+          {/* Form (inline, not modal) */}
+          {showForm && (
+            <ItemGroupForm
+              itemGroup={editingItemGroup}
+              onSave={handleSaveItemGroup}
+              onCancel={handleCancelForm}
+              loading={loading}
+            />
+          )}
+
+          {/* Item Groups List */}
           <div className="row">
             <div className="col-12">
-              <div className="card h-100">
+              <div className="card">
                 <div className="card-body">
                   <ItemGroupsList
                     itemGroups={itemGroups}
@@ -270,8 +304,8 @@ const ItemGroupsPage = () => {
                     onEditItemGroup={handleEditItemGroup}
                     onDeleteItemGroup={handleDeleteItemGroup}
                     onBulkDelete={handleBulkDelete}
-                    onNewItemGroup={() => setShowNewItemGroupModal(true)}
-                    onResetFilters={resetFilters}
+                    onNewItemGroup={handleNewItemGroup}
+                    onResetFilters={handleResetFilters}
                     onRefresh={handleRefresh}
                     hasFilters={hasFilters}
                     isEmpty={isEmpty}
@@ -283,15 +317,6 @@ const ItemGroupsPage = () => {
               </div>
             </div>
           </div>
-
-          {/* New/Edit Item Group Modal */}
-          <ItemGroupModal
-            show={showNewItemGroupModal}
-            onHide={handleCloseModal}
-            onSave={handleSaveItemGroup}
-            itemGroup={editingItemGroup}
-            loading={loading}
-          />
         </div>
       </div>
     </div>
