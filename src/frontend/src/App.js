@@ -18,6 +18,7 @@ import BOMTransferPage from './pages/BOMTransferPage';
 import ItemsPage from './pages/ItemsPage';
 import ItemGroupsPage from './pages/ItemGroupsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
+import ItemEditPage from './pages/ItemEditPage';
 
 function App() {
   return (
@@ -42,6 +43,15 @@ function App() {
             }
           />
 
+          {/* Item Edit/New Page - YENİ */}
+          <Route path="/definitions/items/edit" element={
+            <ProtectedRoute><Layout><ItemEditPage /></Layout></ProtectedRoute>
+          } />
+
+          <Route path="/definitions/items/new" element={
+            <ProtectedRoute><Layout><ItemEditPage /></Layout></ProtectedRoute>
+          } />
+          
           {/* Items Management Routes */}
           <Route
             path="/definitions/items"

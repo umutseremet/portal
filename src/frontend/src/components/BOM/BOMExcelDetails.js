@@ -4,7 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Eye, Search, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import apiService from '../../services/api';
 
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
+// ✅ API_BASE_URL'den /api kısmını kaldırıyoruz çünkü imageUrl direkt /Uploads ile başlıyor
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL 
+  ? process.env.REACT_APP_API_BASE_URL.replace('/api', '') 
+  : 'http://localhost:5154';
 
 const BOMExcelDetails = ({ selectedExcel, workId }) => {
   const [items, setItems] = useState([]);
@@ -83,7 +86,9 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
   };
 
   const handleImageClick = (imageUrl, itemCode) => {
-    setSelectedImage({ url: imageUrl, code: itemCode });
+    // ✅ API_BASE_URL kullanarak tam URL oluştur
+    const fullImageUrl = `${API_BASE_URL}${imageUrl}`;
+    setSelectedImage({ url: fullImageUrl, code: itemCode });
   };
 
   const closeImageModal = () => {
@@ -129,58 +134,45 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
 
   if (!selectedExcel) {
     return (
-      <div className="card mt-4">
-        <div className="card-body text-center py-5">
-          <i className="bi bi-file-earmark-excel fs-1 text-muted mb-3"></i>
-          <p className="text-muted mb-0">Detayları görüntülemek için bir Excel dosyası seçin</p>
-        </div>
+      <div className="text-center py-5 text-muted">
+        <Eye size={48} className="mb-3" />
+        <p>Lütfen bir Excel dosyası seçin</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="card mt-4">
+      <div className="card shadow-sm">
         <div className="card-header bg-white border-bottom">
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h5 className="mb-1">
-                <i className="bi bi-table me-2 text-success"></i>
-                Excel İçeriği
-              </h5>
-              <p className="text-muted small mb-0">
-                {selectedExcel.fileName} - {totalCount} kayıt
-              </p>
+          <div className="row align-items-center">
+            <div className="col-md-6">
+              <h6 className="mb-0 fw-bold text-dark">
+                <Eye size={20} className="me-2" />
+                Excel İçeriği: {selectedExcel.fileName}
+              </h6>
+              <small className="text-muted">
+                Toplam {totalCount} kayıt
+              </small>
             </div>
-
-            <div className="position-relative" style={{ width: '300px' }}>
-              <Search 
-                size={16} 
-                className="position-absolute text-muted" 
-                style={{ left: '12px', top: '50%', transform: 'translateY(-50%)' }} 
-              />
-              <input
-                type="text"
-                className="form-control form-control-sm ps-5"
-                placeholder="Parça no, malzeme, öğe no ile ara..."
-                value={searchTerm}
-                onChange={handleSearch}
-                disabled={loading}
-              />
-              {searchTerm && (
-                <button
-                  className="btn btn-sm position-absolute"
-                  style={{ right: '8px', top: '50%', transform: 'translateY(-50%)', padding: '0.25rem 0.5rem' }}
-                  onClick={() => setSearchTerm('')}
-                >
-                  <i className="bi bi-x"></i>
-                </button>
-              )}
+            <div className="col-md-6">
+              <div className="input-group input-group-sm">
+                <span className="input-group-text bg-light border-end-0">
+                  <Search size={16} />
+                </span>
+                <input
+                  type="text"
+                  className="form-control border-start-0"
+                  placeholder="Parça No, Doküman No veya Öğe No ile ara..."
+                  value={searchTerm}
+                  onChange={handleSearch}
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="card-body p-0">
+        <div className="card-body p-0" style={{ maxHeight: '600px', overflowY: 'auto' }}>
           {loading ? (
             <div className="text-center py-5">
               <div className="spinner-border text-danger" role="status">
@@ -193,8 +185,8 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
               <table className="table table-hover table-sm mb-0 align-middle">
                 <thead className="table-light sticky-top">
                   <tr>
-                    <th style={{ width: '60px' }} className="text-center">Resim</th>
                     <th style={{ width: '80px' }}>Öğe No</th>
+                    <th style={{ width: '80px' }} className="text-center">Resim</th>
                     <th style={{ width: '180px' }}>Parça No</th>
                     <th style={{ width: '120px' }}>Doküman No</th>
                     <th style={{ width: '150px' }}>Malzeme Grubu</th>
@@ -210,99 +202,110 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                       <td className="text-center">
                         {item.itemImageUrl ? (
                           <button
-                            className="btn btn-link p-0"
-                            onClick={() => handleImageClick(API_BASE_URL + item.itemImageUrl, item.itemCode)}
-                            title="Resmi görüntüle"
+                            className="btn btn-sm btn-outline-secondary border-0 p-1"
+                            onClick={() => handleImageClick(item.itemImageUrl, item.itemCode)}
+                            title="Resmi büyüt"
                           >
-                            <ImageIcon size={20} className="text-primary" />
+                            <img 
+                              src={`${API_BASE_URL}${item.itemImageUrl}`}
+                              alt={item.itemCode}
+                              style={{ 
+                                width: '40px', 
+                                height: '40px', 
+                                objectFit: 'cover',
+                                borderRadius: '4px'
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.parentElement.innerHTML = '<ImageIcon size={20} class="text-muted" />';
+                              }}
+                            />
                           </button>
                         ) : (
-                          <span className="text-muted">
-                            <ImageIcon size={20} className="opacity-25" />
-                          </span>
+                          <ImageIcon size={20} className="text-muted" />
                         )}
                       </td>
-
-                      <td className="fw-medium">
-                        {item.ogeNo || item.rowNumber || '-'}
+                      <td>
+                        <small className="text-muted">{item.ogeNo || '-'}</small>
                       </td>
-
-                      <td className="fw-medium text-primary">{item.itemCode || '-'}</td>
-
-                      <td className="small">{item.itemDocNumber || '-'}</td>
-
-                      <td className="small text-muted">{item.itemGroupName || '-'}</td>
-
-                      <td className="text-center">{item.miktar || '-'}</td>
-
-                      <td className="text-center text-muted small">{item.itemX || '-'}</td>
-                      <td className="text-center text-muted small">{item.itemY || '-'}</td>
-                      <td className="text-center text-muted small">{item.itemZ || '-'}</td>
+                      <td>
+                        <span className="badge bg-primary">{item.itemCode}</span>
+                      </td>
+                      <td>
+                        <small>{item.itemDocNumber || '-'}</small>
+                      </td>
+                      <td>
+                        <small className="text-secondary">{item.itemGroupName || '-'}</small>
+                      </td>
+                      <td className="text-center">
+                        <span className="badge bg-success">{item.miktar || 0}</span>
+                      </td>
+                      <td className="text-center">
+                        <small className="text-muted">{item.itemX || '-'}</small>
+                      </td>
+                      <td className="text-center">
+                        <small className="text-muted">{item.itemY || '-'}</small>
+                      </td>
+                      <td className="text-center">
+                        <small className="text-muted">{item.itemZ || '-'}</small>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <div className="text-center py-5">
-              <i className="bi bi-inbox fs-1 text-muted mb-3"></i>
-              {searchTerm ? (
-                <>
-                  <p className="text-muted mb-0">"{searchTerm}" için sonuç bulunamadı</p>
-                  <button 
-                    className="btn btn-link btn-sm mt-2" 
-                    onClick={() => setSearchTerm('')}
-                  >
-                    Aramayı temizle
-                  </button>
-                </>
-              ) : (
-                <p className="text-muted mb-0">Bu Excel'de kayıt bulunmuyor</p>
-              )}
+            <div className="text-center py-5 text-muted">
+              <Search size={48} className="mb-3" />
+              <p>
+                {searchTerm ? 'Arama sonucu bulunamadı' : 'Bu Excel dosyasında henüz içerik yok'}
+              </p>
             </div>
           )}
         </div>
 
-        {!loading && totalPages > 1 && !searchTerm && (
+        {totalPages > 1 && !searchTerm && (
           <div className="card-footer bg-white border-top">
             <div className="d-flex justify-content-between align-items-center">
-              <div className="text-muted small">
-                Sayfa {currentPage} / {totalPages} (Toplam: {totalCount} kayıt)
-              </div>
-
+              <small className="text-muted">
+                Sayfa {currentPage} / {totalPages}
+              </small>
+              
               <nav>
                 <ul className="pagination pagination-sm mb-0">
                   <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
                     <button 
-                      className="page-link" 
+                      className="page-link"
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                     >
                       <ChevronLeft size={16} />
                     </button>
                   </li>
-
-                  {getPageNumbers().map((pageNum, index) => (
-                    <li 
-                      key={index} 
-                      className={`page-item ${pageNum === currentPage ? 'active' : ''} ${pageNum === '...' ? 'disabled' : ''}`}
-                    >
-                      {pageNum === '...' ? (
+                  
+                  {getPageNumbers().map((page, index) => (
+                    page === '...' ? (
+                      <li key={`ellipsis-${index}`} className="page-item disabled">
                         <span className="page-link">...</span>
-                      ) : (
-                        <button 
-                          className="page-link" 
-                          onClick={() => handlePageChange(pageNum)}
+                      </li>
+                    ) : (
+                      <li 
+                        key={page} 
+                        className={`page-item ${currentPage === page ? 'active' : ''}`}
+                      >
+                        <button
+                          className="page-link"
+                          onClick={() => handlePageChange(page)}
                         >
-                          {pageNum}
+                          {page}
                         </button>
-                      )}
-                    </li>
+                      </li>
+                    )
                   ))}
-
+                  
                   <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
                     <button 
-                      className="page-link" 
+                      className="page-link"
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
                     >
@@ -316,7 +319,7 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
         )}
       </div>
 
-      {/* Resim Önizleme Modal */}
+      {/* Resim Modal */}
       {selectedImage && (
         <>
           <div 
@@ -324,7 +327,7 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
             style={{ zIndex: 1040 }}
             onClick={closeImageModal}
           ></div>
-
+          
           <div 
             className="modal fade show d-block" 
             tabIndex="-1" 
@@ -332,7 +335,7 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
             onClick={closeImageModal}
           >
             <div 
-              className="modal-dialog modal-lg modal-dialog-centered"
+              className="modal-dialog modal-xl modal-dialog-centered"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="modal-content">

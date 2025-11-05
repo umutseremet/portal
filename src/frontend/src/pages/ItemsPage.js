@@ -2,8 +2,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ItemsList from '../components/Items/ItemsList';
-import ItemModal from '../components/Items/ItemModal';
-import ItemDetailModal from '../components/Items/ItemDetailModal';
 import apiService from '../services/api';
 import '../assets/css/Items.css';
 
@@ -20,10 +18,6 @@ const ItemsPage = () => {
   const [itemGroups, setItemGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [showNewItemModal, setShowNewItemModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [viewingItem, setViewingItem] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
   
   // Filters
@@ -133,14 +127,19 @@ const ItemsPage = () => {
     setSelectedItems([]);
   };
 
+  // ✅ Detay sayfasına yönlendir
   const handleViewDetails = (item) => {
-    setViewingItem(item);
-    setShowDetailModal(true);
+    navigate('/definitions/items/detail', { state: { item, itemGroups } });
   };
 
+  // ✅ Düzenleme sayfasına yönlendir (MODAL YOK!)
   const handleEditItem = (item) => {
-    setEditingItem(item);
-    setShowNewItemModal(true);
+    navigate('/definitions/items/edit', { state: { item, itemGroups } });
+  };
+
+  // ✅ Yeni ürün sayfasına yönlendir (MODAL YOK!)
+  const handleNewItem = () => {
+    navigate('/definitions/items/new', { state: { itemGroups } });
   };
 
   const handleDeleteItem = async (itemId) => {
@@ -185,50 +184,6 @@ const ItemsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSaveItem = async (itemData) => {
-    try {
-      setLoading(true);
-      if (editingItem) {
-        await apiService.updateItem(editingItem.id, itemData);
-        alert('Ürün başarıyla güncellendi');
-      } else {
-        await apiService.createItem(itemData);
-        alert('Ürün başarıyla oluşturuldu');
-      }
-      await loadItems();
-      setShowNewItemModal(false);
-      setEditingItem(null);
-    } catch (err) {
-      console.error('❌ Error saving item:', err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCloseModal = () => {
-    setShowNewItemModal(false);
-    setEditingItem(null);
-  };
-
-  const handleCloseDetailModal = () => {
-    setShowDetailModal(false);
-    setViewingItem(null);
-  };
-
-  const handleEditFromDetail = (item) => {
-    setShowDetailModal(false);
-    setViewingItem(null);
-    setEditingItem(item);
-    setShowNewItemModal(true);
-  };
-
-  const handleDeleteFromDetail = async (itemId) => {
-    await handleDeleteItem(itemId);
-    setShowDetailModal(false);
-    setViewingItem(null);
   };
 
   const handleResetFilters = () => {
@@ -277,7 +232,7 @@ const ItemsPage = () => {
               </div>
               <button
                 className="btn btn-primary"
-                onClick={() => setShowNewItemModal(true)}
+                onClick={handleNewItem}
                 disabled={loading}
               >
                 <i className="bi bi-plus-lg me-2"></i>
@@ -304,7 +259,7 @@ const ItemsPage = () => {
           </div>
         )}
 
-        {/* Items List with Image Support */}
+        {/* Items List */}
         <div className="row">
           <div className="col-12">
             <div className="card">
@@ -327,7 +282,7 @@ const ItemsPage = () => {
                   onEditItem={handleEditItem}
                   onDeleteItem={handleDeleteItem}
                   onBulkDelete={handleBulkDelete}
-                  onNewItem={() => setShowNewItemModal(true)}
+                  onNewItem={handleNewItem}
                   onResetFilters={handleResetFilters}
                   onRefresh={handleRefresh}
                   hasFilters={hasFilters}
@@ -342,32 +297,6 @@ const ItemsPage = () => {
           </div>
         </div>
       </div>
-
-      {/* Item Modal */}
-      {showNewItemModal && (
-        <ItemModal
-          show={showNewItemModal}
-          onHide={handleCloseModal}
-          onSave={handleSaveItem}
-          item={editingItem}
-          itemGroups={itemGroups}
-          loading={loading}
-        />
-      )}
-
-      {/* Item Detail Modal */}
-      {showDetailModal && viewingItem && (
-        <ItemDetailModal
-          show={showDetailModal}
-          onHide={handleCloseDetailModal}
-          item={viewingItem}
-          itemGroups={itemGroups}
-          loading={loading}
-          onEdit={handleEditFromDetail}
-          onDelete={handleDeleteFromDetail}
-          apiBaseUrl={API_BASE_URL}
-        />
-      )}
     </div>
   );
 };
