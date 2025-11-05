@@ -1,8 +1,6 @@
 // src/frontend/src/components/Items/ItemDetail.js
 import React from 'react';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
 const ItemDetail = ({ item, itemGroups, loading, onEdit, onDelete }) => {
   if (!item) return null;
 
@@ -13,30 +11,17 @@ const ItemDetail = ({ item, itemGroups, loading, onEdit, onDelete }) => {
 
   return (
     <div className="item-detail">
-      {/* ✅ Resim varsa en üstte göster */}
+      {/* Resim - Üstte gösterim */}
       {item.imageUrl && (
-        <div className="row mb-4">
-          <div className="col-12">
-            <div className="detail-section text-center">
-              <h6 className="text-muted mb-3">Ürün Resmi</h6>
-              <img 
-                src={API_BASE_URL + item.imageUrl} 
-                alt={item.name}
-                className="img-thumbnail"
-                style={{ 
-                  maxWidth: '400px', 
-                  maxHeight: '400px',
-                  objectFit: 'contain',
-                  border: '2px solid #dee2e6',
-                  borderRadius: '8px'
-                }}
-                onError={(e) => { 
-                  e.target.style.display = 'none';
-                  e.target.parentElement.innerHTML = '<p class="text-muted">Resim yüklenemedi</p>';
-                }}
-              />
-            </div>
-          </div>
+        <div className="detail-section mb-4">
+          <h6 className="text-muted mb-3">Resim</h6>
+          <img 
+            src={item.imageUrl} 
+            alt={item.name}
+            className="img-thumbnail"
+            style={{ maxWidth: '300px', maxHeight: '300px' }}
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
         </div>
       )}
 
@@ -75,7 +60,9 @@ const ItemDetail = ({ item, itemGroups, loading, onEdit, onDelete }) => {
               </span>
             </div>
           </div>
+        </div>
 
+        <div className="col-md-6">
           <div className="detail-section mb-4">
             <h6 className="text-muted mb-3">Boyutlar</h6>
             <div className="detail-item mb-2">
@@ -91,9 +78,7 @@ const ItemDetail = ({ item, itemGroups, loading, onEdit, onDelete }) => {
               <span className="ms-2">{item.z || '-'}</span>
             </div>
           </div>
-        </div>
 
-        <div className="col-md-6">
           <div className="detail-section mb-4">
             <h6 className="text-muted mb-3">Tedarikçi Bilgileri</h6>
             <div className="detail-item mb-2">
@@ -115,22 +100,22 @@ const ItemDetail = ({ item, itemGroups, loading, onEdit, onDelete }) => {
               <span className="ms-2">{item.unit || '-'}</span>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="detail-section mb-4">
-            <h6 className="text-muted mb-3">Tarihler</h6>
-            <div className="detail-item mb-2">
-              <strong>Oluşturma Tarihi:</strong>
-              <span className="ms-2">
-                {item.createdAt ? new Date(item.createdAt).toLocaleString('tr-TR') : '-'}
-              </span>
-            </div>
-            <div className="detail-item mb-2">
-              <strong>Güncelleme Tarihi:</strong>
-              <span className="ms-2">
-                {item.updatedAt ? new Date(item.updatedAt).toLocaleString('tr-TR') : '-'}
-              </span>
-            </div>
-          </div>
+      <div className="detail-section">
+        <h6 className="text-muted mb-3">Tarihler</h6>
+        <div className="detail-item mb-2">
+          <strong>Oluşturma Tarihi:</strong>
+          <span className="ms-2">
+            {item.createdAt ? new Date(item.createdAt).toLocaleString('tr-TR') : '-'}
+          </span>
+        </div>
+        <div className="detail-item mb-2">
+          <strong>Güncelleme Tarihi:</strong>
+          <span className="ms-2">
+            {item.updatedAt ? new Date(item.updatedAt).toLocaleString('tr-TR') : '-'}
+          </span>
         </div>
       </div>
 
@@ -140,16 +125,14 @@ const ItemDetail = ({ item, itemGroups, loading, onEdit, onDelete }) => {
           onClick={() => onEdit?.(item)}
           disabled={loading}
         >
-          <i className="bi bi-pencil me-2"></i>
-          Düzenle
+          <i className="bi bi-pencil me-2"></i>Düzenle
         </button>
         <button 
-          className="btn btn-danger"
-          onClick={() => onDelete?.(item.id)}
+          className="btn btn-outline-danger" 
+          onClick={() => onDelete?.(item)}
           disabled={loading}
         >
-          <i className="bi bi-trash me-2"></i>
-          Sil
+          <i className="bi bi-trash me-2"></i>Sil
         </button>
       </div>
     </div>

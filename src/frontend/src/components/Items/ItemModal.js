@@ -115,7 +115,7 @@ const ItemModal = ({ show, onHide, onSave, item, itemGroups, loading }) => {
 
   return (
     <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="modal-dialog modal-lg modal-dialog-centered">
+      <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">{item ? 'Ürün Düzenle' : 'Yeni Ürün'}</h5>
@@ -124,7 +124,15 @@ const ItemModal = ({ show, onHide, onSave, item, itemGroups, loading }) => {
 
           <form onSubmit={handleSubmit}>
             <div className="modal-body">
-              <div className="row">
+              {/* Temel Bilgiler */}
+              <div className="row mb-3">
+                <div className="col-12">
+                  <h6 className="text-muted border-bottom pb-2 mb-3">
+                    <i className="bi bi-info-circle me-1"></i>
+                    Temel Bilgiler
+                  </h6>
+                </div>
+
                 <div className="col-md-6">
                   <div className="mb-3">
                     <label className="form-label">Numara <span className="text-danger">*</span></label>
@@ -170,7 +178,7 @@ const ItemModal = ({ show, onHide, onSave, item, itemGroups, loading }) => {
               <div className="row">
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Doküman Numarası</label>
+                    <label className="form-label">Doküman No</label>
                     <input
                       type="text"
                       className="form-control"
@@ -191,8 +199,10 @@ const ItemModal = ({ show, onHide, onSave, item, itemGroups, loading }) => {
                       disabled={submitting || loading}
                     >
                       <option value="">Seçiniz...</option>
-                      {itemGroups.map(group => (
-                        <option key={group.id} value={group.id}>{group.name}</option>
+                      {itemGroups?.map(group => (
+                        <option key={group.id} value={group.id}>
+                          {group.name}
+                        </option>
                       ))}
                     </select>
                     {errors.groupId && <div className="invalid-feedback">{errors.groupId}</div>}
@@ -200,7 +210,15 @@ const ItemModal = ({ show, onHide, onSave, item, itemGroups, loading }) => {
                 </div>
               </div>
 
-              <div className="row">
+              {/* Boyutlar */}
+              <div className="row mb-3">
+                <div className="col-12">
+                  <h6 className="text-muted border-bottom pb-2 mb-3">
+                    <i className="bi bi-rulers me-1"></i>
+                    Boyutlar
+                  </h6>
+                </div>
+
                 <div className="col-md-4">
                   <div className="mb-3">
                     <label className="form-label">X</label>
@@ -239,7 +257,27 @@ const ItemModal = ({ show, onHide, onSave, item, itemGroups, loading }) => {
                 </div>
               </div>
 
-              <div className="row">
+              {/* Tedarikçi Bilgileri */}
+              <div className="row mb-3">
+                <div className="col-12">
+                  <h6 className="text-muted border-bottom pb-2 mb-3">
+                    <i className="bi bi-truck me-1"></i>
+                    Tedarikçi Bilgileri
+                  </h6>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Tedarikçi</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.supplier}
+                      onChange={(e) => handleChange('supplier', e.target.value)}
+                      disabled={submitting || loading}
+                    />
+                  </div>
+                </div>
                 <div className="col-md-6">
                   <div className="mb-3">
                     <label className="form-label">Tedarikçi Kodu</label>
@@ -252,6 +290,9 @@ const ItemModal = ({ show, onHide, onSave, item, itemGroups, loading }) => {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="row">
                 <div className="col-md-6">
                   <div className="mb-3">
                     <label className="form-label">Fiyat</label>
@@ -261,21 +302,6 @@ const ItemModal = ({ show, onHide, onSave, item, itemGroups, loading }) => {
                       className="form-control"
                       value={formData.price}
                       onChange={(e) => handleChange('price', e.target.value)}
-                      disabled={submitting || loading}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="mb-3">
-                    <label className="form-label">Tedarikçi</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.supplier}
-                      onChange={(e) => handleChange('supplier', e.target.value)}
                       disabled={submitting || loading}
                     />
                   </div>
@@ -294,56 +320,92 @@ const ItemModal = ({ show, onHide, onSave, item, itemGroups, loading }) => {
                 </div>
               </div>
 
-              <div className="mb-3">
-                <label className="form-label">Resim URL</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={formData.imageUrl}
-                  onChange={(e) => handleChange('imageUrl', e.target.value)}
-                  disabled={submitting || loading}
-                  maxLength={500}
-                />
-              </div>
+              {/* Resim URL */}
+              <div className="row mb-3">
+                <div className="col-12">
+                  <h6 className="text-muted border-bottom pb-2 mb-3">
+                    <i className="bi bi-image me-1"></i>
+                    Resim
+                  </h6>
+                </div>
 
-              {item && (
-                <div className="mb-3">
-                  <div className="form-check form-switch">
+                <div className="col-12">
+                  <div className="mb-3">
+                    <label className="form-label">Resim URL</label>
                     <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="cancelled"
-                      checked={formData.cancelled}
-                      onChange={(e) => handleChange('cancelled', e.target.checked)}
+                      type="url"
+                      className="form-control"
+                      value={formData.imageUrl}
+                      onChange={(e) => handleChange('imageUrl', e.target.value)}
+                      placeholder="https://example.com/image.jpg"
                       disabled={submitting || loading}
                     />
-                    <label className="form-check-label" htmlFor="cancelled">
-                      İptal Edilmiş
-                    </label>
+                    <div className="form-text">
+                      Ürün resminin URL'sini girin
+                    </div>
+                  </div>
+
+                  {/* Resim Önizleme */}
+                  {formData.imageUrl && (
+                    <div className="mt-2">
+                      <img
+                        src={formData.imageUrl}
+                        alt="Ürün resmi önizleme"
+                        className="img-thumbnail"
+                        style={{ maxWidth: '200px', maxHeight: '200px' }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Durum */}
+              {item && (
+                <div className="row">
+                  <div className="col-12">
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="cancelled"
+                        checked={formData.cancelled}
+                        onChange={(e) => handleChange('cancelled', e.target.checked)}
+                        disabled={submitting || loading}
+                      />
+                      <label className="form-check-label" htmlFor="cancelled">
+                        İptal Edilmiş
+                      </label>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
-
+            
             <div className="modal-footer">
               <button 
-                type="button"
-                className="btn btn-secondary" 
-                onClick={handleClose} 
+                type="button" 
+                className="btn btn-secondary"
+                onClick={handleClose}
                 disabled={submitting || loading}
               >
-                <i className="bi bi-x-circle me-2"></i>İptal
+                <i className="bi bi-x me-1"></i>
+                İptal
               </button>
               <button 
-                type="submit"
+                type="submit" 
                 className="btn btn-primary"
                 disabled={submitting || loading}
               >
-                {submitting || loading ? (
-                  <><span className="spinner-border spinner-border-sm me-2"></span>Kaydediliyor...</>
-                ) : (
-                  <><i className="bi bi-check-circle me-2"></i>{item ? 'Güncelle' : 'Kaydet'}</>
+                {(submitting || loading) && (
+                  <span className="spinner-border spinner-border-sm me-2" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </span>
                 )}
+                <i className="bi bi-check2 me-1"></i>
+                {item ? 'Güncelle' : 'Kaydet'}
               </button>
             </div>
           </form>

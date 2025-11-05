@@ -7,7 +7,7 @@ import ItemDetailModal from '../components/Items/ItemDetailModal';
 import apiService from '../services/api';
 import '../assets/css/Items.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
 
 const ItemsPage = () => {
   const location = useLocation();

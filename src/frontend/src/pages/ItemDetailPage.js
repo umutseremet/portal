@@ -80,117 +80,129 @@ const ItemDetailPage = () => {
 
       {/* Content */}
       <div className="row">
-        {/* Left Column - Image & Basic Info */}
-        <div className="col-md-4">
-          {/* Image Card */}
-          {item.imageUrl && (
-            <div className="card mb-3">
+        {/* Resim - Sol tarafta veya üstte */}
+        {item.imageUrl && (
+          <div className="col-12 mb-4">
+            <div className="card">
               <div className="card-body text-center">
-                <img
-                  src={item.imageUrl}
+                <img 
+                  src={item.imageUrl} 
                   alt={item.name}
                   className="img-fluid rounded"
-                  style={{ maxHeight: '300px' }}
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
+                  style={{ maxWidth: '400px', maxHeight: '400px', objectFit: 'contain' }}
+                  onError={(e) => { e.target.style.display = 'none'; }}
                 />
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Basic Info Card */}
-          <div className="card">
-            <div className="card-header">
+        {/* Temel Bilgiler */}
+        <div className="col-md-6 mb-4">
+          <div className="card h-100">
+            <div className="card-header bg-light">
               <h5 className="card-title mb-0">
                 <i className="bi bi-info-circle me-2"></i>
                 Temel Bilgiler
               </h5>
             </div>
             <div className="card-body">
-              <div className="mb-3">
-                <small className="text-muted d-block">Numara</small>
-                <strong>{item.number}</strong>
-              </div>
-              <div className="mb-3">
-                <small className="text-muted d-block">Kod</small>
-                <span className="badge bg-primary">{item.code}</span>
-              </div>
-              <div className="mb-3">
-                <small className="text-muted d-block">İsim</small>
-                <strong>{item.name}</strong>
-              </div>
-              <div className="mb-3">
-                <small className="text-muted d-block">Doküman No</small>
-                <span>{item.docNumber || '-'}</span>
-              </div>
-              <div className="mb-3">
-                <small className="text-muted d-block">Grup</small>
-                <span className="badge bg-info">{item.groupName || 'Belirtilmemiş'}</span>
-              </div>
-              {item.cancelled && (
-                <div className="mb-3">
-                  <span className="badge bg-danger">
-                    <i className="bi bi-x-circle me-1"></i>
-                    İptal Edilmiş
-                  </span>
+              <div className="row g-3">
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <small className="text-muted d-block">Numara</small>
+                    <strong>{item.number}</strong>
+                  </div>
                 </div>
-              )}
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <small className="text-muted d-block">Kod</small>
+                    <strong>
+                      <span className="badge bg-light text-dark">{item.code}</span>
+                    </strong>
+                  </div>
+                </div>
+                <div className="col-12">
+                  <div className="mb-3">
+                    <small className="text-muted d-block">Ürün Adı</small>
+                    <strong>{item.name}</strong>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <small className="text-muted d-block">Doküman No</small>
+                    <strong>{item.docNumber || 'Belirtilmemiş'}</strong>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <small className="text-muted d-block">Durum</small>
+                    <strong>
+                      {item.cancelled ? (
+                        <span className="badge bg-danger">İptal Edilmiş</span>
+                      ) : (
+                        <span className="badge bg-success">Aktif</span>
+                      )}
+                    </strong>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column - Details */}
-        <div className="col-md-8">
-          {/* Dimensions Card */}
-          <div className="card mb-3">
-            <div className="card-header">
+        {/* Boyutlar */}
+        <div className="col-md-6 mb-4">
+          <div className="card h-100">
+            <div className="card-header bg-light">
               <h5 className="card-title mb-0">
-                <i className="bi bi-box me-2"></i>
+                <i className="bi bi-rulers me-2"></i>
                 Boyutlar
               </h5>
             </div>
             <div className="card-body">
-              <div className="row">
-                <div className="col-md-4">
+              <div className="row g-3">
+                <div className="col-4">
                   <div className="mb-3">
                     <small className="text-muted d-block">X</small>
-                    <strong className="fs-4">{item.x || '-'}</strong>
+                    <strong>{item.x || '-'}</strong>
                   </div>
                 </div>
-                <div className="col-md-4">
+                <div className="col-4">
                   <div className="mb-3">
                     <small className="text-muted d-block">Y</small>
-                    <strong className="fs-4">{item.y || '-'}</strong>
+                    <strong>{item.y || '-'}</strong>
                   </div>
                 </div>
-                <div className="col-md-4">
+                <div className="col-4">
                   <div className="mb-3">
                     <small className="text-muted d-block">Z</small>
-                    <strong className="fs-4">{item.z || '-'}</strong>
+                    <strong>{item.z || '-'}</strong>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Supplier Info Card */}
-          <div className="card mb-3">
-            <div className="card-header">
+        {/* Tedarikçi Bilgileri */}
+        <div className="col-md-6 mb-4">
+          <div className="card h-100">
+            <div className="card-header bg-light">
               <h5 className="card-title mb-0">
                 <i className="bi bi-truck me-2"></i>
                 Tedarikçi Bilgileri
               </h5>
             </div>
             <div className="card-body">
-              <div className="row">
-                <div className="col-md-6">
+              <div className="row g-3">
+                <div className="col-12">
                   <div className="mb-3">
                     <small className="text-muted d-block">Tedarikçi</small>
                     <strong>{item.supplier || 'Belirtilmemiş'}</strong>
                   </div>
                 </div>
-                <div className="col-md-6">
+                <div className="col-12">
                   <div className="mb-3">
                     <small className="text-muted d-block">Tedarikçi Kodu</small>
                     <strong>{item.supplierCode || 'Belirtilmemiş'}</strong>
@@ -200,30 +212,34 @@ const ItemDetailPage = () => {
                   <div className="mb-3">
                     <small className="text-muted d-block">Fiyat</small>
                     <strong className="text-success">
-                      {item.price ? `₺${item.price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}` : '-'}
+                      {item.price 
+                        ? item.price.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })
+                        : 'Belirtilmemiş'}
                     </strong>
                   </div>
                 </div>
                 <div className="col-md-6">
                   <div className="mb-3">
                     <small className="text-muted d-block">Birim</small>
-                    <strong>{item.unit || 'Adet'}</strong>
+                    <strong>{item.unit || 'Belirtilmemiş'}</strong>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Timestamps Card */}
-          <div className="card">
-            <div className="card-header">
+        {/* Tarihler */}
+        <div className="col-md-6 mb-4">
+          <div className="card h-100">
+            <div className="card-header bg-light">
               <h5 className="card-title mb-0">
                 <i className="bi bi-clock-history me-2"></i>
                 Tarih Bilgileri
               </h5>
             </div>
             <div className="card-body">
-              <div className="row">
+              <div className="row g-3">
                 <div className="col-md-6">
                   <div className="mb-3">
                     <small className="text-muted d-block">Oluşturulma Tarihi</small>

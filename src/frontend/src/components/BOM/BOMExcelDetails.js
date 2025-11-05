@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Eye, Search, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import apiService from '../../services/api';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
 
 const BOMExcelDetails = ({ selectedExcel, workId }) => {
   const [items, setItems] = useState([]);
