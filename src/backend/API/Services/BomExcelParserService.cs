@@ -358,21 +358,21 @@ namespace API.Services
             if (columns.ContainsKey("XYonu"))
             {
                 var xText = worksheet.Cells[row, columns["XYonu"]].Text?.Trim();
-                if (int.TryParse(xText, out int x))
+                if (double.TryParse(xText, out double x))
                     data.X = x;
             }
 
             if (columns.ContainsKey("YYonu"))
             {
                 var yText = worksheet.Cells[row, columns["YYonu"]].Text?.Trim();
-                if (int.TryParse(yText, out int y))
+                if (double.TryParse(yText, out double y))
                     data.Y = y;
             }
 
             if (columns.ContainsKey("ZYonu"))
             {
                 var zText = worksheet.Cells[row, columns["ZYonu"]].Text?.Trim();
-                if (int.TryParse(zText, out int z))
+                if (double.TryParse(zText, out double z))
                     data.Z = z;
             }
 
@@ -481,9 +481,9 @@ namespace API.Services
         public string? DokumanNo { get; set; }
         public string? Malzeme { get; set; }
         public int? Miktar { get; set; }
-        public int? X { get; set; }
-        public int? Y { get; set; }
-        public int? Z { get; set; }
+        public double? X { get; set; }
+        public double? Y { get; set; }
+        public double? Z { get; set; }
         public string? Notes { get; set; }
         public string? EskiKod { get; set; }
     }

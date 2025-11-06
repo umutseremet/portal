@@ -200,6 +200,7 @@ const ItemsPage = () => {
   };
 
   const handleRefresh = () => {
+    console.log('🔄 Refresh butonuna basıldı');
     loadItems();
   };
 

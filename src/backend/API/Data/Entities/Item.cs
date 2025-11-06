@@ -27,9 +27,9 @@ namespace API.Data.Entities
         [Required]
         public int GroupId { get; set; }
 
-        public int? X { get; set; }
-        public int? Y { get; set; }
-        public int? Z { get; set; }
+        public double? X { get; set; }
+        public double? Y { get; set; }
+        public double? Z { get; set; }
 
         [MaxLength(500)]
         public string? ImageUrl { get; set; }

@@ -87,9 +87,9 @@ const ItemEditPage = () => {
         ...formData,
         number: parseInt(formData.number) || 0,
         groupId: parseInt(formData.groupId),
-        x: formData.x ? parseInt(formData.x) : null,
-        y: formData.y ? parseInt(formData.y) : null,
-        z: formData.z ? parseInt(formData.z) : null,
+        x: formData.x ? parseFloat(formData.x) : null,
+        y: formData.y ? parseFloat(formData.y) : null,
+        z: formData.z ? parseFloat(formData.z) : null,
         price: formData.price ? parseFloat(formData.price) : 0
       };
 
@@ -285,6 +285,7 @@ const ItemEditPage = () => {
                     <label className="form-label">X</label>
                     <input
                       type="number"
+                      step="0.01"  // Ondalıklı giriş için
                       className="form-control"
                       value={formData.x}
                       onChange={(e) => handleChange('x', e.target.value)}
@@ -295,6 +296,7 @@ const ItemEditPage = () => {
                     <label className="form-label">Y</label>
                     <input
                       type="number"
+                      step="0.01"  // Ondalıklı giriş için
                       className="form-control"
                       value={formData.y}
                       onChange={(e) => handleChange('y', e.target.value)}
@@ -305,6 +307,7 @@ const ItemEditPage = () => {
                     <label className="form-label">Z</label>
                     <input
                       type="number"
+                      step="0.01"  // Ondalıklı giriş için 
                       className="form-control"
                       value={formData.z}
                       onChange={(e) => handleChange('z', e.target.value)}

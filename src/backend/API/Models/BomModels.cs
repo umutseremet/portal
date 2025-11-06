@@ -121,9 +121,9 @@ namespace API.Models
         public string ItemCode { get; set; } = string.Empty;
         public string ItemName { get; set; } = string.Empty;
         public string ItemDocNumber { get; set; } = string.Empty;
-        public int? ItemX { get; set; }
-        public int? ItemY { get; set; }
-        public int? ItemZ { get; set; }
+        public double? ItemX { get; set; }
+        public double? ItemY { get; set; }
+        public double? ItemZ { get; set; }
         public string? ItemGroupName { get; set; }
 
         // Excel'e özel alanlar

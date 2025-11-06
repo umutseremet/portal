@@ -91,25 +91,29 @@ const ItemsList = ({
       {/* Toolbar */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="d-flex gap-2">
-          <button 
+          <button
             className="btn btn-outline-secondary btn-sm"
-            onClick={() => setShowFilters(!showFilters)}
+            onClick={() => {
+              console.log('🔄 Refresh onClick triggered');
+              setShowFilters(!showFilters)
+            }
+            }
           >
             <i className="bi bi-funnel me-1"></i>
             Filtreler
             {hasFilters && <span className="badge bg-primary ms-2">!</span>}
           </button>
-          
+
           {selectedCount > 0 && (
             <>
-              <button 
+              <button
                 className="btn btn-outline-danger btn-sm"
                 onClick={onBulkDelete}
               >
                 <i className="bi bi-trash me-1"></i>
                 Seçilenleri Sil ({selectedCount})
               </button>
-              <button 
+              <button
                 className="btn btn-outline-secondary btn-sm"
                 onClick={onClearSelection}
               >
@@ -119,9 +123,9 @@ const ItemsList = ({
             </>
           )}
         </div>
-        
+
         <div className="d-flex gap-2">
-          <button 
+          <button
             className="btn btn-outline-secondary btn-sm"
             onClick={onRefresh}
             disabled={loading}
@@ -189,21 +193,21 @@ const ItemsList = ({
             </div>
             <div className="mt-3">
               <div className="d-flex gap-2">
-                <button 
+                <button
                   className="btn btn-primary btn-sm"
                   onClick={handleApplyFilters}
                 >
                   <i className="bi bi-search me-1"></i>
                   Filtrele
                 </button>
-                <button 
+                <button
                   className="btn btn-outline-secondary btn-sm"
                   onClick={handleResetFilters}
                 >
                   <i className="bi bi-arrow-clockwise me-1"></i>
                   Temizle
                 </button>
-                <button 
+                <button
                   className="btn btn-outline-secondary btn-sm"
                   onClick={() => setShowFilters(false)}
                 >
@@ -315,9 +319,9 @@ const ItemsList = ({
                         src={item.imageUrl}
                         alt={item.name}
                         className="img-thumbnail"
-                        style={{ 
-                          width: '50px', 
-                          height: '50px', 
+                        style={{
+                          width: '50px',
+                          height: '50px',
                           objectFit: 'cover',
                           cursor: 'pointer'
                         }}
@@ -353,9 +357,9 @@ const ItemsList = ({
                   <td>
                     {item.price ? (
                       <span className="fw-medium">
-                        {item.price.toLocaleString('tr-TR', { 
-                          style: 'currency', 
-                          currency: 'TRY' 
+                        {item.price.toLocaleString('tr-TR', {
+                          style: 'currency',
+                          currency: 'TRY'
                         })}
                       </span>
                     ) : '-'}
@@ -416,7 +420,7 @@ const ItemsList = ({
                   <i className="bi bi-chevron-left"></i>
                 </button>
               </li>
-              
+
               {[...Array(pagination.totalPages)].map((_, i) => {
                 const page = i + 1;
                 if (
@@ -442,7 +446,7 @@ const ItemsList = ({
                 }
                 return null;
               })}
-              
+
               <li className={`page-item ${!pagination.hasNextPage ? 'disabled' : ''}`}>
                 <button
                   className="page-link"

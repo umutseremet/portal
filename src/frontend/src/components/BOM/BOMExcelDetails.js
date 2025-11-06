@@ -5,8 +5,8 @@ import { Eye, Search, ChevronLeft, ChevronRight, Image as ImageIcon } from 'luci
 import apiService from '../../services/api';
 
 // ✅ API_BASE_URL'den /api kısmını kaldırıyoruz çünkü imageUrl direkt /Uploads ile başlıyor
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL 
-  ? process.env.REACT_APP_API_BASE_URL.replace('/api', '') 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
+  ? process.env.REACT_APP_API_BASE_URL.replace('/api', '')
   : 'http://localhost:5154';
 
 const BOMExcelDetails = ({ selectedExcel, workId }) => {
@@ -98,7 +98,7 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
-    
+
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
@@ -128,7 +128,7 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
         pages.push(totalPages);
       }
     }
-    
+
     return pages;
   };
 
@@ -185,8 +185,8 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
               <table className="table table-hover table-sm mb-0 align-middle">
                 <thead className="table-light sticky-top">
                   <tr>
-                    <th style={{ width: '80px' }}>Öğe No</th>
                     <th style={{ width: '80px' }} className="text-center">Resim</th>
+                    <th style={{ width: '80px' }}>Öğe No</th>
                     <th style={{ width: '180px' }}>Parça No</th>
                     <th style={{ width: '120px' }}>Doküman No</th>
                     <th style={{ width: '150px' }}>Malzeme Grubu</th>
@@ -206,12 +206,12 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                             onClick={() => handleImageClick(item.itemImageUrl, item.itemCode)}
                             title="Resmi büyüt"
                           >
-                            <img 
+                            <img
                               src={`${API_BASE_URL}${item.itemImageUrl}`}
                               alt={item.itemCode}
-                              style={{ 
-                                width: '40px', 
-                                height: '40px', 
+                              style={{
+                                width: '40px',
+                                height: '40px',
                                 objectFit: 'cover',
                                 borderRadius: '4px'
                               }}
@@ -270,11 +270,11 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
               <small className="text-muted">
                 Sayfa {currentPage} / {totalPages}
               </small>
-              
+
               <nav>
                 <ul className="pagination pagination-sm mb-0">
                   <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                    <button 
+                    <button
                       className="page-link"
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
@@ -282,15 +282,15 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                       <ChevronLeft size={16} />
                     </button>
                   </li>
-                  
+
                   {getPageNumbers().map((page, index) => (
                     page === '...' ? (
                       <li key={`ellipsis-${index}`} className="page-item disabled">
                         <span className="page-link">...</span>
                       </li>
                     ) : (
-                      <li 
-                        key={page} 
+                      <li
+                        key={page}
                         className={`page-item ${currentPage === page ? 'active' : ''}`}
                       >
                         <button
@@ -302,9 +302,9 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                       </li>
                     )
                   ))}
-                  
+
                   <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                    <button 
+                    <button
                       className="page-link"
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
@@ -322,19 +322,19 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
       {/* Resim Modal */}
       {selectedImage && (
         <>
-          <div 
-            className="modal-backdrop fade show" 
+          <div
+            className="modal-backdrop fade show"
             style={{ zIndex: 1040 }}
             onClick={closeImageModal}
           ></div>
-          
-          <div 
-            className="modal fade show d-block" 
-            tabIndex="-1" 
+
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
             style={{ zIndex: 1050 }}
             onClick={closeImageModal}
           >
-            <div 
+            <div
               className="modal-dialog modal-xl modal-dialog-centered"
               onClick={(e) => e.stopPropagation()}
             >
@@ -344,15 +344,15 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                     <ImageIcon size={20} className="me-2" />
                     {selectedImage.code}
                   </h5>
-                  <button 
-                    type="button" 
-                    className="btn-close" 
+                  <button
+                    type="button"
+                    className="btn-close"
                     onClick={closeImageModal}
                   ></button>
                 </div>
                 <div className="modal-body text-center p-4">
-                  <img 
-                    src={selectedImage.url} 
+                  <img
+                    src={selectedImage.url}
                     alt={selectedImage.code}
                     className="img-fluid rounded shadow"
                     style={{ maxHeight: '70vh', objectFit: 'contain' }}
@@ -362,8 +362,8 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                   />
                 </div>
                 <div className="modal-footer">
-                  <a 
-                    href={selectedImage.url} 
+                  <a
+                    href={selectedImage.url}
                     download={`${selectedImage.code}.png`}
                     className="btn btn-primary"
                     target="_blank"
@@ -372,9 +372,9 @@ const BOMExcelDetails = ({ selectedExcel, workId }) => {
                     <i className="bi bi-download me-2"></i>
                     İndir
                   </a>
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary" 
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
                     onClick={closeImageModal}
                   >
                     Kapat
