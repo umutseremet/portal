@@ -28,7 +28,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
 
-          <Route path="/definitions/items/detail" element={
+          <Route path="/definitions/items/detail/:id" element={
             <ProtectedRoute><Layout><ItemDetailPage /></Layout></ProtectedRoute>
           } />
           {/* Protected Routes */}
@@ -44,14 +44,14 @@ function App() {
           />
 
           {/* Item Edit/New Page - YENİ */}
-          <Route path="/definitions/items/edit" element={
+          <Route path="/definitions/items/edit/:id" element={
             <ProtectedRoute><Layout><ItemEditPage /></Layout></ProtectedRoute>
           } />
 
           <Route path="/definitions/items/new" element={
             <ProtectedRoute><Layout><ItemEditPage /></Layout></ProtectedRoute>
           } />
-          
+
           {/* Items Management Routes */}
           <Route
             path="/definitions/items"

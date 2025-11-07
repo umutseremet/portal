@@ -25,9 +25,52 @@ namespace API.Data
         public DbSet<BomWork> BomWorks { get; set; }
         public DbSet<BomExcel> BomExcels { get; set; }
         public DbSet<BomItem> BomItems { get; set; }
+        public DbSet<ItemFile> ItemFiles { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<ItemFile>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.FileName)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.FilePath)
+                    .IsRequired()
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.FileSize)
+                    .IsRequired();
+
+                entity.Property(e => e.FileExtension)
+                    .IsRequired()
+                    .HasMaxLength(10);
+
+                entity.Property(e => e.FileType)
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.UploadedBy)
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.UploadedAt)
+                    .IsRequired();
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(500);
+
+                // Foreign key relationship
+                entity.HasOne(e => e.Item)
+                    .WithMany()
+                    .HasForeignKey(e => e.ItemId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Index on ItemId for performance
+                entity.HasIndex(e => e.ItemId)
+                    .HasDatabaseName("IX_ItemFiles_ItemId");
+            });
 
             modelBuilder.Entity<BomWork>(entity =>
             {

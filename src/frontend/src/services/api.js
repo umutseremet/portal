@@ -1084,6 +1084,121 @@ class ApiService {
   }
 
   /**
+ * Get files for an item
+ * Backend: POST /api/ItemFiles/list
+ */
+  async getItemFiles(itemId) {
+    if (!itemId) {
+      throw new Error('Item ID is required');
+    }
+
+    console.log('📦 API getItemFiles call:', { itemId });
+
+    try {
+      const requestBody = {
+        itemId: itemId
+      };
+
+      const response = await this.post('/ItemFiles/list', requestBody);
+      console.log('📦 API getItemFiles raw response:', response);
+
+      const files = response.files || response.Files || response.data || response.Data || [];
+
+      console.log('✅ API getItemFiles mapped:', files);
+      return files;
+    } catch (error) {
+      console.error('❌ API getItemFiles error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload file to an item
+   * Backend: POST /api/ItemFiles/upload
+   * Form Data: itemId + file
+   */
+  async uploadItemFile(itemId, file) {
+    if (!itemId) {
+      throw new Error('Item ID is required');
+    }
+
+    if (!file) {
+      throw new Error('File is required');
+    }
+
+    // Allowed extensions
+    const allowedExtensions = ['.esp', '.nc', '.pdf', '.x_t', '.xlsx', '.xls'];
+    const fileName = file.name.toLowerCase();
+    const isAllowed = allowedExtensions.some(ext => fileName.endsWith(ext));
+
+    if (!isAllowed) {
+      throw new Error(`Only these file types are allowed: ${allowedExtensions.join(', ')}`);
+    }
+
+    console.log(`📦 uploadItemFile: itemId=${itemId}, file=${file.name}`);
+
+    const formData = new FormData();
+    formData.append('itemId', itemId);
+    formData.append('file', file);
+
+    const url = `${this.baseURL}/ItemFiles/upload`;
+
+    console.log(`📦 POST ${url}`);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.getAuthToken()}`
+        },
+        body: formData
+      });
+
+      console.log(`📡 Response: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Error ${response.status}:`, errorText);
+
+        if (response.status === 401) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          throw new Error('Oturum süresi doldu');
+        }
+
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Upload success:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Upload failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an item file
+   * Backend: DELETE /api/ItemFiles/{id}
+   */
+  async deleteItemFile(fileId) {
+    if (!fileId) {
+      throw new Error('File ID is required');
+    }
+
+    console.log(`📦 deleteItemFile: fileId=${fileId}`);
+
+    try {
+      const response = await this.delete(`/ItemFiles/${fileId}`);
+      console.log('✅ Delete success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Delete failed:', error);
+      throw error;
+    }
+  }
+  /**
    * Create a new BOM work
    * Backend: POST /api/BomWorks
    */
