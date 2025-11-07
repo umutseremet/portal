@@ -12,14 +12,14 @@ const ItemsPage = () => {
   const navigate = useNavigate();
   const groupFilter = location.state?.groupId;
   const groupName = location.state?.groupName;
-  
+
   // State
   const [items, setItems] = useState([]);
   const [itemGroups, setItemGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
-  
+
   // Filters
   const [filters, setFilters] = useState({
     name: '',
@@ -57,11 +57,11 @@ const ItemsPage = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('📥 Loading items with filters:', filters);
       const response = await apiService.getItems(filters);
       console.log('✅ Items loaded:', response);
-      
+
       setItems(response.items || []);
       setPagination({
         currentPage: response.page || 1,
@@ -110,7 +110,7 @@ const ItemsPage = () => {
   };
 
   const handleItemSelect = (id) => {
-    setSelectedItems(prev => 
+    setSelectedItems(prev =>
       prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
     );
   };
@@ -127,14 +127,12 @@ const ItemsPage = () => {
     setSelectedItems([]);
   };
 
-  // ✅ Detay sayfasına yönlendir
   const handleViewDetails = (item) => {
-    navigate('/definitions/items/detail', { state: { item, itemGroups } });
+    navigate(`/definitions/items/detail/${item.id}`, { state: { item, itemGroups } });
   };
 
-  // ✅ Düzenleme sayfasına yönlendir (MODAL YOK!)
   const handleEditItem = (item) => {
-    navigate('/definitions/items/edit', { state: { item, itemGroups } });
+    navigate(`/definitions/items/edit/${item.id}`, { state: { item, itemGroups } });
   };
 
   // ✅ Yeni ürün sayfasına yönlendir (MODAL YOK!)
@@ -250,9 +248,9 @@ const ItemsPage = () => {
               <div className="alert alert-danger alert-dismissible fade show" role="alert">
                 <i className="bi bi-exclamation-triangle-fill me-2"></i>
                 <strong>Hata!</strong> {error}
-                <button 
-                  type="button" 
-                  className="btn-close" 
+                <button
+                  type="button"
+                  className="btn-close"
                   onClick={() => setError(null)}
                 ></button>
               </div>

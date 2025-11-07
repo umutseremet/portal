@@ -1,20 +1,29 @@
 // src/frontend/src/pages/ItemEditPage.js
+// Bu dosyaya ItemFileUpload component'i eklenecek şekilde güncelleme
 
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import apiService from '../services/api';
-
-// ✅ API_BASE_URL'den /api kısmını kaldırıyoruz çünkü imageUrl direkt /Uploads ile başlıyor
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL 
-  ? process.env.REACT_APP_API_BASE_URL.replace('/api', '') 
-  : 'http://localhost:5154';
+import ItemFileUpload from '../components/Items/ItemFileUpload';
+import PDFPreviewModal from '../components/Items/PDFPreviewModal';
 
 const ItemEditPage = () => {
-  const location = useLocation();
+  const { id } = useParams(); // URL'den ID alınıyor: /definitions/items/edit/:id
   const navigate = useNavigate();
-  const item = location.state?.item;
-  const itemGroups = location.state?.itemGroups || [];
-  const isEdit = !!item;
+  const location = useLocation();
+  const isEdit = !!id; // ID varsa edit mode, yoksa new mode
+
+  const [item, setItem] = useState(location.state?.item || null);
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // File upload states
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   const [formData, setFormData] = useState({
     number: '',
@@ -29,68 +38,126 @@ const ItemEditPage = () => {
     supplierCode: '',
     price: '',
     supplier: '',
-    unit: '',
-    cancelled: false
+    unit: 'Adet'
   });
 
-  const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
-
+  // Load item data
   useEffect(() => {
-    if (item) {
-      setFormData({
-        number: item.number || '',
-        code: item.code || '',
-        name: item.name || '',
-        docNumber: item.docNumber || '',
-        groupId: item.groupId || '',
-        x: item.x || '',
-        y: item.y || '',
-        z: item.z || '',
-        imageUrl: item.imageUrl || '',
-        supplierCode: item.supplierCode || '',
-        price: item.price || '',
-        supplier: item.supplier || '',
-        unit: item.unit || '',
-        cancelled: item.cancelled || false
-      });
+    if (isEdit) {
+      if (item) {
+        populateForm(item);
+      } else {
+        fetchItem();
+      }
     }
-  }, [item]);
+  }, [id, isEdit]);
 
-  const validateForm = () => {
-    const newErrors = {};
+  // Load groups
+  useEffect(() => {
+    fetchGroups();
+  }, []);
 
-    if (!formData.number) newErrors.number = 'Numara zorunludur';
-    if (!formData.code?.trim()) newErrors.code = 'Kod zorunludur';
-    if (!formData.name?.trim()) newErrors.name = 'İsim zorunludur';
-    if (!formData.groupId) newErrors.groupId = 'Grup seçimi zorunludur';
+  // Load files if editing
+  useEffect(() => {
+    if (isEdit && id) {
+      fetchFiles();
+    }
+  }, [isEdit, id]);
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const fetchItem = async () => {
+    try {
+      setLoading(true);
+      const data = await apiService.getItem(id);
+      setItem(data);
+      populateForm(data);
+    } catch (err) {
+      console.error('Error loading item:', err);
+      alert('Ürün bilgisi yüklenirken hata oluştu');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: null }));
+  const fetchGroups = async () => {
+    try {
+      const response = await apiService.getItemGroups({
+        page: 1,
+        pageSize: 100,
+        includeCancelled: false
+      });
+      setGroups(response.itemGroups || []);
+    } catch (err) {
+      console.error('Error loading groups:', err);
     }
+  };
+
+  const fetchFiles = async () => {
+    if (!id) return;
+
+    try {
+      setFilesLoading(true);
+      const files = await apiService.getItemFiles(parseInt(id));
+      setUploadedFiles(Array.isArray(files) ? files : []);
+      console.log('✅ Files loaded:', files.length);
+    } catch (err) {
+      console.error('❌ Error loading files:', err);
+      alert('Dosyalar yüklenirken hata oluştu: ' + err.message);
+    } finally {
+      setFilesLoading(false);
+    }
+  };
+
+  const populateForm = (itemData) => {
+    setFormData({
+      number: itemData.number || '',
+      code: itemData.code || '',
+      name: itemData.name || '',
+      docNumber: itemData.docNumber || '',
+      groupId: itemData.groupId || '',
+      x: itemData.x || '',
+      y: itemData.y || '',
+      z: itemData.z || '',
+      imageUrl: itemData.imageUrl || '',
+      supplierCode: itemData.supplierCode || '',
+      price: itemData.price || '',
+      supplier: itemData.supplier || '',
+      unit: itemData.unit || 'Adet'
+    });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
+    if (!formData.code || !formData.name || !formData.groupId) {
+      alert('Lütfen zorunlu alanları doldurun');
+      return;
+    }
 
     try {
       setSubmitting(true);
+
       const submitData = {
-        ...formData,
         number: parseInt(formData.number) || 0,
+        code: formData.code.trim(),
+        name: formData.name.trim(),
+        docNumber: formData.docNumber.trim(),
         groupId: parseInt(formData.groupId),
         x: formData.x ? parseFloat(formData.x) : null,
         y: formData.y ? parseFloat(formData.y) : null,
         z: formData.z ? parseFloat(formData.z) : null,
-        price: formData.price ? parseFloat(formData.price) : 0
+        imageUrl: formData.imageUrl?.trim(),
+        supplierCode: formData.supplierCode?.trim(),
+        price: formData.price ? parseFloat(formData.price) : 0,
+        supplier: formData.supplier?.trim(),
+        unit: formData.unit || 'Adet'
       };
 
       if (isEdit) {
@@ -113,6 +180,118 @@ const ItemEditPage = () => {
   const handleCancel = () => {
     navigate('/definitions/items');
   };
+
+  // File upload handlers
+  const handleFileUpload = async (files) => {
+    if (!id) {
+      alert('Dosya yüklemek için önce ürünü kaydedin');
+      return;
+    }
+
+    setUploading(true);
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const file of Array.from(files)) {
+      try {
+        console.log('📤 Uploading file:', file.name);
+        const result = await apiService.uploadItemFile(parseInt(id), file);
+        console.log('✅ File uploaded:', result);
+        successCount++;
+      } catch (err) {
+        console.error('❌ Error uploading file:', err);
+        alert(`${file.name} yüklenirken hata oluştu: ${err.message}`);
+        errorCount++;
+      }
+    }
+
+    setUploading(false);
+    
+    if (successCount > 0) {
+      alert(`${successCount} dosya başarıyla yüklendi.${errorCount > 0 ? ` ${errorCount} dosya yüklenemedi.` : ''}`);
+    }
+    
+    await fetchFiles();
+  };
+
+  const handleDeleteFile = async (fileId) => {
+    if (!window.confirm('Bu dosyayı silmek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    try {
+      setFilesLoading(true);
+      await apiService.deleteItemFile(fileId);
+      
+      setUploadedFiles(uploadedFiles.filter(file => file.id !== fileId));
+      
+      console.log('✅ File deleted:', fileId);
+      alert('Dosya başarıyla silindi.');
+    } catch (err) {
+      console.error('❌ Error deleting file:', err);
+      alert('Dosya silinirken hata oluştu: ' + err.message);
+    } finally {
+      setFilesLoading(false);
+    }
+  };
+
+  const handleDeleteMultiple = async (fileIds) => {
+    if (!fileIds || fileIds.length === 0) {
+      return;
+    }
+
+    try {
+      setFilesLoading(true);
+      
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const fileId of fileIds) {
+        try {
+          await apiService.deleteItemFile(fileId);
+          successCount++;
+          console.log(`✅ File ${fileId} deleted`);
+        } catch (err) {
+          errorCount++;
+          console.error(`❌ Error deleting file ${fileId}:`, err);
+        }
+      }
+
+      setUploadedFiles(prev => prev.filter(file => !fileIds.includes(file.id)));
+
+      if (successCount > 0) {
+        alert(`${successCount} dosya silindi.${errorCount > 0 ? ` ${errorCount} dosya silinemedi.` : ''}`);
+      } else {
+        alert('Hiçbir dosya silinemedi.');
+      }
+    } catch (err) {
+      console.error('❌ Error in bulk delete:', err);
+      alert('Dosyalar silinirken hata oluştu: ' + err.message);
+    } finally {
+      setFilesLoading(false);
+    }
+  };
+
+  const handlePreviewFile = (fileId) => {
+    const file = uploadedFiles.find(f => f.id === fileId);
+    if (file && file.isPdf) {
+      setPreviewFile(file);
+      setShowPreview(true);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container-fluid py-4">
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Yükleniyor...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!item && isEdit) {
     return (
@@ -149,9 +328,9 @@ const ItemEditPage = () => {
                   <i className="bi bi-box me-2"></i>
                   {isEdit ? 'Ürün Düzenle' : 'Yeni Ürün'}
                 </h2>
-                {isEdit && (
-                  <p className="text-muted mb-0">{item.code} - {item.name}</p>
-                )}
+                <p className="text-muted mb-0">
+                  {isEdit ? `Ürün: ${item?.code}` : 'Yeni ürün oluştur'}
+                </p>
               </div>
             </div>
           </div>
@@ -159,292 +338,255 @@ const ItemEditPage = () => {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit}>
-        <div className="row">
-          {/* Temel Bilgiler */}
-          <div className="col-md-6 mb-4">
-            <div className="card h-100">
-              <div className="card-header bg-light">
-                <h5 className="card-title mb-0">
-                  <i className="bi bi-info-circle me-2"></i>
-                  Temel Bilgiler
-                </h5>
-              </div>
-              <div className="card-body">
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <label className="form-label">
-                      Numara <span className="text-danger">*</span>
-                    </label>
+      <div className="row">
+        <div className="col-12 col-lg-7">
+          <div className="card shadow-sm mb-4">
+            <div className="card-body">
+              <form onSubmit={handleSubmit}>
+                <div className="row">
+                  {/* Number */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Numara *</label>
                     <input
                       type="number"
-                      className={`form-control ${errors.number ? 'is-invalid' : ''}`}
+                      className="form-control"
+                      name="number"
                       value={formData.number}
-                      onChange={(e) => handleChange('number', e.target.value)}
+                      onChange={handleInputChange}
+                      required
                       disabled={submitting}
                     />
-                    {errors.number && <div className="invalid-feedback">{errors.number}</div>}
                   </div>
 
-                  <div className="col-md-6">
-                    <label className="form-label">
-                      Kod <span className="text-danger">*</span>
-                    </label>
+                  {/* Code */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Kod *</label>
                     <input
                       type="text"
-                      className={`form-control ${errors.code ? 'is-invalid' : ''}`}
+                      className="form-control"
+                      name="code"
                       value={formData.code}
-                      onChange={(e) => handleChange('code', e.target.value)}
+                      onChange={handleInputChange}
+                      required
                       disabled={submitting}
+                      maxLength={50}
                     />
-                    {errors.code && <div className="invalid-feedback">{errors.code}</div>}
                   </div>
 
-                  <div className="col-12">
-                    <label className="form-label">
-                      İsim <span className="text-danger">*</span>
-                    </label>
+                  {/* Name */}
+                  <div className="col-12 mb-3">
+                    <label className="form-label">İsim *</label>
                     <input
                       type="text"
-                      className={`form-control ${errors.name ? 'is-invalid' : ''}`}
+                      className="form-control"
+                      name="name"
                       value={formData.name}
-                      onChange={(e) => handleChange('name', e.target.value)}
+                      onChange={handleInputChange}
+                      required
                       disabled={submitting}
+                      maxLength={500}
                     />
-                    {errors.name && <div className="invalid-feedback">{errors.name}</div>}
                   </div>
 
-                  <div className="col-md-6">
+                  {/* Doc Number */}
+                  <div className="col-md-6 mb-3">
                     <label className="form-label">Doküman No</label>
                     <input
                       type="text"
                       className="form-control"
+                      name="docNumber"
                       value={formData.docNumber}
-                      onChange={(e) => handleChange('docNumber', e.target.value)}
+                      onChange={handleInputChange}
                       disabled={submitting}
+                      maxLength={50}
                     />
                   </div>
 
-                  <div className="col-md-6">
-                    <label className="form-label">
-                      Grup <span className="text-danger">*</span>
-                    </label>
+                  {/* Group */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Grup *</label>
                     <select
-                      className={`form-select ${errors.groupId ? 'is-invalid' : ''}`}
+                      className="form-select"
+                      name="groupId"
                       value={formData.groupId}
-                      onChange={(e) => handleChange('groupId', e.target.value)}
+                      onChange={handleInputChange}
+                      required
                       disabled={submitting}
                     >
-                      <option value="">Seçiniz</option>
-                      {itemGroups.map(group => (
+                      <option value="">Grup Seçin</option>
+                      {groups.map(group => (
                         <option key={group.id} value={group.id}>
                           {group.name}
                         </option>
                       ))}
                     </select>
-                    {errors.groupId && <div className="invalid-feedback">{errors.groupId}</div>}
                   </div>
 
-                  {isEdit && (
-                    <div className="col-12">
-                      <div className="form-check form-switch">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          id="cancelled"
-                          checked={formData.cancelled}
-                          onChange={(e) => handleChange('cancelled', e.target.checked)}
-                          disabled={submitting}
-                        />
-                        <label className="form-check-label" htmlFor="cancelled">
-                          İptal Edilmiş
-                        </label>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Boyutlar ve Tedarikçi */}
-          <div className="col-md-6 mb-4">
-            <div className="card h-100">
-              <div className="card-header bg-light">
-                <h5 className="card-title mb-0">
-                  <i className="bi bi-rulers me-2"></i>
-                  Boyutlar ve Tedarikçi
-                </h5>
-              </div>
-              <div className="card-body">
-                <div className="row g-3 mb-4">
-                  <div className="col-12">
-                    <h6 className="text-muted mb-2">Boyutlar</h6>
-                  </div>
-                  <div className="col-4">
+                  {/* Dimensions */}
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">X</label>
                     <input
                       type="number"
-                      step="0.01"  // Ondalıklı giriş için
+                      step="0.01"
                       className="form-control"
+                      name="x"
                       value={formData.x}
-                      onChange={(e) => handleChange('x', e.target.value)}
+                      onChange={handleInputChange}
                       disabled={submitting}
                     />
                   </div>
-                  <div className="col-4">
+
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Y</label>
                     <input
                       type="number"
-                      step="0.01"  // Ondalıklı giriş için
+                      step="0.01"
                       className="form-control"
+                      name="y"
                       value={formData.y}
-                      onChange={(e) => handleChange('y', e.target.value)}
+                      onChange={handleInputChange}
                       disabled={submitting}
                     />
                   </div>
-                  <div className="col-4">
+
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Z</label>
                     <input
                       type="number"
-                      step="0.01"  // Ondalıklı giriş için 
+                      step="0.01"
                       className="form-control"
+                      name="z"
                       value={formData.z}
-                      onChange={(e) => handleChange('z', e.target.value)}
+                      onChange={handleInputChange}
                       disabled={submitting}
                     />
                   </div>
-                </div>
 
-                <hr />
-
-                <div className="row g-3">
-                  <div className="col-12">
-                    <h6 className="text-muted mb-2">Tedarikçi Bilgileri</h6>
-                  </div>
-                  <div className="col-12">
+                  {/* Supplier Info */}
+                  <div className="col-md-6 mb-3">
                     <label className="form-label">Tedarikçi</label>
                     <input
                       type="text"
                       className="form-control"
+                      name="supplier"
                       value={formData.supplier}
-                      onChange={(e) => handleChange('supplier', e.target.value)}
+                      onChange={handleInputChange}
                       disabled={submitting}
                     />
                   </div>
-                  <div className="col-md-6">
+
+                  <div className="col-md-6 mb-3">
                     <label className="form-label">Tedarikçi Kodu</label>
                     <input
                       type="text"
                       className="form-control"
+                      name="supplierCode"
                       value={formData.supplierCode}
-                      onChange={(e) => handleChange('supplierCode', e.target.value)}
+                      onChange={handleInputChange}
                       disabled={submitting}
                     />
                   </div>
-                  <div className="col-md-6">
+
+                  {/* Price & Unit */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Fiyat</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-control"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      disabled={submitting}
+                    />
+                  </div>
+
+                  <div className="col-md-6 mb-3">
                     <label className="form-label">Birim</label>
                     <input
                       type="text"
                       className="form-control"
+                      name="unit"
                       value={formData.unit}
-                      onChange={(e) => handleChange('unit', e.target.value)}
+                      onChange={handleInputChange}
                       disabled={submitting}
-                      placeholder="Adet, Kg, Litre..."
                     />
                   </div>
-                  <div className="col-12">
-                    <label className="form-label">Fiyat</label>
-                    <div className="input-group">
-                      <input
-                        type="number"
-                        step="0.01"
-                        className="form-control"
-                        value={formData.price}
-                        onChange={(e) => handleChange('price', e.target.value)}
-                        disabled={submitting}
-                      />
-                      <span className="input-group-text">₺</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Resim URL */}
-          <div className="col-12 mb-4">
-            <div className="card">
-              <div className="card-header bg-light">
-                <h5 className="card-title mb-0">
-                  <i className="bi bi-image me-2"></i>
-                  Ürün Resmi
-                </h5>
-              </div>
-              <div className="card-body">
-                <div className="row g-3">
-                  <div className="col-12">
+                  {/* Image URL */}
+                  <div className="col-12 mb-3">
                     <label className="form-label">Resim URL</label>
                     <input
                       type="text"
                       className="form-control"
+                      name="imageUrl"
                       value={formData.imageUrl}
-                      onChange={(e) => handleChange('imageUrl', e.target.value)}
+                      onChange={handleInputChange}
                       disabled={submitting}
-                      placeholder="/Uploads/BOM/Images/..."
+                      maxLength={500}
                     />
                   </div>
-                  {formData.imageUrl && (
-                    <div className="col-12">
-                      <img
-                        src={API_BASE_URL + formData.imageUrl}
-                        alt="Ürün resmi önizleme"
-                        className="img-thumbnail"
-                        style={{ maxWidth: '300px', maxHeight: '300px' }}
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="col-12">
-            <div className="card">
-              <div className="card-body">
+                {/* Buttons */}
                 <div className="d-flex justify-content-end gap-2">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="btn btn-secondary"
                     onClick={handleCancel}
                     disabled={submitting}
                   >
-                    <i className="bi bi-x me-2"></i>
                     İptal
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="btn btn-primary"
                     disabled={submitting}
                   >
-                    {submitting && (
-                      <span className="spinner-border spinner-border-sm me-2" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </span>
+                    {submitting ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Kaydediliyor...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-check-lg me-2"></i>
+                        {isEdit ? 'Güncelle' : 'Kaydet'}
+                      </>
                     )}
-                    <i className="bi bi-check2 me-2"></i>
-                    {isEdit ? 'Güncelle' : 'Kaydet'}
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         </div>
-      </form>
+
+        {/* File Upload Section - Only show when editing */}
+        {isEdit && id && (
+          <div className="col-12 col-lg-5">
+            <ItemFileUpload
+              itemId={parseInt(id)}
+              uploadedFiles={uploadedFiles}
+              onFileUpload={handleFileUpload}
+              onDeleteFile={handleDeleteFile}
+              onDeleteMultiple={handleDeleteMultiple}
+              onPreviewFile={handlePreviewFile}
+              uploading={uploading}
+              loading={filesLoading}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* PDF Preview Modal */}
+      <PDFPreviewModal
+        show={showPreview}
+        file={previewFile}
+        onClose={() => {
+          setShowPreview(false);
+          setPreviewFile(null);
+        }}
+      />
     </div>
   );
 };

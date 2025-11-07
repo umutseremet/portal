@@ -1,20 +1,299 @@
-// src/frontend/src/pages/ItemDetailPage.js
+// src/frontend/src/pages/ItemEditPage.js
+// Bu dosyaya ItemFileUpload component'i eklenecek şekilde güncelleme
 
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import apiService from '../services/api';
+import ItemFileUpload from '../components/Items/ItemFileUpload';
+import PDFPreviewModal from '../components/Items/PDFPreviewModal';
 
-// ✅ API_BASE_URL'den /api kısmını kaldırıyoruz çünkü imageUrl direkt /Uploads ile başlıyor
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL 
-  ? process.env.REACT_APP_API_BASE_URL.replace('/api', '') 
-  : 'http://localhost:5154';
-
-const ItemDetailPage = () => {
-  const location = useLocation();
+const ItemEditPage = () => {
+  const { id } = useParams(); // URL'den ID alınıyor: /definitions/items/edit/:id
   const navigate = useNavigate();
-  const item = location.state?.item;
-  const itemGroups = location.state?.itemGroups || [];
+  const location = useLocation();
+  const isEdit = !!id; // ID varsa edit mode, yoksa new mode
 
-  if (!item) {
+  const [item, setItem] = useState(location.state?.item || null);
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // File upload states
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const [formData, setFormData] = useState({
+    number: '',
+    code: '',
+    name: '',
+    docNumber: '',
+    groupId: '',
+    x: '',
+    y: '',
+    z: '',
+    imageUrl: '',
+    supplierCode: '',
+    price: '',
+    supplier: '',
+    unit: 'Adet'
+  });
+
+  // Load item data
+  useEffect(() => {
+    if (isEdit) {
+      if (item) {
+        populateForm(item);
+      } else {
+        fetchItem();
+      }
+    }
+  }, [id, isEdit]);
+
+  // Load groups
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  // Load files if editing
+  useEffect(() => {
+    if (isEdit && id) {
+      fetchFiles();
+    }
+  }, [isEdit, id]);
+
+  const fetchItem = async () => {
+    try {
+      setLoading(true);
+      const data = await apiService.getItem(id);
+      setItem(data);
+      populateForm(data);
+    } catch (err) {
+      console.error('Error loading item:', err);
+      alert('Ürün bilgisi yüklenirken hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchGroups = async () => {
+    try {
+      const response = await apiService.getItemGroups({
+        page: 1,
+        pageSize: 100,
+        includeCancelled: false
+      });
+      setGroups(response.itemGroups || []);
+    } catch (err) {
+      console.error('Error loading groups:', err);
+    }
+  };
+
+  const fetchFiles = async () => {
+    if (!id) return;
+
+    try {
+      setFilesLoading(true);
+      const files = await apiService.getItemFiles(parseInt(id));
+      setUploadedFiles(Array.isArray(files) ? files : []);
+      console.log('✅ Files loaded:', files.length);
+    } catch (err) {
+      console.error('❌ Error loading files:', err);
+      alert('Dosyalar yüklenirken hata oluştu: ' + err.message);
+    } finally {
+      setFilesLoading(false);
+    }
+  };
+
+  const populateForm = (itemData) => {
+    setFormData({
+      number: itemData.number || '',
+      code: itemData.code || '',
+      name: itemData.name || '',
+      docNumber: itemData.docNumber || '',
+      groupId: itemData.groupId || '',
+      x: itemData.x || '',
+      y: itemData.y || '',
+      z: itemData.z || '',
+      imageUrl: itemData.imageUrl || '',
+      supplierCode: itemData.supplierCode || '',
+      price: itemData.price || '',
+      supplier: itemData.supplier || '',
+      unit: itemData.unit || 'Adet'
+    });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.code || !formData.name || !formData.groupId) {
+      alert('Lütfen zorunlu alanları doldurun');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const submitData = {
+        number: parseInt(formData.number) || 0,
+        code: formData.code.trim(),
+        name: formData.name.trim(),
+        docNumber: formData.docNumber.trim(),
+        groupId: parseInt(formData.groupId),
+        x: formData.x ? parseFloat(formData.x) : null,
+        y: formData.y ? parseFloat(formData.y) : null,
+        z: formData.z ? parseFloat(formData.z) : null,
+        imageUrl: formData.imageUrl?.trim(),
+        supplierCode: formData.supplierCode?.trim(),
+        price: formData.price ? parseFloat(formData.price) : 0,
+        supplier: formData.supplier?.trim(),
+        unit: formData.unit || 'Adet'
+      };
+
+      if (isEdit) {
+        await apiService.updateItem(item.id, submitData);
+        alert('Ürün başarıyla güncellendi');
+      } else {
+        await apiService.createItem(submitData);
+        alert('Ürün başarıyla oluşturuldu');
+      }
+      
+      navigate('/definitions/items');
+    } catch (err) {
+      console.error('Error saving item:', err);
+      alert(err.message || 'Ürün kaydedilirken bir hata oluştu');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    navigate('/definitions/items');
+  };
+
+  // File upload handlers
+  const handleFileUpload = async (files) => {
+    if (!id) {
+      alert('Dosya yüklemek için önce ürünü kaydedin');
+      return;
+    }
+
+    setUploading(true);
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const file of Array.from(files)) {
+      try {
+        console.log('📤 Uploading file:', file.name);
+        const result = await apiService.uploadItemFile(parseInt(id), file);
+        console.log('✅ File uploaded:', result);
+        successCount++;
+      } catch (err) {
+        console.error('❌ Error uploading file:', err);
+        alert(`${file.name} yüklenirken hata oluştu: ${err.message}`);
+        errorCount++;
+      }
+    }
+
+    setUploading(false);
+    
+    if (successCount > 0) {
+      alert(`${successCount} dosya başarıyla yüklendi.${errorCount > 0 ? ` ${errorCount} dosya yüklenemedi.` : ''}`);
+    }
+    
+    await fetchFiles();
+  };
+
+  const handleDeleteFile = async (fileId) => {
+    if (!window.confirm('Bu dosyayı silmek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    try {
+      setFilesLoading(true);
+      await apiService.deleteItemFile(fileId);
+      
+      setUploadedFiles(uploadedFiles.filter(file => file.id !== fileId));
+      
+      console.log('✅ File deleted:', fileId);
+      alert('Dosya başarıyla silindi.');
+    } catch (err) {
+      console.error('❌ Error deleting file:', err);
+      alert('Dosya silinirken hata oluştu: ' + err.message);
+    } finally {
+      setFilesLoading(false);
+    }
+  };
+
+  const handleDeleteMultiple = async (fileIds) => {
+    if (!fileIds || fileIds.length === 0) {
+      return;
+    }
+
+    try {
+      setFilesLoading(true);
+      
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const fileId of fileIds) {
+        try {
+          await apiService.deleteItemFile(fileId);
+          successCount++;
+          console.log(`✅ File ${fileId} deleted`);
+        } catch (err) {
+          errorCount++;
+          console.error(`❌ Error deleting file ${fileId}:`, err);
+        }
+      }
+
+      setUploadedFiles(prev => prev.filter(file => !fileIds.includes(file.id)));
+
+      if (successCount > 0) {
+        alert(`${successCount} dosya silindi.${errorCount > 0 ? ` ${errorCount} dosya silinemedi.` : ''}`);
+      } else {
+        alert('Hiçbir dosya silinemedi.');
+      }
+    } catch (err) {
+      console.error('❌ Error in bulk delete:', err);
+      alert('Dosyalar silinirken hata oluştu: ' + err.message);
+    } finally {
+      setFilesLoading(false);
+    }
+  };
+
+  const handlePreviewFile = (fileId) => {
+    const file = uploadedFiles.find(f => f.id === fileId);
+    if (file && file.isPdf) {
+      setPreviewFile(file);
+      setShowPreview(true);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container-fluid py-4">
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Yükleniyor...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!item && isEdit) {
     return (
       <div className="container-fluid py-4">
         <div className="alert alert-warning">
@@ -29,26 +308,6 @@ const ItemDetailPage = () => {
     );
   }
 
-  const getGroupName = (groupId) => {
-    const group = itemGroups?.find(g => g.id === groupId);
-    return group?.name || 'Bilinmiyor';
-  };
-
-  const handleBack = () => {
-    navigate('/definitions/items');
-  };
-
-  const handleEdit = () => {
-    navigate('/definitions/items/edit', { state: { item, itemGroups } });
-  };
-
-  const handleDelete = () => {
-    if (window.confirm(`${item.code} - ${item.name} ürününü silmek istediğinizden emin misiniz?`)) {
-      console.log('Delete item:', item.id);
-      navigate('/definitions/items');
-    }
-  };
-
   return (
     <div className="container-fluid py-4">
       {/* Header */}
@@ -58,7 +317,8 @@ const ItemDetailPage = () => {
             <div className="d-flex align-items-center">
               <button 
                 className="btn btn-outline-secondary me-3"
-                onClick={handleBack}
+                onClick={handleCancel}
+                disabled={submitting}
               >
                 <i className="bi bi-arrow-left me-2"></i>
                 Geri
@@ -66,211 +326,269 @@ const ItemDetailPage = () => {
               <div>
                 <h2 className="mb-1">
                   <i className="bi bi-box me-2"></i>
-                  {item.code}
+                  {isEdit ? 'Ürün Düzenle' : 'Yeni Ürün'}
                 </h2>
-                <p className="text-muted mb-0">{item.name}</p>
+                <p className="text-muted mb-0">
+                  {isEdit ? `Ürün: ${item?.code}` : 'Yeni ürün oluştur'}
+                </p>
               </div>
-            </div>
-            <div className="d-flex gap-2">
-              <button 
-                className="btn btn-primary"
-                onClick={handleEdit}
-              >
-                <i className="bi bi-pencil me-2"></i>
-                Düzenle
-              </button>
-              <button 
-                className="btn btn-outline-danger"
-                onClick={handleDelete}
-              >
-                <i className="bi bi-trash me-2"></i>
-                Sil
-              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Form */}
       <div className="row">
-        {/* Resim Bölümü */}
-        {item.imageUrl && (
-          <div className="col-12 mb-4">
-            <div className="card">
-              <div className="card-header bg-light">
-                <h5 className="card-title mb-0">
-                  <i className="bi bi-image me-2"></i>
-                  Ürün Resmi
-                </h5>
-              </div>
-              <div className="card-body text-center">
-                <img 
-                  src={`${API_BASE_URL}${item.imageUrl}`}
-                  alt={item.name}
-                  className="img-thumbnail"
-                  style={{ 
-                    maxWidth: '500px', 
-                    maxHeight: '500px',
-                    objectFit: 'contain',
-                    border: '2px solid #dee2e6',
-                    borderRadius: '8px'
-                  }}
-                  onError={(e) => { 
-                    e.target.style.display = 'none';
-                    const parent = e.target.parentElement;
-                    if (parent) {
-                      parent.innerHTML = '<p class="text-muted">Resim yüklenemedi</p>';
-                    }
-                  }}
-                />
-              </div>
+        <div className="col-12 col-lg-8">
+          <div className="card shadow-sm mb-4">
+            <div className="card-body">
+              <form onSubmit={handleSubmit}>
+                <div className="row">
+                  {/* Number */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Numara *</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      name="number"
+                      value={formData.number}
+                      onChange={handleInputChange}
+                      required
+                      disabled={submitting}
+                    />
+                  </div>
+
+                  {/* Code */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Kod *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="code"
+                      value={formData.code}
+                      onChange={handleInputChange}
+                      required
+                      disabled={submitting}
+                      maxLength={50}
+                    />
+                  </div>
+
+                  {/* Name */}
+                  <div className="col-12 mb-3">
+                    <label className="form-label">İsim *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                      disabled={submitting}
+                      maxLength={500}
+                    />
+                  </div>
+
+                  {/* Doc Number */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Doküman No</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="docNumber"
+                      value={formData.docNumber}
+                      onChange={handleInputChange}
+                      disabled={submitting}
+                      maxLength={50}
+                    />
+                  </div>
+
+                  {/* Group */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Grup *</label>
+                    <select
+                      className="form-select"
+                      name="groupId"
+                      value={formData.groupId}
+                      onChange={handleInputChange}
+                      required
+                      disabled={submitting}
+                    >
+                      <option value="">Grup Seçin</option>
+                      {groups.map(group => (
+                        <option key={group.id} value={group.id}>
+                          {group.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Dimensions */}
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label">X</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-control"
+                      name="x"
+                      value={formData.x}
+                      onChange={handleInputChange}
+                      disabled={submitting}
+                    />
+                  </div>
+
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label">Y</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-control"
+                      name="y"
+                      value={formData.y}
+                      onChange={handleInputChange}
+                      disabled={submitting}
+                    />
+                  </div>
+
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label">Z</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-control"
+                      name="z"
+                      value={formData.z}
+                      onChange={handleInputChange}
+                      disabled={submitting}
+                    />
+                  </div>
+
+                  {/* Supplier Info */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Tedarikçi</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="supplier"
+                      value={formData.supplier}
+                      onChange={handleInputChange}
+                      disabled={submitting}
+                    />
+                  </div>
+
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Tedarikçi Kodu</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="supplierCode"
+                      value={formData.supplierCode}
+                      onChange={handleInputChange}
+                      disabled={submitting}
+                    />
+                  </div>
+
+                  {/* Price & Unit */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Fiyat</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-control"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      disabled={submitting}
+                    />
+                  </div>
+
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Birim</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="unit"
+                      value={formData.unit}
+                      onChange={handleInputChange}
+                      disabled={submitting}
+                    />
+                  </div>
+
+                  {/* Image URL */}
+                  <div className="col-12 mb-3">
+                    <label className="form-label">Resim URL</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="imageUrl"
+                      value={formData.imageUrl}
+                      onChange={handleInputChange}
+                      disabled={submitting}
+                      maxLength={500}
+                    />
+                  </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="d-flex justify-content-end gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleCancel}
+                    disabled={submitting}
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Kaydediliyor...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-check-lg me-2"></i>
+                        {isEdit ? 'Güncelle' : 'Kaydet'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
+          </div>
+        </div>
+
+        {/* File Upload Section - Only show when editing */}
+        {isEdit && id && (
+          <div className="col-12 col-lg-4">
+            <ItemFileUpload
+              itemId={parseInt(id)}
+              uploadedFiles={uploadedFiles}
+              onFileUpload={handleFileUpload}
+              onDeleteFile={handleDeleteFile}
+              onDeleteMultiple={handleDeleteMultiple}
+              onPreviewFile={handlePreviewFile}
+              uploading={uploading}
+              loading={filesLoading}
+            />
           </div>
         )}
-
-        {/* Temel Bilgiler */}
-        <div className="col-md-6 mb-4">
-          <div className="card h-100">
-            <div className="card-header bg-light">
-              <h5 className="card-title mb-0">
-                <i className="bi bi-info-circle me-2"></i>
-                Temel Bilgiler
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="row g-3">
-                <div className="col-6">
-                  <small className="text-muted d-block mb-1">Numara</small>
-                  <strong>{item.number}</strong>
-                </div>
-                <div className="col-6">
-                  <small className="text-muted d-block mb-1">Kod</small>
-                  <span className="badge bg-light text-dark">{item.code}</span>
-                </div>
-                <div className="col-12">
-                  <small className="text-muted d-block mb-1">İsim</small>
-                  <strong>{item.name}</strong>
-                </div>
-                <div className="col-6">
-                  <small className="text-muted d-block mb-1">Doküman No</small>
-                  <div>{item.docNumber || '-'}</div>
-                </div>
-                <div className="col-6">
-                  <small className="text-muted d-block mb-1">Grup</small>
-                  <span className="badge bg-info text-dark">{getGroupName(item.groupId)}</span>
-                </div>
-                <div className="col-6">
-                  <small className="text-muted d-block mb-1">Durum</small>
-                  {item.cancelled ? (
-                    <span className="badge bg-danger">İptal Edilmiş</span>
-                  ) : (
-                    <span className="badge bg-success">Aktif</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Boyutlar ve Tedarikçi Bilgileri */}
-        <div className="col-md-6 mb-4">
-          <div className="card h-100">
-            <div className="card-header bg-light">
-              <h5 className="card-title mb-0">
-                <i className="bi bi-rulers me-2"></i>
-                Boyutlar
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="row g-3 mb-4">
-                <div className="col-4">
-                  <small className="text-muted d-block mb-1">X</small>
-                  <strong>{item.x || '-'}</strong>
-                </div>
-                <div className="col-4">
-                  <small className="text-muted d-block mb-1">Y</small>
-                  <strong>{item.y || '-'}</strong>
-                </div>
-                <div className="col-4">
-                  <small className="text-muted d-block mb-1">Z</small>
-                  <strong>{item.z || '-'}</strong>
-                </div>
-              </div>
-
-              <hr />
-
-              <h6 className="text-muted mb-3">
-                <i className="bi bi-truck me-2"></i>
-                Tedarikçi Bilgileri
-              </h6>
-              <div className="row g-3">
-                <div className="col-12">
-                  <small className="text-muted d-block mb-1">Tedarikçi</small>
-                  <div>{item.supplier || '-'}</div>
-                </div>
-                <div className="col-6">
-                  <small className="text-muted d-block mb-1">Tedarikçi Kodu</small>
-                  <div>{item.supplierCode || '-'}</div>
-                </div>
-                <div className="col-6">
-                  <small className="text-muted d-block mb-1">Fiyat</small>
-                  <div>
-                    {item.price ? (
-                      <strong className="text-success">
-                        {item.price.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}
-                      </strong>
-                    ) : '-'}
-                  </div>
-                </div>
-                <div className="col-6">
-                  <small className="text-muted d-block mb-1">Birim</small>
-                  <div>{item.unit || '-'}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tarih Bilgileri */}
-        <div className="col-12">
-          <div className="card">
-            <div className="card-header bg-light">
-              <h5 className="card-title mb-0">
-                <i className="bi bi-calendar-event me-2"></i>
-                Tarih Bilgileri
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <small className="text-muted d-block mb-1">Oluşturma Tarihi</small>
-                  <div>
-                    {item.createdAt ? (
-                      <>
-                        <i className="bi bi-calendar-plus me-2 text-muted"></i>
-                        {new Date(item.createdAt).toLocaleString('tr-TR')}
-                      </>
-                    ) : '-'}
-                  </div>
-                </div>
-                <div className="col-md-6">
-                  <small className="text-muted d-block mb-1">Güncelleme Tarihi</small>
-                  <div>
-                    {item.updatedAt ? (
-                      <>
-                        <i className="bi bi-calendar-check me-2 text-muted"></i>
-                        {new Date(item.updatedAt).toLocaleString('tr-TR')}
-                      </>
-                    ) : '-'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
+
+      {/* PDF Preview Modal */}
+      <PDFPreviewModal
+        show={showPreview}
+        file={previewFile}
+        onClose={() => {
+          setShowPreview(false);
+          setPreviewFile(null);
+        }}
+      />
     </div>
   );
 };
 
-export default ItemDetailPage;
+export default ItemEditPage;
