@@ -42,17 +42,46 @@ function App() {
               </ProtectedRoute>
             }
           />
+{/* ✅ DÜZELTME: Item routes - SIRALAMA ÖNEMLİ! */}
+          {/* Daha spesifik route'lar önce gelmeli */}
+          
+          {/* Yeni ürün ekleme */}
+          <Route 
+            path="/definitions/items/new" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ItemEditPage />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
 
-          {/* Item Edit/New Page - YENİ */}
-          <Route path="/definitions/items/edit/:id" element={
-            <ProtectedRoute><Layout><ItemEditPage /></Layout></ProtectedRoute>
-          } />
+          {/* Ürün detay (sadece görüntüleme - read-only) */}
+          <Route 
+            path="/definitions/items/detail/:id" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ItemDetailPage />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
 
-          <Route path="/definitions/items/new" element={
-            <ProtectedRoute><Layout><ItemEditPage /></Layout></ProtectedRoute>
-          } />
+          {/* Ürün düzenleme */}
+          <Route 
+            path="/definitions/items/edit/:id" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ItemEditPage />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
 
-          {/* Items Management Routes */}
+          {/* Ürün listesi */}
           <Route
             path="/definitions/items"
             element={

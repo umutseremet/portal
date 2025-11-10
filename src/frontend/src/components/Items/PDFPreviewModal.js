@@ -9,16 +9,18 @@ const PDFPreviewModal = ({ show, file, onClose }) => {
 
   if (!show || !file) return null;
 
-  // API URL'yi düzgün oluştur
-  const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://localhost:7123';
-  
-  // /api kısmını kaldır çünkü controller zaten /api/ItemFiles şeklinde
+  // ✅ API URL'yi doğru şekilde oluştur
+  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
   const baseUrl = apiBaseUrl.replace('/api', '');
   
-  // Preview URL - Authorization header ile çalışmaz, o yüzden download endpoint'ini kullanıyoruz
-  const previewUrl = `${baseUrl}/api/ItemFiles/download/${file.id}`;
+  // ✅ DÜZELTME: Preview endpoint kullan (iframe için inline görüntüleme)
+  const previewUrl = `${baseUrl}/api/ItemFiles/preview/${file.id}`;
   
+  // İndirme için download endpoint
   const downloadUrl = `${baseUrl}/api/ItemFiles/download/${file.id}`;
+
+  console.log('📄 PDF Preview URL:', previewUrl);
+  console.log('📥 Download URL:', downloadUrl);
 
   const handleIframeLoad = () => {
     setLoading(false);

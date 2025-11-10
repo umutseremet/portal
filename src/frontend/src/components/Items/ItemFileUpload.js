@@ -16,7 +16,11 @@ const ItemFileUpload = ({
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFileIds, setSelectedFileIds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const filesPerPage = 5;
+  const filesPerPage = 10;
+
+  // ✅ DÜZELTME: API URL'yi doğru şekilde al
+  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
+  const baseUrl = apiBaseUrl.replace('/api', '');
 
   // Pagination hesaplamaları
   const totalPages = Math.ceil(uploadedFiles.length / filesPerPage);
@@ -70,23 +74,21 @@ const ItemFileUpload = ({
       if (allowedFiles.length > 0) {
         onFileUpload(allowedFiles);
       } else {
-        alert('Lütfen sadece desteklenen dosya türlerini yükleyin.');
+        alert('Lütfen sadece desteklenen dosya türlerini yükleyin');
       }
     }
   };
 
-  const handleToggleSelectFile = (fileId) => {
-    setSelectedFileIds(prev => {
-      if (prev.includes(fileId)) {
-        return prev.filter(id => id !== fileId);
-      } else {
-        return [...prev, fileId];
-      }
-    });
+  const handleSelectFile = (fileId) => {
+    setSelectedFileIds(prev => 
+      prev.includes(fileId) 
+        ? prev.filter(id => id !== fileId)
+        : [...prev, fileId]
+    );
   };
 
-  const handleToggleSelectAll = () => {
-    if (isAllSelected) {
+  const handleSelectAll = () => {
+    if (selectedFileIds.length === currentFiles.length) {
       setSelectedFileIds([]);
     } else {
       setSelectedFileIds(currentFiles.map(f => f.id));
@@ -94,68 +96,48 @@ const ItemFileUpload = ({
   };
 
   const handleDeleteSelected = () => {
-    if (selectedFileIds.length === 0) {
-      alert('Lütfen silinecek dosyaları seçin');
-      return;
-    }
-
+    if (selectedFileIds.length === 0) return;
+    
     if (window.confirm(`${selectedFileIds.length} dosyayı silmek istediğinizden emin misiniz?`)) {
       onDeleteMultiple(selectedFileIds);
       setSelectedFileIds([]);
     }
   };
 
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-    setSelectedFileIds([]); // Sayfa değişince seçimleri temizle
-  };
-
-  const isAllSelected = currentFiles.length > 0 && selectedFileIds.length === currentFiles.length;
-  const isSomeSelected = selectedFileIds.length > 0 && selectedFileIds.length < currentFiles.length;
-
-  const getFileIcon = (extension) => {
-    const ext = extension.toLowerCase();
-    if (ext === '.pdf') return '📄';
-    if (ext === '.xlsx' || ext === '.xls') return '📊';
-    if (ext === '.esp') return '🔧';
-    if (ext === '.nc') return '⚙️';
-    if (ext === '.x_t') return '📐';
-    return '📎';
-  };
-
-  const getFileTypeClass = (extension) => {
-    const ext = extension.toLowerCase();
-    if (ext === '.pdf') return 'text-danger';
-    if (ext === '.xlsx' || ext === '.xls') return 'text-success';
-    return 'text-primary';
-  };
-
   const getFileTypeBadge = (fileType, extension) => {
-    const ext = extension.toLowerCase().replace('.', '').toUpperCase();
-    return ext;
+    const types = {
+      'CAD': 'primary',
+      'CNC': 'success',
+      'Document': 'danger',
+      'Spreadsheet': 'info'
+    };
+    const color = types[fileType] || 'secondary';
+    return <span className={`badge bg-${color}`}>{extension.replace('.', '').toUpperCase()}</span>;
+  };
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      setSelectedFileIds([]);
+    }
   };
 
   return (
-    <div className="card shadow-sm h-100">
-      <div className="card-header bg-white py-2 px-3">
+    <div className="card shadow-sm border-0">
+      <div className="card-header bg-white border-bottom">
         <div className="d-flex justify-content-between align-items-center">
-          <h6 className="mb-0 d-flex align-items-center">
-            <Upload size={16} className="me-2" />
-            Dosyalar
-            {uploadedFiles.length > 0 && (
-              <span className="badge bg-secondary ms-2" style={{ fontSize: '0.7rem' }}>
-                {uploadedFiles.length}
-              </span>
-            )}
+          <h6 className="mb-0 text-primary" style={{ fontSize: '0.9rem' }}>
+            <FileText size={16} className="me-2" />
+            Dosyalar {uploadedFiles.length > 0 && `(${uploadedFiles.length})`}
           </h6>
           {selectedFileIds.length > 0 && (
-            <button 
-              className="btn btn-sm btn-danger py-1 px-2"
+            <button
+              className="btn btn-danger btn-sm py-0 px-2"
               onClick={handleDeleteSelected}
-              disabled={uploading || loading}
-              style={{ fontSize: '0.75rem' }}
+              title="Seçili dosyaları sil"
+              style={{ fontSize: '0.7rem' }}
             >
-              <Trash2 size={14} className="me-1" />
+              <Trash2 size={12} className="me-1" />
               Sil ({selectedFileIds.length})
             </button>
           )}
@@ -163,106 +145,122 @@ const ItemFileUpload = ({
       </div>
 
       <div className="card-body p-3">
-        {/* Dosya Yükleme Alanı - Kompakt */}
-        <div className="mb-3">
-          <label htmlFor="fileUpload" className="w-100" style={{ cursor: 'pointer' }}>
-            <input
-              id="fileUpload"
-              type="file"
-              multiple
-              onChange={handleFileSelect}
-              disabled={uploading || loading}
-              accept=".esp,.nc,.pdf,.x_t,.xlsx,.xls"
-              style={{ display: 'none' }}
-            />
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded p-3 text-center ${
-                isDragging ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary'
-              }`}
-              style={{ cursor: uploading || loading ? 'not-allowed' : 'pointer', transition: 'all 0.3s ease' }}
-            >
-              <Upload 
-                size={32} 
-                className={`mb-1 ${isDragging ? 'text-primary' : 'text-secondary'}`}
-              />
-              <div className={isDragging ? 'text-primary mb-0' : 'text-dark mb-0'} style={{ fontSize: '0.85rem', fontWeight: '500' }}>
-                {isDragging ? 'Dosyaları buraya bırakın' : 'Dosyaları sürükleyip bırakın'}
+        {/* Upload Area */}
+        <div 
+          className={`upload-area mb-3 p-3 border-2 border-dashed rounded text-center ${isDragging ? 'border-primary bg-light' : 'border-secondary'}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          style={{ 
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            minHeight: '80px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+          }}
+        >
+          <input
+            type="file"
+            id="fileInput"
+            multiple
+            accept=".esp,.nc,.pdf,.x_t,.xlsx,.xls"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+            disabled={uploading}
+          />
+          <label 
+            htmlFor="fileInput" 
+            className="mb-0 w-100" 
+            style={{ cursor: uploading ? 'not-allowed' : 'pointer' }}
+          >
+            {uploading ? (
+              <div>
+                <div className="spinner-border spinner-border-sm text-primary mb-2" role="status">
+                  <span className="visually-hidden">Yükleniyor...</span>
+                </div>
+                <div className="text-muted" style={{ fontSize: '0.75rem' }}>Yükleniyor...</div>
               </div>
-              <p className="text-muted mb-0" style={{ fontSize: '0.7rem' }}>
-                veya tıklayarak seçin (.esp, .nc, .pdf, .x_t, .xlsx, .xls)
-              </p>
-            </div>
+            ) : (
+              <>
+                <Upload size={24} className="text-muted mb-2" />
+                <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                  Dosya seçin veya sürükleyin
+                </div>
+                <div className="text-muted mt-1" style={{ fontSize: '0.65rem' }}>
+                  .esp, .nc, .pdf, .x_t, .xlsx, .xls (Max 10MB)
+                </div>
+              </>
+            )}
           </label>
         </div>
 
-        {/* Yüklü Dosyalar Listesi - Kompakt Tablo */}
-        {uploadedFiles.length > 0 ? (
+        {/* File List */}
+        {loading ? (
+          <div className="text-center py-3">
+            <div className="spinner-border spinner-border-sm text-primary" role="status">
+              <span className="visually-hidden">Yükleniyor...</span>
+            </div>
+          </div>
+        ) : uploadedFiles.length === 0 ? (
+          <div className="text-center text-muted py-3" style={{ fontSize: '0.8rem' }}>
+            <FileText size={32} className="mb-2 opacity-50" />
+            <div>Henüz dosya yüklenmemiş</div>
+          </div>
+        ) : (
           <>
+            {/* Select All Checkbox */}
+            {currentFiles.length > 0 && (
+              <div className="mb-2 pb-2 border-bottom">
+                <div className="form-check form-check-sm">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    checked={selectedFileIds.length === currentFiles.length}
+                    onChange={handleSelectAll}
+                    style={{ fontSize: '0.7rem' }}
+                  />
+                  <label className="form-check-label text-muted" style={{ fontSize: '0.7rem' }}>
+                    Tümünü Seç
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Files Table */}
             <div className="table-responsive">
-              <table className="table table-sm table-hover mb-2" style={{ fontSize: '0.8rem' }}>
-                <thead className="table-light">
-                  <tr>
-                    <th style={{ width: '30px', padding: '0.4rem' }}>
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        checked={isAllSelected}
-                        onChange={handleToggleSelectAll}
-                        disabled={uploading || loading}
-                        style={{ cursor: 'pointer' }}
-                        ref={input => {
-                          if (input) {
-                            input.indeterminate = isSomeSelected;
-                          }
-                        }}
-                      />
-                    </th>
-                    <th style={{ width: '35px', padding: '0.4rem' }}>#</th>
-                    <th style={{ padding: '0.4rem' }}>Dosya</th>
-                    <th style={{ width: '60px', padding: '0.4rem', textAlign: 'center' }}>Tür</th>
+              <table className="table table-sm table-hover mb-0">
+                <thead>
+                  <tr style={{ fontSize: '0.7rem' }}>
+                    <th style={{ width: '30px', padding: '0.4rem' }}></th>
+                    <th style={{ padding: '0.4rem' }}>Dosya Adı</th>
+                    <th style={{ width: '80px', padding: '0.4rem', textAlign: 'center' }}>Tür</th>
                     <th style={{ width: '70px', padding: '0.4rem', textAlign: 'center' }}>Boyut</th>
-                    <th style={{ width: '110px', padding: '0.4rem', textAlign: 'center' }}>İşlem</th>
+                    <th style={{ width: '120px', padding: '0.4rem', textAlign: 'center' }}>İşlemler</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentFiles.map((file, index) => (
-                    <tr 
-                      key={file.id}
-                      className={selectedFileIds.includes(file.id) ? 'table-active' : ''}
-                    >
+                  {currentFiles.map((file) => (
+                    <tr key={file.id} style={{ fontSize: '0.75rem' }}>
                       <td style={{ padding: '0.4rem' }}>
                         <input
                           className="form-check-input"
                           type="checkbox"
                           checked={selectedFileIds.includes(file.id)}
-                          onChange={() => handleToggleSelectFile(file.id)}
-                          disabled={uploading || loading}
-                          style={{ cursor: 'pointer' }}
+                          onChange={() => handleSelectFile(file.id)}
+                          style={{ fontSize: '0.7rem' }}
                         />
-                      </td>
-                      <td className="text-muted" style={{ padding: '0.4rem' }}>
-                        {startIndex + index + 1}
                       </td>
                       <td style={{ padding: '0.4rem' }}>
                         <div className="d-flex align-items-center">
-                          <span className="me-1" style={{ fontSize: '1.1rem' }}>
-                            {getFileIcon(file.fileExtension)}
+                          <FileText size={14} className="text-muted me-2" />
+                          <span className="text-truncate" style={{ maxWidth: '200px' }} title={file.fileName}>
+                            {file.fileName}
                           </span>
-                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
-                            <div className="fw-medium" title={file.fileName} style={{ fontSize: '0.8rem' }}>
-                              {file.fileName}
-                            </div>
-                            <small className="text-muted" style={{ fontSize: '0.65rem' }}>
-                              {file.formattedUploadDate}
-                            </small>
-                          </div>
                         </div>
                       </td>
                       <td style={{ padding: '0.4rem', textAlign: 'center' }}>
-                        <span className={`badge ${getFileTypeClass(file.fileExtension)}`} style={{ fontSize: '0.65rem' }}>
+                        <span style={{ fontSize: '0.65rem' }}>
                           {getFileTypeBadge(file.fileType, file.fileExtension)}
                         </span>
                       </td>
@@ -285,7 +283,7 @@ const ItemFileUpload = ({
                             </button>
                           )}
                           <a
-                            href={`${process.env.REACT_APP_API_URL || 'https://localhost:7123'}/api/ItemFiles/download/${file.id}`}
+                            href={`${baseUrl}/api/ItemFiles/download/${file.id}`}
                             className="btn btn-outline-success py-0 px-1"
                             download
                             title="İndir"
@@ -295,7 +293,11 @@ const ItemFileUpload = ({
                           </a>
                           <button
                             className="btn btn-outline-danger py-0 px-1"
-                            onClick={() => onDeleteFile(file.id)}
+                            onClick={() => {
+                              if (window.confirm('Bu dosyayı silmek istediğinizden emin misiniz?')) {
+                                onDeleteFile(file.id);
+                              }
+                            }}
                             disabled={loading}
                             title="Sil"
                             style={{ fontSize: '0.7rem' }}
@@ -312,71 +314,31 @@ const ItemFileUpload = ({
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="d-flex justify-content-between align-items-center mt-2">
-                <div className="text-muted" style={{ fontSize: '0.7rem' }}>
-                  Sayfa {currentPage} / {totalPages} 
-                  <span className="ms-2">({uploadedFiles.length} dosya)</span>
-                </div>
-                <div className="btn-group btn-group-sm" role="group">
+              <div className="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                <span className="text-muted" style={{ fontSize: '0.7rem' }}>
+                  Sayfa {currentPage} / {totalPages}
+                </span>
+                <div className="btn-group btn-group-sm">
                   <button
                     className="btn btn-outline-secondary py-0 px-2"
-                    onClick={() => handlePageChange(currentPage - 1)}
+                    onClick={() => goToPage(currentPage - 1)}
                     disabled={currentPage === 1}
                     style={{ fontSize: '0.7rem' }}
                   >
-                    <ChevronLeft size={12} />
+                    <ChevronLeft size={14} />
                   </button>
-                  {[...Array(totalPages)].map((_, i) => {
-                    const page = i + 1;
-                    if (
-                      page === 1 ||
-                      page === totalPages ||
-                      (page >= currentPage - 1 && page <= currentPage + 1)
-                    ) {
-                      return (
-                        <button
-                          key={page}
-                          className={`btn btn-outline-secondary py-0 px-2 ${page === currentPage ? 'active' : ''}`}
-                          onClick={() => handlePageChange(page)}
-                          style={{ fontSize: '0.7rem', minWidth: '28px' }}
-                        >
-                          {page}
-                        </button>
-                      );
-                    } else if (page === currentPage - 2 || page === currentPage + 2) {
-                      return <span key={page} className="px-1" style={{ fontSize: '0.7rem' }}>...</span>;
-                    }
-                    return null;
-                  })}
                   <button
                     className="btn btn-outline-secondary py-0 px-2"
-                    onClick={() => handlePageChange(currentPage + 1)}
+                    onClick={() => goToPage(currentPage + 1)}
                     disabled={currentPage === totalPages}
                     style={{ fontSize: '0.7rem' }}
                   >
-                    <ChevronRight size={12} />
+                    <ChevronRight size={14} />
                   </button>
                 </div>
               </div>
             )}
           </>
-        ) : (
-          <div className="alert alert-info mb-0 py-2" style={{ fontSize: '0.8rem' }}>
-            <i className="bi bi-info-circle me-2"></i>
-            Henüz dosya yüklenmemiş
-          </div>
-        )}
-
-        {/* Loading indicator */}
-        {(uploading || loading) && (
-          <div className="text-center mt-2">
-            <div className="spinner-border spinner-border-sm text-primary me-2" role="status" style={{ width: '1rem', height: '1rem' }}>
-              <span className="visually-hidden">Yükleniyor...</span>
-            </div>
-            <span className="text-muted" style={{ fontSize: '0.75rem' }}>
-              {uploading ? 'Dosyalar yükleniyor...' : 'Yükleniyor...'}
-            </span>
-          </div>
         )}
       </div>
     </div>

@@ -57,7 +57,7 @@ npm run analyze    # Bundle analyzer
 ## 🌐 API Integration
 
 Frontend, backend API ile şu base URL üzerinden iletişim kurar:
-- **Development:** `http://localhost:7123/api`
+- **Development:** `http://localhost:5154/api`
 - **Production:** Environment variable ile belirlenir
 
 ## 📱 Responsive Design

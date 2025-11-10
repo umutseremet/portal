@@ -243,13 +243,98 @@ namespace API.Controllers
                 Response.Headers.Add("Access-Control-Allow-Methods", "GET");
                 Response.Headers.Add("Access-Control-Allow-Headers", "Authorization, Content-Type");
 
-                // PDF preview için inline display (Content-Disposition: inline)
-                return File(fileBytes, "application/pdf", itemFile.FileName, true);
+                // ✅ DOĞRU KOD
+                Response.Headers.Add("Content-Disposition", "inline; filename=\"" + itemFile.FileName + "\"");
+                return File(fileBytes, "application/pdf");  // filename parametresi YOK
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error previewing file: {FileId}", id);
                 return StatusCode(500, new { Message = "Dosya önizlenirken hata oluştu" });
+            }
+        }
+
+        // ✅ ItemFilesController.cs - ZIP İndirme Endpoint'i Eklendi
+        // Mevcut dosyanıza bu metodu ekleyin
+
+        /// <summary>
+        /// Ürüne ait tüm dosyaları ZIP olarak indir
+        /// </summary>
+        [HttpGet("download-zip/{itemId}")]
+        public async Task<IActionResult> DownloadAllAsZip(int itemId)
+        {
+            try
+            {
+                // Ürünü bul
+                var item = await _context.Items.FindAsync(itemId);
+                if (item == null)
+                {
+                    return NotFound(new { Message = "Ürün bulunamadı" });
+                }
+
+                // Ürüne ait dosyaları al
+                var itemFiles = await _context.ItemFiles
+                    .Where(f => f.ItemId == itemId)
+                    .OrderBy(f => f.FileName)
+                    .ToListAsync();
+
+                if (itemFiles.Count == 0)
+                {
+                    return NotFound(new { Message = "Bu ürüne ait dosya bulunamadı" });
+                }
+
+                // ZIP dosyası adı: ürünKodu_tarih.zip
+                var productCode = item.Code
+                                     ?? item.Number.ToString()
+                                     ?? itemId.ToString();
+                var timestamp = DateTime.Now.ToString("yyyy-MM-dd");
+                var zipFileName = $"{productCode}_{timestamp}.zip";
+
+                // Memory stream oluştur
+                using (var memoryStream = new MemoryStream())
+                {
+                    // ZIP arşivi oluştur
+                    using (var archive = new System.IO.Compression.ZipArchive(memoryStream, System.IO.Compression.ZipArchiveMode.Create, true))
+                    {
+                        foreach (var itemFile in itemFiles)
+                        {
+                            if (!System.IO.File.Exists(itemFile.FilePath))
+                            {
+                                _logger.LogWarning("File not found in filesystem: {FilePath}", itemFile.FilePath);
+                                continue;
+                            }
+
+                            // Dosyayı ZIP'e ekle
+                            var zipEntry = archive.CreateEntry(itemFile.FileName, System.IO.Compression.CompressionLevel.Fastest);
+
+                            using (var entryStream = zipEntry.Open())
+                            using (var fileStream = new FileStream(itemFile.FilePath, FileMode.Open, FileAccess.Read))
+                            {
+                                await fileStream.CopyToAsync(entryStream);
+                            }
+                        }
+                    }
+
+                    // Memory stream'i başa sar
+                    memoryStream.Seek(0, SeekOrigin.Begin);
+
+                    // ZIP dosyasını döndür
+                    var fileBytes = memoryStream.ToArray();
+
+                    _logger.LogInformation("ZIP archive created: {FileName} with {FileCount} files", zipFileName, itemFiles.Count);
+
+                    // CORS headers
+                    Response.Headers.Add("Access-Control-Allow-Origin", "*");
+                    Response.Headers.Add("Access-Control-Allow-Methods", "GET");
+                    Response.Headers.Add("Access-Control-Allow-Headers", "Authorization, Content-Type");
+
+                    return File(fileBytes, "application/zip", zipFileName);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating ZIP archive for item: {ItemId}", itemId);
+                return StatusCode(500, new { Message = "ZIP dosyası oluşturulurken hata oluştu: " + ex.Message });
             }
         }
 

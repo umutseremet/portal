@@ -43,12 +43,12 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
         { id: 'item-groups', label: 'Ürün Grupları', path: '/definitions/item-groups' },
       ]
     },
-    {
-      id: 'vehicles',
-      label: 'Araç Takip',
-      icon: 'bi-truck',
-      path: '/vehicles'
-    },
+    // {
+    //   id: 'vehicles',
+    //   label: 'Araç Takip',
+    //   icon: 'bi-truck',
+    //   path: '/vehicles'
+    // },
     {
       id: 'visitors',
       label: 'Ziyaretçi Takip',
