@@ -13,6 +13,8 @@ const ItemDetailPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [itemGroups, setItemGroups] = useState(location.state?.itemGroups || []);
+
   const [item, setItem] = useState(location.state?.item || null);
   const [loading, setLoading] = useState(false);
   
@@ -42,6 +44,20 @@ const ItemDetailPage = () => {
       fetchFiles();
     }
   }, [id]);
+
+   // ✅ Item Groups'u API'den çek
+  const fetchItemGroups = async () => {
+    try {
+      const response = await apiService.getItemGroups({
+        page: 1,
+        pageSize: 100,
+        includeCancelled: false
+      });
+      setItemGroups(response.itemGroups || []);
+    } catch (err) {
+      console.error('Error loading item groups:', err);
+    }
+  };
 
   const fetchItem = async () => {
     try {
@@ -92,7 +108,7 @@ const ItemDetailPage = () => {
   };
 
   const handleEdit = () => {
-    navigate(`/definitions/items/edit/${id}`, { state: { item } });
+    navigate(`/definitions/items/edit/${id}`, { state: { item, itemGroups } });
   };
 
   const handleDelete = async () => {
@@ -278,6 +294,7 @@ const ItemDetailPage = () => {
               <ItemDetail
                 item={item}
                 loading={loading}
+                itemGroups={itemGroups}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
