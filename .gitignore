@@ -205,3 +205,35 @@ out/
 # Yayınlama / publish çıktıları
 publish/
 out/
+
+
+# =============================================
+# EXCEL ve PROJE DOSYALARI
+# =============================================
+# Excel dosyaları
+*.xlsx
+*.xls
+*.xlsm
+*.xlsb
+*.xltx
+*.xltm
+
+# NC dosyaları (CNC makine kodları)
+*.nc
+*.NC
+
+# ESP dosyaları (CAM/CAD dosyaları)
+*.esp
+*.ESP
+
+# CAD/CAM dosyaları
+*.x_t
+*.X_T
+*.stp
+*.step
+*.iges
+*.igs
+
+# PDF
+*.pdf
+*.PDF
