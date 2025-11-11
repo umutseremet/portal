@@ -6,12 +6,14 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import apiService from '../services/api';
 import ItemFileUpload from '../components/Items/ItemFileUpload';
 import PDFPreviewModal from '../components/Items/PDFPreviewModal';
+import { useToast } from '../contexts/ToastContext'; // ← BU SATIRI EKLEYİN
 
-const ItemEditPage = () => {
+const ItemEditPage = () => { 
   const { id } = useParams(); // URL'den ID alınıyor: /definitions/items/edit/:id
   const navigate = useNavigate();
   const location = useLocation();
   const isEdit = !!id; // ID varsa edit mode, yoksa new mode
+  const toast = useToast(); // ← BU SATIRI EKLEYİN
 
   const [item, setItem] = useState(location.state?.item || null);
   const [groups, setGroups] = useState([]);
@@ -72,7 +74,7 @@ const ItemEditPage = () => {
       populateForm(data);
     } catch (err) {
       console.error('Error loading item:', err);
-      alert('Ürün bilgisi yüklenirken hata oluştu');
+      toast.error('Ürün bilgisi yüklenirken hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -101,7 +103,7 @@ const ItemEditPage = () => {
       console.log('✅ Files loaded:', files.length);
     } catch (err) {
       console.error('❌ Error loading files:', err);
-      alert('Dosyalar yüklenirken hata oluştu: ' + err.message);
+      toast.error('Dosyalar yüklenirken hata oluştu: ' + err.message);
     } finally {
       setFilesLoading(false);
     }
@@ -137,7 +139,7 @@ const ItemEditPage = () => {
     e.preventDefault();
 
     if (!formData.code || !formData.name || !formData.groupId) {
-      alert('Lütfen zorunlu alanları doldurun');
+      toast.warning('Lütfen zorunlu alanları doldurun');
       return;
     }
 
@@ -162,16 +164,16 @@ const ItemEditPage = () => {
 
       if (isEdit) {
         await apiService.updateItem(item.id, submitData);
-        alert('Ürün başarıyla güncellendi');
+        toast.success('Ürün başarıyla güncellendi');
       } else {
         await apiService.createItem(submitData);
-        alert('Ürün başarıyla oluşturuldu');
+        toast.success('Ürün başarıyla oluşturuldu');
       }
       
       navigate('/definitions/items');
     } catch (err) {
       console.error('Error saving item:', err);
-      alert(err.message || 'Ürün kaydedilirken bir hata oluştu');
+      toast.error(err.message || 'Ürün kaydedilirken bir hata oluştu');
     } finally {
       setSubmitting(false);
     }
@@ -184,7 +186,7 @@ const ItemEditPage = () => {
   // File upload handlers
   const handleFileUpload = async (files) => {
     if (!id) {
-      alert('Dosya yüklemek için önce ürünü kaydedin');
+      toast.warning('Dosya yüklemek için önce ürünü kaydedin');
       return;
     }
 
@@ -201,7 +203,7 @@ const ItemEditPage = () => {
         successCount++;
       } catch (err) {
         console.error('❌ Error uploading file:', err);
-        alert(`${file.name} yüklenirken hata oluştu: ${err.message}`);
+        toast.error(`${file.name} yüklenirken hata oluştu: ${err.message}`);
         errorCount++;
       }
     }
@@ -209,7 +211,7 @@ const ItemEditPage = () => {
     setUploading(false);
     
     if (successCount > 0) {
-      alert(`${successCount} dosya başarıyla yüklendi.${errorCount > 0 ? ` ${errorCount} dosya yüklenemedi.` : ''}`);
+      toast.success(`${successCount} dosya başarıyla yüklendi.${errorCount > 0 ? ` ${errorCount} dosya yüklenemedi.` : ''}`);
     }
     
     await fetchFiles();
@@ -227,10 +229,10 @@ const ItemEditPage = () => {
       setUploadedFiles(uploadedFiles.filter(file => file.id !== fileId));
       
       console.log('✅ File deleted:', fileId);
-      alert('Dosya başarıyla silindi.');
+      toast.success('Dosya başarıyla silindi.');
     } catch (err) {
       console.error('❌ Error deleting file:', err);
-      alert('Dosya silinirken hata oluştu: ' + err.message);
+      toast.error('Dosya silinirken hata oluştu: ' + err.message);
     } finally {
       setFilesLoading(false);
     }
@@ -261,13 +263,13 @@ const ItemEditPage = () => {
       setUploadedFiles(prev => prev.filter(file => !fileIds.includes(file.id)));
 
       if (successCount > 0) {
-        alert(`${successCount} dosya silindi.${errorCount > 0 ? ` ${errorCount} dosya silinemedi.` : ''}`);
+        toast.success(`${successCount} dosya silindi.${errorCount > 0 ? ` ${errorCount} dosya silinemedi.` : ''}`);
       } else {
-        alert('Hiçbir dosya silinemedi.');
+        toast.error('Hiçbir dosya silinemedi.');
       }
     } catch (err) {
       console.error('❌ Error in bulk delete:', err);
-      alert('Dosyalar silinirken hata oluştu: ' + err.message);
+      toast.error('Dosyalar silinirken hata oluştu: ' + err.message);
     } finally {
       setFilesLoading(false);
     }

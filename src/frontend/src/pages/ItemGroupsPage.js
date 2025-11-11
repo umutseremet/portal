@@ -5,10 +5,12 @@ import ItemGroupsList from '../components/ItemGroups/ItemGroupsList';
 import ItemGroupForm from '../components/ItemGroups/ItemGroupForm';
 import apiService from '../services/api';
 import '../assets/css/ItemGroups.css';
+import { useToast } from '../contexts/ToastContext'; // ← BU SATIRI EKLEYİN
 
 const ItemGroupsPage = () => {
   const navigate = useNavigate();
-  
+  const toast = useToast(); // ← BU SATIRI EKLEYİN
+
   // State
   const [itemGroups, setItemGroups] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -16,7 +18,7 @@ const ItemGroupsPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingItemGroup, setEditingItemGroup] = useState(null);
   const [selectedItemGroups, setSelectedItemGroups] = useState([]);
-  
+
   // Filters
   const [filters, setFilters] = useState({
     name: '',
@@ -42,11 +44,11 @@ const ItemGroupsPage = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('📥 Loading item groups with filters:', filters);
       const response = await apiService.getItemGroups(filters);
       console.log('✅ Item groups loaded:', response);
-      
+
       setItemGroups(response.itemGroups || []);
       setPagination({
         currentPage: response.page || 1,
@@ -107,7 +109,7 @@ const ItemGroupsPage = () => {
 
   // Selection handlers
   const handleItemGroupSelect = (id) => {
-    setSelectedItemGroups(prev => 
+    setSelectedItemGroups(prev =>
       prev.includes(id) ? prev.filter(itemGroupId => itemGroupId !== id) : [...prev, id]
     );
   };
@@ -126,11 +128,11 @@ const ItemGroupsPage = () => {
 
   // CRUD handlers
   const handleViewItemGroup = (itemGroup) => {
-    navigate('/definitions/items', { 
-      state: { 
-        groupId: itemGroup.id, 
-        groupName: itemGroup.name 
-      } 
+    navigate('/definitions/items', {
+      state: {
+        groupId: itemGroup.id,
+        groupName: itemGroup.name
+      }
     });
   };
 
@@ -161,10 +163,10 @@ const ItemGroupsPage = () => {
       setLoading(true);
       await apiService.deleteItemGroup(itemGroup.id);
       await loadItemGroups();
-      alert('Ürün grubu başarıyla silindi');
+      toast.success('Ürün grubu başarıyla silindi');
     } catch (err) {
       console.error('❌ Error deleting item group:', err);
-      alert(err.message || 'Ürün grubu silinirken bir hata oluştu');
+      toast.error(err.message || 'Ürün grubu silinirken bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -172,7 +174,7 @@ const ItemGroupsPage = () => {
 
   const handleBulkDelete = async () => {
     if (selectedItemGroups.length === 0) return;
-    
+
     if (!window.confirm(`${selectedItemGroups.length} grubu silmek istediğinizden emin misiniz?`)) {
       return;
     }
@@ -184,10 +186,10 @@ const ItemGroupsPage = () => {
       );
       setSelectedItemGroups([]);
       await loadItemGroups();
-      alert('Seçili gruplar başarıyla silindi');
+      toast.success('Seçili gruplar başarıyla silindi');
     } catch (err) {
       console.error('❌ Error bulk deleting:', err);
-      alert(err.message || 'Gruplar silinirken bir hata oluştu');
+      toast.error(err.message || 'Gruplar silinirken bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -196,15 +198,15 @@ const ItemGroupsPage = () => {
   const handleSaveItemGroup = async (itemGroupData) => {
     try {
       setLoading(true);
-      
+
       if (editingItemGroup) {
         await apiService.updateItemGroup(editingItemGroup.id, itemGroupData);
-        alert('Ürün grubu başarıyla güncellendi');
+        toast.success('Ürün grubu başarıyla güncellendi');
       } else {
         await apiService.createItemGroup(itemGroupData);
-        alert('Ürün grubu başarıyla oluşturuldu');
+        toast.success('Ürün grubu başarıyla oluşturuldu');
       }
-      
+
       handleCancelForm();
       await loadItemGroups();
     } catch (err) {
@@ -248,7 +250,7 @@ const ItemGroupsPage = () => {
                   {pagination.totalCount} ürün grubu bulundu
                 </p>
               </div>
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={handleNewItemGroup}
                 disabled={loading || showForm}
@@ -264,9 +266,9 @@ const ItemGroupsPage = () => {
             <div className="alert alert-danger alert-dismissible fade show" role="alert">
               <i className="bi bi-exclamation-triangle-fill me-2"></i>
               <strong>Hata!</strong> {error}
-              <button 
-                type="button" 
-                className="btn-close" 
+              <button
+                type="button"
+                className="btn-close"
                 onClick={() => setError(null)}
               ></button>
             </div>

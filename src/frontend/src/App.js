@@ -2,6 +2,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext'; // ← YENİ EKLENEN SATIR
 import Layout from './components/Layout/Layout';
 import Login from './components/Auth/Login';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
@@ -9,8 +10,8 @@ import DashboardPage from './pages/DashboardPage';
 import ProductionPage from './pages/ProductionPage';
 import VisitorsPage from './pages/VisitorsPage';
 import VehiclesPage from './pages/VehiclesPage';
-import VehicleDetailPage from './pages/VehicleDetailPage'; // YENİ
-import VehicleFuelPurchasesPage from './pages/VehicleFuelPurchasesPage'; // YENİ
+import VehicleDetailPage from './pages/VehicleDetailPage';
+import VehicleFuelPurchasesPage from './pages/VehicleFuelPurchasesPage';
 import WeeklyProductionCalendarPage from './pages/WeeklyProductionCalendarPage';
 import IssueDetailsPage from './pages/IssueDetailsPage';
 import './App.css';
@@ -23,184 +24,186 @@ import ItemEditPage from './pages/ItemEditPage';
 function App() {
   return (
     <div className="App">
-      <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
+      {/* ← ToastProvider'ı AuthProvider'ın DIŞINA sarıyoruz */}
+      <ToastProvider>
+        <AuthProvider>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
 
-          <Route path="/definitions/items/detail/:id" element={
-            <ProtectedRoute><Layout><ItemDetailPage /></Layout></ProtectedRoute>
-          } />
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <DashboardPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-{/* ✅ DÜZELTME: Item routes - SIRALAMA ÖNEMLİ! */}
-          {/* Daha spesifik route'lar önce gelmeli */}
-          
-          {/* Yeni ürün ekleme */}
-          <Route 
-            path="/definitions/items/new" 
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ItemEditPage />
-                </Layout>
-              </ProtectedRoute>
-            } 
-          />
+            <Route path="/definitions/items/detail/:id" element={
+              <ProtectedRoute><Layout><ItemDetailPage /></Layout></ProtectedRoute>
+            } />
+            
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <DashboardPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Ürün detay (sadece görüntüleme - read-only) */}
-          <Route 
-            path="/definitions/items/detail/:id" 
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ItemDetailPage />
-                </Layout>
-              </ProtectedRoute>
-            } 
-          />
+            {/* Item routes - SIRALAMA ÖNEMLİ! */}
+            
+            {/* Yeni ürün ekleme */}
+            <Route 
+              path="/definitions/items/new" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ItemEditPage />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
 
-          {/* Ürün düzenleme */}
-          <Route 
-            path="/definitions/items/edit/:id" 
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ItemEditPage />
-                </Layout>
-              </ProtectedRoute>
-            } 
-          />
+            {/* Ürün detay (sadece görüntüleme - read-only) */}
+            <Route 
+              path="/definitions/items/detail/:id" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ItemDetailPage />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
 
-          {/* Ürün listesi */}
-          <Route
-            path="/definitions/items"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ItemsPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Ürün düzenleme */}
+            <Route 
+              path="/definitions/items/edit/:id" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ItemEditPage />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
 
-          <Route
-            path="/definitions/item-groups"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ItemGroupsPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Ürün listesi */}
+            <Route
+              path="/definitions/items"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ItemsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/production/weekly-calendar"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <WeeklyProductionCalendarPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/definitions/item-groups"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ItemGroupsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/production/issue-details"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <IssueDetailsPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/production/weekly-calendar"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <WeeklyProductionCalendarPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/vehicles"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <VehiclesPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/production/issue-details"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <IssueDetailsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
+            <Route
+              path="/vehicles"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehiclesPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          Routes içinde
-          <Route
-            path="/production/bom-transfer"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <BOMTransferPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/production/bom-transfer"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <BOMTransferPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* YENİ ROUTE - Araç Detay Sayfası */}
-          <Route
-            path="/vehicles/detail"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <VehicleDetailPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Araç Detay Sayfası */}
+            <Route
+              path="/vehicles/detail"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehicleDetailPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* YENİ ROUTE - Araç Yakıt Alım Bilgileri Sayfası */}
-          <Route
-            path="/vehicles/fuel-purchases"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <VehicleFuelPurchasesPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Araç Yakıt Alım Bilgileri Sayfası */}
+            <Route
+              path="/vehicles/fuel-purchases"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehicleFuelPurchasesPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/production/*"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ProductionPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/production/*"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ProductionPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/visitors"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <VisitorsPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/visitors"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VisitorsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Redirect routes */}
-          <Route path="/" element={<Navigate to="/production/weekly-calendar" replace />} />
-          <Route path="*" element={<Navigate to="/production/weekly-calendar" replace />} />
-        </Routes>
-      </AuthProvider>
+            {/* Redirect routes */}
+            <Route path="/" element={<Navigate to="/production/weekly-calendar" replace />} />
+            <Route path="*" element={<Navigate to="/production/weekly-calendar" replace />} />
+          </Routes>
+        </AuthProvider>
+      </ToastProvider>
     </div>
   );
 }

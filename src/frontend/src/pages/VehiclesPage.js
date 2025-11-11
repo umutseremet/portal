@@ -8,10 +8,12 @@ import VehicleModal from '../components/Vehicles/VehicleModal';
 import { useVehicles } from '../hooks/useVehicles';
 // 1. Import ekle (dosyanın başına)
 import { exportVehiclesToExcel } from '../utils/excelExport';
+import { useToast } from '../contexts/ToastContext'; // ← BU SATIRI EKLEYİN
 
 const VehiclesPage = () => {
   const navigate = useNavigate();
 
+  const toast = useToast(); // ← BU SATIRI EKLEYİN
   // Use the vehicles hook
   const {
     // Data
@@ -58,13 +60,13 @@ const VehiclesPage = () => {
   const handleExport = () => {
     try {
       if (!vehicles || vehicles.length === 0) {
-        alert('Dışa aktarılacak araç bulunamadı!');
+        toast.warning('Dışa aktarılacak araç bulunamadı!');
         return;
       }
       exportVehiclesToExcel(vehicles, 'Araclar');
     } catch (error) {
       console.error('Export error:', error);
-      alert('Excel dışa aktarma sırasında hata oluştu');
+      toast.error('Excel dışa aktarma sırasında hata oluştu');
     }
   };
 

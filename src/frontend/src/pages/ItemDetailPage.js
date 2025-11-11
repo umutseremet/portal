@@ -7,17 +7,22 @@ import { ChevronLeft, ChevronRight, Download, Archive } from 'lucide-react';
 import apiService from '../services/api';
 import ItemDetail from '../components/Items/ItemDetail';
 import PDFPreviewModal from '../components/Items/PDFPreviewModal';
+import { useToast } from '../contexts/ToastContext';
+import { useConfirm } from '../hooks/useConfirm';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 const ItemDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
+  const toast = useToast();
+  const { confirmDelete, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [itemGroups, setItemGroups] = useState(location.state?.itemGroups || []);
 
   const [item, setItem] = useState(location.state?.item || null);
   const [loading, setLoading] = useState(false);
-  
+
   // File states
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [filesLoading, setFilesLoading] = useState(false);
@@ -45,7 +50,7 @@ const ItemDetailPage = () => {
     }
   }, [id]);
 
-   // ✅ Item Groups'u API'den çek
+  // ✅ Item Groups'u API'den çek
   const fetchItemGroups = async () => {
     try {
       const response = await apiService.getItemGroups({
@@ -66,7 +71,7 @@ const ItemDetailPage = () => {
       setItem(data);
     } catch (err) {
       console.error('Error loading item:', err);
-      alert('Ürün bilgisi yüklenirken hata oluştu');
+      toast.error('Ürün bilgisi yüklenirken hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -79,14 +84,14 @@ const ItemDetailPage = () => {
       setFilesLoading(true);
       const files = await apiService.getItemFiles(parseInt(id));
       const filesArray = Array.isArray(files) ? files : [];
-      
+
       const mappedFiles = filesArray.map(file => ({
         ...file,
         isPdf: file.fileExtension?.toLowerCase() === '.pdf',
         formattedSize: formatFileSize(file.fileSize),
         formattedUploadDate: formatDate(file.uploadedAt)
       }));
-      
+
       setUploadedFiles(mappedFiles);
     } catch (err) {
       console.error('Error loading files:', err);
@@ -111,19 +116,21 @@ const ItemDetailPage = () => {
     navigate(`/definitions/items/edit/${id}`, { state: { item, itemGroups } });
   };
 
+  // ✅ DÜZELTME: window.confirm yerine confirmDelete
   const handleDelete = async () => {
-    if (!window.confirm('Bu ürünü silmek istediğinizden emin misiniz?')) {
-      return;
-    }
+    // Onay iste
+    const confirmed = await confirmDelete(item?.name || 'Bu ürün');
+    if (!confirmed) return;
 
+    // Onaylandıysa sil
     try {
       setLoading(true);
       await apiService.deleteItem(id);
-      alert('Ürün başarıyla silindi');
+      toast.success('Ürün başarıyla silindi');
       navigate('/definitions/items');
     } catch (err) {
       console.error('Error deleting item:', err);
-      alert('Ürün silinirken hata oluştu');
+      toast.error('Ürün silinirken hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -144,7 +151,7 @@ const ItemDetailPage = () => {
   // ✅ YENİ: ZIP olarak tüm dosyaları indir
   const handleDownloadAllAsZip = async () => {
     if (uploadedFiles.length === 0) {
-      alert('İndirilecek dosya yok');
+      toast.warning('İndirilecek dosya yok');
       return;
     }
 
@@ -190,7 +197,7 @@ const ItemDetailPage = () => {
       console.log('✅ ZIP downloaded:', zipFileName);
     } catch (err) {
       console.error('❌ ZIP download error:', err);
-      alert('ZIP dosyası oluşturulurken hata oluştu: ' + err.message);
+      toast.error('ZIP dosyası oluşturulurken hata oluştu: ' + err.message);
     } finally {
       setDownloadingZip(false);
     }
@@ -245,7 +252,7 @@ const ItemDetailPage = () => {
         <div className="col-12">
           <div className="d-flex justify-content-between align-items-center">
             <div className="d-flex align-items-center">
-              <button 
+              <button
                 className="btn btn-outline-secondary me-3"
                 onClick={handleBack}
                 disabled={loading}
@@ -264,7 +271,7 @@ const ItemDetailPage = () => {
               </div>
             </div>
             <div>
-              <button 
+              <button
                 className="btn btn-primary me-2"
                 onClick={handleEdit}
                 disabled={loading}
@@ -272,7 +279,7 @@ const ItemDetailPage = () => {
                 <i className="bi bi-pencil me-2"></i>
                 Düzenle
               </button>
-              <button 
+              <button
                 className="btn btn-outline-danger"
                 onClick={handleDelete}
                 disabled={loading}
@@ -346,8 +353,8 @@ const ItemDetailPage = () => {
                         <div key={file.id} className="list-group-item px-0 py-2">
                           <div className="d-flex justify-content-between align-items-center">
                             <div className="d-flex align-items-center flex-grow-1">
-                              <i 
-                                className={`bi ${file.isPdf ? 'bi-file-pdf text-danger' : 'bi-file-earmark'} me-2`} 
+                              <i
+                                className={`bi ${file.isPdf ? 'bi-file-pdf text-danger' : 'bi-file-earmark'} me-2`}
                                 style={{ fontSize: '1.5rem' }}
                               ></i>
                               <div className="flex-grow-1">
@@ -423,6 +430,22 @@ const ItemDetailPage = () => {
           setShowPreview(false);
           setPreviewFile(null);
         }}
+      />
+
+      {/* ✅ YENİ: Confirm Modal - BUNU EKLEMEYI UNUTMAYIN! */}
+      <ConfirmModal
+        show={confirmState.show}
+        onHide={handleCancel}
+        onConfirm={handleConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        description={confirmState.description}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        confirmButtonClass={confirmState.confirmButtonClass}
+        icon={confirmState.icon}
+        iconColor={confirmState.iconColor}
+        loading={confirmState.loading}
       />
     </div>
   );

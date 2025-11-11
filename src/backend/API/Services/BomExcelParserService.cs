@@ -51,14 +51,12 @@ namespace API.Services
                     return result;
                 }
 
-                // ✅ RESİMLERİ İŞLE VE KAYDET
-                var imageMap = await ProcessAndSaveImagesAsync(worksheet, excelId);
-
                 // Kolon başlıklarını bul (2. satır)
                 var headerRow = 2;
                 var columns = FindColumnIndexes(worksheet, headerRow);
 
-                // Veri satırlarını işle (3. satırdan başla)
+                // ✅ ÖNCE TÜM ÜRÜNLER OLUŞTURULSUN (Resimler için ItemId'lere ihtiyacımız var)
+                var veriSatirlari = new Dictionary<int, (ExcelRowData RowData, Item Item)>();
                 var rowCount = worksheet.Dimension?.Rows ?? 0;
                 var processedRows = 0;
                 var skippedRows = 0;
@@ -76,25 +74,12 @@ namespace API.Services
                             continue;
                         }
 
-                        // ✅ Bu satır için resim var mı kontrol et
-                        var imageInfo = GetImageForRow(imageMap, row);
+                        // Items tablosunda ürünü bul veya oluştur (resim olmadan)
+                        var item = await FindOrCreateItemAsync(rowData, null);
 
-                        // Items tablosunda ürünü bul veya oluştur (resim bilgisi ile)
-                        var item = await FindOrCreateItemAsync(rowData, imageInfo.ImagePath);
+                        // Satır bilgisini sakla (resimler için)
+                        veriSatirlari[row] = (rowData, item);
 
-                        // BomItem oluştur
-                        var bomItem = new BomItem
-                        {
-                            ExcelId = excelId,
-                            ItemId = item.Id,
-                            OgeNo = rowData.OgeNo,
-                            Miktar = rowData.Miktar,
-                            RowNumber = row - headerRow, // Excel'deki gerçek satır numarası
-                            Notes = rowData.Notes,
-                            CreatedAt = DateTime.Now
-                        };
-
-                        _context.BomItems.Add(bomItem);
                         processedRows++;
                     }
                     catch (Exception ex)
@@ -104,10 +89,33 @@ namespace API.Services
                     }
                 }
 
+                // ✅ ŞİMDİ RESİMLERİ İŞLE VE ITEMID BAZLI KLASÖRLERE KAYDET
+                var imageSaveCount = await ProcessAndSaveImagesAsync(worksheet, veriSatirlari);
+
+                // ✅ BomItem kayıtlarını oluştur
+                foreach (var kvp in veriSatirlari)
+                {
+                    var row = kvp.Key;
+                    var (rowData, item) = kvp.Value;
+
+                    var bomItem = new BomItem
+                    {
+                        ExcelId = excelId,
+                        ItemId = item.Id,
+                        OgeNo = rowData.OgeNo,
+                        Miktar = rowData.Miktar,
+                        RowNumber = row - headerRow,
+                        Notes = rowData.Notes,
+                        CreatedAt = DateTime.Now
+                    };
+
+                    _context.BomItems.Add(bomItem);
+                }
+
                 // Excel'in row count'unu güncelle
                 excel.RowCount = processedRows;
                 excel.IsProcessed = true;
-                excel.ProcessingNotes = $"{processedRows} satır işlendi, {skippedRows} satır atlandı. {imageMap.Count} resim kaydedildi.";
+                excel.ProcessingNotes = $"{processedRows} satır işlendi, {skippedRows} satır atlandı. {imageSaveCount} resim kaydedildi.";
 
                 await _context.SaveChangesAsync();
 
@@ -117,7 +125,7 @@ namespace API.Services
                 result.NewItemsCreated = result.NewItemsCreated;
 
                 _logger.LogInformation("Excel {ExcelId} başarıyla işlendi: {Processed} satır, {Images} resim",
-                    excelId, processedRows, imageMap.Count);
+                    excelId, processedRows, imageSaveCount);
 
                 return result;
             }
@@ -131,29 +139,25 @@ namespace API.Services
         }
 
         /// <summary>
-        /// Excel'deki resimleri işler ve kaydeder
+        /// Excel'deki resimleri işler ve ItemId bazlı klasörlere kaydeder
+        /// ✅ TAMAMEN DÜZELTİLDİ: ItemFiles mantığıyla aynı - ItemId bazlı klasör
         /// </summary>
-        private async Task<Dictionary<int, (string ImagePath, int ImageRow, int ImageCol)>> ProcessAndSaveImagesAsync(
-            ExcelWorksheet worksheet, int excelId)
+        private async Task<int> ProcessAndSaveImagesAsync(
+            ExcelWorksheet worksheet,
+            Dictionary<int, (ExcelRowData RowData, Item Item)> veriSatirlari)
         {
-            var imageMap = new Dictionary<int, (string, int, int)>();
-
             if (worksheet.Drawings.Count == 0)
             {
                 _logger.LogInformation("Excel'de resim bulunamadı");
-                return imageMap;
+                return 0;
             }
 
-            // Resim klasörünü oluştur: Uploads/BOM/Images/{excelId}/
-            var imageFolder = Path.Combine(_environment.ContentRootPath, "Uploads", "BOM", "Images", excelId.ToString());
-            if (!Directory.Exists(imageFolder))
-            {
-                Directory.CreateDirectory(imageFolder);
-                _logger.LogInformation("Resim klasörü oluşturuldu: {Folder}", imageFolder);
-            }
-
+            int savedImageCount = 0;
             int imageIndex = 0;
             _logger.LogInformation("Excel'de toplam {Count} resim bulundu", worksheet.Drawings.Count);
+
+            // Geçici olarak resimleri hafızada tut
+            var tempImages = new List<(byte[] ImageBytes, int Row, int Col, string OriginalName)>();
 
             foreach (var drawing in worksheet.Drawings)
             {
@@ -165,43 +169,80 @@ namespace API.Services
                         int imageRow = picture.From.Row + 1; // EPPlus sıfır indeksli, biz 1 indeksli
                         int imageCol = picture.From.Column + 1;
 
-                        // Güvenli dosya adı oluştur
-                        string fileName = $"image_{imageIndex:D3}_{SanitizeFileName(picture.Name ?? "unnamed")}.png";
-                        string filePath = Path.Combine(imageFolder, fileName);
-
-                        // Resmi kaydet
                         if (picture.Image?.ImageBytes != null)
                         {
-                            File.WriteAllBytes(filePath, picture.Image.ImageBytes);
-                            _logger.LogInformation("Resim kaydedildi: {FileName} (Pozisyon: R{Row}C{Col})",
-                                fileName, imageRow, imageCol);
-
-                            // Resmin hangi veri satırına ait olduğunu belirle
-                            int dataRowForImage = FindDataRowForImage(worksheet, imageRow, imageCol);
-
-                            if (dataRowForImage > 0)
-                            {
-                                // Web'den erişilebilir relative path oluştur
-                                string relativePath = $"/Uploads/BOM/Images/{excelId}/{fileName}";
-                                imageMap[dataRowForImage] = (relativePath, imageRow, imageCol);
-                                _logger.LogInformation("Resim eşleştirildi: {FileName} -> Veri Satır: {DataRow}",
-                                    fileName, dataRowForImage);
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Resim {FileName} için veri satırı bulunamadı", fileName);
-                            }
+                            tempImages.Add((picture.Image.ImageBytes, imageRow, imageCol, picture.Name ?? "unnamed"));
+                            _logger.LogInformation("Resim bulundu: {Index} (Pozisyon: R{Row}C{Col})",
+                                imageIndex, imageRow, imageCol);
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Resim {Index} kaydedilirken hata", imageIndex);
+                        _logger.LogError(ex, "Resim {Index} okunurken hata", imageIndex);
                     }
                 }
             }
 
-            _logger.LogInformation("Toplam {Count} resim başarıyla eşleştirildi", imageMap.Count);
-            return imageMap;
+            // Şimdi her resim için veri satırını bul ve ItemId bazlı klasöre kaydet
+            foreach (var (imageBytes, imageRow, imageCol, originalName) in tempImages)
+            {
+                try
+                {
+                    // Resmin hangi veri satırına ait olduğunu belirle
+                    int dataRowForImage = FindDataRowForImage(worksheet, imageRow, imageCol);
+
+                    if (dataRowForImage > 0 && veriSatirlari.ContainsKey(dataRowForImage))
+                    {
+                        var (rowData, item) = veriSatirlari[dataRowForImage];
+
+                        // ✅ ItemId bazlı klasör yapısı - ItemFiles ile AYNI MANTIK
+                        var itemFolder = Path.Combine(_environment.ContentRootPath, "Uploads", "Items", item.Id.ToString());
+
+                        // Klasör yoksa oluştur
+                        if (!Directory.Exists(itemFolder))
+                        {
+                            Directory.CreateDirectory(itemFolder);
+                            _logger.LogInformation("Ürün klasörü oluşturuldu: {Folder}", itemFolder);
+                        }
+
+                        // Dosya adı: image_item.I.png
+                        // Aynı ürün için birden fazla BOM resmi olabilir
+                        var existingImages = Directory.GetFiles(itemFolder, "image_*.png");
+                        var nextIndex = existingImages.Length + 1;
+                        string fileName = $"image_{item.Id.ToString()}.png";
+                        string filePath = Path.Combine(itemFolder, fileName);
+
+                        // Resmi kaydet
+                        File.WriteAllBytes(filePath, imageBytes);
+                        _logger.LogInformation("Resim kaydedildi: {FileName} -> ItemId: {ItemId} ({ProductCode})",
+                            fileName, item.Id, item.Code);
+
+                        // Item'in ImageUrl'sini güncelle (eğer yoksa ilk resmi set et)
+                        if (string.IsNullOrEmpty(item.ImageUrl))
+                        {
+                            string relativePath = $"/Uploads/Items/{item.Id}/{fileName}";
+                            item.ImageUrl = relativePath;
+                            item.UpdatedAt = DateTime.Now;
+                            await _context.SaveChangesAsync();
+                            _logger.LogInformation("Item ImageUrl güncellendi: ItemId={ItemId}, Path={Path}", item.Id, relativePath);
+                        }
+
+                        savedImageCount++;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Resim için veri satırı bulunamadı veya item eşleşmedi (Pozisyon: R{Row}C{Col})",
+                            imageRow, imageCol);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Resim kaydedilirken hata (Pozisyon: R{Row}C{Col})", imageRow, imageCol);
+                }
+            }
+
+            _logger.LogInformation("Toplam {Count} resim başarıyla ItemId bazlı klasörlere kaydedildi", savedImageCount);
+            return savedImageCount;
         }
 
         /// <summary>
@@ -222,8 +263,8 @@ namespace API.Services
 
             for (int dataRow = startDataRow; dataRow <= maxRows; dataRow++)
             {
-                // Bu satırda veri var mı kontrol et (B kolonu - Parça No)
-                var parcaNo = worksheet.Cells[dataRow, 3].Value?.ToString()?.Trim(); // C kolonu - Parça Numarası
+                // Bu satırda veri var mı kontrol et (C kolonu - Parça Numarası)
+                var parcaNo = worksheet.Cells[dataRow, 3].Value?.ToString()?.Trim();
 
                 // Boş satırları atla
                 if (string.IsNullOrEmpty(parcaNo))
@@ -253,23 +294,6 @@ namespace API.Services
 
             // En yakın mesafe 10'dan büyükse eşleştirme yapma
             return minDistance <= 10 ? closestDataRow : 0;
-        }
-
-        /// <summary>
-        /// Satır için resim bilgisini döndürür
-        /// </summary>
-        private (string ImagePath, int Row, int Column) GetImageForRow(
-            Dictionary<int, (string, int, int)> imageMap,
-            int currentDataRow)
-        {
-            // Direkt bu satır için resim var mı kontrol et
-            if (imageMap.ContainsKey(currentDataRow))
-            {
-                return imageMap[currentDataRow];
-            }
-
-            // Resim yok
-            return (null, 0, 0);
         }
 
         /// <summary>
@@ -446,13 +470,13 @@ namespace API.Services
             {
                 Number = maxNumber + 1,
                 Code = code,
-                Name = code, // Malzeme adını ürün adı olarak kullan
+                Name = code, // Ürün kodu = ürün adı
                 DocNumber = rowData.DokumanNo ?? "",
                 GroupId = itemGroup.Id,
                 X = rowData.X,
                 Y = rowData.Y,
                 Z = rowData.Z,
-                ImageUrl = imagePath, // ✅ Resim yolu eklendi
+                ImageUrl = imagePath, // ✅ Resim yolu eklendi (ama null olacak, resimler daha sonra ekleniyor)
                 CreatedAt = DateTime.Now,
                 Cancelled = false,
                 SupplierCode = rowData.EskiKod ?? "",
@@ -464,8 +488,8 @@ namespace API.Services
             _context.Items.Add(newItem);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Yeni ürün oluşturuldu: {Code} - {Name} (Grup: {Group}) {Image}",
-                code, newItem.Name, groupName, !string.IsNullOrEmpty(imagePath) ? $"[Resimli]" : "");
+            _logger.LogInformation("Yeni ürün oluşturuldu: {Code} - {Name} (Grup: {Group})",
+                code, newItem.Name, groupName);
 
             return newItem;
         }
