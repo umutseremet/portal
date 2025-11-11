@@ -163,9 +163,136 @@ const VisitorsList = ({
     );
   }
 
-  // Empty state
-  if (!loading && (!visitors || visitors.length === 0)) {
-    return (
+// ✅ YENİ KOD (DOĞRU):
+// Empty state
+if (!loading && (!visitors || visitors.length === 0)) {
+  return (
+    <>
+      {/* Header with Actions - Empty state'de de göster */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          {/* Sol taraf boş veya başlık olabilir */}
+        </div>
+        <div className="d-flex gap-2">
+          {/* Hızlı Tarih Filtreleri */}
+          <div className="btn-group">
+            <button 
+              className="btn btn-outline-secondary btn-sm dropdown-toggle"
+              data-bs-toggle="dropdown"
+            >
+              <i className="bi bi-calendar-range me-1"></i>
+              Hızlı Filtre
+            </button>
+            <ul className="dropdown-menu">
+              <li><button className="dropdown-item" onClick={() => onQuickDateFilter?.('today')}>Bugün</button></li>
+              <li><button className="dropdown-item" onClick={() => onQuickDateFilter?.('thisWeek')}>Bu Hafta</button></li>
+              <li><button className="dropdown-item" onClick={() => onQuickDateFilter?.('thisMonth')}>Bu Ay</button></li>
+              <li><button className="dropdown-item" onClick={() => onQuickDateFilter?.('last7Days')}>Son 7 Gün</button></li>
+              <li><button className="dropdown-item" onClick={() => onQuickDateFilter?.('last30Days')}>Son 30 Gün</button></li>
+            </ul>
+          </div>
+
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <i className="bi bi-funnel me-1"></i>
+            Filtrele
+            {hasFilters && <span className="badge bg-danger ms-1 rounded-pill">!</span>}
+          </button>
+
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            onClick={onExport}
+            disabled={true}
+          >
+            <i className="bi bi-download me-1"></i>
+            Excel İndir
+          </button>
+
+          <button
+            className="btn btn-danger btn-sm"
+            onClick={onNewVisitor}
+          >
+            <i className="bi bi-plus-lg me-1"></i>
+            Yeni Ziyaretçi
+          </button>
+        </div>
+      </div>
+
+      {/* Filter Panel - Empty state'de de göster */}
+      {showFilters && (
+        <div className="card mb-4">
+          <div className="card-body">
+            <div className="row">
+              <div className="col-md-3">
+                <label className="form-label small">Başlangıç Tarihi</label>
+                <input
+                  type="date"
+                  className="form-control form-control-sm"
+                  value={localFilters.fromDate}
+                  onChange={(e) => handleLocalFilterChange('fromDate', e.target.value)}
+                />
+              </div>
+              <div className="col-md-3">
+                <label className="form-label small">Bitiş Tarihi</label>
+                <input
+                  type="date"
+                  className="form-control form-control-sm"
+                  value={localFilters.toDate}
+                  onChange={(e) => handleLocalFilterChange('toDate', e.target.value)}
+                />
+              </div>
+              <div className="col-md-3">
+                <label className="form-label small">Şirket</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={localFilters.company}
+                  onChange={(e) => handleLocalFilterChange('company', e.target.value)}
+                  placeholder="Şirket adı..."
+                />
+              </div>
+              <div className="col-md-3">
+                <label className="form-label small">Ziyaretçi</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={localFilters.visitor}
+                  onChange={(e) => handleLocalFilterChange('visitor', e.target.value)}
+                  placeholder="Ziyaretçi adı..."
+                />
+              </div>
+            </div>
+
+            <div className="d-flex justify-content-end gap-2 mt-3">
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={handleApplyFilters}
+              >
+                <i className="bi bi-search me-1"></i>
+                Filtrele
+              </button>
+              <button 
+                className="btn btn-outline-secondary btn-sm"
+                onClick={handleResetFilters}
+              >
+                <i className="bi bi-arrow-clockwise me-1"></i>
+                Temizle
+              </button>
+              <button 
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => setShowFilters(false)}
+              >
+                <i className="bi bi-x me-1"></i>
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Empty State Message */}
       <div className="text-center py-5">
         <div className="mb-4">
           <i className="bi bi-people display-1 text-muted"></i>
@@ -176,7 +303,7 @@ const VisitorsList = ({
         <p className="text-muted">
           {hasFilters 
             ? 'Filtre kriterlerinizi değiştirmeyi deneyin.' 
-            : 'İlk ziyaretçi kaydınızı oluşturmak için "Yeni Ziyaretçi" butonunu kullanın.'
+            : 'İlk ziyaretçi kaydınızı oluşturmak için yukarıdaki "Yeni Ziyaretçi" butonunu kullanın.'
           }
         </p>
         {hasFilters && (
@@ -186,9 +313,9 @@ const VisitorsList = ({
           </button>
         )}
       </div>
-    );
-  }
-
+    </>
+  );
+}
   return (
     <>
       {/* Header with Actions */}

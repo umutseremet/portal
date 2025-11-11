@@ -111,7 +111,7 @@ const VehiclesList = ({
   // Handle import success
   const handleImportSuccess = (result) => {
     setShowImportModal(false);
-    
+
     // Show success message
     if (result.successCount > 0) {
       alert(`Başarıyla ${result.successCount} yakıt alım kaydı içe aktarıldı!`);
@@ -138,26 +138,190 @@ const VehiclesList = ({
   // Empty state
   if (isEmpty && !loading) {
     return (
-      <div className="text-center py-5">
-        <i className="bi bi-car-front display-1 text-muted mb-3"></i>
-        <h5 className="text-muted mb-2">
-          {hasFilters ? 'Filtrelere uygun araç bulunamadı' : 'Henüz araç kaydı bulunmuyor'}
-        </h5>
-        <p className="text-muted">
-          {hasFilters
-            ? 'Filtre kriterlerinizi değiştirmeyi deneyin.'
-            : 'İlk araç kaydınızı oluşturmak için "Yeni Araç" butonunu kullanın.'
-          }
-        </p>
-        {hasFilters && (
-          <button className="btn btn-outline-secondary" onClick={handleResetFilters}>
-            <i className="bi bi-arrow-clockwise me-1"></i>
-            Filtreleri Temizle
-          </button>
+      <>
+        {/* Header with Actions - Empty state'de de göster */}
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            {/* Sol taraf boş */}
+          </div>
+          <div className="d-flex gap-2">
+            <button
+              className="btn btn-outline-secondary btn-sm"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <i className="bi bi-funnel me-1"></i>
+              Filtrele
+              {hasFilters && <span className="badge bg-danger ms-1 rounded-pill">!</span>}
+            </button>
+
+            {/* Excel'den Yükle Butonu */}
+            <button
+              className="btn btn-outline-success btn-sm"
+              onClick={() => setShowImportModal(true)}
+            >
+              <i className="bi bi-file-earmark-arrow-up me-1"></i>
+              Excel'den Yakıt Alımları Yükle
+            </button>
+
+            <button
+              className="btn btn-outline-secondary btn-sm"
+              onClick={onExport}
+              disabled={true}
+            >
+              <i className="bi bi-download me-1"></i>
+              Excel İndir
+            </button>
+
+            <button
+              className="btn btn-danger btn-sm"
+              onClick={onNewVisitor}
+            >
+              <i className="bi bi-plus-lg me-1"></i>
+              Yeni Araç
+            </button>
+          </div>
+        </div>
+
+        {/* Filter Panel - Empty state'de de çalışsın */}
+        {showFilters && (
+          <div className="card mb-4">
+            <div className="card-body">
+              <div className="row">
+                <div className="col-md-3">
+                  <label className="form-label small">Marka</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={localFilters.brand}
+                    onChange={(e) => handleLocalFilterChange('brand', e.target.value)}
+                    placeholder="Toyota, BMW..."
+                  />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label small">Model</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={localFilters.model}
+                    onChange={(e) => handleLocalFilterChange('model', e.target.value)}
+                    placeholder="Corolla, X5..."
+                  />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label small">Plaka</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={localFilters.licensePlate}
+                    onChange={(e) => handleLocalFilterChange('licensePlate', e.target.value)}
+                    placeholder="34 ABC 123"
+                  />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label small">Şirket</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={localFilters.companyName}
+                    onChange={(e) => handleLocalFilterChange('companyName', e.target.value)}
+                    placeholder="Şirket adı..."
+                  />
+                </div>
+              </div>
+
+              <div className="row mt-3">
+                <div className="col-md-3">
+                  <label className="form-label small">Sahiplik Tipi</label>
+                  <select
+                    className="form-select form-select-sm"
+                    value={localFilters.ownershipType}
+                    onChange={(e) => handleLocalFilterChange('ownershipType', e.target.value)}
+                  >
+                    <option value="">Tümü</option>
+                    <option value="company">Şirket</option>
+                    <option value="rental">Kiralık</option>
+                    <option value="personal">Kişisel</option>
+                  </select>
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label small">Atanan Kullanıcı</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={localFilters.assignedUser}
+                    onChange={(e) => handleLocalFilterChange('assignedUser', e.target.value)}
+                    placeholder="Kullanıcı adı..."
+                  />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label small">Konum</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={localFilters.location}
+                    onChange={(e) => handleLocalFilterChange('location', e.target.value)}
+                    placeholder="İstanbul, Ankara..."
+                  />
+                </div>
+              </div>
+
+              <div className="d-flex justify-content-end gap-2 mt-3">
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={handleApplyFilters}
+                >
+                  <i className="bi bi-search me-1"></i>
+                  Filtrele
+                </button>
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={handleResetFilters}
+                >
+                  <i className="bi bi-arrow-clockwise me-1"></i>
+                  Temizle
+                </button>
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => setShowFilters(false)}
+                >
+                  <i className="bi bi-x me-1"></i>
+                  Kapat
+                </button>
+              </div>
+            </div>
+          </div>
         )}
-      </div>
+
+        {/* Empty State Message */}
+        <div className="text-center py-5">
+          <i className="bi bi-car-front display-1 text-muted mb-3"></i>
+          <h5 className="text-muted mb-2">
+            {hasFilters ? 'Filtrelere uygun araç bulunamadı' : 'Henüz araç kaydı bulunmuyor'}
+          </h5>
+          <p className="text-muted">
+            {hasFilters
+              ? 'Filtre kriterlerinizi değiştirmeyi deneyin.'
+              : 'İlk araç kaydınızı oluşturmak için yukarıdaki "Yeni Araç" butonunu kullanın.'
+            }
+          </p>
+          {hasFilters && (
+            <button className="btn btn-outline-secondary" onClick={handleResetFilters}>
+              <i className="bi bi-arrow-clockwise me-1"></i>
+              Filtreleri Temizle
+            </button>
+          )}
+        </div>
+
+        {/* Excel Import Modal - Empty state'de de olmalı */}
+        <FuelPurchaseImportModal
+          show={showImportModal}
+          onHide={() => setShowImportModal(false)}
+          onSuccess={handleImportSuccess}
+        />
+      </>
     );
   }
+
 
   return (
     <>
@@ -175,7 +339,7 @@ const VehiclesList = ({
             Filtrele
             {hasFilters && <span className="badge bg-danger ms-1 rounded-pill">!</span>}
           </button>
-          
+
           {/* YENİ - Excel'den Yükle Butonu */}
           <button
             className="btn btn-outline-success btn-sm"
@@ -265,21 +429,21 @@ const VehiclesList = ({
               </div>
               <div className="col-12 mt-3">
                 <div className="d-flex gap-2">
-                  <button 
+                  <button
                     className="btn btn-primary btn-sm"
                     onClick={handleApplyFilters}
                   >
                     <i className="bi bi-search me-1"></i>
                     Filtrele
                   </button>
-                  <button 
+                  <button
                     className="btn btn-outline-secondary btn-sm"
                     onClick={handleResetFilters}
                   >
                     <i className="bi bi-arrow-clockwise me-1"></i>
                     Temizle
                   </button>
-                  <button 
+                  <button
                     className="btn btn-outline-secondary btn-sm"
                     onClick={() => setShowFilters(false)}
                   >
@@ -482,7 +646,7 @@ const VehiclesList = ({
               {[...Array(pagination.totalPages)].map((_, index) => {
                 const pageNum = index + 1;
                 const currentPage = pagination.currentPage;
-                
+
                 if (
                   pageNum === 1 ||
                   pageNum === pagination.totalPages ||
@@ -499,11 +663,11 @@ const VehiclesList = ({
                     </li>
                   );
                 }
-                
+
                 if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
                   return <li key={pageNum} className="page-item disabled"><span className="page-link">...</span></li>;
                 }
-                
+
                 return null;
               })}
 

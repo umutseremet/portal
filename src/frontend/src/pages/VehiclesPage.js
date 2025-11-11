@@ -1,12 +1,10 @@
 // src/frontend/src/pages/VehiclesPage.js
-// Modal yerine sayfa yönlendirmesi yapan versiyon
+// ✅ DÜZELTİLMİŞ VERSİYON - Modal kaldırıldı, tam sayfa navigasyonu eklendi
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import VehiclesList from '../components/Vehicles/VehiclesList';
-import VehicleModal from '../components/Vehicles/VehicleModal';
 import { useVehicles } from '../hooks/useVehicles';
-// 1. Import ekle (dosyanın başına)
 import { exportVehiclesToExcel } from '../utils/excelExport';
 import { useToast } from '../contexts/ToastContext'; // ← BU SATIRI EKLEYİN
 
@@ -33,10 +31,7 @@ const VehiclesPage = () => {
 
     // Actions
     loadVehicles,
-    createVehicle,
-    updateVehicle,
     deleteVehicle,
-    exportVehicles,
     updateFilters,
     resetFilters,
     goToPage,
@@ -47,16 +42,16 @@ const VehiclesPage = () => {
     clearError
   } = useVehicles();
 
-  // Modal states
-  const [showNewVehicleModal, setShowNewVehicleModal] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState(null);
+  // ❌ KALDIRILDI: Modal states
+  // const [showNewVehicleModal, setShowNewVehicleModal] = useState(false);
+  // const [editingVehicle, setEditingVehicle] = useState(null);
 
   // Refresh function for Excel import
   const handleRefresh = () => {
     loadVehicles();
   };
 
-  // 2. Export handler ekle (diğer handler'larla birlikte)
+  // Export handler
   const handleExport = () => {
     try {
       if (!vehicles || vehicles.length === 0) {
@@ -131,20 +126,28 @@ const VehiclesPage = () => {
     }
   };
 
-  // YENİ - Handle view vehicle - Sayfaya yönlendir
+  // ✅ YENİ: Handle new vehicle - Tam sayfaya yönlendir
+  const handleNewVehicle = () => {
+    try {
+      navigate('/vehicles/new');
+    } catch (error) {
+      console.error('Error navigating to new vehicle:', error);
+    }
+  };
+
+  // ✅ DÜZELTİLDİ: Handle view vehicle - Detay sayfasına yönlendir
   const handleViewVehicle = (vehicle) => {
     try {
-      navigate('/vehicles/detail', { state: { vehicle } });
+      navigate(`/vehicles/detail/${vehicle.id}`, { state: { vehicle } });
     } catch (error) {
       console.error('Error viewing vehicle:', error);
     }
   };
 
-  // Handle edit vehicle
+  // ✅ DÜZELTİLDİ: Handle edit vehicle - Düzenleme sayfasına yönlendir
   const handleEditVehicle = (vehicle) => {
     try {
-      setEditingVehicle(vehicle);
-      setShowNewVehicleModal(true);
+      navigate(`/vehicles/edit/${vehicle.id}`, { state: { vehicle } });
     } catch (error) {
       console.error('Error editing vehicle:', error);
     }
@@ -172,26 +175,9 @@ const VehiclesPage = () => {
     }
   };
 
-  // Handle close modal
-  const handleCloseModal = () => {
-    setShowNewVehicleModal(false);
-    setEditingVehicle(null);
-  };
-
-  // Handle save vehicle
-  const handleSaveVehicle = async (vehicleData) => {
-    try {
-      if (editingVehicle) {
-        await updateVehicle(editingVehicle.id, vehicleData);
-      } else {
-        await createVehicle(vehicleData);
-      }
-      handleCloseModal();
-    } catch (error) {
-      console.error('Error saving vehicle:', error);
-    }
-  };
-
+  // ❌ KALDIRILDI: Modal handlers
+  // const handleCloseModal = () => { ... }
+  // const handleSaveVehicle = async (vehicleData) => { ... }
 
   return (
     <div className="container-fluid py-4">
@@ -233,7 +219,7 @@ const VehiclesPage = () => {
                     onEditVisitor={handleEditVehicle}
                     onDeleteVisitor={handleDeleteVehicle}
                     onBulkDelete={handleBulkDelete}
-                    onNewVisitor={() => setShowNewVehicleModal(true)}
+                    onNewVisitor={handleNewVehicle} // ✅ Artık modal açmıyor, sayfaya yönlendiriyor
                     onExport={handleExport}
                     onResetFilters={resetFilters}
                     onRefresh={handleRefresh}
@@ -248,14 +234,8 @@ const VehiclesPage = () => {
             </div>
           </div>
 
-          {/* New/Edit Vehicle Modal */}
-          <VehicleModal
-            show={showNewVehicleModal}
-            onHide={handleCloseModal}
-            onSave={handleSaveVehicle}
-            vehicle={editingVehicle}
-            loading={loading}
-          />
+          {/* ❌ KALDIRILDI: Vehicle Modal */}
+          {/* <VehicleModal ... /> */}
         </div>
       </div>
     </div>

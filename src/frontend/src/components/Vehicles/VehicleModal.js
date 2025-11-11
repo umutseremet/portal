@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 
-const VehicleModal = ({ 
-  show, 
-  onHide, 
-  onSave, 
-  vehicle = null, 
-  loading = false 
+const VehicleModal = ({
+  show,
+  onHide,
+  onSave,
+  vehicle = null,
+  loading = false
 }) => {
   const isEdit = vehicle !== null;
-  
+
   const [formData, setFormData] = useState({
     licensePlate: '',
     brand: '',
@@ -32,7 +32,7 @@ const VehicleModal = ({
     vehicleImageUrl: '',
     registrationInfo: ''
   });
-  
+
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -95,7 +95,7 @@ const VehicleModal = ({
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -132,14 +132,15 @@ const VehicleModal = ({
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setSubmitting(true);
-    
+
     try {
+      // ✅ DÜZELTİLDİ: Decimal alanları güvenli şekilde parse et
       const submitData = {
         licensePlate: formData.licensePlate.trim(),
         brand: formData.brand.trim(),
@@ -150,22 +151,36 @@ const VehicleModal = ({
         location: formData.location.trim(),
         assignedUserName: formData.assignedUserName.trim(),
         assignedUserPhone: formData.assignedUserPhone.trim(),
-        currentMileage: formData.currentMileage ? parseInt(formData.currentMileage) : null,
-        fuelConsumption: formData.fuelConsumption ? parseFloat(formData.fuelConsumption) : null,
-        tireCondition: formData.tireCondition,
+
+        // ✅ DECIMAL ALANLARI - Boş ise null gönder
+        currentMileage: formData.currentMileage && formData.currentMileage !== ''
+          ? parseInt(formData.currentMileage)
+          : null,
+
+        fuelConsumption: formData.fuelConsumption && formData.fuelConsumption !== ''
+          ? parseFloat(formData.fuelConsumption)
+          : null, // ← BURASI ÖNEMLİ!
+
+        // Tarih alanları
         lastServiceDate: formData.lastServiceDate || null,
-        insurance: formData.insurance.trim(),
         insuranceExpiryDate: formData.insuranceExpiryDate || null,
         inspectionDate: formData.inspectionDate || null,
+
+        // Diğer alanlar
+        tireCondition: formData.tireCondition.trim() || null,
+        insurance: formData.insurance.trim() || null,
         ownershipType: formData.ownershipType,
-        vehicleImageUrl: formData.vehicleImageUrl.trim(),
-        registrationInfo: formData.registrationInfo.trim()
+        vehicleImageUrl: formData.vehicleImageUrl?.trim() || null,
+        registrationInfo: formData.registrationInfo?.trim() || null,
+        notes: formData.notes?.trim() || null
       };
 
+      console.log('📤 Submitting vehicle data:', submitData);
+
       await onSave(submitData);
-      onHide?.();
     } catch (error) {
-      console.error('Form submission error:', error);
+      console.error('❌ Form submission error:', error);
+      setErrors({ submit: error.message || 'Kayıt sırasında hata oluştu' });
     } finally {
       setSubmitting(false);
     }
@@ -193,14 +208,14 @@ const VehicleModal = ({
               <i className="bi bi-car-front me-2"></i>
               {isEdit ? 'Araç Düzenle' : 'Yeni Araç Ekle'}
             </h5>
-            <button 
-              type="button" 
-              className="btn-close" 
+            <button
+              type="button"
+              className="btn-close"
               onClick={handleClose}
               disabled={submitting}
             ></button>
           </div>
-          
+
           <form onSubmit={handleSubmit}>
             <div className="modal-body">
               {/* Temel Bilgiler */}
@@ -211,7 +226,7 @@ const VehicleModal = ({
                     Temel Bilgiler
                   </h6>
                 </div>
-                
+
                 <div className="col-md-6 mb-3">
                   <label className="form-label">
                     Plaka <span className="text-danger">*</span>
@@ -535,10 +550,10 @@ const VehicleModal = ({
                 </div>
               </div>
             </div>
-            
+
             <div className="modal-footer">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn btn-secondary"
                 onClick={handleClose}
                 disabled={submitting}
@@ -546,8 +561,8 @@ const VehicleModal = ({
                 <i className="bi bi-x me-1"></i>
                 İptal
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="btn btn-primary"
                 disabled={submitting || loading}
               >
