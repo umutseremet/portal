@@ -1,17 +1,17 @@
 // src/frontend/src/pages/VehiclesPage.js
-// ✅ DÜZELTİLMİŞ VERSİYON - Modal kaldırıldı, tam sayfa navigasyonu eklendi
+// ✅ TAM DÜZELTİLMİŞ VERSİYON - Tüm prop isimleri araç sistemine göre güncellendi
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import VehiclesList from '../components/Vehicles/VehiclesList';
 import { useVehicles } from '../hooks/useVehicles';
 import { exportVehiclesToExcel } from '../utils/excelExport';
-import { useToast } from '../contexts/ToastContext'; // ← BU SATIRI EKLEYİN
+import { useToast } from '../contexts/ToastContext';
 
 const VehiclesPage = () => {
   const navigate = useNavigate();
+  const toast = useToast();
 
-  const toast = useToast(); // ← BU SATIRI EKLEYİN
   // Use the vehicles hook
   const {
     // Data
@@ -41,10 +41,6 @@ const VehiclesPage = () => {
     deleteSelectedVehicles,
     clearError
   } = useVehicles();
-
-  // ❌ KALDIRILDI: Modal states
-  // const [showNewVehicleModal, setShowNewVehicleModal] = useState(false);
-  // const [editingVehicle, setEditingVehicle] = useState(null);
 
   // Refresh function for Excel import
   const handleRefresh = () => {
@@ -126,7 +122,7 @@ const VehiclesPage = () => {
     }
   };
 
-  // ✅ YENİ: Handle new vehicle - Tam sayfaya yönlendir
+  // ✅ Handle new vehicle - Tam sayfaya yönlendir
   const handleNewVehicle = () => {
     try {
       navigate('/vehicles/new');
@@ -135,7 +131,7 @@ const VehiclesPage = () => {
     }
   };
 
-  // ✅ DÜZELTİLDİ: Handle view vehicle - Detay sayfasına yönlendir
+  // ✅ Handle view vehicle - Detay sayfasına yönlendir
   const handleViewVehicle = (vehicle) => {
     try {
       navigate(`/vehicles/detail/${vehicle.id}`, { state: { vehicle } });
@@ -144,9 +140,10 @@ const VehiclesPage = () => {
     }
   };
 
-  // ✅ DÜZELTİLDİ: Handle edit vehicle - Düzenleme sayfasına yönlendir
+  // ✅ Handle edit vehicle - Düzenleme sayfasına yönlendir
   const handleEditVehicle = (vehicle) => {
     try {
+      console.log('🖱️ Edit button clicked for vehicle:', vehicle);
       navigate(`/vehicles/edit/${vehicle.id}`, { state: { vehicle } });
     } catch (error) {
       console.error('Error editing vehicle:', error);
@@ -175,10 +172,6 @@ const VehiclesPage = () => {
     }
   };
 
-  // ❌ KALDIRILDI: Modal handlers
-  // const handleCloseModal = () => { ... }
-  // const handleSaveVehicle = async (vehicleData) => { ... }
-
   return (
     <div className="container-fluid py-4">
       <div className="row">
@@ -197,6 +190,34 @@ const VehiclesPage = () => {
             </div>
           )}
 
+          {/* Page Header */}
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2 className="h3 mb-1">
+                <i className="bi bi-truck me-2"></i>
+                Araç Takip Sistemi
+              </h2>
+              <p className="text-muted mb-0">
+                Şirket araçlarını takip edin ve yönetin
+              </p>
+            </div>
+          </div>
+
+          {/* Filter Summary */}
+          {hasFilters && (
+            <div className="alert alert-info d-flex justify-content-between align-items-center">
+              <div>
+                <i className="bi bi-funnel me-2"></i>
+                <strong>Aktif Filtreler:</strong>
+                <span className="ms-2">{filterSummary?.text || 'Filtre uygulandı'}</span>
+              </div>
+              <button className="btn btn-sm btn-outline-secondary" onClick={resetFilters}>
+                <i className="bi bi-x-circle me-1"></i>
+                Filtreleri Temizle
+              </button>
+            </div>
+          )}
+
           {/* Vehicles List */}
           <div className="row">
             <div className="col-12">
@@ -212,14 +233,14 @@ const VehiclesPage = () => {
                     onPageChange={handlePageChange}
                     onFilterChange={handleFilterChange}
                     onSort={handleSort}
-                    onSelectVisitor={handleVehicleSelect}
+                    onSelectVehicle={handleVehicleSelect}
                     onSelectAll={handleSelectAll}
                     onClearSelection={handleClearSelection}
-                    onViewVisitor={handleViewVehicle}
-                    onEditVisitor={handleEditVehicle}
-                    onDeleteVisitor={handleDeleteVehicle}
+                    onViewVehicle={handleViewVehicle}
+                    onEditVehicle={handleEditVehicle}
+                    onDeleteVehicle={handleDeleteVehicle}
                     onBulkDelete={handleBulkDelete}
-                    onNewVisitor={handleNewVehicle} // ✅ Artık modal açmıyor, sayfaya yönlendiriyor
+                    onNewVehicle={handleNewVehicle}
                     onExport={handleExport}
                     onResetFilters={resetFilters}
                     onRefresh={handleRefresh}
@@ -233,9 +254,6 @@ const VehiclesPage = () => {
               </div>
             </div>
           </div>
-
-          {/* ❌ KALDIRILDI: Vehicle Modal */}
-          {/* <VehicleModal ... /> */}
         </div>
       </div>
     </div>

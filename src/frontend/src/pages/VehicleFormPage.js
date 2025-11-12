@@ -1,19 +1,27 @@
 // src/frontend/src/pages/VehicleFormPage.js
-// ✅ YENİ TAM SAYFA - Araç ekleme ve düzenleme
+// ✅ TAM DÜZELTİLMİŞ VERSİYON - Resim yükleme ile (Sürükle-Bırak)
+// PART 1: Imports ve State
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useVehicles } from '../hooks/useVehicles';
+import { useToast } from '../contexts/ToastContext';
+import { vehicleService } from '../services/vehicleService';
+import { Upload } from 'lucide-react';
 
 const VehicleFormPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Düzenleme için ID
+  const { id } = useParams();
   const location = useLocation();
-  const vehicle = location.state?.vehicle; // State'den gelen araç bilgisi
+  const toast = useToast();
+  const vehicle = location.state?.vehicle;
 
-  const isEdit = !!id; // Düzenleme modu mu?
-
+  const isEdit = !!id;
   const { createVehicle, updateVehicle, loading } = useVehicles();
+
+  // Resim URL'sini oluştur
+  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
+  const baseUrl = apiBaseUrl.replace('/api', '');
 
   const [formData, setFormData] = useState({
     licensePlate: '',
@@ -40,6 +48,12 @@ const VehicleFormPage = () => {
 
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  
+  // Resim yükleme state'leri
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Initialize form when editing
   useEffect(() => {
@@ -66,8 +80,13 @@ const VehicleFormPage = () => {
         registrationInfo: vehicle.registrationInfo || '',
         notes: vehicle.notes || ''
       });
+
+      // Mevcut resmi göster
+      if (vehicle.vehicleImageUrl) {
+        setImagePreview(`${baseUrl}${vehicle.vehicleImageUrl}`);
+      }
     }
-  }, [isEdit, vehicle]);
+  }, [isEdit, vehicle, baseUrl]);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -77,12 +96,118 @@ const VehicleFormPage = () => {
       [name]: value
     }));
     
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
       }));
+    }
+  };
+// PART 2: Image Upload Functions
+
+  // Resim seçme
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      processImageFile(file);
+    }
+    e.target.value = '';
+  };
+
+  // Resim işleme
+  const processImageFile = (file) => {
+    // Dosya türü kontrolü
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Sadece resim dosyaları yüklenebilir (JPG, PNG, GIF, WEBP)');
+      return;
+    }
+
+    // Dosya boyutu kontrolü (5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('Resim boyutu 5MB\'dan küçük olmalıdır');
+      return;
+    }
+
+    setImageFile(file);
+
+    // Preview oluştur
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Resmi kaldır
+  const handleRemoveImage = async () => {
+    if (isEdit && formData.vehicleImageUrl && window.confirm('Araç resmini silmek istediğinize emin misiniz?')) {
+      try {
+        setUploadingImage(true);
+        await vehicleService.deleteVehicleImage(id);
+        
+        setImageFile(null);
+        setImagePreview(null);
+        setFormData(prev => ({ ...prev, vehicleImageUrl: '' }));
+        
+        toast.success('Resim başarıyla silindi');
+      } catch (error) {
+        console.error('Error deleting image:', error);
+        toast.error('Resim silinirken hata oluştu');
+      } finally {
+        setUploadingImage(false);
+      }
+    } else {
+      setImageFile(null);
+      setImagePreview(null);
+    }
+  };
+
+  // Resim yükleme
+  const uploadImage = async (vehicleId) => {
+    if (!imageFile) return;
+
+    try {
+      setUploadingImage(true);
+      const result = await vehicleService.uploadVehicleImage(vehicleId, imageFile);
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        vehicleImageUrl: result.imageUrl || result.ImageUrl 
+      }));
+      
+      toast.success('Resim başarıyla yüklendi');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Resim yüklenirken hata oluştu');
+      throw error;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Sürükle-bırak
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processImageFile(files[0]);
     }
   };
 
@@ -121,7 +246,6 @@ const VehicleFormPage = () => {
     setSubmitting(true);
     
     try {
-      // ✅ Decimal alanları güvenli parse et
       const submitData = {
         licensePlate: formData.licensePlate.trim().toUpperCase(),
         brand: formData.brand.trim(),
@@ -132,44 +256,41 @@ const VehicleFormPage = () => {
         location: formData.location.trim(),
         assignedUserName: formData.assignedUserName.trim(),
         assignedUserPhone: formData.assignedUserPhone.trim(),
-        
-        // ✅ Decimal - Boş ise null
         currentMileage: formData.currentMileage && formData.currentMileage !== '' 
           ? parseInt(formData.currentMileage) 
           : null,
-        
         fuelConsumption: formData.fuelConsumption && formData.fuelConsumption !== '' 
           ? parseFloat(formData.fuelConsumption) 
           : null,
-        
-        // Tarihler
+        tireCondition: formData.tireCondition,
         lastServiceDate: formData.lastServiceDate || null,
+        insurance: formData.insurance.trim(),
         insuranceExpiryDate: formData.insuranceExpiryDate || null,
         inspectionDate: formData.inspectionDate || null,
-        
-        // Diğer
-        tireCondition: formData.tireCondition,
-        insurance: formData.insurance.trim(),
         ownershipType: formData.ownershipType,
-        vehicleImageUrl: formData.vehicleImageUrl?.trim() || null,
-        registrationInfo: formData.registrationInfo?.trim() || null,
-        notes: formData.notes?.trim() || null
+        vehicleImageUrl: formData.vehicleImageUrl,
+        registrationInfo: formData.registrationInfo.trim(),
+        notes: formData.notes.trim()
       };
 
-      console.log('📤 Submitting:', submitData);
-
+      let savedVehicle;
       if (isEdit) {
         await updateVehicle(id, submitData);
+        savedVehicle = { id, ...submitData };
       } else {
-        await createVehicle(submitData);
+        savedVehicle = await createVehicle(submitData);
       }
 
-      // Başarılı, listeye dön
+      // Resim yükleme
+      if (imageFile && savedVehicle.id) {
+        await uploadImage(savedVehicle.id);
+      }
+
+      toast.success(isEdit ? 'Araç başarıyla güncellendi' : 'Araç başarıyla eklendi');
       navigate('/vehicles');
-      
-    } catch (error) {
-      console.error('❌ Form error:', error);
-      setErrors({ submit: error.message || 'Kayıt sırasında hata oluştu' });
+    } catch (err) {
+      console.error('Error saving vehicle:', err);
+      toast.error(err.message || 'Araç kaydedilirken bir hata oluştu');
     } finally {
       setSubmitting(false);
     }
@@ -178,46 +299,38 @@ const VehicleFormPage = () => {
   const handleCancel = () => {
     navigate('/vehicles');
   };
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 1979 }, (_, i) => currentYear - i);
+// PART 3: JSX Return - Form Render
 
   return (
     <div className="container-fluid py-4">
-      <div className="row">
-        <div className="col-12">
-          {/* Header */}
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2 className="h3 mb-0">
-              <i className="bi bi-car-front me-2"></i>
-              {isEdit ? 'Araç Düzenle' : 'Yeni Araç Ekle'}
-            </h2>
-            <button className="btn btn-outline-secondary" onClick={handleCancel}>
-              <i className="bi bi-x me-1"></i>
-              İptal
-            </button>
-          </div>
+      <div className="mb-4">
+        <button className="btn btn-outline-secondary mb-3" onClick={handleCancel}>
+          <i className="bi bi-arrow-left me-2"></i>
+          Araç Listesine Dön
+        </button>
+        
+        <h2 className="h3 mb-1">
+          <i className="bi bi-truck me-2 text-danger"></i>
+          {isEdit ? 'Araç Düzenle' : 'Yeni Araç Ekle'}
+        </h2>
+        <p className="text-muted">
+          {isEdit ? 'Araç bilgilerini güncelleyin' : 'Yeni araç bilgilerini girin'}
+        </p>
+      </div>
 
-          {/* Error Alert */}
-          {errors.submit && (
-            <div className="alert alert-danger alert-dismissible fade show">
-              <i className="bi bi-exclamation-triangle me-2"></i>
-              {errors.submit}
-              <button type="button" className="btn-close" onClick={() => setErrors({})}></button>
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit}>
-            <div className="card">
+      <form onSubmit={handleSubmit}>
+        <div className="row g-4">
+          {/* Sol Kolon - Form */}
+          <div className={`${imagePreview || imageFile ? 'col-12 col-lg-7' : 'col-12'}`}>
+            <div className="card shadow-sm">
               <div className="card-body">
                 {/* Temel Bilgiler */}
-                <h5 className="card-title mb-3">
-                  <i className="bi bi-info-circle me-2"></i>
+                <h5 className="card-title border-bottom pb-2 mb-3">
+                  <i className="bi bi-info-circle me-2 text-primary"></i>
                   Temel Bilgiler
                 </h5>
                 <div className="row g-3 mb-4">
-                  <div className="col-md-4">
+                  <div className="col-md-6">
                     <label className="form-label">
                       Plaka <span className="text-danger">*</span>
                     </label>
@@ -229,10 +342,12 @@ const VehicleFormPage = () => {
                       onChange={handleChange}
                       placeholder="34 ABC 123"
                     />
-                    {errors.licensePlate && <div className="invalid-feedback">{errors.licensePlate}</div>}
+                    {errors.licensePlate && (
+                      <div className="invalid-feedback">{errors.licensePlate}</div>
+                    )}
                   </div>
 
-                  <div className="col-md-4">
+                  <div className="col-md-6">
                     <label className="form-label">
                       Marka <span className="text-danger">*</span>
                     </label>
@@ -242,12 +357,14 @@ const VehicleFormPage = () => {
                       name="brand"
                       value={formData.brand}
                       onChange={handleChange}
-                      placeholder="Toyota, BMW..."
+                      placeholder="Ford"
                     />
-                    {errors.brand && <div className="invalid-feedback">{errors.brand}</div>}
+                    {errors.brand && (
+                      <div className="invalid-feedback">{errors.brand}</div>
+                    )}
                   </div>
 
-                  <div className="col-md-4">
+                  <div className="col-md-6">
                     <label className="form-label">
                       Model <span className="text-danger">*</span>
                     </label>
@@ -257,38 +374,56 @@ const VehicleFormPage = () => {
                       name="model"
                       value={formData.model}
                       onChange={handleChange}
-                      placeholder="Corolla, X5..."
+                      placeholder="Transit"
                     />
-                    {errors.model && <div className="invalid-feedback">{errors.model}</div>}
+                    {errors.model && (
+                      <div className="invalid-feedback">{errors.model}</div>
+                    )}
                   </div>
 
-                  <div className="col-md-4">
-                    <label className="form-label">Model Yılı</label>
-                    <select
-                      className="form-select"
+                  <div className="col-md-6">
+                    <label className="form-label">
+                      Yıl <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      className={`form-control ${errors.year ? 'is-invalid' : ''}`}
                       name="year"
                       value={formData.year}
                       onChange={handleChange}
-                    >
-                      {years.map(y => (
-                        <option key={y} value={y}>{y}</option>
-                      ))}
-                    </select>
+                      min="1980"
+                      max={new Date().getFullYear() + 1}
+                    />
+                    {errors.year && (
+                      <div className="invalid-feedback">{errors.year}</div>
+                    )}
                   </div>
 
-                  <div className="col-md-4">
-                    <label className="form-label">VIN</label>
+                  <div className="col-md-6">
+                    <label className="form-label">Şasi No (VIN)</label>
                     <input
                       type="text"
                       className="form-control"
                       name="vin"
                       value={formData.vin}
                       onChange={handleChange}
-                      placeholder="17 haneli VIN numarası"
+                      placeholder="17 haneli şasi numarası"
                     />
                   </div>
 
-                  <div className="col-md-4">
+                  <div className="col-md-6">
+                    <label className="form-label">Şirket</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="companyName"
+                      value={formData.companyName}
+                      onChange={handleChange}
+                      placeholder="Şirket adı"
+                    />
+                  </div>
+
+                  <div className="col-md-12">
                     <label className="form-label">Sahiplik Tipi</label>
                     <select
                       className="form-select"
@@ -304,35 +439,12 @@ const VehicleFormPage = () => {
                 </div>
 
                 {/* Kullanıcı Bilgileri */}
-                <h5 className="card-title mb-3">
-                  <i className="bi bi-person me-2"></i>
+                <h5 className="card-title border-bottom pb-2 mb-3">
+                  <i className="bi bi-person me-2 text-success"></i>
                   Kullanıcı Bilgileri
                 </h5>
                 <div className="row g-3 mb-4">
-                  <div className="col-md-4">
-                    <label className="form-label">Şirket</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="companyName"
-                      value={formData.companyName}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="col-md-4">
-                    <label className="form-label">Konum</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleChange}
-                      placeholder="İstanbul, Ankara..."
-                    />
-                  </div>
-
-                  <div className="col-md-4">
+                  <div className="col-md-6">
                     <label className="form-label">Atanan Kullanıcı</label>
                     <input
                       type="text"
@@ -340,10 +452,11 @@ const VehicleFormPage = () => {
                       name="assignedUserName"
                       value={formData.assignedUserName}
                       onChange={handleChange}
+                      placeholder="Ad Soyad"
                     />
                   </div>
 
-                  <div className="col-md-4">
+                  <div className="col-md-6">
                     <label className="form-label">Telefon</label>
                     <input
                       type="tel"
@@ -351,18 +464,30 @@ const VehicleFormPage = () => {
                       name="assignedUserPhone"
                       value={formData.assignedUserPhone}
                       onChange={handleChange}
-                      placeholder="0555 123 45 67"
+                      placeholder="0532 123 45 67"
+                    />
+                  </div>
+
+                  <div className="col-md-12">
+                    <label className="form-label">Konum</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleChange}
+                      placeholder="İstanbul Şube"
                     />
                   </div>
                 </div>
 
                 {/* Teknik Bilgiler */}
-                <h5 className="card-title mb-3">
-                  <i className="bi bi-gear me-2"></i>
+                <h5 className="card-title border-bottom pb-2 mb-3">
+                  <i className="bi bi-gear me-2 text-warning"></i>
                   Teknik Bilgiler
                 </h5>
                 <div className="row g-3 mb-4">
-                  <div className="col-md-4">
+                  <div className="col-md-6">
                     <label className="form-label">Kilometre</label>
                     <input
                       type="number"
@@ -370,25 +495,24 @@ const VehicleFormPage = () => {
                       name="currentMileage"
                       value={formData.currentMileage}
                       onChange={handleChange}
-                      min="0"
+                      placeholder="150000"
                     />
                   </div>
 
-                  <div className="col-md-4">
+                  <div className="col-md-6">
                     <label className="form-label">Yakıt Tüketimi (L/100km)</label>
                     <input
                       type="number"
+                      step="0.1"
                       className="form-control"
                       name="fuelConsumption"
                       value={formData.fuelConsumption}
                       onChange={handleChange}
-                      step="0.1"
-                      min="0"
-                      max="99.9"
+                      placeholder="8.5"
                     />
                   </div>
 
-                  <div className="col-md-4">
+                  <div className="col-md-12">
                     <label className="form-label">Lastik Durumu</label>
                     <select
                       className="form-select"
@@ -403,8 +527,15 @@ const VehicleFormPage = () => {
                       <option value="needsReplacement">Değiştirilmeli</option>
                     </select>
                   </div>
+                </div>
 
-                  <div className="col-md-4">
+                {/* Bakım ve Sigorta */}
+                <h5 className="card-title border-bottom pb-2 mb-3">
+                  <i className="bi bi-tools me-2 text-danger"></i>
+                  Bakım ve Sigorta
+                </h5>
+                <div className="row g-3 mb-4">
+                  <div className="col-md-6">
                     <label className="form-label">Son Servis Tarihi</label>
                     <input
                       type="date"
@@ -414,15 +545,8 @@ const VehicleFormPage = () => {
                       onChange={handleChange}
                     />
                   </div>
-                </div>
 
-                {/* Resmi Bilgiler */}
-                <h5 className="card-title mb-3">
-                  <i className="bi bi-file-earmark-text me-2"></i>
-                  Resmi Bilgiler
-                </h5>
-                <div className="row g-3 mb-4">
-                  <div className="col-md-4">
+                  <div className="col-md-6">
                     <label className="form-label">Muayene Tarihi</label>
                     <input
                       type="date"
@@ -433,7 +557,7 @@ const VehicleFormPage = () => {
                     />
                   </div>
 
-                  <div className="col-md-4">
+                  <div className="col-md-6">
                     <label className="form-label">Sigorta Şirketi</label>
                     <input
                       type="text"
@@ -441,10 +565,11 @@ const VehicleFormPage = () => {
                       name="insurance"
                       value={formData.insurance}
                       onChange={handleChange}
+                      placeholder="Anadolu Sigorta"
                     />
                   </div>
 
-                  <div className="col-md-4">
+                  <div className="col-md-6">
                     <label className="form-label">Sigorta Bitiş Tarihi</label>
                     <input
                       type="date"
@@ -455,7 +580,7 @@ const VehicleFormPage = () => {
                     />
                   </div>
 
-                  <div className="col-12">
+                  <div className="col-md-12">
                     <label className="form-label">Ruhsat Bilgisi</label>
                     <input
                       type="text"
@@ -463,21 +588,25 @@ const VehicleFormPage = () => {
                       name="registrationInfo"
                       value={formData.registrationInfo}
                       onChange={handleChange}
+                      placeholder="Ruhsat bilgileri"
                     />
                   </div>
                 </div>
 
                 {/* Notlar */}
+                <h5 className="card-title border-bottom pb-2 mb-3">
+                  <i className="bi bi-journal-text me-2 text-info"></i>
+                  Notlar
+                </h5>
                 <div className="row g-3">
                   <div className="col-12">
-                    <label className="form-label">Notlar</label>
                     <textarea
                       className="form-control"
                       name="notes"
                       value={formData.notes}
                       onChange={handleChange}
                       rows="3"
-                      placeholder="İlave bilgiler..."
+                      placeholder="İlave notlar..."
                     ></textarea>
                   </div>
                 </div>
@@ -490,7 +619,7 @@ const VehicleFormPage = () => {
                     type="button"
                     className="btn btn-secondary"
                     onClick={handleCancel}
-                    disabled={submitting}
+                    disabled={submitting || uploadingImage}
                   >
                     <i className="bi bi-x me-1"></i>
                     İptal
@@ -498,12 +627,12 @@ const VehicleFormPage = () => {
                   <button
                     type="submit"
                     className="btn btn-primary"
-                    disabled={submitting || loading}
+                    disabled={submitting || uploadingImage || loading}
                   >
-                    {submitting ? (
+                    {submitting || uploadingImage ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2"></span>
-                        Kaydediliyor...
+                        {uploadingImage ? 'Resim Yükleniyor...' : 'Kaydediliyor...'}
                       </>
                     ) : (
                       <>
@@ -515,9 +644,88 @@ const VehicleFormPage = () => {
                 </div>
               </div>
             </div>
-          </form>
+          </div>
+
+          {/* Sağ Kolon - Resim Yükleme */}
+          <div className="col-12 col-lg-5">
+            <div className="card shadow-sm">
+              <div className="card-header bg-white">
+                <h6 className="mb-0">
+                  <i className="bi bi-image me-2"></i>
+                  Araç Resmi
+                </h6>
+              </div>
+              <div className="card-body">
+                {/* Preview varsa göster */}
+                {imagePreview ? (
+                  <div className="text-center mb-3">
+                    <img
+                      src={imagePreview}
+                      alt="Araç Önizleme"
+                      className="img-fluid rounded mb-3"
+                      style={{ maxHeight: '300px', objectFit: 'contain' }}
+                    />
+                    <div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={handleRemoveImage}
+                        disabled={uploadingImage}
+                      >
+                        <i className="bi bi-trash me-1"></i>
+                        Resmi Kaldır
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Sürükle-Bırak Alanı */
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => document.getElementById('vehicle-image-input').click()}
+                    className={`text-center py-5 border-3 border-dashed rounded ${
+                      isDragging ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary'
+                    }`}
+                    style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+                  >
+                    <Upload 
+                      size={48} 
+                      className={`mb-2 ${isDragging ? 'text-primary' : 'text-secondary'}`}
+                    />
+                    <h6 className={isDragging ? 'text-primary mb-1' : 'text-dark mb-1'}>
+                      {isDragging ? 'Resmi Buraya Bırakın' : 'Resim Yükle'}
+                    </h6>
+                    <p className="text-muted small mb-0">
+                      Sürükle-bırak veya tıklayın
+                    </p>
+                    <p className="text-muted small mb-0">
+                      (JPG, PNG, GIF, WEBP - Max 5MB)
+                    </p>
+                  </div>
+                )}
+
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  id="vehicle-image-input"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={handleImageSelect}
+                />
+
+                {/* Bilgi Notu */}
+                <div className="alert alert-info mt-3 mb-0">
+                  <small>
+                    <i className="bi bi-info-circle me-1"></i>
+                    <strong>Not:</strong> Aracı kaydettiğinizde resim otomatik olarak yüklenecektir.
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

@@ -1,10 +1,12 @@
+﻿using API.Data;
+using API.Data.Entities;
+using API.Models;
+using API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using API.Data;
-using API.Data.Entities;
-using API.Services;
-using API.Models;
-using Microsoft.AspNetCore.Authorization;
+using System;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace API.Controllers
@@ -22,12 +24,14 @@ namespace API.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IVehicleLogService _logService;
         private readonly ILogger<VehiclesController> _logger;
+        private readonly IWebHostEnvironment _environment;
 
-        public VehiclesController(ApplicationDbContext context, IVehicleLogService logService, ILogger<VehiclesController> logger)
+        public VehiclesController(ApplicationDbContext context, IVehicleLogService logService, ILogger<VehiclesController> logger, IWebHostEnvironment environment)
         {
             _context = context;
             _logService = logService;
             _logger = logger;
+            _environment = environment;
         }
 
         /// <summary>
@@ -39,6 +43,176 @@ namespace API.Controllers
             if (string.IsNullOrEmpty(ipAddress) || ipAddress == "::1")
                 ipAddress = "127.0.0.1";
             return ipAddress ?? "Unknown";
+        }
+
+        // src/backend/API/Controllers/VehiclesController.cs
+        // Araç resmi yükleme ve silme endpoint'leri EKLEME
+
+        // ✅ Mevcut VehiclesController'a EKLENECEK metodlar:
+
+        /// <summary>
+        /// Araç resmi yükle
+        /// </summary>
+        [HttpPost("{id}/image")]
+        public async Task<ActionResult> UploadVehicleImage(int id, [FromForm] IFormFile vehicleImage)
+        {
+            try
+            {
+                var username = User.Identity?.IsAuthenticated == true
+                    ? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Email)
+                    : "Unknown";
+
+                _logger.LogInformation("Uploading image for Vehicle {VehicleId} by user: {Username}", id, username);
+
+                // Araç kontrolü
+                var vehicle = await _context.Vehicles.FindAsync(id);
+                if (vehicle == null)
+                {
+                    return NotFound(new { Message = "Araç bulunamadı" });
+                }
+
+                // Dosya kontrolleri
+                if (vehicleImage == null || vehicleImage.Length == 0)
+                {
+                    return BadRequest(new { Message = "Resim dosyası seçilmedi" });
+                }
+
+                // Maksimum 5MB
+                const long MaxImageSize = 5 * 1024 * 1024;
+                if (vehicleImage.Length > MaxImageSize)
+                {
+                    return BadRequest(new { Message = "Resim boyutu 5MB'dan büyük olamaz" });
+                }
+
+                // İzin verilen resim uzantıları
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var fileExtension = Path.GetExtension(vehicleImage.FileName).ToLowerInvariant();
+
+                if (!allowedExtensions.Contains(fileExtension))
+                {
+                    return BadRequest(new { Message = $"Bu resim türü desteklenmiyor. İzin verilen: {string.Join(", ", allowedExtensions)}" });
+                }
+
+                // Eski resmi sil (varsa)
+                if (!string.IsNullOrEmpty(vehicle.VehicleImageUrl))
+                {
+                    var oldImagePath = Path.Combine(_environment.ContentRootPath, vehicle.VehicleImageUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(oldImagePath))
+                    {
+                        try
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                            _logger.LogInformation("Old vehicle image deleted: {ImagePath}", oldImagePath);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Could not delete old vehicle image: {ImagePath}", oldImagePath);
+                        }
+                    }
+                }
+
+                // ✅ Araç ID bazlı klasör yapısı - ItemFiles ile AYNI MANTIK
+                var vehicleFolder = Path.Combine(_environment.ContentRootPath, "Uploads", "Vehicles", id.ToString());
+
+                // Klasör yoksa oluştur
+                if (!Directory.Exists(vehicleFolder))
+                {
+                    Directory.CreateDirectory(vehicleFolder);
+                    _logger.LogInformation("Vehicle folder created: {Folder}", vehicleFolder);
+                }
+
+                // Dosya adı: vehicle_123.jpg
+                var fileName = $"vehicle_{id}{fileExtension}";
+                var filePath = Path.Combine(vehicleFolder, fileName);
+
+                // Resmi kaydet
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await vehicleImage.CopyToAsync(stream);
+                }
+
+                _logger.LogInformation("Vehicle image saved: {FileName}", fileName);
+
+                // Database'de URL'yi güncelle
+                var relativePath = $"/Uploads/Vehicles/{id}/{fileName}";
+                vehicle.VehicleImageUrl = relativePath;
+                vehicle.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Araç resmi başarıyla yüklendi",
+                    ImageUrl = relativePath,
+                    Vehicle = new
+                    {
+                        vehicle.Id,
+                        vehicle.LicensePlate,
+                        vehicle.Brand,
+                        vehicle.Model,
+                        VehicleImageUrl = vehicle.VehicleImageUrl
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading image for Vehicle {VehicleId}", id);
+                return StatusCode(500, new { Message = "Resim yüklenirken hata oluştu: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Araç resmini sil
+        /// </summary>
+        [HttpDelete("{id}/image")]
+        public async Task<ActionResult> DeleteVehicleImage(int id)
+        {
+            try
+            {
+                var vehicle = await _context.Vehicles.FindAsync(id);
+                if (vehicle == null)
+                {
+                    return NotFound(new { Message = "Araç bulunamadı" });
+                }
+
+                if (string.IsNullOrEmpty(vehicle.VehicleImageUrl))
+                {
+                    return BadRequest(new { Message = "Araç resmi bulunamadı" });
+                }
+
+                // Fiziksel dosyayı sil
+                var imagePath = Path.Combine(_environment.ContentRootPath, vehicle.VehicleImageUrl.TrimStart('/'));
+                if (System.IO.File.Exists(imagePath))
+                {
+                    try
+                    {
+                        System.IO.File.Delete(imagePath);
+                        _logger.LogInformation("Vehicle image deleted: {ImagePath}", imagePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Could not delete vehicle image file: {ImagePath}", imagePath);
+                    }
+                }
+
+                // Database'den URL'yi kaldır
+                vehicle.VehicleImageUrl = null;
+                vehicle.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Araç resmi başarıyla silindi"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting image for Vehicle {VehicleId}", id);
+                return StatusCode(500, new { Message = "Resim silinirken hata oluştu: " + ex.Message });
+            }
         }
 
         /// <summary>
