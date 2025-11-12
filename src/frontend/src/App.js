@@ -31,9 +31,7 @@ function App() {
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
 
-            <Route path="/definitions/items/detail/:id" element={
-              <ProtectedRoute><Layout><ItemDetailPage /></Layout></ProtectedRoute>
-            } />
+            
             
             {/* Protected Routes */}
             <Route
