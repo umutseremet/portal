@@ -5,7 +5,7 @@
 # =============================================
 
 # Dependencies
-/node_modules
+src/frontend/node_modules
 /.pnp
 .pnp.js
 jspm_packages/
