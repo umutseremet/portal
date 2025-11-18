@@ -1,0 +1,446 @@
+/* ==========================================================================
+   Vervo Portal - App.css (Ana Uygulama Stilleri)
+   ========================================================================== */
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #f5f7fa;
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================================================
+   LOGIN SAYFASI
+   ========================================================================== */
+.login-container {
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+.login-bg {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  color: white;
+}
+
+.login-form-container {
+  max-width: 400px;
+  padding: 2rem;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  border: none;
+  color: white;
+  font-weight: 500;
+  padding: 12px 24px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #FF5252, #FF7043);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px 16px;
+  transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: #FF6B6B;
+  box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.25);
+}
+
+/* ==========================================================================
+   SIDEBAR - DESKTOP VE MOBİL UYUMLU
+   ========================================================================== */
+.sidebar {
+  position: fixed !important;
+  top: 0 !important;
+  width: 280px !important;
+  height: 100vh !important;
+  background: white !important;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1) !important;
+  z-index: 1040 !important;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-right: 1px solid #e9ecef !important;
+  
+  /* Flexbox layout için */
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding-top: 80px !important; /* Header yüksekliği */
+}
+
+/* Sidebar Content Area - İnce Scrollbar */
+.sidebar-content {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  
+  /* Custom scrollbar */
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(255, 107, 107, 0.3) transparent !important;
+}
+
+/* Webkit Scrollbar Stilleri - Sidebar Content İçin */
+.sidebar-content::-webkit-scrollbar {
+  width: 4px !important;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: transparent !important;
+  border-radius: 10px !important;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 107, 107, 0.3) !important;
+  border-radius: 10px !important;
+  transition: background 0.3s ease !important;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 107, 0.5) !important;
+}
+
+/* Sidebar Overlay */
+.sidebar-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 1035 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: all 0.3s ease !important;
+  pointer-events: none !important;
+}
+
+.sidebar-overlay.show {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+/* Desktop için - Sidebar toggle davranışı */
+@media (min-width: 992px) {
+  .sidebar {
+    left: -280px !important; /* Başlangıçta gizli */
+  }
+  
+  .sidebar.show {
+    left: 0 !important; /* Açıldığında görünür */
+  }
+  
+  .sidebar-overlay {
+    display: none !important; /* Desktop'ta overlay yok */
+  }
+}
+
+/* Mobil için - Sidebar tamamen gizli */
+@media (max-width: 991.98px) {
+  .sidebar {
+    left: -100% !important;
+    width: 100% !important;
+    max-width: 320px !important;
+    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.15) !important;
+  }
+  
+  .sidebar.show {
+    left: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   MAIN CONTENT LAYOUT
+   ========================================================================== */
+.main-content {
+  margin-left: 0 !important;
+  padding-top: 80px !important;
+  min-height: 100vh !important;
+  background-color: #f5f7fa !important;
+  display: flex !important;
+  flex-direction: column !important;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.main-content.with-sidebar {
+  margin-left: 280px !important;
+}
+
+.main-content.without-sidebar {
+  margin-left: 0 !important;
+}
+
+@media (max-width: 991.98px) {
+  .main-content,
+  .main-content.with-sidebar {
+    margin-left: 0 !important;
+  }
+}
+
+.content-wrapper {
+  flex: 1 !important;
+  padding: 2rem !important;
+}
+
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 1rem !important;
+  }
+}
+
+/* ==========================================================================
+   SIDEBAR COMPONENT STİLLERİ
+   ========================================================================== */
+.sidebar-header {
+  padding: 2rem 1.5rem 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+}
+
+.logo-text {
+  font-weight: 700;
+  color: #212529 !important;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.sidebar-nav .nav-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  color: #6c757d;
+  text-decoration: none;
+  font-weight: 500;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  background: none;
+}
+
+.sidebar-nav .nav-link:hover,
+.sidebar-nav .nav-link.active {
+  background-color: rgba(255, 107, 107, 0.1);
+  color: #FF6B6B;
+}
+
+/* Submenu Animasyonları */
+.submenu {
+  overflow: hidden !important;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.submenu.expanded {
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.submenu.collapsed {
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Nav Link Smooth Transitions */
+.nav-link {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.nav-sublink {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Chevron Rotation Animation */
+.nav-group-toggle .bi-chevron-right,
+.nav-group-toggle .bi-chevron-down {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ==========================================================================
+   HEADER & HAMBURGER MENU
+   ========================================================================== */
+.navbar.header-nav {
+  height: 80px;
+  z-index: 1050 !important;
+  background: white !important;
+  border-bottom: 1px solid #e9ecef;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.header-nav .container-fluid {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+}
+
+/* Hamburger Menu Button */
+.hamburger-menu-btn {
+  border: 2px solid #FF6B6B !important;
+  background: white !important;
+  color: #FF6B6B !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.hamburger-menu-btn:hover {
+  background-color: #FF6B6B !important;
+  color: white !important;
+  border-color: #FF6B6B !important;
+  transform: translateY(-1px) !important;
+}
+
+.hamburger-menu-btn:focus {
+  outline: 2px solid #FF6B6B !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.25) !important;
+}
+
+.hamburger-menu-btn:active {
+  transform: translateY(0) !important;
+}
+
+/* Header Actions & Buttons */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-actions .btn-link {
+  color: #6c757d !important;
+  padding: 8px !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  text-decoration: none !important;
+}
+
+.header-actions .btn-link:hover {
+  background-color: rgba(108, 117, 125, 0.1) !important;
+  color: #495057 !important;
+}
+
+/* User Avatar */
+.user-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 14px !important;
+}
+
+/* ==========================================================================
+   STATS CARDS
+   ========================================================================== */
+.stats-card {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card .stats-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 1rem;
+}
+
+.stats-card .stats-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+
+.stats-card .stats-label {
+  color: #6c757d;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ==========================================================================
+   RESPONSIVE UTILITIES
+   ========================================================================== */
+@media (max-width: 575.98px) {
+  .d-sm-none { display: none !important; }
+}
+
+@media (max-width: 767.98px) {
+  .d-md-none { display: none !important; }
+}
+
+@media (max-width: 991.98px) {
+  .d-lg-none { display: none !important; }
+}
+
+@media (max-width: 1199.98px) {
+  .d-xl-none { display: none !important; }
+}
+
+/* ==========================================================================
+   CUSTOM UTILITIES
+   ========================================================================== */
+.shadow-sm-custom {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+.shadow-custom {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.shadow-lg-custom {
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+}
+
+.border-radius-custom {
+  border-radius: 0.5rem !important;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

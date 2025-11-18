@@ -1,0 +1,460 @@
+/* ==========================================================================
+   Layout Styles - styles/layout.css (Sidebar Çakışmaları Temizlenmiş)
+   ========================================================================== */
+
+/* App Layout */
+.app-layout {
+  min-height: 100vh;
+  position: relative;
+  background-color: var(--bg-body);
+}
+
+/* Header Layout */
+.header-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  background-color: var(--header-bg);
+  border-bottom: var(--header-border);
+  box-shadow: var(--header-shadow);
+  backdrop-filter: blur(10px);
+  z-index: var(--z-fixed);
+  padding: 0;
+  transition: all var(--transition-normal);
+}
+
+.header-nav .navbar-brand {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--acara-primary);
+}
+
+.header-nav .navbar-toggler {
+  border: none;
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.header-nav .navbar-toggler:hover {
+  background-color: var(--bg-hover);
+}
+
+.header-nav .navbar-toggler:focus {
+  box-shadow: none;
+}
+
+.header-nav .form-control {
+  background-color: var(--bg-surface);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-fast);
+}
+
+.header-nav .form-control:focus {
+  border-color: var(--acara-primary);
+  box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.15);
+}
+
+/* ==========================================================================
+   SIDEBAR LAYOUT - ÇAKİŞAN STİLLER KALDIRILDI
+   ========================================================================== */
+
+/* NOT: Sidebar stilleri artık App.css'te yönetiliyor - çakışma önlendi */
+
+/* Sidebar Responsive Behavior - Sadece gerekli stiller */
+@media (min-width: 992px) {
+  .main-content {
+    margin-left: var(--sidebar-width);
+  }
+  
+  .main-content.sidebar-collapsed {
+    margin-left: var(--sidebar-width-collapsed);
+  }
+}
+
+/* ==========================================================================
+   MAIN CONTENT LAYOUT
+   ========================================================================== */
+.content-wrapper {
+  flex: 1;
+  padding: var(--content-padding);
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: var(--space-md);
+  }
+}
+
+/* ==========================================================================
+   PAGE LAYOUT
+   ========================================================================== */
+.page-header {
+  margin-bottom: var(--space-xl);
+  padding: var(--space-lg) 0;
+  position: relative;
+}
+
+.page-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, var(--acara-primary), transparent);
+}
+
+.page-title {
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  font-size: var(--font-size-3xl);
+  margin-bottom: var(--space-sm);
+  line-height: var(--line-height-tight);
+  position: relative;
+}
+
+.page-title::before {
+  content: '';
+  position: absolute;
+  left: -var(--space-md);
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--acara-primary), var(--acara-secondary));
+  border-radius: var(--radius-sm);
+}
+
+.page-subtitle {
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  margin: 0;
+  line-height: var(--line-height-relaxed);
+}
+
+.page-actions {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    text-align: center;
+    padding: var(--space-md) 0;
+  }
+  
+  .page-title {
+    font-size: var(--font-size-2xl);
+  }
+  
+  .page-title::before {
+    display: none;
+  }
+  
+  .page-actions {
+    justify-content: center;
+    margin-top: var(--space-md);
+  }
+}
+
+/* ==========================================================================
+   WELCOME SECTION
+   ========================================================================== */
+.welcome-section {
+  background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(255, 107, 107, 0.05) 100%);
+  padding: var(--space-xl);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-xl);
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, var(--acara-primary), var(--acara-secondary));
+}
+
+.welcome-actions {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .welcome-section {
+    padding: var(--space-lg);
+    text-align: center;
+  }
+  
+  .welcome-actions {
+    justify-content: center;
+    margin-top: var(--space-md);
+  }
+}
+
+/* ==========================================================================
+   SIDEBAR NAV COMPONENTS (ÇAKIŞMAYAN)
+   ========================================================================== */
+
+/* Navigation Link Base (Sadece layout - stiller App.css'te) */
+.nav-text {
+  flex: 1;
+  margin-left: var(--space-sm);
+}
+
+.nav-indicator {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: var(--acara-primary);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+/* Menu Section Layout */
+.menu-section {
+  margin-bottom: var(--space-lg);
+}
+
+.menu-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-md);
+}
+
+.menu-section-header:hover {
+  color: var(--acara-primary);
+  background-color: var(--bg-hover);
+}
+
+.menu-items {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--transition-normal);
+}
+
+.menu-items.show {
+  max-height: 200px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md) var(--space-sm) calc(var(--space-md) * 2.5);
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  font-size: var(--font-size-sm);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-xs);
+}
+
+.menu-item:hover {
+  color: var(--acara-primary);
+  background-color: var(--bg-hover);
+  transform: translateX(4px);
+}
+
+/* ==========================================================================
+   SIDEBAR FOOTER
+   ========================================================================== */
+.sidebar-footer {
+  padding: var(--space-lg);
+  border-top: 1px solid var(--border-color-light);
+  background-color: var(--sidebar-bg);
+}
+
+.upgrade-card {
+  background: linear-gradient(135deg, var(--acara-primary), var(--acara-secondary));
+  padding: var(--space-lg);
+  border-radius: var(--radius-xl);
+  color: var(--text-light);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.upgrade-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.upgrade-icon {
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--space-sm);
+  position: relative;
+  z-index: 1;
+}
+
+.upgrade-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   FOOTER LAYOUT
+   ========================================================================== */
+.footer {
+  margin-top: auto;
+  padding: var(--space-lg) 0;
+  background-color: var(--bg-surface);
+  border-top: 1px solid var(--border-color-light);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* ==========================================================================
+   CONTAINER & GRID IMPROVEMENTS
+   ========================================================================== */
+.container-fluid {
+  padding-left: var(--space-lg);
+  padding-right: var(--space-lg);
+}
+
+@media (max-width: 768px) {
+  .container-fluid {
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+  }
+}
+
+.row {
+  --bs-gutter-x: 2rem;
+  --bs-gutter-y: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .row {
+    --bs-gutter-x: 1rem;
+    --bs-gutter-y: 1rem;
+  }
+}
+
+/* ==========================================================================
+   LOADING STATES
+   ========================================================================== */
+.dashboard-loading,
+.production-loading {
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-container {
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+.loading-container .spinner-border {
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: var(--space-md);
+  color: var(--acara-primary);
+}
+
+.loading-container h5 {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+}
+
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Component Animations */
+.stats-card {
+  animation: fadeInUp 0.6s ease-out;
+  animation-fill-mode: both;
+}
+
+.card {
+  animation: fadeInUp 0.7s ease-out;
+  animation-fill-mode: both;
+}
+
+.page-header {
+  animation: fadeInLeft 0.5s ease-out;
+  animation-fill-mode: both;
+}
+
+.welcome-section {
+  animation: fadeInUp 0.8s ease-out;
+  animation-fill-mode: both;
+}

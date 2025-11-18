@@ -1,0 +1,1240 @@
+/* src/frontend/src/components/WeeklyCalendar/WeeklyCalendar.css */
+
+.weekly-production-calendar {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* Page Header */
+.page-header {
+  margin-bottom: 0;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+}
+
+.page-subtitle {
+  font-size: 0.95rem;
+  margin-bottom: 0;
+}
+
+.page-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Statistics Cards */
+.stat-card {
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  opacity: 0.9;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+/* Calendar Grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.calendar-day-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  min-height: 500px;
+  transition: box-shadow 0.2s;
+}
+
+.calendar-day-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.calendar-day-card.today {
+  border: 2px solid #e74c3c;
+  box-shadow: 0 4px 16px rgba(231, 76, 60, 0.2);
+}
+
+/* Day Header */
+.day-header {
+  /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+    background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+
+  color: white;
+  padding: 15px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+}
+
+.calendar-day-card.today .day-header {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.day-name {
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.day-date {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.day-header .badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+/* Issues Container */
+.day-issues {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  max-height: 450px;
+}
+
+.day-issues::-webkit-scrollbar {
+  width: 6px;
+}
+
+.day-issues::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.day-issues::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.day-issues::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* No Issues State */
+.no-issues {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  min-height: 200px;
+}
+
+.no-issues i {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+/* ============================================
+   COMPACT ISSUE CARD - YENİ SADELEŞTİRİLMİŞ
+   ============================================ */
+.issue-card-compact {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border-left: 3px solid #e74c3c;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.issue-card-compact:hover {
+  background: #e9ecef;
+  transform: translateX(2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.issue-card-compact:last-child {
+  margin-bottom: 0;
+}
+
+/* Compact Header */
+.issue-compact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.production-badge-compact {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.badge-compact {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: white;
+}
+
+.badge-compact.bg-success {
+  background-color: #28a745;
+}
+
+.badge-compact.bg-info {
+  background-color: #17a2b8;
+}
+
+.badge-compact.bg-warning {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.badge-compact.bg-danger {
+  background-color: #dc3545;
+}
+
+/* Proje Adı */
+.project-name-compact {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* İş Numarası */
+.issue-id-compact {
+  font-size: 0.7rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 1600px) {
+  .calendar-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .calendar-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .calendar-day-card {
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 992px) {
+  .calendar-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .page-actions {
+    width: 100%;
+    margin-top: 15px;
+  }
+  
+  .page-actions button {
+    flex: 1;
+  }
+  
+  .calendar-day-card {
+    min-height: 350px;
+  }
+  
+  /* Compact card - mobilde daha da küçült */
+  .issue-card-compact {
+    padding: 6px 8px;
+  }
+  
+  .production-badge-compact,
+  .badge-compact {
+    font-size: 0.6rem;
+    padding: 2px 4px;
+  }
+  
+  .project-name-compact {
+    font-size: 0.7rem;
+  }
+  
+  .issue-id-compact {
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .calendar-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .weekly-production-calendar {
+    padding: 10px;
+  }
+  
+  .calendar-day-card {
+    min-height: 300px;
+  }
+  
+  .stat-card {
+    padding: 15px;
+  }
+  
+  .stat-icon {
+    font-size: 2rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .page-actions,
+  .card:has(.row.g-3) {
+    display: none;
+  }
+  
+  .calendar-grid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+  }
+  
+  .calendar-day-card {
+    break-inside: avoid;
+    min-height: auto;
+    box-shadow: none;
+    border: 1px solid #dee2e6;
+  }
+  
+  .day-issues {
+    max-height: none;
+    overflow: visible;
+  }
+  
+  .issue-card-compact {
+    page-break-inside: avoid;
+  }
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.calendar-day-card {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Meksika dalgası efekti
+.calendar-day-card:nth-child(1) { animation-delay: 0.05s; }
+.calendar-day-card:nth-child(2) { animation-delay: 0.1s; }
+.calendar-day-card:nth-child(3) { animation-delay: 0.15s; }
+.calendar-day-card:nth-child(4) { animation-delay: 0.2s; }
+.calendar-day-card:nth-child(5) { animation-delay: 0.25s; }
+.calendar-day-card:nth-child(6) { animation-delay: 0.3s; }
+.calendar-day-card:nth-child(7) { animation-delay: 0.35s; } */
+
+/* Loading State */
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Card Improvements */
+.card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* Form Controls */
+.form-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #e74c3c;
+  box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.15);
+}
+
+/* Buttons */
+.btn {
+  border-radius: 8px;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.btn-danger {
+  background-color: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.btn-danger:hover {
+  background-color: #c0392b;
+  border-color: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+}
+
+.btn-outline-primary {
+  color: #667eea;
+  border-color: #667eea;
+}
+
+.btn-outline-primary:hover {
+  background-color: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+.btn-outline-secondary {
+  border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: white;
+}
+
+/* Alert */
+.alert {
+  border-radius: 8px;
+  border: none;
+}
+
+/* Badge Enhancements */
+.badge {
+  padding: 0.35em 0.65em;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+/* ============================================
+   GROUPED ISSUE CARD - YENİ BASIT TASARIM
+   ============================================ */
+
+.grouped-issue-card {
+  border-radius: 8px;
+  padding: 2px 7px;
+  margin-bottom: 7px;
+  border-left: 4px solid #e74c3c;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.grouped-issue-card:hover {
+  transform: translateX(3px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.grouped-issue-card:last-child {
+  margin-bottom: 0;
+}
+
+/* Card Header */
+.grouped-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.production-type-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.issue-count-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+/* Project Code */
+.project-code-text {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #2c3e50;
+  line-height: 1.4;
+  letter-spacing: 0.3px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .grouped-issue-card {
+    padding: 10px 12px;
+  }
+  
+  .production-type-badge {
+    font-size: 0.6rem;
+    padding: 3px 8px;
+  }
+  
+  .project-code-text {
+    font-size: 0.85rem;
+  }
+  
+  .issue-count-badge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+}
+
+@media (max-width: 576px) {
+  .grouped-issue-card {
+    padding: 8px 10px;
+  }
+  
+  .production-type-badge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+  
+  .project-code-text {
+    font-size: 0.8rem;
+  }
+}
+
+/* ============================================
+   PROJECT LEGEND - PROJE RENK KODLARI
+   ============================================ */
+
+.project-legend-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.project-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  min-width: 200px;
+  flex: 1 1 calc(33.333% - 8px);
+  /* max-width: calc(33.333% - 8px); */
+}
+
+.project-legend-item:hover {
+  background-color: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.project-color-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+.project-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.project-code {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #2c3e50;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6c757d !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-count {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .project-legend-item {
+    flex: 1 1 calc(50% - 6px);
+    max-width: calc(50% - 6px);
+  }
+}
+
+@media (max-width: 768px) {
+  .project-legend-container {
+    gap: 10px;
+  }
+  
+  .project-legend-item {
+    padding: 8px 12px;
+    min-width: 150px;
+    flex: 1 1 calc(50% - 5px);
+    max-width: calc(50% - 5px);
+  }
+  
+  .project-color-box {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .project-code {
+    font-size: 0.85rem;
+  }
+  
+  .project-name {
+    font-size: 0.7rem;
+  }
+  
+  .project-count {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .project-legend-container {
+    gap: 8px;
+  }
+  
+  .project-legend-item {
+    flex: 1 1 100%;
+    max-width: 100%;
+    min-width: auto;
+  }
+}
+
+/* ============================================
+   COMPACT GROUPED ISSUE CARD - MİNİMAL TASARIM
+   ============================================ */
+
+.grouped-issue-card-compact {
+  border-radius: 5px;
+  padding: 5px 8px;
+  margin-bottom: 6px;
+  border-left: 3px solid #e74c3c;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.grouped-issue-card-compact:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.grouped-issue-card-compact:last-child {
+  margin-bottom: 0;
+}
+
+/* Tek Satır Layout */
+.card-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* İş Tipi Badge - Mini */
+.production-badge-mini {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Proje Kodu - Mini */
+.project-code-mini {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+/* Calendar Grid - DAHA DA UZATILMIŞ */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.calendar-day-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  min-height: 750px; /* ARTIRILD I: 600px → 750px */
+  transition: box-shadow 0.2s;
+}
+
+/* Day Issues Container - DAHA DA UZATILMIŞ */
+.day-issues {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  max-height: 700px; /* ARTIRILD I: 550px → 700px */
+}
+
+/* Responsive */
+@media (max-width: 1600px) {
+  .calendar-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  
+  .calendar-day-card {
+    min-height: 700px; /* 750px → 700px */
+  }
+  
+  .day-issues {
+    max-height: 650px; /* 700px → 650px */
+  }
+}
+
+@media (max-width: 1200px) {
+  .calendar-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .calendar-day-card {
+    min-height: 650px; /* 700px → 650px */
+  }
+  
+  .day-issues {
+    max-height: 600px; /* 650px → 600px */
+  }
+}
+
+@media (max-width: 992px) {
+  .calendar-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grouped-issue-card-compact {
+    padding: 4px 6px;
+  }
+  
+  .production-badge-mini {
+    font-size: 0.6rem;
+    padding: 2px 5px;
+  }
+  
+  .project-code-mini {
+    font-size: 0.7rem;
+  }
+  
+  .calendar-day-card {
+    min-height: 450px;
+  }
+}
+
+@media (max-width: 576px) {
+  .calendar-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .calendar-day-card {
+    min-height: 400px;
+  }
+  
+  .day-issues {
+    max-height: 350px;
+  }
+}
+
+/* Scrollbar Styling */
+.day-issues::-webkit-scrollbar {
+  width: 5px;
+}
+
+.day-issues::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.day-issues::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 10px;
+}
+
+.day-issues::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+
+/* ============================================
+   LEGEND COLLAPSE AREA - AÇILABİLİR PROJE RENKLERİ
+   (Mevcut CSS dosyanızın SONUNA ekleyin)
+   ============================================ */
+
+.legend-collapse-area {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.project-legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); /* 250px → 300px */
+  gap: 12px;
+}
+
+.legend-collapse-area .project-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* 10px → 12px */
+  padding: 12px 18px; /* 10px 16px → 12px 18px */
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.legend-collapse-area .project-legend-item:hover {
+  background-color: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.legend-collapse-area .project-color-box {
+    width: 28px;
+    height: 28px;
+  }
+
+.legend-collapse-area .project-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px; /* 2px → 3px */
+  flex: 1; /* Flex-grow ile kalan tüm alanı kapla */
+  min-width: 0; /* Text overflow için gerekli */
+  max-width: none; /* Maksimum genişlik sınırlaması kaldırıldı */
+}
+
+.legend-collapse-area .project-code {
+    font-size: 0.9rem;
+  }
+
+.legend-collapse-area .project-name {
+    font-size: 0.75rem;
+  }
+
+.legend-collapse-area .project-count {
+    font-size: 0.75rem;
+  }
+
+/* Legend Responsive */
+/* Responsive - Tablet */
+@media (max-width: 1200px) {
+  .project-legend-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .project-legend-grid {
+    grid-template-columns: 1fr;
+  }
+  
+ .legend-collapse-area .project-legend-item {
+    padding: 10px 14px;
+  }
+  
+.legend-collapse-area .project-color-box {
+  width: 32px; /* 28px → 32px */
+  height: 32px; /* 28px → 32px */
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+}
+  
+  .legend-collapse-area .project-code {
+    font-size: 0.85rem;
+  }
+  
+  .legend-collapse-area .project-name {
+    font-size: 0.7rem;
+  }
+}
+
+/* Tarihe tıklama hover efekti */
+.clickable-date-header {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.clickable-date-header:hover {
+  background: linear-gradient(135deg, #FF8E53, #FFB088) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.clickable-date-header:active {
+  transform: translateY(0);
+}
+
+/* Tıklama İpucu İkonu */
+.date-click-hint {
+  position: absolute;
+  bottom: 5px;
+  right: 10px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  font-size: 0.75rem;
+}
+
+.clickable-date-header:hover .date-click-hint {
+  opacity: 0.8;
+}
+
+/* Bugün olan kartın header'ı için özel hover */
+.calendar-day-card.today .clickable-date-header:hover {
+  background: linear-gradient(135deg, #c0392b, #e74c3c) !important;
+}
+
+/* src/frontend/src/components/WeeklyCalendar/WeeklyCalendar.css */
+/* MEVCUT CSS DOSYANIZIN EN SONUNA EKLEYİN */
+
+/* ============================================
+   OVERDUE (GECİKMİŞ) İŞLER - UYARI KARTI
+   ============================================ */
+
+/* Geciken iş kartı */
+.overdue-card {
+  position: relative;
+  border-left-width: 4px !important;
+  border-left-color: #dc3545 !important;
+  background: linear-gradient(135deg, 
+    rgba(220, 53, 69, 0.08) 0%, 
+    rgba(220, 53, 69, 0.15) 100%) !important;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2) !important;
+}
+
+.overdue-card:hover {
+  background: linear-gradient(135deg, 
+    rgba(220, 53, 69, 0.15) 0%, 
+    rgba(220, 53, 69, 0.22) 100%) !important;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3) !important;
+  transform: translateX(3px);
+}
+
+/* Uyarı ikonu container */
+.overdue-warning-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #dc3545;
+  color: white;
+  font-size: 0.75rem;
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4);
+}
+
+/* ✅ YANIP SÖNEN ANİMASYON */
+.blinking {
+  animation: blink-warning 1.5s ease-in-out infinite;
+}
+
+@keyframes blink-warning {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+}
+
+/* Gecikme bilgisi */
+.overdue-info {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+/* Geciken iş badge'i - production type */
+.overdue-card .production-type-badge {
+  background-color: #dc3545 !important;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(220, 53, 69, 0);
+  }
+}
+
+/* Responsive - Mobil cihazlarda animasyonu yavaşlat */
+@media (max-width: 768px) {
+  .blinking {
+    animation-duration: 2s;
+  }
+  
+  .overdue-card .production-type-badge {
+    animation-duration: 2.5s;
+  }
+}
+
+/* ============================================
+   CALENDAR DAY HEADER - Gecikme badge'i için
+   ============================================ */
+
+/* Tarih başlığına gecikme badge'i eklenebilir */
+.day-header {
+  position: relative;
+}
+
+.day-header .badge.bg-danger {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  animation: pulse-danger-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-danger-badge {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0);
+  }
+}
+
+/* Accessibility - Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .blinking,
+  .overdue-card .production-type-badge,
+  .day-header .badge.bg-danger {
+    animation: none;
+  }
+  
+  .overdue-warning-icon {
+    opacity: 1;
+  }
+}
+
+/* src/frontend/src/components/WeeklyCalendar/WeeklyCalendar.css */
+/* VEYA src/frontend/src/pages/IssueDetailsPage.css */
+/* MEVCUT DOSYANIZIN SONUNA EKLEYİN */
+
+/* ============================================
+   DETAY EKRANDA GECİKMİŞ SATIRLAR
+   ============================================ */
+
+/* Gecikmiş satır */
+.overdue-row {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.overdue-row:hover {
+  background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+/* Gecikme göstergesi - ünlem ikonu */
+.overdue-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.overdue-indicator.blinking {
+  animation: blink-indicator 1.5s ease-in-out infinite;
+}
+
+@keyframes blink-indicator {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+}
+
+/* Gruplu card'da has-overdue class'ı */
+.grouped-issue-card.has-overdue {
+  position: relative;
+  animation: pulse-overdue 2s ease-in-out infinite;
+}
+
+@keyframes pulse-overdue {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(220, 53, 69, 0.4);
+  }
+}
+
+/* Overdue warning icon - card içinde */
+.overdue-warning-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #dc3545;
+  color: white;
+  font-size: 0.7rem;
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4);
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .overdue-indicator.blinking,
+  .grouped-issue-card.has-overdue {
+    animation: none;
+  }
+}

@@ -1,0 +1,198 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# =============================================
+# NODE.JS / JAVASCRIPT / TYPESCRIPT
+# =============================================
+
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+jspm_packages/
+bower_components
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.yarn-integrity
+
+# Testing
+/coverage
+coverage/
+*.lcov
+.nyc_output
+
+# Build output
+/build
+build/Release
+dist
+.next
+.nuxt
+public
+.out
+.storybook-out
+
+# Cache
+.cache
+.parcel-cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.npm
+.eslintcache
+
+# TypeScript
+*.tsbuildinfo
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Temporary folders
+tmp/
+temp/
+.grunt
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# =============================================
+# ENVIRONMENT VARIABLES
+# =============================================
+.env
+.env.test
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# =============================================
+# .NET / C# / ASP.NET
+# =============================================
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build artifacts
+*.dll
+*.exe
+*.app
+*.appx
+*.apk
+*.cache
+*.pdb
+*.mdb
+*.dbmdl
+
+# Visual Studio cache
+.vs/
+*.db
+*.db-shm
+*.db-wal
+*.v2
+*.vsidx
+*.ncb
+*.opendb
+*.vcxproj.user
+*.jfm
+
+# NuGet
+*.nupkg
+*.snupkg
+*.nuspec
+*.psmdcp
+packages/
+.nuget/
+
+# Dotnet specific
+project.lock.json
+project.fragment.lock.json
+
+# Entity Framework Core Migrations
+*Migrations/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Publish
+publish/
+out/
+
+# =============================================
+# IDE / EDITORS
+# =============================================
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains Rider / IntelliJ IDEA
+.idea/
+
+# Vim
+*.swp
+*.swo
+
+# =============================================
+# OS GENERATED FILES
+# =============================================
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# =============================================
+# PROJECT SPECIFIC FILES
+# =============================================
+
+# Excel files
+*.xlsx
+*.xls
+*.xlsm
+*.xlsb
+*.xltx
+*.xltm
+
+# CNC machine codes
+*.nc
+*.NC
+
+# CAM/CAD files
+*.esp
+*.ESP
+*.x_t
+*.X_T
+*.stp
+*.step
+*.iges
+*.igs
+
+# PDF
+*.pdf
+*.PDF
