@@ -79,8 +79,8 @@ namespace API.Models
         [MaxLength(500, ErrorMessage = "Resim URL'i en fazla 500 karakter olabilir")]
         public string? ImageUrl { get; set; }
 
-        public string SupplierCode { get; set; } = string.Empty;
-        public double Price { get; set; }
+        public string? SupplierCode { get; set; } = string.Empty;
+        public double? Price { get; set; }
         public string? Supplier { get; set; }
         public string? Unit { get; set; }
     }
@@ -113,8 +113,8 @@ namespace API.Models
 
         public bool? Cancelled { get; set; }
 
-        public string SupplierCode { get; set; } = string.Empty;
-        public double Price { get; set; }
+        public string? SupplierCode { get; set; } = string.Empty;
+        public double? Price { get; set; }
         public string? Supplier { get; set; }
         public string? Unit { get; set; }
     }
@@ -156,8 +156,8 @@ namespace API.Models
         public string FormattedCreatedAt => CreatedAt.ToString("dd.MM.yyyy HH:mm");
         public string Dimensions => $"{X ?? 0}x{Y ?? 0}x{Z ?? 0}";
 
-        public string SupplierCode { get; set; } = string.Empty;
-        public double Price { get; set; }
+        public string? SupplierCode { get; set; } = string.Empty;
+        public double? Price { get; set; }
         public string? Supplier { get; set; }
         public string? Unit { get; set; }
 

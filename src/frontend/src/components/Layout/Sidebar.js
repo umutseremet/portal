@@ -21,7 +21,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       icon: 'bi-tools',
       children: [
         { id: 'bom-transfer', label: 'BOM Listesi Aktarımı', path: '/production/bom-transfer' },
-        { id: 'data-cam', label: 'Data / CAM Hazırlama', path: '/production/data-cam' },
+         { id: 'data-cam', label: 'Data / CAM Hazırlama', path: '/production/technical-drawing-preparation' },
         // { id: 'production-planning', label: 'Üretim Planlama', path: '/production/planning' },
         // { id: 'production-tracking', label: 'Üretim Takip', path: '/production/tracking' },
         // { id: 'reports', label: 'Raporlar', path: '/production/reports' }

@@ -41,7 +41,103 @@ class ApiService {
       return true;
     }
   }
+ 
+  // src/frontend/src/services/api.js içine eklenecek metodlar
 
+  // ===== TECHNICAL DRAWING PREPARATION ENDPOINTS =====
+
+  /**
+   * Get BOM works for technical drawing preparation
+   * Backend: GET /api/TechnicalDrawingPreparation/works
+   */
+  async getTechnicalDrawingWorks() {
+    console.log('📦 API getTechnicalDrawingWorks call');
+
+    try {
+      // ✅ Kullanıcı credentials'larını localStorage'dan al
+      const userStr = localStorage.getItem('user');
+      let redmineUsername = '';
+      let redminePassword = '';
+
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          redmineUsername = user.login || user.username || user.email || '';
+          redminePassword = user.password || '';
+        } catch (e) {
+          console.warn('User bilgisi parse edilemedi:', e);
+        }
+      }
+
+      // ✅ Query parameter olarak credentials gönder
+      const queryParams = new URLSearchParams();
+      if (redmineUsername) queryParams.append('redmineUsername', redmineUsername);
+      if (redminePassword) queryParams.append('redminePassword', redminePassword);
+
+      const url = `/TechnicalDrawingPreparation/works${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+
+      const response = await this.get(url);
+      console.log('✅ API getTechnicalDrawingWorks response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API getTechnicalDrawingWorks error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get item groups for a BOM work
+   * Backend: GET /api/TechnicalDrawingPreparation/work/{workId}/item-groups
+   */
+  async getTechnicalDrawingItemGroups(workId) {
+    if (!workId) {
+      throw new Error('Work ID is required');
+    }
+
+    console.log('📦 API getTechnicalDrawingItemGroups call:', { workId });
+
+    try {
+      const response = await this.get(`/TechnicalDrawingPreparation/work/${workId}/item-groups`);
+      console.log('✅ API getTechnicalDrawingItemGroups response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API getTechnicalDrawingItemGroups error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get items for technical drawing preparation
+   * Backend: POST /api/TechnicalDrawingPreparation/items
+   */
+  async getTechnicalDrawingItems(params) {
+    if (!params.workId || !params.itemGroupIds || params.itemGroupIds.length === 0) {
+      throw new Error('Work ID and item group IDs are required');
+    }
+
+    console.log('📦 API getTechnicalDrawingItems call:', params);
+
+    try {
+      const requestBody = {
+        workId: params.workId,
+        itemGroupIds: params.itemGroupIds
+      };
+
+      const response = await this.post('/TechnicalDrawingPreparation/items', requestBody);
+      console.log('✅ API getTechnicalDrawingItems response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API getTechnicalDrawingItems error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Download technical drawings as ZIP
+   * Backend: POST /api/TechnicalDrawingPreparation/download-zip
+   * Note: This is handled directly in the component using fetch for blob download
+   */
+  
   // Generic API call method
   async apiCall(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;

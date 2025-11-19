@@ -1,72 +1,80 @@
 // src/frontend/src/pages/DataCamPreparationPage.js
+// GÜNCELLENME: Teknik Resim Hazırlama butonunu ekledik
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '../contexts/ToastContext';
-import api from '../services/api';
+import { Archive } from 'lucide-react';
+import apiService from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const DataCamPreparationPage = () => {
   const navigate = useNavigate();
-  const { showToast } = useToast();
 
-  // State
+  // States
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [sortBy, setSortBy] = useState('CreatedAt');
-  const [sortOrder, setSortOrder] = useState('asc');
   const [expandedRows, setExpandedRows] = useState({});
 
-  // İstatistikleri yükle
-  const loadStats = useCallback(async () => {
-    try {
-      const statsData = await api.getDataCamStats();
-      setStats(statsData);
-    } catch (error) {
-      console.error('Stats loading error:', error);
-      showToast('İstatistikler yüklenirken hata oluştu', 'error');
-    }
-  }, [showToast]);
+  // Pagination & Filtering
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('CreatedAt');
+  const [sortOrder, setSortOrder] = useState('desc');
 
-  // Ürünleri yükle
-  const loadItems = useCallback(async () => {
+  // Load items on mount and when filters change
+  useEffect(() => {
+    loadItems();
+  }, [currentPage, searchTerm, sortBy, sortOrder]);
+
+  const loadItems = async () => {
     try {
       setLoading(true);
-      const response = await api.getDataCamItems({
-        searchTerm,
+      const response = await apiService.getDataCamItems({
         page: currentPage,
-        pageSize,
-        sortBy,
-        sortOrder
+        pageSize: pageSize,
+        searchTerm: searchTerm,
+        sortBy: sortBy,
+        sortOrder: sortOrder
       });
 
-      setItems(response.items);
-      setTotalPages(response.totalPages);
+      setItems(response.items || []);
+      setTotalCount(response.totalCount || 0);
+
+      // Calculate stats
+      const total = response.totalCount || 0;
+      const completed = (response.items || []).filter(item => item.technicalDrawingCompleted).length;
+      const pending = total - completed;
+      const completionRate = total > 0 ? ((completed / total) * 100).toFixed(1) : 0;
+
+      setStats({
+        totalItems: total,
+        completedItems: completed,
+        pendingItems: pending,
+        completionRate: completionRate
+      });
     } catch (error) {
-      console.error('Items loading error:', error);
+      console.error('Error loading items:', error);
       showToast('Ürünler yüklenirken hata oluştu', 'error');
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, currentPage, pageSize, sortBy, sortOrder, showToast]);
-
-  // İlk yükleme
-  useEffect(() => {
-    loadStats();
-    loadItems();
-  }, [loadStats, loadItems]);
-
-  // Arama
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
   };
 
-  // Sıralama
+  const showToast = (message, type = 'info') => {
+    console.log(`[${type.toUpperCase()}] ${message}`);
+  };
+
+  // Search handler
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    loadItems();
+  };
+
+  // Sort handler
   const handleSort = (field) => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -83,7 +91,7 @@ const DataCamPreparationPage = () => {
       setExpandedRows(prev => ({ ...prev, [itemId]: null }));
     } else {
       try {
-        const locations = await api.getItemBomLocations(itemId);
+        const locations = await apiService.getItemBomLocations(itemId);
         setExpandedRows(prev => ({ ...prev, [itemId]: locations }));
       } catch (error) {
         console.error('BOM locations loading error:', error);
@@ -101,6 +109,11 @@ const DataCamPreparationPage = () => {
         returnPath: '/production/data-cam'
       } 
     });
+  };
+
+  // ✅ YENİ: Teknik Resim Hazırlama sayfasına git
+  const handleGoToTechnicalDrawingPreparation = () => {
+    navigate('/production/technical-drawing-preparation');
   };
 
   // Pagination
@@ -122,6 +135,15 @@ const DataCamPreparationPage = () => {
             Teknik resim çalışması bekleyen ürünler
           </p>
         </div>
+
+        {/* ✅ YENİ: Teknik Resim Hazırlama Butonu */}
+        <button
+          className="btn btn-primary"
+          onClick={handleGoToTechnicalDrawingPreparation}
+        >
+          <Archive size={18} className="me-2" />
+          Teknik Resim Hazırlama
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -155,175 +177,139 @@ const DataCamPreparationPage = () => {
             <div className="card bg-info text-white">
               <div className="card-body">
                 <h6 className="card-subtitle mb-2 opacity-75">Tamamlanma Oranı</h6>
-                <h2 className="card-title mb-0">{stats.completionRate.toFixed(1)}%</h2>
+                <h2 className="card-title mb-0">{stats.completionRate}%</h2>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="card mb-4">
+      {/* Search & Filter */}
+      <div className="card shadow-sm mb-4">
         <div className="card-body">
-          <div className="row g-3">
-            <div className="col-md-6">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Ürün ara (kod, ad, doküman no)..."
-                value={searchTerm}
-                onChange={handleSearch}
-              />
+          <form onSubmit={handleSearch}>
+            <div className="row g-3 align-items-end">
+              <div className="col-md-10">
+                <label className="form-label">Ürün Ara</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Ürün adı, kodu veya doküman numarası..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="col-md-2">
+                <button type="submit" className="btn btn-primary w-100">
+                  <i className="bi bi-search me-2"></i>
+                  Ara
+                </button>
+              </div>
             </div>
-            <div className="col-md-6 text-end">
-              <span className="text-muted">
-                Toplam {items.length} ürün gösteriliyor
-              </span>
-            </div>
-          </div>
+          </form>
         </div>
       </div>
 
       {/* Items Table */}
-      <div className="card">
-        <div className="card-body p-0">
+      <div className="card shadow-sm">
+        <div className="card-body">
           <div className="table-responsive">
-            <table className="table table-hover mb-0">
+            <table className="table table-hover align-middle">
               <thead className="table-light">
                 <tr>
                   <th style={{ width: '50px' }}></th>
-                  <th 
-                    style={{ cursor: 'pointer', width: '100px' }}
-                    onClick={() => handleSort('Number')}
-                  >
-                    No {sortBy === 'Number' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  <th style={{ width: '80px' }} onClick={() => handleSort('number')} className="cursor-pointer">
+                    Ürün No {sortBy === 'number' && (sortOrder === 'asc' ? '↑' : '↓')}
                   </th>
-                  <th 
-                    style={{ cursor: 'pointer', width: '150px' }}
-                    onClick={() => handleSort('Code')}
-                  >
-                    Kod {sortBy === 'Code' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  <th style={{ width: '150px' }} onClick={() => handleSort('code')} className="cursor-pointer">
+                    Ürün Kodu {sortBy === 'code' && (sortOrder === 'asc' ? '↑' : '↓')}
                   </th>
-                  <th 
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => handleSort('Name')}
-                  >
-                    Ürün Adı {sortBy === 'Name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  <th onClick={() => handleSort('name')} className="cursor-pointer">
+                    Ürün Adı {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
                   </th>
-                  <th style={{ width: '150px' }}>Doküman No</th>
-                  <th style={{ width: '120px' }}>Grup</th>
+                  <th style={{ width: '150px' }}>Ürün Grubu</th>
                   <th style={{ width: '120px' }}>Boyutlar</th>
-                  <th style={{ width: '180px' }}>Çalışma / Proje</th>
-                  <th 
-                    style={{ cursor: 'pointer', width: '150px' }}
-                    onClick={() => handleSort('CreatedAt')}
-                  >
-                    Eklenme {sortBy === 'CreatedAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  <th style={{ width: '150px' }} onClick={() => handleSort('createdat')} className="cursor-pointer">
+                    Eklenme Tarihi {sortBy === 'createdat' && (sortOrder === 'asc' ? '↑' : '↓')}
                   </th>
+                  <th style={{ width: '100px' }} className="text-center">İşlemler</th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="text-center py-4 text-muted">
-                      <i className="bi bi-inbox fs-1 d-block mb-2"></i>
-                      Teknik resim çalışması bekleyen ürün bulunamadı
+                    <td colSpan="8" className="text-center py-4 text-muted">
+                      {searchTerm ? 'Arama sonucu bulunamadı' : 'Teknik resim bekleyen ürün bulunmuyor'}
                     </td>
                   </tr>
                 ) : (
-                  items.map(item => (
+                  items.map((item) => (
                     <React.Fragment key={item.itemId}>
-                      <tr 
-                        style={{ cursor: 'pointer' }}
-                        className={expandedRows[item.itemId] ? 'table-active' : ''}
-                      >
+                      <tr>
                         <td>
-                          {item.additionalBomCount > 0 && (
-                            <button
-                              className="btn btn-sm btn-link p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleRow(item.itemId);
-                              }}
-                              title="Diğer BOM konumlarını göster"
-                            >
-                              <i className={`bi bi-chevron-${expandedRows[item.itemId] ? 'down' : 'right'}`}></i>
-                            </button>
-                          )}
+                          <button
+                            className="btn btn-sm btn-link p-0"
+                            onClick={() => toggleRow(item.itemId)}
+                            title="BOM bilgilerini göster"
+                          >
+                            <i className={`bi ${expandedRows[item.itemId] ? 'bi-chevron-down' : 'bi-chevron-right'}`}></i>
+                          </button>
                         </td>
-                        <td onClick={() => handleItemClick(item.itemId)}>
-                          {item.itemNumber}
-                        </td>
-                        <td onClick={() => handleItemClick(item.itemId)}>
+                        <td>{item.itemNumber}</td>
+                        <td>
                           <code className="text-primary">{item.itemCode}</code>
                         </td>
-                        <td onClick={() => handleItemClick(item.itemId)}>
-                          <strong>{item.itemName}</strong>
+                        <td>{item.itemName}</td>
+                        <td>
+                          <span className="badge bg-secondary">{item.itemGroupName || '-'}</span>
                         </td>
-                        <td onClick={() => handleItemClick(item.itemId)}>
-                          {item.itemDocNumber}
-                        </td>
-                        <td onClick={() => handleItemClick(item.itemId)}>
-                          <span className="badge bg-secondary">
-                            {item.itemGroupName || '-'}
-                          </span>
-                        </td>
-                        <td onClick={() => handleItemClick(item.itemId)}>
-                          <small className="text-muted">{item.dimensions}</small>
-                        </td>
-                        <td onClick={() => handleItemClick(item.itemId)}>
-                          {item.bomWorkName ? (
-                            <div>
-                              <div><strong>{item.bomWorkName}</strong></div>
-                              <small className="text-muted">{item.projectName}</small>
-                              {item.additionalBomCount > 0 && (
-                                <div>
-                                  <small className="text-info">
-                                    +{item.additionalBomCount} diğer BOM
-                                  </small>
-                                </div>
-                              )}
-                            </div>
+                        <td className="small">
+                          {item.x && item.y && item.z ? (
+                            <span>{item.x} × {item.y} × {item.z}</span>
                           ) : (
                             <span className="text-muted">-</span>
                           )}
                         </td>
-                        <td onClick={() => handleItemClick(item.itemId)}>
-                          <small className="text-muted">
-                            {item.formattedCreatedAt}
-                          </small>
+                        <td className="small">
+                          {new Date(item.createdAt).toLocaleDateString('tr-TR')}
+                        </td>
+                        <td className="text-center">
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => handleItemClick(item.itemId)}
+                            title="Ürün detayına git"
+                          >
+                            <i className="bi bi-arrow-right"></i>
+                          </button>
                         </td>
                       </tr>
 
-                      {/* Expanded Row - Diğer BOM Konumları */}
+                      {/* Expanded Row - BOM Locations */}
                       {expandedRows[item.itemId] && (
-                        <tr className="table-secondary">
-                          <td colSpan="9" className="p-0">
-                            <div className="px-5 py-3">
-                              <h6 className="mb-3">
-                                <i className="bi bi-list-ul me-2"></i>
-                                Bu ürünün bulunduğu tüm BOM'lar:
-                              </h6>
-                              <div className="list-group">
-                                {expandedRows[item.itemId].map(location => (
-                                  <div key={location.bomItemId} className="list-group-item">
-                                    <div className="d-flex justify-content-between align-items-start">
-                                      <div>
-                                        <strong>{location.bomWorkName}</strong>
-                                        <div className="small text-muted">
-                                          {location.projectName}
-                                        </div>
-                                        <div className="small">
-                                          Excel: {location.bomExcelFileName}
-                                        </div>
-                                      </div>
-                                      <small className="text-muted">
-                                        {location.formattedCreatedAt}
-                                      </small>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
+                        <tr>
+                          <td colSpan="8" className="bg-light">
+                            <div className="p-3">
+                              <h6 className="mb-2">BOM Konumları</h6>
+                              {expandedRows[item.itemId].length === 0 ? (
+                                <p className="text-muted mb-0">Bu ürün henüz bir BOM'da bulunmuyor</p>
+                              ) : (
+                                <ul className="list-unstyled mb-0">
+                                  {expandedRows[item.itemId].map((location) => (
+                                    <li key={location.bomItemId} className="mb-1">
+                                      <i className="bi bi-file-earmark-spreadsheet me-2 text-success"></i>
+                                      <strong>{location.bomWorkName}</strong>
+                                      {' → '}
+                                      <span className="text-muted">{location.bomExcelFileName}</span>
+                                      {location.projectName && (
+                                        <>
+                                          {' '}
+                                          <span className="badge bg-info">{location.projectName}</span>
+                                        </>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -334,70 +320,41 @@ const DataCamPreparationPage = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {totalCount > pageSize && (
+            <div className="d-flex justify-content-between align-items-center mt-3">
+              <div className="text-muted">
+                Toplam {totalCount} ürün
+              </div>
+              <nav>
+                <ul className="pagination pagination-sm mb-0">
+                  <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      Önceki
+                    </button>
+                  </li>
+                  <li className="page-item active">
+                    <span className="page-link">{currentPage}</span>
+                  </li>
+                  <li className={`page-item ${currentPage * pageSize >= totalCount ? 'disabled' : ''}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage * pageSize >= totalCount}
+                    >
+                      Sonraki
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          )}
         </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="card-footer">
-            <nav>
-              <ul className="pagination justify-content-center mb-0">
-                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    Önceki
-                  </button>
-                </li>
-                
-                {[...Array(totalPages)].map((_, index) => {
-                  const pageNum = index + 1;
-                  // Sadece mevcut sayfa etrafındaki 2 sayfa göster
-                  if (
-                    pageNum === 1 ||
-                    pageNum === totalPages ||
-                    (pageNum >= currentPage - 2 && pageNum <= currentPage + 2)
-                  ) {
-                    return (
-                      <li
-                        key={pageNum}
-                        className={`page-item ${currentPage === pageNum ? 'active' : ''}`}
-                      >
-                        <button
-                          className="page-link"
-                          onClick={() => handlePageChange(pageNum)}
-                        >
-                          {pageNum}
-                        </button>
-                      </li>
-                    );
-                  } else if (
-                    pageNum === currentPage - 3 ||
-                    pageNum === currentPage + 3
-                  ) {
-                    return (
-                      <li key={pageNum} className="page-item disabled">
-                        <span className="page-link">...</span>
-                      </li>
-                    );
-                  }
-                  return null;
-                })}
-
-                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Sonraki
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        )}
       </div>
     </div>
   );

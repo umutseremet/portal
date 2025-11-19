@@ -24,6 +24,7 @@ import ItemGroupsPage from './pages/ItemGroupsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
 import ItemEditPage from './pages/ItemEditPage';
 import './App.css';
+import TechnicalDrawingPreparationPage from './pages/TechnicalDrawingPreparationPage';
 
 function App() {
   return (
@@ -216,6 +217,18 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <DataCamPreparationPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Teknik Resim Hazırlama */}
+            <Route
+              path="/production/technical-drawing-preparation"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <TechnicalDrawingPreparationPage />
                   </Layout>
                 </ProtectedRoute>
               }

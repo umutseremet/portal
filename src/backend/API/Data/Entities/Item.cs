@@ -38,11 +38,11 @@ namespace API.Data.Entities
 
         // Audit fields
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-
         public DateTime? UpdatedAt { get; set; }
 
-        public string SupplierCode { get; set; } = string.Empty;
-        public double Price { get; set; }
+        // ✅ DEĞİŞTİ: nullable yapıldı
+        public string? SupplierCode { get; set; }
+        public double? Price { get; set; }  // ✅ DEĞİŞTİ: nullable
         public string? Supplier { get; set; }
         public string? Unit { get; set; }
 
