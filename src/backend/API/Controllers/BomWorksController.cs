@@ -36,7 +36,7 @@ namespace API.Controllers
                 var username = User.FindFirst("username")?.Value;
                 _logger.LogInformation("Getting BOM works for user: {Username}", username);
 
-                var query = _context.BomWorks
+                var query = _context.BomWorks.Where(s=> s.IsActive)
                     .Include(w => w.BomExcels)
                     .ThenInclude(e => e.BomItems)
                     .AsQueryable();
@@ -44,9 +44,10 @@ namespace API.Controllers
                 // Search filter
                 if (!string.IsNullOrWhiteSpace(request.SearchTerm))
                 {
-                    query = query.Where(w =>
+                    query = query.Where(w =>  
                         w.WorkName.Contains(request.SearchTerm) ||
-                        w.Description.Contains(request.SearchTerm));
+                        w.Description.Contains(request.SearchTerm)  
+                        );
                 }
 
                 var totalCount = await query.CountAsync();

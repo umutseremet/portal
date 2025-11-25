@@ -8,14 +8,14 @@ import ItemFileUpload from '../components/Items/ItemFileUpload';
 import PDFPreviewModal from '../components/Items/PDFPreviewModal';
 import { useToast } from '../contexts/ToastContext';
 
-const ItemEditPage = () => { 
+const ItemEditPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { showToast } = useToast();
-  
+
   const isEdit = !!id;
-  
+
   // ✅ DataCam entegrasyonu
   const fromDataCam = location.state?.fromDataCam || false;
   const returnPath = location.state?.returnPath || '/definitions/items';
@@ -24,7 +24,7 @@ const ItemEditPage = () => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  
+
   // File upload states
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [filesLoading, setFilesLoading] = useState(false);
@@ -142,7 +142,7 @@ const ItemEditPage = () => {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user types
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -233,7 +233,7 @@ const ItemEditPage = () => {
       if (isEdit) {
         // Ürünü güncelle
         await apiService.updateItem(id, submitData);
-        
+
         // ✅ CRITICAL: DataCam ekranından açıldıysa, teknik resim tamamlandı olarak işaretle
         if (fromDataCam) {
           try {
@@ -247,7 +247,7 @@ const ItemEditPage = () => {
         } else {
           showToast('Ürün başarıyla güncellendi', 'success');
         }
-        
+
         // Geri dön
         navigate(returnPath);
       } else {
@@ -271,9 +271,40 @@ const ItemEditPage = () => {
     navigate(returnPath);
   };
 
-  const handleFileUploaded = (newFile) => {
-    setUploadedFiles(prev => [...prev, newFile]);
-    showToast('Dosya başarıyla yüklendi', 'success');
+
+  const handleFileUpload = async (files) => {
+    if (!id) return;
+
+    try {
+      setUploading(true);
+
+      for (const file of files) {
+        // ✅ FormData KULLANMA - direkt itemId ve file gönder
+        const result = await apiService.uploadItemFile(parseInt(id), file);
+
+        if (result.success && result.file) {
+          setUploadedFiles(prev => [...prev, result.file]);
+        }
+      }
+
+      showToast(`${files.length} dosya başarıyla yüklendi`, 'success');
+    } catch (err) {
+      console.error('File upload error:', err);
+      showToast(err.message || 'Dosya yüklenirken hata oluştu', 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteMultiple = async (fileIds) => {
+    try {
+      await apiService.deleteMultipleItemFiles(fileIds);
+      setUploadedFiles(prev => prev.filter(f => !fileIds.includes(f.id)));
+      showToast(`${fileIds.length} dosya silindi`, 'success');
+    } catch (err) {
+      console.error('Delete multiple error:', err);
+      showToast('Dosyalar silinirken hata oluştu', 'error');
+    }
   };
 
   const handleFileDeleted = (fileId) => {
@@ -281,9 +312,16 @@ const ItemEditPage = () => {
     showToast('Dosya silindi', 'success');
   };
 
-  const handlePreviewFile = (file) => {
-    setPreviewFile(file);
-    setShowPreview(true);
+  const handlePreviewFile = (fileIdOrFile) => {
+    // Eğer sadece ID geliyorsa, uploadedFiles'dan file objesini bul
+    const file = typeof fileIdOrFile === 'number'
+      ? uploadedFiles.find(f => f.id === fileIdOrFile)
+      : fileIdOrFile;
+
+    if (file) {
+      setPreviewFile(file);
+      setShowPreview(true);
+    }
   };
 
   if (loading) {
@@ -311,13 +349,13 @@ const ItemEditPage = () => {
                   <p className="text-muted mb-0">
                     {isEdit ? `Ürün: ${item?.code}` : 'Yeni ürün oluştur'}
                   </p>
-                  
+
                   {/* ✅ DataCam bilgilendirme banner'ı */}
                   {fromDataCam && (
                     <div className="alert alert-info mt-2 mb-0 py-2 px-3">
                       <i className="bi bi-info-circle me-2"></i>
                       <small>
-                        <strong>Data/CAM Hazırlama:</strong> Kaydet butonuna bastığınızda 
+                        <strong>Data/CAM Hazırlama:</strong> Kaydet butonuna bastığınızda
                         bu ürün için teknik resim çalışması tamamlanmış olarak işaretlenecektir.
                       </small>
                     </div>
@@ -348,7 +386,7 @@ const ItemEditPage = () => {
               <form onSubmit={handleSubmit}>
                 <div className="row">
                   {/* Number */}
-                  <div className="col-md-6 mb-3">
+                  {/* <div className="col-md-6 mb-3">
                     <label className="form-label">Numara</label>
                     <input
                       type="number"
@@ -361,10 +399,10 @@ const ItemEditPage = () => {
                     {errors.number && (
                       <div className="invalid-feedback">{errors.number}</div>
                     )}
-                  </div>
+                  </div> */}
 
                   {/* Code */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-12 mb-3">
                     <label className="form-label">Kod *</label>
                     <input
                       type="text"
@@ -595,8 +633,9 @@ const ItemEditPage = () => {
               uploadedFiles={uploadedFiles}
               loading={filesLoading}
               uploading={uploading}
-              onFileUploaded={handleFileUploaded}
+              onFileUpload={handleFileUpload}
               onFileDeleted={handleFileDeleted}
+              onDeleteMultiple={handleDeleteMultiple} // ✅ YENİ: Toplu silme
               onPreviewFile={handlePreviewFile}
             />
           </div>
@@ -604,12 +643,11 @@ const ItemEditPage = () => {
       </div>
 
       {/* PDF Preview Modal */}
-      {showPreview && previewFile && (
-        <PDFPreviewModal
-          file={previewFile}
-          onClose={() => setShowPreview(false)}
-        />
-      )}
+      <PDFPreviewModal
+        show={showPreview}
+        file={previewFile}
+        onClose={() => setShowPreview(false)}
+      />
     </div>
   );
 };

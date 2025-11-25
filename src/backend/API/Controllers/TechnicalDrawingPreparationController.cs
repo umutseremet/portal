@@ -209,24 +209,23 @@ namespace API.Controllers
             }
         }
 
-        /// <summary>
-        /// Seçilen çalışma ve gruplara göre tüm ürün dosyalarını ZIP olarak indir
-        /// Klasör yapısı:
-        /// - Çalışma Adı (tayas revizyon-1)
-        ///   - Excel Dosya Adı (1000_grubu.xlsx)
-        ///     - Ürün Klasörleri (ürün kodu)
-        ///       - Ürün Dosyaları (xt, pdf, vs.)
-        /// </summary>
+
         [HttpPost("download-zip")]
         public async Task<IActionResult> DownloadTechnicalDrawingsAsZip(
-            [FromBody] DownloadTechnicalDrawingsRequest request)
+    [FromBody] DownloadTechnicalDrawingsRequest request)
         {
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew(); // ✅ İşlem süresini ölç
+
             try
             {
                 if (request.ItemGroupIds == null || !request.ItemGroupIds.Any())
                 {
                     return BadRequest(new ErrorResponse { Message = "En az bir ürün grubu seçilmeli" });
                 }
+
+                // ✅ Kullanıcı bilgilerini al
+                var username = User.FindFirst("username")?.Value ?? "System";
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
                 // Work bilgisini al
                 var work = await _context.BomWorks.FindAsync(request.WorkId);
@@ -235,10 +234,13 @@ namespace API.Controllers
                     return NotFound(new ErrorResponse { Message = "Çalışma bulunamadı" });
                 }
 
-                // ✅ FIX: ItemGroupIds'i önce local değişkene al
+                if (string.IsNullOrWhiteSpace(work.WorkName))
+                {
+                    return BadRequest(new ErrorResponse { Message = "Çalışma adı geçersiz" });
+                }
+
                 var selectedGroupIds = request.ItemGroupIds.ToList();
 
-                // ✅ FIX: Önce work'e ait tüm BomItem'ları al (SQL'de)
                 var allBomItems = await _context.BomItems
                     .Where(bi => bi.BomExcel.WorkId == request.WorkId)
                     .Select(bi => new
@@ -249,11 +251,10 @@ namespace API.Controllers
                         ItemGroupId = bi.Item.GroupId,
                         ExcelFileName = bi.BomExcel.FileName,
                         ExcelId = bi.BomExcel.Id,
-                        TechnicalDrawingCompleted = bi.Item.TechnicalDrawingCompleted // ✅ Flag
+                        TechnicalDrawingCompleted = bi.Item.TechnicalDrawingCompleted
                     })
                     .ToListAsync();
 
-                // ✅ Sonra memory'de filtrele
                 var itemsWithExcel = allBomItems
                     .Where(x => selectedGroupIds.Contains(x.ItemGroupId))
                     .ToList();
@@ -263,7 +264,6 @@ namespace API.Controllers
                     return NotFound(new ErrorResponse { Message = "Seçilen kriterlere uygun ürün bulunamadı" });
                 }
 
-                // ✅ Sadece TechnicalDrawingCompleted = true olanları al
                 var itemsWithDrawing = itemsWithExcel
                     .Where(x => x.TechnicalDrawingCompleted)
                     .GroupBy(x => x.ItemId)
@@ -288,9 +288,17 @@ namespace API.Controllers
                     itemFilesLookup.AddRange(files);
                 }
 
-                // ZIP dosyası adı: WorkName_tarih.zip
-                var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HHmmss");
+                if (!itemFilesLookup.Any())
+                {
+                    return NotFound(new ErrorResponse { Message = "Seçilen ürünlere ait dosya bulunamadı" });
+                }
+
+                // ✅ ZIP dosyası adı - Tarih ve saat dahil
+                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                 var zipFileName = $"{SanitizeFileName(work.WorkName)}_{timestamp}.zip";
+
+                byte[] fileBytes;
+                int addedFileCount = 0;
 
                 // Memory stream oluştur
                 using (var memoryStream = new MemoryStream())
@@ -298,71 +306,292 @@ namespace API.Controllers
                     // ZIP arşivi oluştur
                     using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
                     {
-                        // Excel dosyalarına göre grupla
                         var itemsByExcel = itemsWithDrawing.GroupBy(x => new { x.ExcelId, x.ExcelFileName });
 
                         foreach (var excelGroup in itemsByExcel)
                         {
                             var excelFileName = excelGroup.Key.ExcelFileName;
+
+                            if (string.IsNullOrWhiteSpace(excelFileName))
+                            {
+                                _logger.LogWarning("Empty excel filename for ExcelId={ExcelId}", excelGroup.Key.ExcelId);
+                                continue;
+                            }
+
                             var excelNameWithoutExt = Path.GetFileNameWithoutExtension(excelFileName);
 
-                            // Excel klasörü adı
-                            var excelFolder = $"{SanitizeFileName(work.WorkName)}/{SanitizeFileName(excelNameWithoutExt)}";
+                            if (string.IsNullOrWhiteSpace(excelNameWithoutExt))
+                            {
+                                excelNameWithoutExt = $"Excel_{excelGroup.Key.ExcelId}";
+                            }
+
+                            // "-" karakterine kadar al
+                            if (excelNameWithoutExt.Contains('-'))
+                            {
+                                var dashIndex = excelNameWithoutExt.IndexOf('-');
+                                var prefix = excelNameWithoutExt.Substring(0, dashIndex).Trim();
+
+                                if (!string.IsNullOrWhiteSpace(prefix))
+                                {
+                                    excelNameWithoutExt = prefix;
+                                }
+                            }
+
+                            var excelFolder = SanitizeFileName(excelNameWithoutExt);
+
+                            if (string.IsNullOrWhiteSpace(excelFolder))
+                            {
+                                excelFolder = $"Excel_{excelGroup.Key.ExcelId}";
+                            }
 
                             foreach (var itemData in excelGroup)
                             {
-                                // Ürün klasörü adı: ürün kodu
-                                var itemFolder = $"{excelFolder}/{SanitizeFileName(itemData.ItemCode ?? itemData.ItemNumber.ToString())}";
+                                var itemCode = itemData.ItemCode ?? itemData.ItemNumber.ToString();
 
-                                // Bu ürüne ait dosyaları al
+                                if (string.IsNullOrWhiteSpace(itemCode))
+                                {
+                                    itemCode = $"Item_{itemData.ItemId}";
+                                }
+
+                                var itemFolderName = SanitizeFileName(itemCode);
+
+                                if (string.IsNullOrWhiteSpace(itemFolderName))
+                                {
+                                    itemFolderName = $"Item_{itemData.ItemId}";
+                                }
+
+                                var itemFolder = $"{excelFolder}/{itemFolderName}";
+
                                 var files = itemFilesLookup.Where(f => f.ItemId == itemData.ItemId).ToList();
 
                                 foreach (var file in files)
                                 {
+                                    if (string.IsNullOrWhiteSpace(file.FileName))
+                                    {
+                                        continue;
+                                    }
+
                                     if (!System.IO.File.Exists(file.FilePath))
                                     {
                                         _logger.LogWarning("File not found: {FilePath}", file.FilePath);
                                         continue;
                                     }
 
-                                    // ZIP entry yolu
-                                    var entryName = $"{itemFolder}/{SanitizeFileName(file.FileName)}";
+                                    var sanitizedFileName = SanitizeFileName(file.FileName);
 
-                                    // Dosyayı ZIP'e ekle
-                                    var zipEntry = archive.CreateEntry(entryName, CompressionLevel.Fastest);
-
-                                    using (var entryStream = zipEntry.Open())
-                                    using (var fileStream = new FileStream(file.FilePath, FileMode.Open, FileAccess.Read))
+                                    if (string.IsNullOrWhiteSpace(sanitizedFileName))
                                     {
-                                        await fileStream.CopyToAsync(entryStream);
+                                        sanitizedFileName = $"File_{file.Id}{Path.GetExtension(file.FileName)}";
+                                    }
+
+                                    var entryName = $"{itemFolder}/{sanitizedFileName}";
+
+                                    try
+                                    {
+                                        var zipEntry = archive.CreateEntry(entryName, CompressionLevel.Fastest);
+
+                                        using (var entryStream = zipEntry.Open())
+                                        using (var fileStream = new FileStream(file.FilePath, FileMode.Open, FileAccess.Read))
+                                        {
+                                            await fileStream.CopyToAsync(entryStream);
+                                            addedFileCount++;
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _logger.LogError(ex, "Error adding file to ZIP: {FileName}", file.FileName);
                                     }
                                 }
                             }
                         }
                     }
 
-                    // Memory stream'i başa sar
+                    if (addedFileCount == 0)
+                    {
+                        return NotFound(new ErrorResponse { Message = "ZIP'e hiçbir dosya eklenemedi" });
+                    }
+
                     memoryStream.Seek(0, SeekOrigin.Begin);
+                    fileBytes = memoryStream.ToArray();
 
-                    // ZIP dosyasını döndür
-                    var fileBytes = memoryStream.ToArray();
-
-                    _logger.LogInformation(
-                        "ZIP created: {FileName} for WorkId={WorkId}, Groups={GroupCount}, Items={ItemCount}",
-                        zipFileName, request.WorkId, request.ItemGroupIds.Count, itemsWithDrawing.Count);
-
-                    // CORS headers
-                    Response.Headers.Add("Access-Control-Allow-Origin", "*");
-                    Response.Headers.Add("Access-Control-Allow-Methods", "POST");
-                    Response.Headers.Add("Access-Control-Allow-Headers", "Authorization, Content-Type");
-
-                    return File(fileBytes, "application/zip", zipFileName);
+                    if (fileBytes.Length == 0)
+                    {
+                        return StatusCode(500, new ErrorResponse { Message = "Oluşturulan ZIP dosyası boş" });
+                    }
                 }
+
+                stopwatch.Stop();
+
+                // ✅ LOG KAYDI OLUŞTUR
+                var downloadLog = new TechnicalDrawingDownloadLog
+                {
+                    WorkId = request.WorkId,
+                    WorkName = work.WorkName,
+                    ProjectId = work.ProjectId,
+                    ZipFileName = zipFileName,
+                    ZipFileSize = fileBytes.Length,
+                    ItemCount = itemsWithDrawing.Count,
+                    FileCount = addedFileCount,
+                    SelectedGroupIds = System.Text.Json.JsonSerializer.Serialize(request.ItemGroupIds),
+                    DownloadedBy = username,
+                    DownloadedAt = DateTime.Now,
+                    IpAddress = ipAddress,
+                    ProcessingTimeMs = (int)stopwatch.ElapsedMilliseconds
+                };
+
+                _context.TechnicalDrawingDownloadLogs.Add(downloadLog);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "ZIP download logged: LogId={LogId}, FileName={FileName}, Size={SizeKB}KB, Files={FileCount}, User={User}, Time={TimeMs}ms",
+                    downloadLog.Id, zipFileName, fileBytes.Length / 1024, addedFileCount, username, stopwatch.ElapsedMilliseconds);
+
+                // CORS headers
+                Response.Headers.Add("Access-Control-Allow-Origin", "*");
+                Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+
+                return File(fileBytes, "application/zip", zipFileName);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating technical drawings ZIP");
                 return StatusCode(500, new ErrorResponse { Message = "ZIP dosyası oluşturulurken hata oluştu: " + ex.Message });
+            }
+        }
+
+        // TechnicalDrawingPreparationController.cs - Log görüntüleme metodları
+
+        /// <summary>
+        /// ZIP indirme loglarını listele
+        /// </summary>
+        [HttpGet("download-logs")]
+        public async Task<ActionResult<GetDownloadLogsResponse>> GetDownloadLogs(
+            [FromQuery] int? workId = null,
+            [FromQuery] string? username = null,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50)
+        {
+            try
+            {
+                var query = _context.TechnicalDrawingDownloadLogs
+                    .Include(l => l.BomWork)
+                    .AsQueryable();
+
+                // Filtreler
+                if (workId.HasValue)
+                {
+                    query = query.Where(l => l.WorkId == workId.Value);
+                }
+
+                if (!string.IsNullOrWhiteSpace(username))
+                {
+                    query = query.Where(l => l.DownloadedBy.Contains(username));
+                }
+
+                if (startDate.HasValue)
+                {
+                    query = query.Where(l => l.DownloadedAt >= startDate.Value);
+                }
+
+                if (endDate.HasValue)
+                {
+                    query = query.Where(l => l.DownloadedAt <= endDate.Value);
+                }
+
+                var totalCount = await query.CountAsync();
+
+                var logs = await query
+                    .OrderByDescending(l => l.DownloadedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(l => new DownloadLogResponse
+                    {
+                        Id = l.Id,
+                        WorkId = l.WorkId,
+                        WorkName = l.WorkName,
+                        ProjectId = l.ProjectId,
+                        ZipFileName = l.ZipFileName,
+                        ZipFileSize = l.ZipFileSize,
+                        ZipFileSizeMB = Math.Round((double)l.ZipFileSize / 1024 / 1024, 2),
+                        ItemCount = l.ItemCount,
+                        FileCount = l.FileCount,
+                        SelectedGroupIds = l.SelectedGroupIds,
+                        DownloadedBy = l.DownloadedBy,
+                        DownloadedAt = l.DownloadedAt,
+                        IpAddress = l.IpAddress,
+                        ProcessingTimeMs = l.ProcessingTimeMs
+                    })
+                    .ToListAsync();
+
+                return Ok(new GetDownloadLogsResponse
+                {
+                    Logs = logs,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting download logs");
+                return StatusCode(500, new ErrorResponse { Message = "Loglar yüklenirken hata oluştu" });
+            }
+        }
+
+        /// <summary>
+        /// Bir çalışma için indirme istatistikleri
+        /// </summary>
+        [HttpGet("download-stats/{workId}")]
+        public async Task<ActionResult<DownloadStatsResponse>> GetDownloadStats(int workId)
+        {
+            try
+            {
+                var logs = await _context.TechnicalDrawingDownloadLogs
+                    .Where(l => l.WorkId == workId)
+                    .ToListAsync();
+
+                if (!logs.Any())
+                {
+                    return Ok(new DownloadStatsResponse
+                    {
+                        TotalDownloads = 0,
+                        TotalSizeMB = 0,
+                        TotalFiles = 0,
+                        AverageProcessingTimeMs = 0,
+                        LastDownloadDate = null,
+                        TopDownloaders = new List<TopDownloaderInfo>()
+                    });
+                }
+
+                var stats = new DownloadStatsResponse
+                {
+                    TotalDownloads = logs.Count,
+                    TotalSizeMB = Math.Round(logs.Sum(l => l.ZipFileSize) / 1024.0 / 1024.0, 2),
+                    TotalFiles = logs.Sum(l => l.FileCount),
+                    AverageProcessingTimeMs = (int)logs.Average(l => l.ProcessingTimeMs ?? 0),
+                    LastDownloadDate = logs.Max(l => l.DownloadedAt),
+                    TopDownloaders = logs
+                        .GroupBy(l => l.DownloadedBy)
+                        .Select(g => new TopDownloaderInfo
+                        {
+                            Username = g.Key,
+                            DownloadCount = g.Count(),
+                            TotalSizeMB = Math.Round(g.Sum(l => l.ZipFileSize) / 1024.0 / 1024.0, 2)
+                        })
+                        .OrderByDescending(x => x.DownloadCount)
+                        .Take(5)
+                        .ToList()
+                };
+
+                return Ok(stats);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting download stats for WorkId={WorkId}", workId);
+                return StatusCode(500, new ErrorResponse { Message = "İstatistikler yüklenirken hata oluştu" });
             }
         }
 

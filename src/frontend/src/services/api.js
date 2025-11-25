@@ -167,6 +167,9 @@ class ApiService {
         if (response.status === 401) {
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
+
+          // window.location.href = '/login';  // ✅ BU SATIRI EKLE
+          
           throw new Error('Oturum süresi doldu. Lütfen tekrar giriş yapın.');
         }
 

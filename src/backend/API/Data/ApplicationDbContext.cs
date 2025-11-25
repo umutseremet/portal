@@ -27,7 +27,8 @@ namespace API.Data
         public DbSet<BomItem> BomItems { get; set; }
         public DbSet<ItemFile> ItemFiles { get; set; }
 
-  
+        // ApplicationDbContext.cs
+        public DbSet<TechnicalDrawingDownloadLog> TechnicalDrawingDownloadLogs { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

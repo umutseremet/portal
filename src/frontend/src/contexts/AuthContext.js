@@ -24,17 +24,17 @@ export const AuthProvider = ({ children }) => {
   const initializeAuth = async () => {
     try {
       setLoading(true);
-      
+
       // Check if user data exists in localStorage
       const token = localStorage.getItem('authToken');
       const savedUser = localStorage.getItem('user');
-      
+
       if (token && savedUser) {
         // Check if token is expired
         if (authService.isTokenExpired()) {
           console.log('Token expired, attempting refresh...');
           const refreshResult = await authService.refreshToken();
-          
+
           if (refreshResult.success) {
             setIsAuthenticated(true);
             setUser(JSON.parse(savedUser));
@@ -61,18 +61,20 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      
-      console.log('🔐 Attempting login with API...', { 
-        email: credentials.email, 
-        apiUrl: process.env.REACT_APP_API_BASE_URL 
+
+      console.log('🔐 Attempting login with API...', {
+        email: credentials.email,
+        apiUrl: process.env.REACT_APP_API_BASE_URL
       });
-      
+
       // Call the real API through authService
       const result = await authService.login(credentials);
-      
+
       console.log('🔐 API Login result:', result);
-      
+
       if (result.success) {
+
+        clearAllFilters();
         setIsAuthenticated(true);
         setUser(result.user);
         console.log('✅ Login successful:', result.user);
@@ -96,13 +98,13 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('📝 Attempting registration with API...', userData);
-      
+
       const result = await authService.register(userData);
-      
+
       console.log('📝 API Registration result:', result);
-      
+
       if (result.success) {
         setIsAuthenticated(true);
         setUser(result.user);
@@ -127,12 +129,16 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       console.log('👋 Logging out...');
-      
+
       await authService.logout();
       console.log('✅ Logout successful');
+
+      clearAllFilters();
     } catch (error) {
       console.error('🚨 Logout error:', error);
     } finally {
+
+
       setIsAuthenticated(false);
       setUser(null);
       setError(null);
@@ -140,11 +146,33 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Clear all filter and page state data from localStorage
+  const clearAllFilters = () => {
+    const keysToRemove = Object.keys(localStorage).filter(key =>
+      key.endsWith('Filters') ||
+      key.endsWith('PageState') ||
+      key.endsWith('Settings') ||
+      key.includes('selectedItems') ||
+      key.includes('sortBy') ||
+      key.includes('sortOrder') ||
+      key.includes('pageSize') ||
+      key.includes('currentPage') ||
+      key.includes('tdp_selectedWorkId') ||
+      key.includes('tdp_selectedGroupIds')
+    );
+
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+      console.log('🧹 Cleared localStorage key:', key);
+    });
+
+    console.log(`🧹 Cleared ${keysToRemove.length} filter/state keys from localStorage`);
+  };
   const refreshToken = async () => {
     try {
       console.log('🔄 Refreshing token...');
       const result = await authService.refreshToken();
-      
+
       if (result.success) {
         console.log('✅ Token refresh successful');
         return true;
@@ -187,7 +215,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     error,
-    
+
     // Actions
     login,
     register,
@@ -195,7 +223,7 @@ export const AuthProvider = ({ children }) => {
     refreshToken,
     updateUser,
     clearError,
-    
+
     // Helpers
     isTokenExpired: authService.isTokenExpired,
     getToken: authService.getToken

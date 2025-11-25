@@ -29,10 +29,10 @@ const ItemDetail = ({ item, itemGroups, loading, onEdit, onDelete }) => {
         <div className="col-md-6">
           <div className="detail-section mb-4">
             <h6 className="text-muted mb-3">Temel Bilgiler</h6>
-            <div className="detail-item mb-2">
+            {/* <div className="detail-item mb-2">
               <strong>Numara:</strong>
               <span className="ms-2">{item.number}</span>
-            </div>
+            </div> */}
             <div className="detail-item mb-2">
               <strong>Kod:</strong>
               <span className="ms-2">{item.code}</span>

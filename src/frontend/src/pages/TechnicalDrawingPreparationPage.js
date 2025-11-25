@@ -11,12 +11,18 @@ const TechnicalDrawingPreparationPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
-  // States
+  // ✅ localStorage'dan state yükle
   const [loading, setLoading] = useState(false);
   const [works, setWorks] = useState([]);
-  const [selectedWorkId, setSelectedWorkId] = useState(null);
+  const [selectedWorkId, setSelectedWorkId] = useState(() => {
+    const saved = localStorage.getItem('tdp_selectedWorkId');
+    return saved ? parseInt(saved) : null;
+  });
   const [itemGroups, setItemGroups] = useState([]);
-  const [selectedGroupIds, setSelectedGroupIds] = useState([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState(() => {
+    const saved = localStorage.getItem('tdp_selectedGroupIds');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [items, setItems] = useState([]);
   const [filterMissing, setFilterMissing] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -25,6 +31,24 @@ const TechnicalDrawingPreparationPage = () => {
   useEffect(() => {
     loadWorks();
   }, []);
+
+  // ✅ selectedWorkId değiştiğinde localStorage'a kaydet
+  useEffect(() => {
+    if (selectedWorkId) {
+      localStorage.setItem('tdp_selectedWorkId', selectedWorkId.toString());
+    } else {
+      localStorage.removeItem('tdp_selectedWorkId');
+    }
+  }, [selectedWorkId]);
+
+  // ✅ selectedGroupIds değiştiğinde localStorage'a kaydet
+  useEffect(() => {
+    if (selectedGroupIds.length > 0) {
+      localStorage.setItem('tdp_selectedGroupIds', JSON.stringify(selectedGroupIds));
+    } else {
+      localStorage.removeItem('tdp_selectedGroupIds');
+    }
+  }, [selectedGroupIds]);
 
   // Load item groups when work is selected
   useEffect(() => {

@@ -7,7 +7,7 @@ const ItemFileUpload = ({
   itemId,
   uploadedFiles, 
   onFileUpload, 
-  onDeleteFile, 
+  onFileDeleted, 
   onDeleteMultiple,
   onPreviewFile,
   uploading, 
@@ -274,7 +274,7 @@ const ItemFileUpload = ({
                           {file.isPdf && (
                             <button
                               className="btn btn-outline-primary py-0 px-1"
-                              onClick={() => onPreviewFile(file.id)}
+                              onClick={() => onPreviewFile(file)}
                               disabled={loading}
                               title="PDF Önizle"
                               style={{ fontSize: '0.7rem' }}
@@ -295,7 +295,7 @@ const ItemFileUpload = ({
                             className="btn btn-outline-danger py-0 px-1"
                             onClick={() => {
                               if (window.confirm('Bu dosyayı silmek istediğinizden emin misiniz?')) {
-                                onDeleteFile(file.id);
+                                onFileDeleted(file.id);
                               }
                             }}
                             disabled={loading}
