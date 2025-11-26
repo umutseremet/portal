@@ -26,6 +26,8 @@ public class User
     public string Mail { get; set; } = string.Empty;
     public bool Admin { get; set; }
     public string FullName => $"{FirstName} {LastName}".Trim();
+    public string RedmineUsername { get; set; } = string.Empty;
+    public string RedminePassword { get; set; } = string.Empty;
 }
 
 public class RedmineUserResponse

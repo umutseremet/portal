@@ -41,14 +41,15 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       children: [
         { id: 'items', label: 'Ürünler', path: '/definitions/items' },
         { id: 'item-groups', label: 'Ürün Grupları', path: '/definitions/item-groups' },
+        { id: 'permissions', label: 'Yetki Yönetimi', path: '/definitions/permissions' }, // ← EKLE
       ]
     },
-    // {
-    //   id: 'vehicles',
-    //   label: 'Araç Takip',
-    //   icon: 'bi-truck',
-    //   path: '/vehicles'
-    // },
+    {
+      id: 'vehicles',
+      label: 'Araç Takip',
+      icon: 'bi-truck',
+      path: '/vehicles'
+    },
     {
       id: 'visitors',
       label: 'Ziyaretçi Takip',

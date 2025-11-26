@@ -69,6 +69,8 @@ builder.Services.AddScoped<IVehicleLogService, VehicleLogService>();
 
 builder.Services.AddScoped<BomExcelParserService>();
 
+builder.Services.AddScoped<PermissionService>();
+
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10MB

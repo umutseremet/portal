@@ -41,7 +41,7 @@ class ApiService {
       return true;
     }
   }
- 
+
   // src/frontend/src/services/api.js içine eklenecek metodlar
 
   // ===== TECHNICAL DRAWING PREPARATION ENDPOINTS =====
@@ -137,7 +137,7 @@ class ApiService {
    * Backend: POST /api/TechnicalDrawingPreparation/download-zip
    * Note: This is handled directly in the component using fetch for blob download
    */
-  
+
   // Generic API call method
   async apiCall(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
@@ -169,7 +169,7 @@ class ApiService {
           localStorage.removeItem('user');
 
           // window.location.href = '/login';  // ✅ BU SATIRI EKLE
-          
+
           throw new Error('Oturum süresi doldu. Lütfen tekrar giriş yapın.');
         }
 
@@ -2079,6 +2079,200 @@ class ApiService {
       throw error;
     }
   }
+
+  // =============================================================================
+  // API.JS'E EKLENECEK KOD - YETKİ YÖNETİMİ METODLARI (JWT TABANLI)
+  // =============================================================================
+  // NOT: Bu metodları api.js dosyasının sonuna (export'tan önce) ekleyin
+  // ARTIK CREDENTİALS PARAMETRES İYOK - JWT TOKEN'DAN OTOMATIK ALINIYOR!
+  // =============================================================================
+
+  // ===== PERMISSION MANAGEMENT ENDPOINTS =====
+  // JWT TOKEN'DAN CREDENTİALS ALINIYOR - BODY BOŞ VEYA SADECE GEREKLI DATA
+
+  /**
+   * Yetki yönetimi ana ekranı için tüm bilgileri getir
+   * Backend JWT token'dan Redmine credentials'ı alıyor
+   */
+  async getPermissionManagement() {
+    console.log('📦 API getPermissionManagement call (JWT-based)');
+
+
+    const userStr = localStorage.getItem('user');
+      let username = '';
+      let password = '';
+
+      console.log('umut');
+      console.log(userStr);
+      
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          username = user.login || user.username || user.email || '';
+          password = user.password || '';
+        } catch (e) {
+          console.warn('User bilgisi parse edilemedi:', e);
+        }
+      }
+
+      // ✅ Backend POST /api/BomWorks/list bekliyor + credentials
+      const requestBody = { 
+        username,
+        password
+      };
+      
+    try {
+      // Body boş gönder - backend JWT'den alacak
+      const response = await this.post('/Permissions/management', requestBody);
+      console.log('📦 API getPermissionManagement response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API getPermissionManagement error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Kullanıcıları listele
+   * Backend JWT token'dan Redmine credentials'ı alıyor
+   */
+  async getPermissionUsers() {
+    console.log('📦 API getPermissionUsers call (JWT-based)');
+
+    try {
+      const response = await this.post('/Permissions/users', {});
+      console.log('📦 API getPermissionUsers response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API getPermissionUsers error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Grupları listele
+   * Backend JWT token'dan Redmine credentials'ı alıyor
+   */
+  async getPermissionGroups() {
+    console.log('📦 API getPermissionGroups call (JWT-based)');
+
+    try {
+      const response = await this.post('/Permissions/groups', {});
+      console.log('📦 API getPermissionGroups response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API getPermissionGroups error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Özel alanları getir
+   * Backend JWT token'dan Redmine credentials'ı alıyor
+   */
+  async getPermissionCustomFields() {
+    console.log('📦 API getPermissionCustomFields call (JWT-based)');
+
+    try {
+      const response = await this.post('/Permissions/custom-fields', {});
+      console.log('📦 API getPermissionCustomFields response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API getPermissionCustomFields error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Kullanıcı yetki güncelle
+   * Backend JWT token'dan Redmine credentials'ı alıyor
+   * @param {number} userId - Kullanıcı ID
+   * @param {object} data - {customFieldId, value}
+   */
+  async updateUserPermission(userId, data) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    if (!data || data.customFieldId === undefined) {
+      throw new Error('customFieldId is required');
+    }
+
+    console.log('📦 API updateUserPermission call (JWT-based):', { userId, customFieldId: data.customFieldId });
+
+    try {
+      const response = await this.put(`/Permissions/users/${userId}/permissions`, {
+        customFieldId: data.customFieldId,
+        value: data.value || ''
+      });
+
+      console.log('✅ API updateUserPermission response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API updateUserPermission error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Grup yetki güncelle
+   * Backend JWT token'dan Redmine credentials'ı alıyor
+   * @param {number} groupId - Grup ID
+   * @param {object} data - {customFieldId, value}
+   */
+  async updateGroupPermission(groupId, data) {
+    if (!groupId) {
+      throw new Error('Group ID is required');
+    }
+    if (!data || data.customFieldId === undefined) {
+      throw new Error('customFieldId is required');
+    }
+
+    console.log('📦 API updateGroupPermission call (JWT-based):', { groupId, customFieldId: data.customFieldId });
+
+    try {
+      const response = await this.put(`/Permissions/groups/${groupId}/permissions`, {
+        customFieldId: data.customFieldId,
+        value: data.value || ''
+      });
+
+      console.log('✅ API updateGroupPermission response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API updateGroupPermission error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Login sırasında kullanıcı yetkilerini getir
+   * Backend JWT token'dan Redmine credentials'ı alıyor
+   * @param {number} userId - Kullanıcı ID
+   */
+  async getUserLoginPermissions(userId) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    console.log('📦 API getUserLoginPermissions call (JWT-based):', { userId });
+
+    try {
+      const response = await this.post('/Permissions/user-login-permissions', {
+        userId: userId
+      });
+
+      console.log('✅ API getUserLoginPermissions response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ API getUserLoginPermissions error:', error);
+      throw error;
+    }
+  }
+
+
+  // =============================================================================
+  // YUKARIDAKI KODU api.js DOSYASININ SONUNA EKLEYIN
+  // export default apiService; SATIRINDAN HEMEN ÖNCE
+  // =============================================================================
 }
 
 // Create a single instance

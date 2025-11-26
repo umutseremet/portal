@@ -23,6 +23,8 @@ import ItemsPage from './pages/ItemsPage';
 import ItemGroupsPage from './pages/ItemGroupsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
 import ItemEditPage from './pages/ItemEditPage';
+import PermissionManagementPage from './pages/PermissionManagementPage';
+
 import './App.css';
 import TechnicalDrawingPreparationPage from './pages/TechnicalDrawingPreparationPage';
 
@@ -188,6 +190,17 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <ItemGroupsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/definitions/permissions"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PermissionManagementPage />
                   </Layout>
                 </ProtectedRoute>
               }

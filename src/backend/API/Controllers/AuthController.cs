@@ -51,6 +51,9 @@ public class AuthController : ControllerBase
                 return Unauthorized(new ErrorResponse { Message = "Kullanıcı adı veya şifre hatalı" });
             }
 
+            user.RedmineUsername = request.Username;
+            user.RedminePassword = request.Password;
+
             // JWT token oluştur
             var token = GenerateJwtToken(user);
             var expiresAt = DateTime.Now.AddMinutes(_configuration.GetValue<int>("JwtSettings:ExpiryMinutes", 60));
@@ -122,7 +125,10 @@ public class AuthController : ControllerBase
             new Claim("username", user.Login),
             new Claim("email", user.Mail),
             new Claim("fullname", user.FullName),
-            new Claim("admin", user.Admin.ToString().ToLower())
+            new Claim("admin", user.Admin.ToString().ToLower()),
+            new Claim("redmine_username", user.RedmineUsername?? user.Login),
+            new Claim("redmine_password", user.RedminePassword?? string.Empty)
+
         };
 
         var tokenDescriptor = new SecurityTokenDescriptor

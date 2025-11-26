@@ -129,6 +129,15 @@ export const API_ENDPOINTS = {
     CREATE: '/Visitors',
     UPDATE: '/Visitors',
     DELETE: '/Visitors'
+  },
+  PERMISSIONS: {
+    MANAGEMENT: '/Permissions/management',
+    USERS: '/Permissions/users',
+    GROUPS: '/Permissions/groups',
+    CUSTOM_FIELDS: '/Permissions/custom-fields',
+    UPDATE_USER: '/Permissions/users', // /{userId}/permissions ile kullanılacak
+    UPDATE_GROUP: '/Permissions/groups', // /{groupId}/permissions ile kullanılacak
+    USER_LOGIN_PERMISSIONS: '/Permissions/user-login-permissions'
   }
 };
 
