@@ -25,18 +25,31 @@ const PermissionManagementPage = () => {
     try {
       setLoading(true);
 
-      // JWT token'dan otomatik alınacak - body göndermeye gerek YOK
+      console.log('🔄 Loading permission data...');
       const response = await apiService.getPermissionManagement();
+      console.log('✅ Permission data loaded:', response);
 
       setUsers(response.users || []);
       setGroups(response.groups || []);
       setUserCustomFields(response.userCustomFields || []);
       setGroupCustomFields(response.groupCustomFields || []);
+
+      // Log permissions for debugging
+      console.log('📊 Users with permissions:', response.users?.filter(u => u.permissions?.length > 0).length);
+      console.log('📊 Groups with permissions:', response.groups?.filter(g => g.permissions?.length > 0).length);
     } catch (error) {
-      console.error('Yetki bilgileri yüklenemedi:', error);
+      console.error('❌ Yetki bilgileri yüklenemedi:', error);
+      alert('Yetki bilgileri yüklenirken bir hata oluştu: ' + error.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ Artık API çağrısına gerek yok - zaten ilk yüklemede permissions geliyor
+  const handleViewPermissions = (entity) => {
+    console.log('👁️ Viewing permissions for:', entity);
+    console.log('📋 Entity permissions:', entity.permissions);
+    setSelectedEntity(entity);
   };
 
   const handleEditPermission = (entity, customField) => {
@@ -49,8 +62,8 @@ const PermissionManagementPage = () => {
   };
 
   const getCurrentPermissionValue = (entity, customFieldId) => {
-    const permissions = activeTab === 'users' ? entity.permissions : entity.permissions;
-    const permission = permissions?.find(p => p.customFieldId === customFieldId);
+    const permissions = entity.permissions || [];
+    const permission = permissions.find(p => p.customFieldId === customFieldId);
     return permission?.permissionValue || '';
   };
 
@@ -59,6 +72,12 @@ const PermissionManagementPage = () => {
 
     try {
       setSaving(true);
+
+      console.log('💾 Saving permission:', {
+        entityId: editingPermission.entity.id,
+        customFieldId: editingPermission.customField.id,
+        value: editingPermission.value
+      });
 
       // Yeni API metodlarını kullan - JWT'den credentials alınacak
       if (activeTab === 'users') {
@@ -81,10 +100,14 @@ const PermissionManagementPage = () => {
 
       // Başarılı - listeyi yenile
       await loadPermissionData();
+      
       setEditingPermission(null);
+      setSelectedEntity(null); // Modal'ı kapat
+      
+      alert('Yetki başarıyla güncellendi');
     } catch (error) {
-      console.error('Yetki güncellenemedi:', error);
-      alert('Yetki güncellenirken bir hata oluştu');
+      console.error('❌ Yetki güncellenemedi:', error);
+      alert('Yetki güncellenirken bir hata oluştu: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -120,10 +143,15 @@ const PermissionManagementPage = () => {
       <td>
         <button
           className="btn btn-sm btn-primary"
-          onClick={() => setSelectedEntity(user)}
+          onClick={() => handleViewPermissions(user)}
         >
           <i className="bi bi-shield-lock me-1"></i>
           Yetkileri Görüntüle
+          {user.permissions && user.permissions.length > 0 && (
+            <span className="badge bg-light text-dark ms-1">
+              {user.permissions.length}
+            </span>
+          )}
         </button>
       </td>
     </tr>
@@ -145,10 +173,15 @@ const PermissionManagementPage = () => {
       <td>
         <button
           className="btn btn-sm btn-primary"
-          onClick={() => setSelectedEntity(group)}
+          onClick={() => handleViewPermissions(group)}
         >
           <i className="bi bi-shield-lock me-1"></i>
           Yetkileri Görüntüle
+          {group.permissions && group.permissions.length > 0 && (
+            <span className="badge bg-light text-dark ms-1">
+              {group.permissions.length}
+            </span>
+          )}
         </button>
       </td>
     </tr>
@@ -182,7 +215,7 @@ const PermissionManagementPage = () => {
               {customFields.length === 0 ? (
                 <div className="alert alert-info">
                   <i className="bi bi-info-circle me-2"></i>
-                  Henüz yetki alanı tanımlanmamış. Portal'da özel alanları oluşturun.
+                  Henüz yetki alanı tanımlanmamış. Redmine'da özel alanları oluşturun ve açıklama kısmına <code>#yetki_kullanici</code> veya <code>#yetki_grup</code> ekleyin.
                 </div>
               ) : (
                 <div className="permission-list">
@@ -221,24 +254,24 @@ const PermissionManagementPage = () => {
                 </div>
               )}
 
-              {isUser && selectedEntity.permissions && selectedEntity.permissions.length > 0 && (
+              {selectedEntity.permissions && selectedEntity.permissions.length > 0 && (
                 <div className="mt-4">
                   <h6 className="text-muted mb-3">
                     <i className="bi bi-info-circle me-2"></i>
                     Mevcut Yetkiler
                   </h6>
                   <div className="table-responsive">
-                    <table className="table table-sm">
-                      <thead>
+                    <table className="table table-sm table-bordered">
+                      <thead className="table-light">
                         <tr>
-                          <th>Yetki</th>
+                          <th>Yetki Alanı</th>
                           <th>Değer</th>
                         </tr>
                       </thead>
                       <tbody>
                         {selectedEntity.permissions.map((perm, idx) => (
                           <tr key={idx}>
-                            <td>{perm.permissionKey}</td>
+                            <td>{perm.customFieldName || perm.permissionKey}</td>
                             <td><code>{perm.permissionValue}</code></td>
                           </tr>
                         ))}
@@ -402,6 +435,7 @@ const PermissionManagementPage = () => {
           <button
             className="btn btn-outline-primary"
             onClick={loadPermissionData}
+            disabled={loading}
           >
             <i className="bi bi-arrow-clockwise me-2"></i>
             Yenile
@@ -412,7 +446,7 @@ const PermissionManagementPage = () => {
       {/* Info Alert */}
       <div className="alert alert-info mb-4">
         <i className="bi bi-info-circle me-2"></i>
-        <strong>Bilgi:</strong> Yetkiler Portal'da tanımlanan özel alanlar üzerinden yönetilir.
+        <strong>Bilgi:</strong> Yetkiler Redmine'da tanımlanan özel alanlar üzerinden yönetilir.
         Açıklama alanında <code>#yetki_kullanici</code> veya <code>#yetki_grup</code> öneki
         olan alanlar yetki alanı olarak kullanılır.
       </div>

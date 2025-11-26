@@ -131,7 +131,7 @@
             public DateTime? UpdatedOn { get; set; }
             public DateTime? LastLoginOn { get; set; }
             public int Status { get; set; }
-            public List<RedmineCustomFieldValue>? CustomFields { get; set; }
+            public List<RedmineCustomFieldValue>? Custom_Fields { get; set; }
         }
 
         public class RedmineGroupsResponse
