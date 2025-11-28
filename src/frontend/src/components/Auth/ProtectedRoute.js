@@ -1,69 +1,65 @@
+// src/frontend/src/components/Auth/ProtectedRoute.js
+
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
+import permissionService from '../../services/permissionService';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading, error } = useAuth();
-  const location = useLocation();
-
-  // Show loading spinner while checking authentication
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
-        <div className="text-center">
-          <div className="spinner-border text-danger mb-3" style={{ width: '3rem', height: '3rem' }}>
-            <span className="visually-hidden">Yükleniyor...</span>
-          </div>
-          <h5 className="text-muted mb-2">Sistem yükleniyor...</h5>
-          <p className="text-muted small">Kimlik doğrulaması kontrol ediliyor</p>
-          
-          {/* API Connection Status */}
-          <div className="mt-3">
-            <div className="d-flex justify-content-center align-items-center">
-              <div className="spinner-grow spinner-grow-sm text-info me-2" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-              <small className="text-muted">API bağlantısı kontrol ediliyor...</small>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+/**
+ * Protected Route Component
+ * Yetki kontrolü ile sayfa erişimini sınırlandırır
+ * 
+ * Kullanım:
+ * <ProtectedRoute permission="yetki_kullanici_data_cam_hazirlama">
+ *   <YourComponent />
+ * </ProtectedRoute>
+ * 
+ * veya
+ * 
+ * <ProtectedRoute requireAdmin={true}>
+ *   <AdminOnlyComponent />
+ * </ProtectedRoute>
+ */
+const ProtectedRoute = ({ 
+  children, 
+  permission = null, 
+  permissions = null, // Birden fazla yetki için (OR mantığı)
+  requireAll = false, // true ise tüm yetkiler gerekli (AND mantığı)
+  requireAdmin = false,
+  redirectTo = '/dashboard' 
+}) => {
+  
+  // Admin kontrolü
+  if (requireAdmin && !permissionService.isAdmin()) {
+    console.warn('🚫 Access denied: Admin permission required');
+    return <Navigate to={redirectTo} replace />;
   }
 
-  // Show error if there's an authentication error
-  if (error && !isAuthenticated) {
-    return (
-      <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
-        <div className="text-center">
-          <div className="alert alert-danger d-inline-flex align-items-center" role="alert">
-            <i className="bi bi-exclamation-triangle-fill me-2"></i>
-            <div>
-              <strong>Kimlik Doğrulama Hatası</strong>
-              <div className="small mt-1">{error}</div>
-            </div>
-          </div>
-          <div className="mt-3">
-            <button 
-              className="btn btn-danger"
-              onClick={() => window.location.href = '/login'}
-            >
-              <i className="bi bi-box-arrow-in-right me-2"></i>
-              Giriş Sayfasına Git
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+  // Tekil yetki kontrolü
+  if (permission && !permissionService.hasPermission(permission)) {
+    console.warn(`🚫 Access denied: Missing permission ${permission}`);
+    return <Navigate to={redirectTo} replace />;
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    // Save the attempted location for redirecting after login
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  // Çoklu yetki kontrolü
+  if (permissions && Array.isArray(permissions) && permissions.length > 0) {
+    let hasAccess = false;
+
+    if (requireAll) {
+      // Tüm yetkiler gerekli (AND mantığı)
+      hasAccess = permissionService.hasAllPermissions(permissions);
+    } else {
+      // En az bir yetki yeterli (OR mantığı)
+      hasAccess = permissionService.hasAnyPermission(permissions);
+    }
+
+    if (!hasAccess) {
+      const logic = requireAll ? 'all of' : 'any of';
+      console.warn(`🚫 Access denied: Missing ${logic} permissions:`, permissions);
+      return <Navigate to={redirectTo} replace />;
+    }
   }
 
-  // User is authenticated, render the protected component
+  // Yetki kontrolü geçti, children'ı render et
   return children;
 };
 

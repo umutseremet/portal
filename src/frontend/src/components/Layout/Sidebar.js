@@ -1,36 +1,46 @@
 // src/frontend/src/components/Layout/Sidebar.js
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import permissionService from '../../services/permissionService';
 
 const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedGroups, setExpandedGroups] = useState({});
 
-  // Menu items configuration
-  const menuItems = [
+  // Menu items configuration WITH PERMISSIONS
+  const allMenuItems = [
     {
       id: 'dashboard',
       label: 'Dashboard',
       icon: 'bi-speedometer2',
-      path: '/dashboard'
+      path: '/dashboard',
+      permission: null // Dashboard herkese açık
     },
     {
       id: 'production',
       label: 'Üretim',
       icon: 'bi-tools',
+      permission: null, // Ana grup herkese açık, alt öğeler kendi yetkilerini kontrol eder
       children: [
-        { id: 'bom-transfer', label: 'BOM Listesi Aktarımı', path: '/production/bom-transfer' },
-         { id: 'data-cam', label: 'Data / CAM Hazırlama', path: '/production/technical-drawing-preparation' },
-        // { id: 'production-planning', label: 'Üretim Planlama', path: '/production/planning' },
-        // { id: 'production-tracking', label: 'Üretim Takip', path: '/production/tracking' },
-        // { id: 'reports', label: 'Raporlar', path: '/production/reports' }
-
+        { 
+          id: 'bom-transfer', 
+          label: 'BOM Listesi Aktarımı', 
+          path: '/production/bom-transfer',
+          permission: 'yetki_kullanici_bom_listesi_aktarim'
+        },
+        { 
+          id: 'data-cam', 
+          label: 'Data / CAM Hazırlama', 
+          path: '/production/technical-drawing-preparation',
+          permission: 'yetki_kullanici_data_cam_hazirlama'
+        },
         {
           id: 'weekly-calendar',
           label: 'Haftalık Üretim Planı',
           icon: 'bi-calendar3',
-          path: '/production/weekly-calendar'
+          path: '/production/weekly-calendar',
+          permission: null // Herkes görebilir, sadece düzenleme yetkili
         }
       ]
     },
@@ -38,25 +48,86 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       id: 'definitions',
       label: 'Tanımlamalar',
       icon: 'bi-gear-fill',
+      permission: null,
       children: [
-        { id: 'items', label: 'Ürünler', path: '/definitions/items' },
-        { id: 'item-groups', label: 'Ürün Grupları', path: '/definitions/item-groups' },
-        { id: 'permissions', label: 'Yetki Yönetimi', path: '/definitions/permissions' }, // ← EKLE
+        { 
+          id: 'items', 
+          label: 'Ürünler', 
+          path: '/definitions/items',
+          permission: 'yetki_kullanici_urun_guncelle'
+        },
+        { 
+          id: 'item-groups', 
+          label: 'Ürün Grupları', 
+          path: '/definitions/item-groups',
+          permission: 'yetki_kullanici_urun_guncelle'
+        },
+        { 
+          id: 'permissions', 
+          label: 'Yetki Yönetimi', 
+          path: '/definitions/permissions',
+          permission: null, // Admin kontrolü ayrıca yapılacak
+          requireAdmin: true // Bu menü sadece admin'e gösterilir
+        }
       ]
     },
     {
       id: 'vehicles',
       label: 'Araç Takip',
       icon: 'bi-truck',
-      path: '/vehicles'
+      path: '/vehicles',
+      permission: null
     },
     {
       id: 'visitors',
       label: 'Ziyaretçi Takip',
       icon: 'bi-people-fill',
-      path: '/visitors'
+      path: '/visitors',
+      permission: null
     }
   ];
+
+  // Filter menu items based on permissions
+  const menuItems = useMemo(() => {
+    const filterMenuItems = (items) => {
+      return items
+        .map(item => {
+          // Admin kontrolü
+          if (item.requireAdmin && !permissionService.isAdmin()) {
+            return null; // Admin değilse gösterme
+          }
+
+          // Grup öğesi ise
+          if (item.children) {
+            // Alt öğeleri filtrele
+            const filteredChildren = filterMenuItems(item.children);
+            
+            // Eğer hiç alt öğe kalmadıysa, bu grubu gösterme
+            if (filteredChildren.length === 0) {
+              return null;
+            }
+            
+            return {
+              ...item,
+              children: filteredChildren
+            };
+          }
+          
+          // Tekil menü öğesi - yetki kontrolü
+          if (item.permission) {
+            // Yetki kontrolü yap
+            if (!permissionService.hasPermission(item.permission)) {
+              return null; // Yetkisi yoksa gösterme
+            }
+          }
+          
+          return item;
+        })
+        .filter(item => item !== null); // null olanları çıkar
+    };
+
+    return filterMenuItems(allMenuItems);
+  }, []); // Component mount olduğunda bir kez hesapla
 
   // Check if current path is active
   const isActive = (path) => {

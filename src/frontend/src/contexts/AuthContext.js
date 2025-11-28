@@ -1,3 +1,4 @@
+// src/frontend/src/contexts/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
 
@@ -73,12 +74,51 @@ export const AuthProvider = ({ children }) => {
       console.log('🔐 API Login result:', result);
 
       if (result.success) {
-
         clearAllFilters();
-        setIsAuthenticated(true);
-        setUser(result.user);
-        console.log('✅ Login successful:', result.user);
-        return { success: true, user: result.user };
+        
+        // ✅ YENİ: Login sonrası kullanıcı yetkilerini çek
+        try {
+          console.log('🔑 Fetching user permissions for userId:', result.user.id);
+          
+          // apiService'i import et
+          const apiService = (await import('../services/api')).default;
+          const permissionsResult = await apiService.getUserLoginPermissions(result.user.id);
+          
+          console.log('🔑 Permissions API response:', permissionsResult);
+          
+          if (permissionsResult && permissionsResult.permissions) {
+            // Kullanıcı bilgilerine yetkileri ekle
+            const updatedUser = {
+              ...result.user,
+              permissions: permissionsResult.permissions,
+              isAdmin: permissionsResult.isAdmin || false
+            };
+            
+            // localStorage'ı güncelle
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            
+            setUser(updatedUser);
+            setIsAuthenticated(true);
+            console.log('✅ Login successful with permissions:', {
+              user: updatedUser.login || updatedUser.username,
+              isAdmin: updatedUser.isAdmin,
+              permissionCount: updatedUser.permissions.length
+            });
+            
+            return { success: true, user: updatedUser };
+          } else {
+            // Yetkiler alınamadıysa da giriş başarılı
+            console.warn('⚠️ Permissions not loaded, continuing with basic user info');
+            setUser(result.user);
+            setIsAuthenticated(true);
+            return { success: true, user: result.user };
+          }
+        } catch (permError) {
+          console.error('⚠️ Failed to load permissions, continuing with basic user info:', permError);
+          setUser(result.user);
+          setIsAuthenticated(true);
+          return { success: true, user: result.user };
+        }
       } else {
         console.log('❌ Login failed:', result.error);
         setError(result.error);
@@ -99,25 +139,19 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      console.log('📝 Attempting registration with API...', userData);
-
       const result = await authService.register(userData);
-
-      console.log('📝 API Registration result:', result);
 
       if (result.success) {
         setIsAuthenticated(true);
         setUser(result.user);
-        console.log('✅ Registration successful:', result.user);
         return { success: true, user: result.user };
       } else {
-        console.log('❌ Registration failed:', result.error);
         setError(result.error);
         return { success: false, error: result.error };
       }
     } catch (error) {
-      console.error('🚨 Registration error:', error);
-      const errorMessage = 'Kayıt sırasında beklenmeyen bir hata oluştu. API bağlantısını kontrol edin.';
+      console.error('🚨 Register error:', error);
+      const errorMessage = 'Kayıt sırasında beklenmeyen bir hata oluştu.';
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -137,8 +171,6 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('🚨 Logout error:', error);
     } finally {
-
-
       setIsAuthenticated(false);
       setUser(null);
       setError(null);
@@ -168,6 +200,7 @@ export const AuthProvider = ({ children }) => {
 
     console.log(`🧹 Cleared ${keysToRemove.length} filter/state keys from localStorage`);
   };
+
   const refreshToken = async () => {
     try {
       console.log('🔄 Refreshing token...');

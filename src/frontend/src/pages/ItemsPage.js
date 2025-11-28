@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import ItemsList from '../components/Items/ItemsList';
 import apiService from '../services/api';
 import '../assets/css/Items.css';
+import permissionService from '../services/permissionService';
 
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
 
@@ -14,6 +15,9 @@ const ItemsPage = () => {
   const navigate = useNavigate();
   const groupFilter = location.state?.groupId;
   const groupName = location.state?.groupName;
+
+  // ✅ YETKİ KONTROLÜ
+  const canEdit = permissionService.hasPermission('yetki_kullanici_urun_guncelle');
 
   // State
   const [items, setItems] = useState([]);
