@@ -268,7 +268,7 @@ public class PermissionService
             // 1. SQL'den yetki custom field'larını al
             var permissionFields = await GetPermissionCustomFieldsFromDatabase();
             var groupPermissionFieldIds = permissionFields
-                .Where(f => f.CustomizedType== "GroupCustomField" &&
+                .Where(f => f.CustomizedType == "GroupCustomField" &&
                            !string.IsNullOrEmpty(f.Description) &&
                            f.Description.Contains("#yetki_grup", StringComparison.OrdinalIgnoreCase))
                 .Select(f => f.Id)
@@ -417,14 +417,14 @@ public class PermissionService
 
             // Kullanıcı alanları
             var userFields = allFields
-                .Where(f => (f.CustomizedType == "user" || f.CustomizedType == "principal") &&
+                .Where(f => f.CustomizedType == "UserCustomField" &&
                            !string.IsNullOrEmpty(f.Description) &&
                            f.Description.Contains("#yetki_kullanici", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             // Grup alanları
             var groupFields = allFields
-                .Where(f => (f.CustomizedType == "group" || f.CustomizedType == "principal") &&
+                .Where(f => f.CustomizedType == "GroupCustomField" &&
                            !string.IsNullOrEmpty(f.Description) &&
                            f.Description.Contains("#yetki_grup", StringComparison.OrdinalIgnoreCase))
                 .ToList();

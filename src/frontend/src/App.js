@@ -1,5 +1,5 @@
 // src/frontend/src/App.js
-// ✅ ROUTE SIRALAMA SORUNU DÜZELTİLDİ
+// ✅ Yetki detay sayfası route'u eklendi
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -24,6 +24,7 @@ import ItemGroupsPage from './pages/ItemGroupsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
 import ItemEditPage from './pages/ItemEditPage';
 import PermissionManagementPage from './pages/PermissionManagementPage';
+import PermissionDetailPage from './pages/PermissionDetailPage'; // ✅ YENİ
 
 import './App.css';
 import TechnicalDrawingPreparationPage from './pages/TechnicalDrawingPreparationPage';
@@ -34,14 +35,10 @@ function App() {
       <ToastProvider>
         <AuthProvider>
           <Routes>
-            {/* ============================================
-                PUBLIC ROUTES
-                ============================================ */}
+            {/* PUBLIC ROUTES */}
             <Route path="/login" element={<Login />} />
 
-            {/* ============================================
-                DASHBOARD
-                ============================================ */}
+            {/* DASHBOARD */}
             <Route
               path="/dashboard"
               element={
@@ -53,12 +50,47 @@ function App() {
               }
             />
 
-            {/* ============================================
-                ARAÇ YÖNETİMİ ROUTES
-                SPESİFİK ROUTES ÖNCE!
-                ============================================ */}
-            
-            {/* Araç Yakıt Alımları */}
+            {/* ARAÇ YÖNETİMİ */}
+            <Route
+              path="/vehicles/new"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehicleFormPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vehicles/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehicleFormPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vehicles/:id"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehicleDetailPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vehicles"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehiclesPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/vehicles/:id/fuel-purchases"
               element={
@@ -70,60 +102,7 @@ function App() {
               }
             />
 
-            {/* Araç Düzenleme */}
-            <Route
-              path="/vehicles/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <VehicleFormPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Yeni Araç */}
-            <Route
-              path="/vehicles/new"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <VehicleFormPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Araç Detay */}
-            <Route
-              path="/vehicles/:id"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <VehicleDetailPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Araç Listesi */}
-            <Route
-              path="/vehicles"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <VehiclesPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* ============================================
-                TANIMLAMALAR ROUTES
-                SPESİFİK ROUTES ÖNCE!
-                ============================================ */}
-            
-            {/* Yeni Ürün Ekleme */}
+            {/* ÜRÜN YÖNETİMİ */}
             <Route 
               path="/definitions/items/new" 
               element={
@@ -134,8 +113,6 @@ function App() {
                 </ProtectedRoute>
               } 
             />
-
-            {/* ✅ DÜZELTİLDİ: Ürün Düzenleme - Her iki pattern için de route tanımlandı */}
             <Route 
               path="/definitions/items/:id/edit" 
               element={
@@ -146,8 +123,6 @@ function App() {
                 </ProtectedRoute>
               } 
             />
-
-            {/* Eski pattern için backward compatibility */}
             <Route 
               path="/definitions/items/edit/:id" 
               element={
@@ -158,8 +133,6 @@ function App() {
                 </ProtectedRoute>
               } 
             />
-
-            {/* Ürün Detay */}
             <Route 
               path="/definitions/items/detail/:id" 
               element={
@@ -170,8 +143,6 @@ function App() {
                 </ProtectedRoute>
               } 
             />
-
-            {/* Ürün Listesi */}
             <Route
               path="/definitions/items"
               element={
@@ -182,8 +153,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            {/* Ürün Grupları */}
             <Route
               path="/definitions/item-groups"
               element={
@@ -195,8 +164,21 @@ function App() {
               }
             />
 
+            {/* YETKİ YÖNETİMİ - ✅ YENİ ROUTE'LAR */}
+            {/* Detay sayfası - ÖNCE bu tanımlanmali */}
             <Route
-              path="/definitions/permissions"
+              path="/permissions/:type/:id"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PermissionDetailPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            {/* Liste sayfası */}
+            <Route
+              path="/permissions"
               element={
                 <ProtectedRoute>
                   <Layout>
@@ -205,49 +187,13 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            {/* ============================================
-                ÜRETİM YÖNETİMİ ROUTES
-                SPESİFİK ROUTES ÖNCE, WILDCARD EN SONA!
-                ============================================ */}
-
-            {/* BOM Transfer */}
+            {/* Eski route için backward compatibility */}
             <Route
-              path="/production/bom-transfer"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <BOMTransferPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
+              path="/definitions/permissions"
+              element={<Navigate to="/permissions" replace />}
             />
 
-            {/* Data/CAM Hazırlama */}
-            <Route
-              path="/production/data-cam"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <DataCamPreparationPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Teknik Resim Hazırlama */}
-            <Route
-              path="/production/technical-drawing-preparation"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <TechnicalDrawingPreparationPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Haftalık Üretim Takvimi */}
+            {/* ÜRETİM YÖNETİMİ */}
             <Route
               path="/production/weekly-calendar"
               element={
@@ -258,10 +204,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            {/* İş Detayları */}
             <Route
-              path="/production/issue-details"
+              path="/production/issue/:issueId"
               element={
                 <ProtectedRoute>
                   <Layout>
@@ -270,8 +214,36 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            {/* ⚠️ WILDCARD ROUTE - EN SONA KOYULDU! */}
+            <Route
+              path="/production/bom-transfer"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <BOMTransferPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/production/datacam-preparation"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <DataCamPreparationPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/production/technical-drawing-preparation"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <TechnicalDrawingPreparationPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/production/*"
               element={
@@ -283,10 +255,7 @@ function App() {
               }
             />
 
-            {/* ============================================
-                ZİYARETÇİ YÖNETİMİ
-                ============================================ */}
-
+            {/* ZİYARETÇİ YÖNETİMİ */}
             <Route
               path="/visitors"
               element={
@@ -298,14 +267,8 @@ function App() {
               }
             />
 
-            {/* ============================================
-                REDIRECT ROUTES
-                ============================================ */}
-
-            {/* Ana sayfa - Haftalık takvime yönlendir */}
+            {/* REDIRECT ROUTES */}
             <Route path="/" element={<Navigate to="/production/weekly-calendar" replace />} />
-            
-            {/* Tanımsız route'lar - Haftalık takvime yönlendir */}
             <Route path="*" element={<Navigate to="/production/weekly-calendar" replace />} />
           </Routes>
         </AuthProvider>

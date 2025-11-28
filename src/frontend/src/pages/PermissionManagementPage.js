@@ -1,21 +1,23 @@
 // src/frontend/src/pages/PermissionManagementPage.js
+// Liste sayfası - Modal yerine detay sayfasına yönlendirme
+
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiService from '../services/api';
 import '../styles/permissions.css';
 
 const PermissionManagementPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('users'); // 'users' or 'groups'
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [userCustomFields, setUserCustomFields] = useState([]);
   const [groupCustomFields, setGroupCustomFields] = useState([]);
-  const [selectedEntity, setSelectedEntity] = useState(null);
-  const [editingPermission, setEditingPermission] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadPermissionData();
@@ -37,6 +39,8 @@ const PermissionManagementPage = () => {
       // Log permissions for debugging
       console.log('📊 Users with permissions:', response.users?.filter(u => u.permissions?.length > 0).length);
       console.log('📊 Groups with permissions:', response.groups?.filter(g => g.permissions?.length > 0).length);
+      console.log('📋 User Custom Fields:', response.userCustomFields);
+      console.log('📋 Group Custom Fields:', response.groupCustomFields);
     } catch (error) {
       console.error('❌ Yetki bilgileri yüklenemedi:', error);
       alert('Yetki bilgileri yüklenirken bir hata oluştu: ' + error.message);
@@ -45,72 +49,11 @@ const PermissionManagementPage = () => {
     }
   };
 
-  // ✅ Artık API çağrısına gerek yok - zaten ilk yüklemede permissions geliyor
-  const handleViewPermissions = (entity) => {
-    console.log('👁️ Viewing permissions for:', entity);
-    console.log('📋 Entity permissions:', entity.permissions);
-    setSelectedEntity(entity);
-  };
-
-  const handleEditPermission = (entity, customField) => {
-    const currentValue = getCurrentPermissionValue(entity, customField.id);
-    setEditingPermission({
-      entity,
-      customField,
-      value: currentValue || ''
+  const handleViewPermissions = (entity, type) => {
+    // Detay sayfasına yönlendir
+    navigate(`/permissions/${type}/${entity.id}`, {
+      state: { entity }
     });
-  };
-
-  const getCurrentPermissionValue = (entity, customFieldId) => {
-    const permissions = entity.permissions || [];
-    const permission = permissions.find(p => p.customFieldId === customFieldId);
-    return permission?.permissionValue || '';
-  };
-
-  const handleSavePermission = async () => {
-    if (!editingPermission) return;
-
-    try {
-      setSaving(true);
-
-      console.log('💾 Saving permission:', {
-        entityId: editingPermission.entity.id,
-        customFieldId: editingPermission.customField.id,
-        value: editingPermission.value
-      });
-
-      // Yeni API metodlarını kullan - JWT'den credentials alınacak
-      if (activeTab === 'users') {
-        await apiService.updateUserPermission(
-          editingPermission.entity.id,
-          {
-            customFieldId: editingPermission.customField.id,
-            value: editingPermission.value
-          }
-        );
-      } else {
-        await apiService.updateGroupPermission(
-          editingPermission.entity.id,
-          {
-            customFieldId: editingPermission.customField.id,
-            value: editingPermission.value
-          }
-        );
-      }
-
-      // Başarılı - listeyi yenile
-      await loadPermissionData();
-      
-      setEditingPermission(null);
-      setSelectedEntity(null); // Modal'ı kapat
-      
-      alert('Yetki başarıyla güncellendi');
-    } catch (error) {
-      console.error('❌ Yetki güncellenemedi:', error);
-      alert('Yetki güncellenirken bir hata oluştu: ' + error.message);
-    } finally {
-      setSaving(false);
-    }
   };
 
   const filteredUsers = users.filter(u =>
@@ -122,8 +65,8 @@ const PermissionManagementPage = () => {
   );
 
   const renderUserRow = (user) => (
-    <tr key={user.id}>
-      <td>
+    <tr key={user.id} style={{ cursor: 'pointer' }}>
+      <td onClick={() => handleViewPermissions(user, 'user')}>
         <div className="user-info">
           <div className="user-avatar">
             {user.firstname?.[0]}{user.lastname?.[0]}
@@ -134,421 +77,280 @@ const PermissionManagementPage = () => {
           </div>
         </div>
       </td>
-      <td>{user.mail || '-'}</td>
-      <td>
+      <td onClick={() => handleViewPermissions(user, 'user')}>
+        {user.mail || '-'}
+      </td>
+      <td onClick={() => handleViewPermissions(user, 'user')}>
         <span className={`badge ${user.status === 1 ? 'bg-success' : 'bg-secondary'}`}>
           {user.status === 1 ? 'Aktif' : 'Pasif'}
         </span>
       </td>
+      <td onClick={() => handleViewPermissions(user, 'user')}>
+        {user.permissions && user.permissions.length > 0 ? (
+          <span className="badge bg-primary">
+            {user.permissions.length} Yetki
+          </span>
+        ) : (
+          <span className="badge bg-secondary">
+            Yetki Yok
+          </span>
+        )}
+      </td>
       <td>
         <button
           className="btn btn-sm btn-primary"
-          onClick={() => handleViewPermissions(user)}
+          onClick={() => handleViewPermissions(user, 'user')}
         >
           <i className="bi bi-shield-lock me-1"></i>
           Yetkileri Görüntüle
-          {user.permissions && user.permissions.length > 0 && (
-            <span className="badge bg-light text-dark ms-1">
-              {user.permissions.length}
-            </span>
-          )}
         </button>
       </td>
     </tr>
   );
 
   const renderGroupRow = (group) => (
-    <tr key={group.id}>
-      <td>
+    <tr key={group.id} style={{ cursor: 'pointer' }}>
+      <td onClick={() => handleViewPermissions(group, 'group')}>
         <div className="group-info">
           <i className="bi bi-people-fill me-2 text-primary"></i>
           <strong>{group.name}</strong>
         </div>
       </td>
-      <td>
+      <td onClick={() => handleViewPermissions(group, 'group')}>
         <span className="badge bg-info">
           {group.users?.length || 0} Kullanıcı
         </span>
       </td>
+      <td onClick={() => handleViewPermissions(group, 'group')}>
+        {group.permissions && group.permissions.length > 0 ? (
+          <span className="badge bg-primary">
+            {group.permissions.length} Yetki
+          </span>
+        ) : (
+          <span className="badge bg-secondary">
+            Yetki Yok
+          </span>
+        )}
+      </td>
       <td>
         <button
           className="btn btn-sm btn-primary"
-          onClick={() => handleViewPermissions(group)}
+          onClick={() => handleViewPermissions(group, 'group')}
         >
           <i className="bi bi-shield-lock me-1"></i>
           Yetkileri Görüntüle
-          {group.permissions && group.permissions.length > 0 && (
-            <span className="badge bg-light text-dark ms-1">
-              {group.permissions.length}
-            </span>
-          )}
         </button>
       </td>
     </tr>
   );
 
-  const renderPermissionModal = () => {
-    if (!selectedEntity) return null;
-
-    const customFields = activeTab === 'users' ? userCustomFields : groupCustomFields;
-    const isUser = activeTab === 'users';
-
-    return (
-      <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-        <div className="modal-dialog modal-lg modal-dialog-scrollable">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">
-                <i className="bi bi-shield-lock me-2"></i>
-                {isUser
-                  ? `${selectedEntity.firstname} ${selectedEntity.lastname} - Yetkiler`
-                  : `${selectedEntity.name} - Yetkiler`
-                }
-              </h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setSelectedEntity(null)}
-              ></button>
-            </div>
-            <div className="modal-body">
-              {customFields.length === 0 ? (
-                <div className="alert alert-info">
-                  <i className="bi bi-info-circle me-2"></i>
-                  Henüz yetki alanı tanımlanmamış. Redmine'da özel alanları oluşturun ve açıklama kısmına <code>#yetki_kullanici</code> veya <code>#yetki_grup</code> ekleyin.
-                </div>
-              ) : (
-                <div className="permission-list">
-                  {customFields.map(field => {
-                    const currentValue = getCurrentPermissionValue(selectedEntity, field.id);
-                    return (
-                      <div key={field.id} className="permission-item card mb-3">
-                        <div className="card-body">
-                          <div className="d-flex justify-content-between align-items-start">
-                            <div className="flex-grow-1">
-                              <h6 className="mb-1">{field.name}</h6>
-                              {field.description && (
-                                <small className="text-muted d-block mb-2">
-                                  {field.description}
-                                </small>
-                              )}
-                              <div className="permission-value">
-                                <strong>Mevcut Değer:</strong>{' '}
-                                <span className={currentValue ? 'text-success' : 'text-muted'}>
-                                  {currentValue || 'Tanımlı değil'}
-                                </span>
-                              </div>
-                            </div>
-                            <button
-                              className="btn btn-sm btn-outline-primary"
-                              onClick={() => handleEditPermission(selectedEntity, field)}
-                            >
-                              <i className="bi bi-pencil me-1"></i>
-                              Düzenle
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {selectedEntity.permissions && selectedEntity.permissions.length > 0 && (
-                <div className="mt-4">
-                  <h6 className="text-muted mb-3">
-                    <i className="bi bi-info-circle me-2"></i>
-                    Mevcut Yetkiler
-                  </h6>
-                  <div className="table-responsive">
-                    <table className="table table-sm table-bordered">
-                      <thead className="table-light">
-                        <tr>
-                          <th>Yetki Alanı</th>
-                          <th>Değer</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedEntity.permissions.map((perm, idx) => (
-                          <tr key={idx}>
-                            <td>{perm.customFieldName || perm.permissionKey}</td>
-                            <td><code>{perm.permissionValue}</code></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setSelectedEntity(null)}
-              >
-                Kapat
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderEditModal = () => {
-    if (!editingPermission) return null;
-
-    const { entity, customField, value } = editingPermission;
-
-    return (
-      <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">
-                <i className="bi bi-pencil me-2"></i>
-                Yetki Düzenle
-              </h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setEditingPermission(null)}
-              ></button>
-            </div>
-            <div className="modal-body">
-              <div className="mb-3">
-                <label className="form-label">
-                  <strong>
-                    {activeTab === 'users'
-                      ? `${entity.firstname} ${entity.lastname}`
-                      : entity.name
-                    }
-                  </strong>
-                </label>
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Yetki Alanı</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={customField.name}
-                  disabled
-                />
-                {customField.description && (
-                  <small className="text-muted">{customField.description}</small>
-                )}
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Değer</label>
-                {customField.fieldFormat === 'bool' ? (
-                  <select
-                    className="form-select"
-                    value={value}
-                    onChange={(e) => setEditingPermission({ ...editingPermission, value: e.target.value })}
-                  >
-                    <option value="">Seçiniz</option>
-                    <option value="1">Evet</option>
-                    <option value="0">Hayır</option>
-                  </select>
-                ) : customField.possibleValues && customField.possibleValues.length > 0 ? (
-                  <select
-                    className="form-select"
-                    value={value}
-                    onChange={(e) => setEditingPermission({ ...editingPermission, value: e.target.value })}
-                  >
-                    <option value="">Seçiniz</option>
-                    {customField.possibleValues.map((val, idx) => (
-                      <option key={idx} value={val}>{val}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={value}
-                    onChange={(e) => setEditingPermission({ ...editingPermission, value: e.target.value })}
-                    placeholder="Değer giriniz"
-                  />
-                )}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setEditingPermission(null)}
-                disabled={saving}
-              >
-                İptal
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleSavePermission}
-                disabled={saving}
-              >
-                {saving ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2"></span>
-                    Kaydediliyor...
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-check-lg me-1"></i>
-                    Kaydet
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   if (loading) {
     return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Yükleniyor...</span>
+      <div className="container-fluid py-4">
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Yükleniyor...</span>
+          </div>
+          <p className="mt-3 text-muted">Yetki bilgileri yükleniyor...</p>
         </div>
-        <p className="mt-3 text-muted">Yetki bilgileri yükleniyor...</p>
       </div>
     );
   }
 
   return (
-    <div className="permission-management-page">
+    <div className="container-fluid py-4">
       {/* Header */}
-      <div className="page-header mb-4">
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            <h2 className="mb-1">
-              <i className="bi bi-shield-lock me-2 text-primary"></i>
-              Yetki Yönetimi
-            </h2>
-            <p className="text-muted mb-0">
-              Kullanıcı ve grup yetkilerini yönetin
-            </p>
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <h2 className="mb-1">
+                <i className="bi bi-shield-lock me-2 text-primary"></i>
+                Yetki Yönetimi
+              </h2>
+              <p className="text-muted mb-0">
+                Kullanıcı ve grup yetkilerini görüntüleyin ve düzenleyin
+              </p>
+            </div>
+            <button
+              className="btn btn-outline-primary"
+              onClick={loadPermissionData}
+              disabled={loading}
+            >
+              <i className="bi bi-arrow-clockwise me-2"></i>
+              Yenile
+            </button>
           </div>
-          <button
-            className="btn btn-outline-primary"
-            onClick={loadPermissionData}
-            disabled={loading}
-          >
-            <i className="bi bi-arrow-clockwise me-2"></i>
-            Yenile
-          </button>
         </div>
       </div>
 
       {/* Info Alert */}
-      <div className="alert alert-info mb-4">
-        <i className="bi bi-info-circle me-2"></i>
-        <strong>Bilgi:</strong> Yetkiler Redmine'da tanımlanan özel alanlar üzerinden yönetilir.
-        Açıklama alanında <code>#yetki_kullanici</code> veya <code>#yetki_grup</code> öneki
-        olan alanlar yetki alanı olarak kullanılır.
-      </div>
-
-      {/* Tabs */}
-      <ul className="nav nav-tabs mb-4">
-        <li className="nav-item">
-          <button
-            className={`nav-link ${activeTab === 'users' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('users');
-              setSelectedEntity(null);
-            }}
-          >
-            <i className="bi bi-person me-2"></i>
-            Kullanıcılar ({users.length})
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link ${activeTab === 'groups' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('groups');
-              setSelectedEntity(null);
-            }}
-          >
-            <i className="bi bi-people me-2"></i>
-            Gruplar ({groups.length})
-          </button>
-        </li>
-      </ul>
-
-      {/* Search */}
-      <div className="mb-4">
-        <div className="input-group">
-          <span className="input-group-text">
-            <i className="bi bi-search"></i>
-          </span>
-          <input
-            type="text"
-            className="form-control"
-            placeholder={activeTab === 'users' ? 'Kullanıcı ara...' : 'Grup ara...'}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="card">
-        <div className="card-body">
-          <div className="table-responsive">
-            <table className="table table-hover">
-              <thead>
-                <tr>
-                  {activeTab === 'users' ? (
-                    <>
-                      <th>Kullanıcı</th>
-                      <th>E-posta</th>
-                      <th>Durum</th>
-                      <th>İşlemler</th>
-                    </>
-                  ) : (
-                    <>
-                      <th>Grup Adı</th>
-                      <th>Üye Sayısı</th>
-                      <th>İşlemler</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {activeTab === 'users' ? (
-                  filteredUsers.length > 0 ? (
-                    filteredUsers.map(renderUserRow)
-                  ) : (
-                    <tr>
-                      <td colSpan="4" className="text-center text-muted py-4">
-                        {searchTerm ? 'Kullanıcı bulunamadı' : 'Henüz kullanıcı yok'}
-                      </td>
-                    </tr>
-                  )
-                ) : (
-                  filteredGroups.length > 0 ? (
-                    filteredGroups.map(renderGroupRow)
-                  ) : (
-                    <tr>
-                      <td colSpan="3" className="text-center text-muted py-4">
-                        {searchTerm ? 'Grup bulunamadı' : 'Henüz grup yok'}
-                      </td>
-                    </tr>
-                  )
-                )}
-              </tbody>
-            </table>
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="alert alert-info">
+            <i className="bi bi-info-circle me-2"></i>
+            <strong>Bilgi:</strong> Yetkiler Redmine'da tanımlanan özel alanlar üzerinden yönetilir.
+            Açıklama alanında <code>#yetki_kullanici</code> veya <code>#yetki_grup</code> öneki
+            olan alanlar yetki alanı olarak kullanılır. Detay sayfasında tüm yetki alanlarını görüntüleyebilir,
+            mevcut değerleri güncelleyebilir veya yeni değerler atayabilirsiniz.
           </div>
         </div>
       </div>
 
-      {/* Modals */}
-      {renderPermissionModal()}
-      {renderEditModal()}
+      {/* Stats Cards */}
+      <div className="row mb-4">
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex align-items-center">
+                <div className="flex-shrink-0">
+                  <div className="bg-primary bg-opacity-10 p-3 rounded">
+                    <i className="bi bi-person text-primary fs-4"></i>
+                  </div>
+                </div>
+                <div className="flex-grow-1 ms-3">
+                  <h6 className="text-muted mb-1">Toplam Kullanıcı</h6>
+                  <h3 className="mb-0">{users.length}</h3>
+                  <small className="text-success">
+                    {users.filter(u => u.permissions?.length > 0).length} kullanıcıda yetki tanımlı
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex align-items-center">
+                <div className="flex-shrink-0">
+                  <div className="bg-info bg-opacity-10 p-3 rounded">
+                    <i className="bi bi-people text-info fs-4"></i>
+                  </div>
+                </div>
+                <div className="flex-grow-1 ms-3">
+                  <h6 className="text-muted mb-1">Toplam Grup</h6>
+                  <h3 className="mb-0">{groups.length}</h3>
+                  <small className="text-success">
+                    {groups.filter(g => g.permissions?.length > 0).length} grupta yetki tanımlı
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="row mb-3">
+        <div className="col-12">
+          <ul className="nav nav-tabs">
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activeTab === 'users' ? 'active' : ''}`}
+                onClick={() => setActiveTab('users')}
+              >
+                <i className="bi bi-person me-2"></i>
+                Kullanıcılar ({users.length})
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activeTab === 'groups' ? 'active' : ''}`}
+                onClick={() => setActiveTab('groups')}
+              >
+                <i className="bi bi-people me-2"></i>
+                Gruplar ({groups.length})
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="row mb-3">
+        <div className="col-12">
+          <div className="input-group">
+            <span className="input-group-text bg-white">
+              <i className="bi bi-search"></i>
+            </span>
+            <input
+              type="text"
+              className="form-control"
+              placeholder={activeTab === 'users' ? 'Kullanıcı ara...' : 'Grup ara...'}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button
+                className="btn btn-outline-secondary"
+                onClick={() => setSearchTerm('')}
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="row">
+        <div className="col-12">
+          <div className="card">
+            <div className="card-body">
+              <div className="table-responsive">
+                <table className="table table-hover">
+                  <thead className="table-light">
+                    <tr>
+                      {activeTab === 'users' ? (
+                        <>
+                          <th>Kullanıcı</th>
+                          <th>E-posta</th>
+                          <th>Durum</th>
+                          <th>Yetki Durumu</th>
+                          <th>İşlemler</th>
+                        </>
+                      ) : (
+                        <>
+                          <th>Grup Adı</th>
+                          <th>Üye Sayısı</th>
+                          <th>Yetki Durumu</th>
+                          <th>İşlemler</th>
+                        </>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeTab === 'users' ? (
+                      filteredUsers.length > 0 ? (
+                        filteredUsers.map(renderUserRow)
+                      ) : (
+                        <tr>
+                          <td colSpan="5" className="text-center text-muted py-4">
+                            <i className="bi bi-inbox fs-1 d-block mb-2"></i>
+                            {searchTerm ? 'Kullanıcı bulunamadı' : 'Henüz kullanıcı yok'}
+                          </td>
+                        </tr>
+                      )
+                    ) : (
+                      filteredGroups.length > 0 ? (
+                        filteredGroups.map(renderGroupRow)
+                      ) : (
+                        <tr>
+                          <td colSpan="4" className="text-center text-muted py-4">
+                            <i className="bi bi-inbox fs-1 d-block mb-2"></i>
+                            {searchTerm ? 'Grup bulunamadı' : 'Henüz grup yok'}
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
