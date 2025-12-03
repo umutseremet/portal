@@ -44,6 +44,32 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
         }
       ]
     },
+    // ✅ YENİ MENÜ: Talep ve Satınalma Yönetimi
+    {
+      id: 'purchase-management',
+      label: 'Talep ve Satınalma Yönetimi',
+      icon: 'bi-cart-check-fill',
+      children: [
+        { 
+          id: 'purchase-requests', 
+          label: 'Satınalma Talepleri', 
+          path: '/purchase-requests',  // ✅ DÜZELTİLDİ
+          icon: 'bi-file-earmark-text'
+        },
+        { 
+          id: 'purchase-orders', 
+          label: 'Satınalma Siparişleri', 
+          path: '/purchase-orders',    // ✅ DÜZELTİLDİ
+          icon: 'bi-receipt'
+        },
+        { 
+          id: 'pending-approvals', 
+          label: 'Onay Bekleyenler', 
+          path: '/pending-approvals',  // ✅ DÜZELTİLDİ
+          icon: 'bi-hourglass-split'
+        }
+      ]
+    },
     {
       id: 'definitions',
       label: 'Tanımlamalar',

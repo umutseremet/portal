@@ -1,5 +1,5 @@
 // src/frontend/src/App.js
-// ✅ Yetki detay sayfası route'u eklendi
+// ✅ SATINALMA YÖNETİMİ - Route sıralaması DÜZELTİLDİ
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -19,15 +19,24 @@ import WeeklyProductionCalendarPage from './pages/WeeklyProductionCalendarPage';
 import IssueDetailsPage from './pages/IssueDetailsPage';
 import BOMTransferPage from './pages/BOMTransferPage';
 import DataCamPreparationPage from './pages/DataCamPreparationPage';
+import TechnicalDrawingPreparationPage from './pages/TechnicalDrawingPreparationPage';
 import ItemsPage from './pages/ItemsPage';
 import ItemGroupsPage from './pages/ItemGroupsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
 import ItemEditPage from './pages/ItemEditPage';
 import PermissionManagementPage from './pages/PermissionManagementPage';
-import PermissionDetailPage from './pages/PermissionDetailPage'; // ✅ YENİ
+import PermissionDetailPage from './pages/PermissionDetailPage';
+
+// ✅ SATINALMA YÖNETİMİ IMPORT'LARI
+import PurchaseRequestsListPage from './pages/PurchaseRequestsListPage';
+import PurchaseRequestDetailPage from './pages/PurchaseRequestDetailPage';
+import PurchaseRequestFormPage from './pages/PurchaseRequestFormPage';
+import PurchaseOrdersListPage from './pages/PurchaseOrdersListPage';
+import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage';
+import PurchaseOrderFormPage from './pages/PurchaseOrderFormPage';
+import PendingApprovalsPage from './pages/PendingApprovalsPage';
 
 import './App.css';
-import TechnicalDrawingPreparationPage from './pages/TechnicalDrawingPreparationPage';
 
 function App() {
   return (
@@ -50,7 +59,110 @@ function App() {
               }
             />
 
-            {/* ARAÇ YÖNETİMİ */}
+            {/* ========================================
+                SATINALMA YÖNETİMİ - DOĞRU SIRALAMA
+                ⚠️ ÖNEMLİ: Spesifik route'lar (:id) parametrik route'lardan ÖNCE!
+                ======================================== */}
+            
+            {/* SATINALMA TALEPLERİ */}
+            <Route
+              path="/purchase-requests/new"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PurchaseRequestFormPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/purchase-requests/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PurchaseRequestFormPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/purchase-requests/:id"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PurchaseRequestDetailPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/purchase-requests"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PurchaseRequestsListPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* SATINALMA SİPARİŞLERİ */}
+            <Route
+              path="/purchase-orders/new"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PurchaseOrderFormPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/purchase-orders/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PurchaseOrderFormPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/purchase-orders/:id"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PurchaseOrderDetailPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/purchase-orders"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PurchaseOrdersListPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ONAY BEKLEYENLER */}
+            <Route
+              path="/pending-approvals"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PendingApprovalsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ========================================
+                ARAÇ YÖNETİMİ
+                ======================================== */}
             <Route
               path="/vehicles/new"
               element={
@@ -67,6 +179,16 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <VehicleFormPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vehicles/:id/fuel-purchases"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehicleFuelPurchasesPage />
                   </Layout>
                 </ProtectedRoute>
               }
@@ -91,57 +213,49 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* ========================================
+                ÜRÜN YÖNETİMİ
+                ======================================== */}
             <Route
-              path="/vehicles/:id/fuel-purchases"
+              path="/definitions/items/new"
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <VehicleFuelPurchasesPage />
+                    <ItemEditPage />
                   </Layout>
                 </ProtectedRoute>
               }
             />
-
-            {/* ÜRÜN YÖNETİMİ */}
-            <Route 
-              path="/definitions/items/new" 
+            <Route
+              path="/definitions/items/:id/edit"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <ItemEditPage />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/definitions/items/:id/edit" 
+            <Route
+              path="/definitions/items/edit/:id"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <ItemEditPage />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/definitions/items/edit/:id" 
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <ItemEditPage />
-                  </Layout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/definitions/items/detail/:id" 
+            <Route
+              path="/definitions/items/detail/:id"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <ItemDetailPage />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
             <Route
               path="/definitions/items"
@@ -164,8 +278,9 @@ function App() {
               }
             />
 
-            {/* YETKİ YÖNETİMİ - ✅ YENİ ROUTE'LAR */}
-            {/* Detay sayfası - ÖNCE bu tanımlanmali */}
+            {/* ========================================
+                YETKİ YÖNETİMİ
+                ======================================== */}
             <Route
               path="/permissions/:type/:id"
               element={
@@ -176,7 +291,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* Liste sayfası */}
             <Route
               path="/permissions"
               element={
@@ -187,13 +301,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* Eski route için backward compatibility */}
             <Route
               path="/definitions/permissions"
               element={<Navigate to="/permissions" replace />}
             />
 
-            {/* ÜRETİM YÖNETİMİ */}
+            {/* ========================================
+                ÜRETİM YÖNETİMİ
+                ======================================== */}
             <Route
               path="/production/weekly-calendar"
               element={
@@ -255,7 +370,9 @@ function App() {
               }
             />
 
-            {/* ZİYARETÇİ YÖNETİMİ */}
+            {/* ========================================
+                ZİYARETÇİ YÖNETİMİ
+                ======================================== */}
             <Route
               path="/visitors"
               element={
@@ -267,7 +384,9 @@ function App() {
               }
             />
 
-            {/* REDIRECT ROUTES */}
+            {/* ========================================
+                REDIRECT ROUTES
+                ======================================== */}
             <Route path="/" element={<Navigate to="/production/weekly-calendar" replace />} />
             <Route path="*" element={<Navigate to="/production/weekly-calendar" replace />} />
           </Routes>

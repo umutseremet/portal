@@ -1,5 +1,7 @@
 // ===== 1. src/frontend/src/services/api.js (Temizlenmiş) =====
 
+import { API_ENDPOINTS } from '../utils/constants';
+
 class ApiService {
   constructor() {
     this.baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
@@ -2273,6 +2275,334 @@ class ApiService {
   // YUKARIDAKI KODU api.js DOSYASININ SONUNA EKLEYIN
   // export default apiService; SATIRINDAN HEMEN ÖNCE
   // =============================================================================
+
+  // ========================================
+  // PURCHASE REQUESTS - SATINALMA TALEPLERİ
+  // ========================================
+
+  /**
+   * Talep listesini getir
+   */
+  async getPurchaseRequests(params = {}) {
+    try {
+      const queryString = new URLSearchParams(
+        Object.entries(params).filter(([_, v]) => v != null && v !== '')
+      ).toString();
+      
+      const url = queryString 
+        ? `${API_ENDPOINTS.PURCHASE_REQUESTS.LIST}?${queryString}`
+        : API_ENDPOINTS.PURCHASE_REQUESTS.LIST;
+
+      return await this.get(url);
+    } catch (error) {
+      console.error('Error fetching purchase requests:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Benim taleplerimi getir
+   */
+  async getMyPurchaseRequests(params = {}) {
+    try {
+      const queryString = new URLSearchParams(
+        Object.entries(params).filter(([_, v]) => v != null && v !== '')
+      ).toString();
+      
+      const url = queryString
+        ? `${API_ENDPOINTS.PURCHASE_REQUESTS.MY_REQUESTS}?${queryString}`
+        : API_ENDPOINTS.PURCHASE_REQUESTS.MY_REQUESTS;
+
+      return await this.get(url);
+    } catch (error) {
+      console.error('Error fetching my purchase requests:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Onay bekleyen talepleri getir (benim onayıma sunulan)
+   */
+  async getPendingMyApprovalRequests(params = {}) {
+    try {
+      const queryString = new URLSearchParams(
+        Object.entries(params).filter(([_, v]) => v != null && v !== '')
+      ).toString();
+      
+      const url = queryString
+        ? `${API_ENDPOINTS.PURCHASE_REQUESTS.PENDING_MY_APPROVAL}?${queryString}`
+        : API_ENDPOINTS.PURCHASE_REQUESTS.PENDING_MY_APPROVAL;
+
+      return await this.get(url);
+    } catch (error) {
+      console.error('Error fetching pending approval requests:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Talep detayını getir
+   */
+  async getPurchaseRequest(id) {
+    try {
+      return await this.get(`${API_ENDPOINTS.PURCHASE_REQUESTS.GET}/${id}`);
+    } catch (error) {
+      console.error(`Error fetching purchase request ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Yeni talep oluştur
+   */
+  async createPurchaseRequest(data) {
+    try {
+      return await this.post(API_ENDPOINTS.PURCHASE_REQUESTS.CREATE, data);
+    } catch (error) {
+      console.error('Error creating purchase request:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Talep güncelle
+   */
+  async updatePurchaseRequest(id, data) {
+    try {
+      return await this.put(`${API_ENDPOINTS.PURCHASE_REQUESTS.UPDATE}/${id}`, data);
+    } catch (error) {
+      console.error(`Error updating purchase request ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Talep sil
+   */
+  async deletePurchaseRequest(id) {
+    try {
+      return await this.delete(`${API_ENDPOINTS.PURCHASE_REQUESTS.DELETE}/${id}`);
+    } catch (error) {
+      console.error(`Error deleting purchase request ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Talebi gönder (submit)
+   */
+  async submitPurchaseRequest(id, data = {}) {
+    try {
+      return await this.post(`${API_ENDPOINTS.PURCHASE_REQUESTS.SUBMIT}/${id}/submit`, data);
+    } catch (error) {
+      console.error(`Error submitting purchase request ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Talebi onayla
+   */
+  async approvePurchaseRequest(id, data) {
+    try {
+      return await this.post(`${API_ENDPOINTS.PURCHASE_REQUESTS.APPROVE}/${id}/approve`, data);
+    } catch (error) {
+      console.error(`Error approving purchase request ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Talebi reddet
+   */
+  async rejectPurchaseRequest(id, data) {
+    try {
+      return await this.post(`${API_ENDPOINTS.PURCHASE_REQUESTS.REJECT}/${id}/reject`, data);
+    } catch (error) {
+      console.error(`Error rejecting purchase request ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Talebi iptal et
+   */
+  async cancelPurchaseRequest(id, data) {
+    try {
+      return await this.post(`${API_ENDPOINTS.PURCHASE_REQUESTS.CANCEL}/${id}/cancel`, data);
+    } catch (error) {
+      console.error(`Error cancelling purchase request ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Talep istatistiklerini getir
+   */
+  async getPurchaseRequestStats() {
+    try {
+      return await this.get(API_ENDPOINTS.PURCHASE_REQUESTS.STATS);
+    } catch (error) {
+      console.error('Error fetching purchase request stats:', error);
+      throw error;
+    }
+  }
+
+  // ========================================
+  // PURCHASE ORDERS - SATINALMA SİPARİŞLERİ
+  // ========================================
+
+  /**
+   * Sipariş listesini getir
+   */
+  async getPurchaseOrders(params = {}) {
+    try {
+      const queryString = new URLSearchParams(
+        Object.entries(params).filter(([_, v]) => v != null && v !== '')
+      ).toString();
+      
+      const url = queryString 
+        ? `${API_ENDPOINTS.PURCHASE_ORDERS.LIST}?${queryString}`
+        : API_ENDPOINTS.PURCHASE_ORDERS.LIST;
+
+      return await this.get(url);
+    } catch (error) {
+      console.error('Error fetching purchase orders:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Sipariş detayını getir
+   */
+  async getPurchaseOrder(id) {
+    try {
+      return await this.get(`${API_ENDPOINTS.PURCHASE_ORDERS.GET}/${id}`);
+    } catch (error) {
+      console.error(`Error fetching purchase order ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Yeni sipariş oluştur
+   */
+  async createPurchaseOrder(data) {
+    try {
+      return await this.post(API_ENDPOINTS.PURCHASE_ORDERS.CREATE, data);
+    } catch (error) {
+      console.error('Error creating purchase order:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Taleplerden sipariş oluştur
+   */
+  async createPurchaseOrderFromRequests(data) {
+    try {
+      return await this.post(API_ENDPOINTS.PURCHASE_ORDERS.CREATE_FROM_REQUEST, data);
+    } catch (error) {
+      console.error('Error creating purchase order from requests:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Sipariş güncelle
+   */
+  async updatePurchaseOrder(id, data) {
+    try {
+      return await this.put(`${API_ENDPOINTS.PURCHASE_ORDERS.UPDATE}/${id}`, data);
+    } catch (error) {
+      console.error(`Error updating purchase order ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Sipariş sil
+   */
+  async deletePurchaseOrder(id) {
+    try {
+      return await this.delete(`${API_ENDPOINTS.PURCHASE_ORDERS.DELETE}/${id}`);
+    } catch (error) {
+      console.error(`Error deleting purchase order ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Siparişi gönder (submit)
+   */
+  async submitPurchaseOrder(id, data = {}) {
+    try {
+      return await this.post(`${API_ENDPOINTS.PURCHASE_ORDERS.SUBMIT}/${id}/submit`, data);
+    } catch (error) {
+      console.error(`Error submitting purchase order ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Siparişi onayla
+   */
+  async approvePurchaseOrder(id, data) {
+    try {
+      return await this.post(`${API_ENDPOINTS.PURCHASE_ORDERS.APPROVE}/${id}/approve`, data);
+    } catch (error) {
+      console.error(`Error approving purchase order ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Siparişi onayla (confirm)
+   */
+  async confirmPurchaseOrder(id, data) {
+    try {
+      return await this.post(`${API_ENDPOINTS.PURCHASE_ORDERS.CONFIRM}/${id}/confirm`, data);
+    } catch (error) {
+      console.error(`Error confirming purchase order ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Siparişi iptal et
+   */
+  async cancelPurchaseOrder(id, data) {
+    try {
+      return await this.post(`${API_ENDPOINTS.PURCHASE_ORDERS.CANCEL}/${id}/cancel`, data);
+    } catch (error) {
+      console.error(`Error cancelling purchase order ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Teslimat güncelle
+   */
+  async updatePurchaseOrderDelivery(id, data) {
+    try {
+      return await this.post(`${API_ENDPOINTS.PURCHASE_ORDERS.UPDATE_DELIVERY}/${id}/update-delivery`, data);
+    } catch (error) {
+      console.error(`Error updating delivery for order ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Sipariş istatistiklerini getir
+   */
+  async getPurchaseOrderStats() {
+    try {
+      return await this.get(API_ENDPOINTS.PURCHASE_ORDERS.STATS);
+    } catch (error) {
+      console.error('Error fetching purchase order stats:', error);
+      throw error;
+    }
+  }
 }
 
 // Create a single instance

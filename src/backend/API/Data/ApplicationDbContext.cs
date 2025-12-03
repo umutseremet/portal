@@ -1,3 +1,4 @@
+﻿using API.Controllers;
 using API.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,6 +30,15 @@ namespace API.Data
 
         // ApplicationDbContext.cs
         public DbSet<TechnicalDrawingDownloadLog> TechnicalDrawingDownloadLogs { get; set; }
+
+        // ✅ YENİ EKLENECEK DbSet'ler
+        public DbSet<PurchaseRequest> PurchaseRequests { get; set; }
+        public DbSet<PurchaseRequestDetail> PurchaseRequestDetails { get; set; }
+        public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
+        public DbSet<PurchaseOrderDetail> PurchaseOrderDetails { get; set; }
+        public DbSet<PurchaseRequestApprovalHistory> PurchaseRequestApprovalHistory { get; set; }
+        public DbSet<PurchaseOrderHistory> PurchaseOrderHistory { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -75,6 +85,42 @@ namespace API.Data
                     .HasDatabaseName("IX_ItemFiles_ItemId");
             });
 
+            // ✅ YENİ İLİŞKİLER
+            // PurchaseRequest - PurchaseOrder ilişkisi
+            modelBuilder.Entity<PurchaseRequest>()
+                .HasOne(r => r.PurchaseOrder)
+                .WithMany(o => o.Requests)
+                .HasForeignKey(r => r.PurchaseOrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // PurchaseRequest - PurchaseRequestDetail ilişkisi
+            modelBuilder.Entity<PurchaseRequestDetail>()
+                .HasOne(d => d.Request)
+                .WithMany(r => r.Details)
+                .HasForeignKey(d => d.RequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // PurchaseOrder - PurchaseOrderDetail ilişkisi
+            modelBuilder.Entity<PurchaseOrderDetail>()
+                .HasOne(d => d.Order)
+                .WithMany(o => o.Details)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // PurchaseRequestDetail - Item ilişkisi
+            modelBuilder.Entity<PurchaseRequestDetail>()
+                .HasOne(d => d.Item)
+                .WithMany()
+                .HasForeignKey(d => d.ItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // PurchaseOrderDetail - Item ilişkisi
+            modelBuilder.Entity<PurchaseOrderDetail>()
+                .HasOne(d => d.Item)
+                .WithMany()
+                .HasForeignKey(d => d.ItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<BomWork>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -85,7 +131,7 @@ namespace API.Data
                 entity.HasIndex(e => e.IsActive);
             });
 
-            // BOM Excel konfig�rasyonu - EKLE
+            // BOM Excel konfigürasyonu - EKLE
             modelBuilder.Entity<BomExcel>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -101,7 +147,7 @@ namespace API.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // BOM Item konfig�rasyonu - REV�ZE ED�LD� (ItemId ile Items tablosuna referans)
+            // BOM Item konfigürasyonu - REVİZE EDİLDİ (ItemId ile Items tablosuna referans)
             modelBuilder.Entity<BomItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -113,13 +159,13 @@ namespace API.Data
                 // Composite index for Excel + Item
                 entity.HasIndex(e => new { e.ExcelId, e.ItemId });
 
-                // BomExcel ile ili�ki (Cascade Delete)
+                // BomExcel ile ilişki (Cascade Delete)
                 entity.HasOne(e => e.BomExcel)
                     .WithMany(ex => ex.BomItems)
                     .HasForeignKey(e => e.ExcelId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                // Items tablosu ile ili�ki (Restrict Delete - Item silindi�inde BomItem'� silme)
+                // Items tablosu ile ilişki (Restrict Delete - Item silindiğinde BomItem'ı silme)
                 entity.HasOne(e => e.Item)
                     .WithMany()
                     .HasForeignKey(e => e.ItemId)

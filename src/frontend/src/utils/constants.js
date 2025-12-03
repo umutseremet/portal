@@ -138,6 +138,37 @@ export const API_ENDPOINTS = {
     UPDATE_USER: '/Permissions/users', // /{userId}/permissions ile kullanılacak
     UPDATE_GROUP: '/Permissions/groups', // /{groupId}/permissions ile kullanılacak
     USER_LOGIN_PERMISSIONS: '/Permissions/user-login-permissions'
+  },
+  // ========================================
+  // PURCHASE MANAGEMENT - YENİ
+  // ========================================
+  PURCHASE_REQUESTS: {
+    LIST: '/PurchaseRequests',
+    GET: '/PurchaseRequests', // /{id}
+    CREATE: '/PurchaseRequests',
+    UPDATE: '/PurchaseRequests', // /{id}
+    DELETE: '/PurchaseRequests', // /{id}
+    SUBMIT: '/PurchaseRequests', // /{id}/submit
+    APPROVE: '/PurchaseRequests', // /{id}/approve
+    REJECT: '/PurchaseRequests', // /{id}/reject
+    CANCEL: '/PurchaseRequests', // /{id}/cancel
+    STATS: '/PurchaseRequests/stats',
+    MY_REQUESTS: '/PurchaseRequests/my-requests',
+    PENDING_MY_APPROVAL: '/PurchaseRequests/pending-my-approval'
+  },
+  PURCHASE_ORDERS: {
+    LIST: '/PurchaseOrders',
+    GET: '/PurchaseOrders', // /{id}
+    CREATE: '/PurchaseOrders',
+    CREATE_FROM_REQUEST: '/PurchaseOrders/create-from-requests',
+    UPDATE: '/PurchaseOrders', // /{id}
+    DELETE: '/PurchaseOrders', // /{id}
+    SUBMIT: '/PurchaseOrders', // /{id}/submit
+    APPROVE: '/PurchaseOrders', // /{id}/approve
+    CONFIRM: '/PurchaseOrders', // /{id}/confirm
+    CANCEL: '/PurchaseOrders', // /{id}/cancel
+    UPDATE_DELIVERY: '/PurchaseOrders', // /{id}/update-delivery
+    STATS: '/PurchaseOrders/stats'
   }
 };
 
@@ -352,4 +383,106 @@ export const PRODUCTION_TYPES = {
   TURNING: 'Torna',
   DATA_PREP: 'Data Hazırlama',
   ASSEMBLY: 'Montaj'
+};
+
+// ========================================
+// STATUS CONSTANTS - PURCHASE MANAGEMENT
+// ========================================
+export const PURCHASE_REQUEST_STATUS = {
+  DRAFT: 'Draft',
+  SUBMITTED: 'Submitted',
+  MANAGER_APPROVAL: 'ManagerApproval',
+  PURCHASING_REVIEW: 'PurchasingReview',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+  CANCELLED: 'Cancelled',
+  COMPLETED: 'Completed'
+};
+
+export const PURCHASE_REQUEST_STATUS_LABELS = {
+  [PURCHASE_REQUEST_STATUS.DRAFT]: 'Taslak',
+  [PURCHASE_REQUEST_STATUS.SUBMITTED]: 'Gönderildi',
+  [PURCHASE_REQUEST_STATUS.MANAGER_APPROVAL]: 'Yönetici Onayında',
+  [PURCHASE_REQUEST_STATUS.PURCHASING_REVIEW]: 'Satınalma İncelemesinde',
+  [PURCHASE_REQUEST_STATUS.APPROVED]: 'Onaylandı',
+  [PURCHASE_REQUEST_STATUS.REJECTED]: 'Reddedildi',
+  [PURCHASE_REQUEST_STATUS.CANCELLED]: 'İptal Edildi',
+  [PURCHASE_REQUEST_STATUS.COMPLETED]: 'Tamamlandı'
+};
+
+export const PURCHASE_REQUEST_STATUS_COLORS = {
+  [PURCHASE_REQUEST_STATUS.DRAFT]: 'secondary',
+  [PURCHASE_REQUEST_STATUS.SUBMITTED]: 'info',
+  [PURCHASE_REQUEST_STATUS.MANAGER_APPROVAL]: 'warning',
+  [PURCHASE_REQUEST_STATUS.PURCHASING_REVIEW]: 'warning',
+  [PURCHASE_REQUEST_STATUS.APPROVED]: 'success',
+  [PURCHASE_REQUEST_STATUS.REJECTED]: 'danger',
+  [PURCHASE_REQUEST_STATUS.CANCELLED]: 'dark',
+  [PURCHASE_REQUEST_STATUS.COMPLETED]: 'primary'
+};
+
+export const PURCHASE_ORDER_STATUS = {
+  DRAFT: 'Draft',
+  SUBMITTED: 'Submitted',
+  SUPPLIER_APPROVAL: 'SupplierApproval',
+  CONFIRMED: 'Confirmed',
+  PARTIAL_DELIVERED: 'PartialDelivered',
+  DELIVERED: 'Delivered',
+  INVOICED: 'Invoiced',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled'
+};
+
+export const PURCHASE_ORDER_STATUS_LABELS = {
+  [PURCHASE_ORDER_STATUS.DRAFT]: 'Taslak',
+  [PURCHASE_ORDER_STATUS.SUBMITTED]: 'Tedarikçiye Gönderildi',
+  [PURCHASE_ORDER_STATUS.SUPPLIER_APPROVAL]: 'Tedarikçi Onayı Bekleniyor',
+  [PURCHASE_ORDER_STATUS.CONFIRMED]: 'Onaylandı',
+  [PURCHASE_ORDER_STATUS.PARTIAL_DELIVERED]: 'Kısmi Teslimat',
+  [PURCHASE_ORDER_STATUS.DELIVERED]: 'Teslim Edildi',
+  [PURCHASE_ORDER_STATUS.INVOICED]: 'Faturalandı',
+  [PURCHASE_ORDER_STATUS.COMPLETED]: 'Tamamlandı',
+  [PURCHASE_ORDER_STATUS.CANCELLED]: 'İptal Edildi'
+};
+
+export const PURCHASE_ORDER_STATUS_COLORS = {
+  [PURCHASE_ORDER_STATUS.DRAFT]: 'secondary',
+  [PURCHASE_ORDER_STATUS.SUBMITTED]: 'info',
+  [PURCHASE_ORDER_STATUS.SUPPLIER_APPROVAL]: 'warning',
+  [PURCHASE_ORDER_STATUS.CONFIRMED]: 'success',
+  [PURCHASE_ORDER_STATUS.PARTIAL_DELIVERED]: 'primary',
+  [PURCHASE_ORDER_STATUS.DELIVERED]: 'success',
+  [PURCHASE_ORDER_STATUS.INVOICED]: 'primary',
+  [PURCHASE_ORDER_STATUS.COMPLETED]: 'success',
+  [PURCHASE_ORDER_STATUS.CANCELLED]: 'dark'
+};
+
+export const REQUEST_PRIORITY = {
+  NORMAL: 'Normal',
+  URGENT: 'Urgent',
+  CRITICAL: 'Critical'
+};
+
+export const REQUEST_PRIORITY_LABELS = {
+  [REQUEST_PRIORITY.NORMAL]: 'Normal',
+  [REQUEST_PRIORITY.URGENT]: 'Acil',
+  [REQUEST_PRIORITY.CRITICAL]: 'Kritik'
+};
+
+export const REQUEST_PRIORITY_COLORS = {
+  [REQUEST_PRIORITY.NORMAL]: 'secondary',
+  [REQUEST_PRIORITY.URGENT]: 'warning',
+  [REQUEST_PRIORITY.CRITICAL]: 'danger'
+};
+
+export const REQUEST_TYPE = {
+  STANDARD: 'Standard',
+  EMERGENCY: 'Emergency',
+  PROJECT: 'Project'
+};
+
+export const REQUEST_TYPE_LABELS = {
+  [REQUEST_TYPE.STANDARD]: 'Standart',
+  [REQUEST_TYPE.EMERGENCY]: 'Acil',
+  [REQUEST_TYPE.PROJECT]: 'Proje Bazlı'
 };
