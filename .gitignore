@@ -5,6 +5,9 @@
 # =============================================
 
 # Dependencies
+
+src/backend/api/uploads/
+
 src/frontend/node_modules
 /.pnp
 .pnp.js
