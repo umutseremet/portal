@@ -1,76 +1,80 @@
 // src/frontend/src/pages/PurchaseRequestFormPage.js
-// Modal'sız tam sayfa yapısı - ItemEditPage benzeri
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import apiService from '../services/api';
-import {
-  REQUEST_PRIORITY,
-  REQUEST_PRIORITY_LABELS,
-  REQUEST_TYPE,
-  REQUEST_TYPE_LABELS
+import { 
+  REQUEST_PRIORITY_LABELS, 
+  REQUEST_TYPE_LABELS,
+  PURCHASE_REQUEST_STATUS 
 } from '../utils/constants';
+import api from '../services/api';
 
 const PurchaseRequestFormPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const isEdit = Boolean(id);
+  const isEdit = !!id;
 
+  // State
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [items, setItems] = useState([]);
-  const [errors, setErrors] = useState({});
-
+  const [itemGroups, setItemGroups] = useState([]);
+  
+  // Form verileri
   const [formData, setFormData] = useState({
     description: '',
-    priority: REQUEST_PRIORITY.NORMAL,
-    requestType: REQUEST_TYPE.STANDARD,
-    details: []
+    priority: 'Normal',
+    requestType: 'Standard'
   });
 
-  const [detailForm, setDetailForm] = useState({
+  // Ürün ekleme formu
+  const [productForm, setProductForm] = useState({
     itemId: '',
-    quantity: 1,
-    unit: 'Adet',
+    itemCode: '',
+    itemName: '',
+    itemGroupId: '',
+    itemGroupName: '',
+    quantity: '',
+    unit: '',
     description: '',
     requiredDate: '',
-    estimatedUnitPrice: ''
+    estimatedUnitPrice: '',
+    estimatedTotalPrice: ''
   });
 
-  // Load data
+  // Eklenen ürünler listesi
+  const [addedProducts, setAddedProducts] = useState([]);
+
   useEffect(() => {
-    loadItems();
-    if (isEdit) {
-      loadRequest();
-    }
+    loadData();
   }, [id]);
 
-  const loadItems = async () => {
+  const loadData = async () => {
+    setLoading(true);
     try {
-      const response = await apiService.getItems({ pageSize: 1000 });
-      setItems(response.items || []);
-    } catch (error) {
-      console.error('Error loading items:', error);
-      alert('Ürün listesi yüklenirken hata oluştu');
-    }
-  };
+      // Ürünleri yükle
+      const itemsResponse = await api.getItems();
+      setItems(itemsResponse.data || []);
 
-  const loadRequest = async () => {
-    try {
-      setLoading(true);
-      const response = await apiService.getPurchaseRequest(id);
-      setFormData({
-        description: response.description || '',
-        priority: response.priority,
-        requestType: response.requestType,
-        details: response.details || []
-      });
+      // Ürün gruplarını yükle
+      const groupsResponse = await api.getItemGroups();
+      setItemGroups(groupsResponse.data || []);
+
+      // Düzenleme modundaysa, mevcut talebi yükle
+      if (isEdit) {
+        const response = await api.getPurchaseRequest(id);
+        const request = response.data;
+        
+        setFormData({
+          description: request.description || '',
+          priority: request.priority || 'Normal',
+          requestType: request.requestType || 'Standard'
+        });
+
+        setAddedProducts(request.details || []);
+      }
     } catch (error) {
-      console.error('Error loading request:', error);
-      alert('Talep yüklenirken hata oluştu');
-      navigate('/purchase-requests');
+      console.error('Veri yükleme hatası:', error);
+      alert('Veriler yüklenirken bir hata oluştu.');
     } finally {
       setLoading(false);
     }
@@ -82,463 +86,490 @@ const PurchaseRequestFormPage = () => {
       ...prev,
       [name]: value
     }));
-
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
   };
 
-  const handleDetailInputChange = (e) => {
+  const handleProductFormChange = (e) => {
     const { name, value } = e.target;
-    setDetailForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Ürün seçildiğinde
+    if (name === 'itemId') {
+      const selectedItem = items.find(item => item.id === parseInt(value));
+      if (selectedItem) {
+        setProductForm(prev => ({
+          ...prev,
+          itemId: value,
+          itemCode: selectedItem.code,
+          itemName: selectedItem.name,
+          itemGroupId: selectedItem.groupId,
+          itemGroupName: selectedItem.itemGroup?.name || '',
+          unit: selectedItem.unit || ''
+        }));
+      }
+    } else if (name === 'quantity' || name === 'estimatedUnitPrice') {
+      // Miktar veya birim fiyat değiştiğinde toplam fiyatı hesapla
+      const qty = name === 'quantity' ? parseFloat(value) || 0 : parseFloat(productForm.quantity) || 0;
+      const price = name === 'estimatedUnitPrice' ? parseFloat(value) || 0 : parseFloat(productForm.estimatedUnitPrice) || 0;
+      
+      setProductForm(prev => ({
+        ...prev,
+        [name]: value,
+        estimatedTotalPrice: qty * price
+      }));
+    } else {
+      setProductForm(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
-  const handleAddDetail = () => {
-    // Validation
-    if (!detailForm.itemId || !detailForm.quantity) {
-      alert('Ürün ve miktar zorunludur');
+  const handleAddProduct = () => {
+    // Validasyon
+    if (!productForm.itemId || !productForm.quantity) {
+      alert('Lütfen en az ürün ve miktar bilgilerini giriniz.');
       return;
     }
 
-    if (parseFloat(detailForm.quantity) <= 0) {
-      alert('Miktar 0\'dan büyük olmalıdır');
-      return;
-    }
-
-    const selectedItem = items.find(i => i.id === parseInt(detailForm.itemId));
-    if (!selectedItem) {
-      alert('Seçilen ürün bulunamadı');
-      return;
-    }
-
-    const newDetail = {
-      itemId: selectedItem.id,
-      itemCode: selectedItem.code,
-      itemName: selectedItem.name,
-      itemGroupId: selectedItem.groupId,
-      itemGroupName: selectedItem.groupName,
-      quantity: parseFloat(detailForm.quantity),
-      unit: detailForm.unit,
-      description: detailForm.description,
-      requiredDate: detailForm.requiredDate || null,
-      estimatedUnitPrice: detailForm.estimatedUnitPrice ? parseFloat(detailForm.estimatedUnitPrice) : null
+    // Ürünü listeye ekle
+    const newProduct = {
+      itemId: parseInt(productForm.itemId),
+      itemCode: productForm.itemCode,
+      itemName: productForm.itemName,
+      itemGroupId: productForm.itemGroupId,
+      itemGroupName: productForm.itemGroupName,
+      quantity: parseFloat(productForm.quantity),
+      unit: productForm.unit,
+      description: productForm.description,
+      requiredDate: productForm.requiredDate,
+      estimatedUnitPrice: productForm.estimatedUnitPrice ? parseFloat(productForm.estimatedUnitPrice) : null,
+      estimatedTotalPrice: productForm.estimatedTotalPrice ? parseFloat(productForm.estimatedTotalPrice) : null,
+      currency: 'TRY'
     };
 
-    setFormData(prev => ({
-      ...prev,
-      details: [...prev.details, newDetail]
-    }));
+    setAddedProducts(prev => [...prev, newProduct]);
 
-    // Reset detail form
-    setDetailForm({
+    // Formu temizle
+    setProductForm({
       itemId: '',
-      quantity: 1,
-      unit: 'Adet',
+      itemCode: '',
+      itemName: '',
+      itemGroupId: '',
+      itemGroupName: '',
+      quantity: '',
+      unit: '',
       description: '',
       requiredDate: '',
-      estimatedUnitPrice: ''
+      estimatedUnitPrice: '',
+      estimatedTotalPrice: ''
     });
   };
 
-  const handleRemoveDetail = (index) => {
-    if (!window.confirm('Bu ürünü listeden çıkarmak istediğinizden emin misiniz?')) {
-      return;
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      details: prev.details.filter((_, i) => i !== index)
-    }));
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (formData.details.length === 0) {
-      newErrors.details = 'En az bir ürün eklemelisiniz';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleRemoveProduct = (index) => {
+    setAddedProducts(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      alert('Lütfen tüm zorunlu alanları doldurun');
+    if (addedProducts.length === 0) {
+      alert('Lütfen en az bir ürün ekleyiniz.');
       return;
     }
 
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-
       const requestData = {
-        description: formData.description,
-        priority: formData.priority,
-        requestType: formData.requestType,
-        details: formData.details.map(d => ({
-          itemId: d.itemId,
-          quantity: d.quantity,
-          unit: d.unit,
-          description: d.description,
-          requiredDate: d.requiredDate,
-          estimatedUnitPrice: d.estimatedUnitPrice
+        ...formData,
+        details: addedProducts.map(product => ({
+          itemId: product.itemId,
+          quantity: product.quantity,
+          unit: product.unit,
+          description: product.description,
+          requiredDate: product.requiredDate || null,
+          estimatedUnitPrice: product.estimatedUnitPrice
         }))
       };
 
       if (isEdit) {
-        await apiService.updatePurchaseRequest(id, requestData);
-        alert('Talep başarıyla güncellendi');
+        await api.updatePurchaseRequest(id, requestData);
+        alert('Talep başarıyla güncellendi.');
       } else {
-        await apiService.createPurchaseRequest(requestData);
-        alert('Talep başarıyla oluşturuldu');
+        await api.createPurchaseRequest(requestData);
+        alert('Talep başarıyla oluşturuldu.');
       }
 
       navigate('/purchase-requests');
     } catch (error) {
-      console.error('Error saving request:', error);
-      alert('Hata: ' + (error.response?.data?.message || error.message));
+      console.error('Kaydetme hatası:', error);
+      alert(error.response?.data?.message || 'Talep kaydedilirken bir hata oluştu.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleCancel = () => {
-    if (formData.details.length > 0) {
-      if (!window.confirm('Kaydedilmemiş değişiklikler var. Çıkmak istediğinizden emin misiniz?')) {
-        return;
-      }
-    }
     navigate('/purchase-requests');
   };
 
   if (loading) {
     return (
-      <div className="container-fluid py-4">
-        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Yükleniyor...</span>
-          </div>
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Yükleniyor...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container-fluid py-4">
+    <div className="container-fluid p-4">
       {/* Header */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card shadow-sm">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h2 className="mb-1">
-                    <i className="bi bi-file-earmark-text text-primary me-2"></i>
-                    {isEdit ? 'Talep Düzenle' : 'Yeni Talep Oluştur'}
-                  </h2>
-                  <p className="text-muted mb-0">
-                    {isEdit ? 'Mevcut talebi düzenleyin' : 'Yeni satınalma talebi oluşturun'}
-                  </p>
-                </div>
-                <button 
-                  className="btn btn-outline-secondary" 
-                  onClick={handleCancel}
-                  disabled={submitting}
-                >
-                  <i className="bi bi-x me-2"></i>
-                  İptal
-                </button>
-              </div>
-            </div>
+      <div className="mb-4">
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <h2 className="mb-1">
+              <i className={`bi ${isEdit ? 'bi-pencil-square' : 'bi-plus-circle'} text-primary me-2`}></i>
+              {isEdit ? 'Talep Düzenle' : 'Yeni Satınalma Talebi'}
+            </h2>
+            <p className="text-muted mb-0">
+              {isEdit ? 'Mevcut talebi düzenleyin' : 'Yeni satınalma talebi oluşturun'}
+            </p>
           </div>
+          <button 
+            className="btn btn-outline-secondary" 
+            onClick={handleCancel}
+            disabled={submitting}
+          >
+            <i className="bi bi-x me-2"></i>
+            İptal
+          </button>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="row">
-          {/* Left Column - Form */}
-          <div className="col-lg-8 mb-4">
-            {/* Temel Bilgiler */}
-            <div className="card shadow-sm mb-4">
-              <div className="card-header bg-light">
-                <h5 className="mb-0">
-                  <i className="bi bi-info-circle me-2"></i>
-                  Temel Bilgiler
-                </h5>
+        {/* ===== 1. TEMEL BİLGİLER ===== */}
+        <div className="card shadow-sm mb-4">
+          <div className="card-header bg-primary text-white">
+            <h5 className="mb-0">
+              <i className="bi bi-info-circle me-2"></i>
+              Talep Bilgileri
+            </h5>
+          </div>
+          <div className="card-body">
+            <div className="row">
+              <div className="col-md-4 mb-3">
+                <label className="form-label fw-bold">
+                  Öncelik <span className="text-danger">*</span>
+                </label>
+                <select
+                  className="form-select form-select-lg"
+                  name="priority"
+                  value={formData.priority}
+                  onChange={handleInputChange}
+                  disabled={submitting}
+                  required
+                >
+                  {Object.entries(REQUEST_PRIORITY_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
               </div>
-              <div className="card-body">
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      Öncelik <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      className="form-select"
-                      name="priority"
-                      value={formData.priority}
-                      onChange={handleInputChange}
-                      disabled={submitting}
-                      required
-                    >
-                      {Object.entries(REQUEST_PRIORITY_LABELS).map(([key, label]) => (
-                        <option key={key} value={key}>{label}</option>
-                      ))}
-                    </select>
-                  </div>
 
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      Talep Türü <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      className="form-select"
-                      name="requestType"
-                      value={formData.requestType}
-                      onChange={handleInputChange}
-                      disabled={submitting}
-                      required
-                    >
-                      {Object.entries(REQUEST_TYPE_LABELS).map(([key, label]) => (
-                        <option key={key} value={key}>{label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="col-12 mb-3">
-                    <label className="form-label">Açıklama</label>
-                    <textarea
-                      className="form-control"
-                      name="description"
-                      rows="3"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      disabled={submitting}
-                      placeholder="Talep hakkında açıklama yazın..."
-                    />
-                  </div>
-                </div>
+              <div className="col-md-4 mb-3">
+                <label className="form-label fw-bold">
+                  Talep Türü <span className="text-danger">*</span>
+                </label>
+                <select
+                  className="form-select form-select-lg"
+                  name="requestType"
+                  value={formData.requestType}
+                  onChange={handleInputChange}
+                  disabled={submitting}
+                  required
+                >
+                  {Object.entries(REQUEST_TYPE_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
               </div>
-            </div>
 
-            {/* Ürün Ekle */}
-            <div className="card shadow-sm mb-4">
-              <div className="card-header bg-light">
-                <h5 className="mb-0">
-                  <i className="bi bi-plus-circle me-2"></i>
-                  Ürün Ekle
-                </h5>
-              </div>
-              <div className="card-body">
-                <div className="row">
-                  <div className="col-md-12 mb-3">
-                    <label className="form-label">
-                      Ürün <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      className="form-select"
-                      name="itemId"
-                      value={detailForm.itemId}
-                      onChange={handleDetailInputChange}
-                      disabled={submitting}
-                    >
-                      <option value="">Seçiniz...</option>
-                      {items.map(item => (
-                        <option key={item.id} value={item.id}>
-                          {item.code} - {item.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="col-md-3 mb-3">
-                    <label className="form-label">
-                      Miktar <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      name="quantity"
-                      value={detailForm.quantity}
-                      onChange={handleDetailInputChange}
-                      min="0.01"
-                      step="0.01"
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div className="col-md-3 mb-3">
-                    <label className="form-label">Birim</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="unit"
-                      value={detailForm.unit}
-                      onChange={handleDetailInputChange}
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div className="col-md-3 mb-3">
-                    <label className="form-label">Tahmini Fiyat</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      name="estimatedUnitPrice"
-                      value={detailForm.estimatedUnitPrice}
-                      onChange={handleDetailInputChange}
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div className="col-md-3 mb-3">
-                    <label className="form-label">İhtiyaç Tarihi</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      name="requiredDate"
-                      value={detailForm.requiredDate}
-                      onChange={handleDetailInputChange}
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div className="col-md-12 mb-3">
-                    <label className="form-label">Ürün Açıklaması</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="description"
-                      value={detailForm.description}
-                      onChange={handleDetailInputChange}
-                      placeholder="Ürün için özel notlar..."
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div className="col-12">
-                    <button
-                      type="button"
-                      className="btn btn-primary w-100"
-                      onClick={handleAddDetail}
-                      disabled={submitting}
-                    >
-                      <i className="bi bi-plus-lg me-2"></i>
-                      Ürünü Listeye Ekle
-                    </button>
-                  </div>
-                </div>
+              <div className="col-md-4 mb-3">
+                <label className="form-label fw-bold">Açıklama</label>
+                <textarea
+                  className="form-control"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows="1"
+                  placeholder="İsteğe bağlı açıklama giriniz"
+                  disabled={submitting}
+                />
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Right Column - Eklenen Ürünler */}
-          <div className="col-lg-4 mb-4">
-            <div className="card shadow-sm sticky-top" style={{ top: '20px' }}>
-              <div className="card-header bg-light">
-                <h5 className="mb-0">
-                  <i className="bi bi-cart-check me-2"></i>
-                  Eklenen Ürünler ({formData.details.length})
-                </h5>
+        {/* ===== 2. ÜRÜN EKLEME FORMU ===== */}
+        <div className="card shadow-sm mb-4">
+          <div className="card-header bg-success text-white">
+            <h5 className="mb-0">
+              <i className="bi bi-plus-circle me-2"></i>
+              Ürün Ekle
+            </h5>
+          </div>
+          <div className="card-body">
+            <div className="row">
+              {/* Ürün Seçimi */}
+              <div className="col-md-4 mb-3">
+                <label className="form-label fw-bold">
+                  Ürün <span className="text-danger">*</span>
+                </label>
+                <select
+                  className="form-select"
+                  name="itemId"
+                  value={productForm.itemId}
+                  onChange={handleProductFormChange}
+                  disabled={submitting}
+                >
+                  <option value="">Ürün Seçiniz</option>
+                  {items.map(item => (
+                    <option key={item.id} value={item.id}>
+                      {item.code} - {item.name}
+                    </option>
+                  ))}
+                </select>
+                {productForm.itemGroupName && (
+                  <small className="text-muted">Grup: {productForm.itemGroupName}</small>
+                )}
               </div>
-              <div className="card-body" style={{ maxHeight: '600px', overflowY: 'auto' }}>
-                {formData.details.length === 0 ? (
-                  <div className="text-center py-5 text-muted">
-                    <i className="bi bi-inbox fs-1 d-block mb-2"></i>
-                    <p className="mb-0">Henüz ürün eklenmedi</p>
-                    <small>Soldaki formdan ürün ekleyin</small>
-                  </div>
-                ) : (
-                  <div className="list-group list-group-flush">
-                    {formData.details.map((detail, index) => (
-                      <div key={index} className="list-group-item px-0 border-bottom">
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <div className="flex-grow-1">
-                            <h6 className="mb-1">
-                              <code className="text-primary">{detail.itemCode}</code>
-                            </h6>
-                            <p className="mb-1 small">{detail.itemName}</p>
-                            {detail.itemGroupName && (
-                              <span className="badge bg-secondary mb-2">{detail.itemGroupName}</span>
-                            )}
-                          </div>
+
+              {/* Miktar */}
+              <div className="col-md-2 mb-3">
+                <label className="form-label fw-bold">
+                  Miktar <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="number"
+                  className="form-control"
+                  name="quantity"
+                  value={productForm.quantity}
+                  onChange={handleProductFormChange}
+                  step="0.01"
+                  min="0"
+                  placeholder="0"
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* Birim */}
+              <div className="col-md-2 mb-3">
+                <label className="form-label fw-bold">Birim</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="unit"
+                  value={productForm.unit}
+                  onChange={handleProductFormChange}
+                  placeholder="Adet, Kg, vb."
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* İhtiyaç Tarihi */}
+              <div className="col-md-2 mb-3">
+                <label className="form-label fw-bold">İhtiyaç Tarihi</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  name="requiredDate"
+                  value={productForm.requiredDate}
+                  onChange={handleProductFormChange}
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* Tahmini Birim Fiyat */}
+              <div className="col-md-2 mb-3">
+                <label className="form-label fw-bold">Tahmini Birim Fiyat</label>
+                <div className="input-group">
+                  <input
+                    type="number"
+                    className="form-control"
+                    name="estimatedUnitPrice"
+                    value={productForm.estimatedUnitPrice}
+                    onChange={handleProductFormChange}
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    disabled={submitting}
+                  />
+                  <span className="input-group-text">₺</span>
+                </div>
+              </div>
+
+              {/* Açıklama */}
+              <div className="col-md-12 mb-3">
+                <label className="form-label fw-bold">Ürün Açıklaması</label>
+                <textarea
+                  className="form-control"
+                  name="description"
+                  value={productForm.description}
+                  onChange={handleProductFormChange}
+                  rows="2"
+                  placeholder="İsteğe bağlı ürün açıklaması"
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+
+            {/* Tahmini Toplam Fiyat (Hesaplanan) */}
+            {productForm.estimatedTotalPrice > 0 && (
+              <div className="alert alert-info d-flex align-items-center mb-3">
+                <i className="bi bi-calculator me-2 fs-4"></i>
+                <div>
+                  <strong>Tahmini Toplam:</strong> {productForm.estimatedTotalPrice.toFixed(2)} ₺
+                </div>
+              </div>
+            )}
+
+            {/* Ekle Butonu */}
+            <div className="d-flex justify-content-end">
+              <button
+                type="button"
+                className="btn btn-success btn-lg"
+                onClick={handleAddProduct}
+                disabled={submitting || !productForm.itemId || !productForm.quantity}
+              >
+                <i className="bi bi-plus-circle me-2"></i>
+                Ürünü Listeye Ekle
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ===== 3. EKLENEN ÜRÜNLER LİSTESİ ===== */}
+        <div className="card shadow-sm mb-4">
+          <div className="card-header bg-info text-white">
+            <h5 className="mb-0">
+              <i className="bi bi-list-ul me-2"></i>
+              Eklenen Ürünler ({addedProducts.length})
+            </h5>
+          </div>
+          <div className="card-body">
+            {addedProducts.length === 0 ? (
+              <div className="text-center py-5 text-muted">
+                <i className="bi bi-inbox fs-1 d-block mb-3"></i>
+                <p className="mb-0">Henüz ürün eklenmedi. Yukarıdaki formdan ürün ekleyiniz.</p>
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-hover table-bordered align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th style={{ width: '5%' }}>#</th>
+                      <th style={{ width: '12%' }}>Ürün Kodu</th>
+                      <th style={{ width: '20%' }}>Ürün Adı</th>
+                      <th style={{ width: '12%' }}>Grup</th>
+                      <th style={{ width: '8%' }} className="text-end">Miktar</th>
+                      <th style={{ width: '6%' }}>Birim</th>
+                      <th style={{ width: '10%' }}>İhtiyaç Tarihi</th>
+                      <th style={{ width: '10%' }} className="text-end">Birim Fiyat</th>
+                      <th style={{ width: '10%' }} className="text-end">Toplam</th>
+                      <th style={{ width: '7%' }} className="text-center">İşlem</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {addedProducts.map((product, index) => (
+                      <tr key={index}>
+                        <td className="text-center fw-bold">{index + 1}</td>
+                        <td>
+                          <span className="badge bg-secondary">{product.itemCode}</span>
+                        </td>
+                        <td>
+                          <strong>{product.itemName}</strong>
+                          {product.description && (
+                            <div className="text-muted small">{product.description}</div>
+                          )}
+                        </td>
+                        <td>
+                          <span className="badge bg-light text-dark">{product.itemGroupName}</span>
+                        </td>
+                        <td className="text-end fw-bold">{product.quantity}</td>
+                        <td>{product.unit}</td>
+                        <td>
+                          {product.requiredDate 
+                            ? new Date(product.requiredDate).toLocaleDateString('tr-TR')
+                            : '-'}
+                        </td>
+                        <td className="text-end">
+                          {product.estimatedUnitPrice 
+                            ? `${product.estimatedUnitPrice.toFixed(2)} ₺`
+                            : '-'}
+                        </td>
+                        <td className="text-end fw-bold text-success">
+                          {product.estimatedTotalPrice 
+                            ? `${product.estimatedTotalPrice.toFixed(2)} ₺`
+                            : '-'}
+                        </td>
+                        <td className="text-center">
                           <button
                             type="button"
                             className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleRemoveDetail(index)}
+                            onClick={() => handleRemoveProduct(index)}
                             disabled={submitting}
-                            title="Çıkar"
+                            title="Sil"
                           >
                             <i className="bi bi-trash"></i>
                           </button>
-                        </div>
-                        <div className="d-flex justify-content-between small text-muted">
-                          <span><strong>{detail.quantity}</strong> {detail.unit}</span>
-                          {detail.estimatedUnitPrice && (
-                            <span className="text-primary">
-                              {new Intl.NumberFormat('tr-TR', {
-                                style: 'currency',
-                                currency: 'TRY'
-                              }).format(detail.estimatedUnitPrice)}
-                            </span>
-                          )}
-                        </div>
-                        {detail.requiredDate && (
-                          <div className="small text-muted mt-1">
-                            <i className="bi bi-calendar-event me-1"></i>
-                            {new Date(detail.requiredDate).toLocaleDateString('tr-TR')}
-                          </div>
-                        )}
-                      </div>
+                        </td>
+                      </tr>
                     ))}
-                  </div>
-                )}
-
-                {errors.details && (
-                  <div className="alert alert-danger mt-3 mb-0">
-                    <i className="bi bi-exclamation-triangle me-2"></i>
-                    {errors.details}
-                  </div>
-                )}
+                  </tbody>
+                  <tfoot className="table-light">
+                    <tr>
+                      <td colSpan="8" className="text-end fw-bold">Genel Toplam:</td>
+                      <td className="text-end fw-bold text-success fs-5">
+                        {addedProducts
+                          .reduce((sum, p) => sum + (p.estimatedTotalPrice || 0), 0)
+                          .toFixed(2)} ₺
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
-              <div className="card-footer bg-light">
-                <div className="d-grid gap-2">
-                  <button
-                    type="submit"
-                    className="btn btn-success"
-                    disabled={submitting || formData.details.length === 0}
-                  >
-                    {submitting ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                        Kaydediliyor...
-                      </>
-                    ) : (
-                      <>
-                        <i className="bi bi-check-lg me-2"></i>
-                        {isEdit ? 'Değişiklikleri Kaydet' : 'Talebi Oluştur'}
-                      </>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary"
-                    onClick={handleCancel}
-                    disabled={submitting}
-                  >
-                    İptal
-                  </button>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
+        </div>
+
+        {/* ===== 4. KAYDET BUTONU ===== */}
+        <div className="d-flex justify-content-end gap-2">
+          <button 
+            type="button" 
+            className="btn btn-secondary btn-lg"
+            onClick={handleCancel}
+            disabled={submitting}
+          >
+            <i className="bi bi-x-circle me-2"></i>
+            İptal
+          </button>
+          <button 
+            type="submit" 
+            className="btn btn-primary btn-lg"
+            disabled={submitting || addedProducts.length === 0}
+          >
+            {submitting ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Kaydediliyor...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-check-circle me-2"></i>
+                {isEdit ? 'Değişiklikleri Kaydet' : 'Talebi Oluştur'}
+              </>
+            )}
+          </button>
         </div>
       </form>
     </div>
