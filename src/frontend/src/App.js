@@ -1,5 +1,5 @@
 // src/frontend/src/App.js
-// ✅ SATINALMA YÖNETİMİ - Route sıralaması DÜZELTİLDİ
+// ✅ ARAÇ YÖNETİMİ ROUTE DÜZELTMESİ - /vehicles/:id route'u kaldırıldı
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -161,8 +161,12 @@ function App() {
             />
 
             {/* ========================================
-                ARAÇ YÖNETİMİ
+                ARAÇ YÖNETİMİ - DÜZELTİLDİ ✅
+                ⚠️ DİKKAT: /vehicles/:id route'u KALDIRILDI
+                Bunun yerine spesifik route'lar kullanılıyor
                 ======================================== */}
+            
+            {/* Yeni Araç - En üstte olmalı */}
             <Route
               path="/vehicles/new"
               element={
@@ -173,6 +177,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            
+            {/* Araç Düzenleme - İKİ FORMAT DESTEKLENİYOR */}
             <Route
               path="/vehicles/:id/edit"
               element={
@@ -184,6 +190,40 @@ function App() {
               }
             />
             <Route
+              path="/vehicles/edit/:id"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehicleFormPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Araç Detay - İKİ FORMAT DESTEKLENİYOR */}
+            <Route
+              path="/vehicles/detail/:id"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehicleDetailPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vehicles/:id/detail"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehicleDetailPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Yakıt Alımları */}
+            <Route
               path="/vehicles/:id/fuel-purchases"
               element={
                 <ProtectedRoute>
@@ -193,16 +233,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/vehicles/:id"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <VehicleDetailPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
+            
+            {/* Araç Listesi - En sonda olmalı */}
             <Route
               path="/vehicles"
               element={
