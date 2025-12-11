@@ -246,7 +246,7 @@ namespace API.Controllers
                         OwnershipType = v.OwnershipType,
                         Insurance = v.Insurance,
                         VIN = v.VIN,
-                        FuelConsumption =  v.FuelConsumption,
+                        FuelConsumption = v.FuelConsumption,
                         VehicleImageUrl = v.VehicleImageUrl
                     })
                     .ToListAsync();
@@ -316,17 +316,20 @@ namespace API.Controllers
             }
         }
 
-        /// <summary>
-        /// Creates a new vehicle
-        /// POST: api/vehicles
-        /// </summary>
+
+        // src/backend/API/Controllers/VehiclesController.cs
+        // ✅ CreateVehicle metodu - NULL-SAFE VERSION
+
         [HttpPost]
         public async Task<ActionResult<Vehicle>> CreateVehicle([FromBody] VehicleCreateDto vehicleDto)
         {
             try
             {
+                _logger.LogInformation("CreateVehicle called with data: {@VehicleDto}", vehicleDto);
+
                 if (!ModelState.IsValid)
                 {
+                    _logger.LogWarning("ModelState invalid: {@ModelState}", ModelState);
                     return BadRequest(ModelState);
                 }
 
@@ -336,29 +339,34 @@ namespace API.Controllers
 
                 if (existingVehicle != null)
                 {
+                    _logger.LogWarning("Duplicate license plate: {LicensePlate}", vehicleDto.LicensePlate);
                     return Conflict(new { message = $"A vehicle with license plate ({vehicleDto.LicensePlate}) already exists." });
                 }
 
+                // ✅ NULL-SAFE: Nullable alanlar için ?. operatörü ve ?? kullan
                 var vehicle = new Vehicle
                 {
+                    // Zorunlu alanlar
                     LicensePlate = vehicleDto.LicensePlate.ToUpper().Trim(),
                     Brand = vehicleDto.Brand.Trim(),
                     Model = vehicleDto.Model.Trim(),
+
+                    // Opsiyonel alanlar - NULL-SAFE
                     Year = vehicleDto.Year,
-                    VIN = vehicleDto.VIN.Trim(),
-                    CompanyName = vehicleDto.CompanyName.Trim(),
+                    VIN = vehicleDto.VIN?.Trim(),
+                    CompanyName = vehicleDto.CompanyName?.Trim(),
                     InspectionDate = vehicleDto.InspectionDate,
-                    Insurance = vehicleDto.Insurance.Trim(),
+                    Insurance = vehicleDto.Insurance?.Trim(),
                     InsuranceExpiryDate = vehicleDto.InsuranceExpiryDate,
                     LastServiceDate = vehicleDto.LastServiceDate,
                     CurrentMileage = vehicleDto.CurrentMileage,
                     FuelConsumption = vehicleDto.FuelConsumption,
-                    TireCondition = vehicleDto.TireCondition.Trim(),
-                    RegistrationInfo = vehicleDto.RegistrationInfo.Trim(),
-                    OwnershipType = vehicleDto.OwnershipType.Trim(),
-                    AssignedUserName = vehicleDto.AssignedUserName.Trim(),
-                    AssignedUserPhone = vehicleDto.AssignedUserPhone.Trim(),
-                    Location = vehicleDto.Location.Trim(),
+                    TireCondition = vehicleDto.TireCondition?.Trim(),
+                    RegistrationInfo = vehicleDto.RegistrationInfo?.Trim(),
+                    OwnershipType = vehicleDto.OwnershipType?.Trim() ?? "company",
+                    AssignedUserName = vehicleDto.AssignedUserName?.Trim(),
+                    AssignedUserPhone = vehicleDto.AssignedUserPhone?.Trim(),
+                    Location = vehicleDto.Location?.Trim(),
                     VehicleImageUrl = vehicleDto.VehicleImageUrl?.Trim(),
                     CreatedAt = DateTime.Now
                 };
@@ -366,25 +374,39 @@ namespace API.Controllers
                 _context.Vehicles.Add(vehicle);
                 await _context.SaveChangesAsync();
 
-                // Log entry
-                await _logService.LogOperationAsync(
-                    vehicle.Id,
-                    "Vehicle Creation",
-                    $"New vehicle added: {vehicle.LicensePlate} - {vehicle.Brand} {vehicle.Model}",
-                    null,
-                    new { vehicle.LicensePlate, vehicle.Brand, vehicle.Model, vehicle.AssignedUserName },
-                    User.Identity?.Name ?? "System",
-                    GetClientIpAddress()
-                );
+                _logger.LogInformation("Vehicle created successfully. Id: {VehicleId}, LicensePlate: {LicensePlate}",
+                    vehicle.Id, vehicle.LicensePlate);
 
-                _logger.LogInformation("New vehicle added. ID: {Id}, LicensePlate: {LicensePlate}", vehicle.Id, vehicle.LicensePlate);
+                // Log entry
+                try
+                {
+                    await _logService.LogOperationAsync(
+                        vehicle.Id,
+                        "Vehicle Creation",
+                        $"New vehicle added: {vehicle.LicensePlate} - {vehicle.Brand} {vehicle.Model}",
+                        null,
+                        new { vehicle.LicensePlate, vehicle.Brand, vehicle.Model },
+                        User.Identity?.Name ?? "System",
+                        GetClientIpAddress()
+                    );
+                }
+                catch (Exception logEx)
+                {
+                    // Log hataları araç oluşturmayı engellemez
+                    _logger.LogError(logEx, "Error logging vehicle creation");
+                }
 
                 return CreatedAtAction(nameof(GetVehicle), new { id = vehicle.Id }, vehicle);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error adding new vehicle");
-                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+                _logger.LogError(ex, "Error creating vehicle. Data: {@VehicleDto}", vehicleDto);
+                return StatusCode(500, new
+                {
+                    message = "Internal server error",
+                    error = ex.Message,
+                    innerError = ex.InnerException?.Message
+                });
             }
         }
 

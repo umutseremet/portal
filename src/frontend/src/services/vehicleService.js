@@ -3,7 +3,7 @@
 import apiService from './api';
 
 class VehicleService {
-  
+
   // Get vehicles with filtering and pagination
   async getVehicles(params = {}) {
     try {
@@ -29,23 +29,64 @@ class VehicleService {
     }
   }
 
-  // Create new vehicle
+
+  // src/frontend/src/services/vehicleService.js
+  // ✅ DÜZELTİLMİŞ createVehicle metodu
+
   async createVehicle(vehicleData) {
     try {
+      console.log('🚀 vehicleService.createVehicle called with:', vehicleData);
+
       // Validate required fields
-      if (!vehicleData.brand || !vehicleData.model || !vehicleData.licensePlate) {
-        throw new Error('Marka, model ve plaka zorunlu alanlar');
+      if (!vehicleData.licensePlate?.trim()) {
+        throw new Error('Plaka zorunludur');
+      }
+      if (!vehicleData.brand?.trim()) {
+        throw new Error('Marka zorunludur');
+      }
+      if (!vehicleData.model?.trim()) {
+        throw new Error('Model zorunludur');
       }
 
-      // Format data to ensure consistency
+      // Format data - Boş string'leri null'a çevir
       const formattedData = {
-        ...vehicleData,
-        licensePlate: vehicleData.licensePlate?.toUpperCase().trim()
+        licensePlate: vehicleData.licensePlate.toUpperCase().trim(),
+        brand: vehicleData.brand.trim(),
+        model: vehicleData.model.trim(),
+        year: vehicleData.year || null,
+        vin: vehicleData.vin?.trim() || null,
+        companyName: vehicleData.companyName?.trim() || null,
+        location: vehicleData.location?.trim() || null,
+        assignedUserName: vehicleData.assignedUserName?.trim() || null,
+        assignedUserPhone: vehicleData.assignedUserPhone?.trim() || null,
+        currentMileage: vehicleData.currentMileage || null,
+        fuelConsumption: vehicleData.fuelConsumption || null,
+        tireCondition: vehicleData.tireCondition?.trim() || null,
+        lastServiceDate: vehicleData.lastServiceDate || null,
+        insurance: vehicleData.insurance?.trim() || null,
+        insuranceExpiryDate: vehicleData.insuranceExpiryDate || null,
+        inspectionDate: vehicleData.inspectionDate || null,
+        ownershipType: vehicleData.ownershipType?.trim() || 'company',
+        vehicleImageUrl: vehicleData.vehicleImageUrl?.trim() || null,
+        registrationInfo: vehicleData.registrationInfo?.trim() || null
       };
 
-      return await apiService.createVehicle(formattedData);
+      console.log('📦 Formatted data:', formattedData);
+
+      // API call
+      const response = await apiService.createVehicle(formattedData);
+
+      console.log('✅ API response:', response);
+
+      return response;
     } catch (error) {
-      console.error('Error creating vehicle:', error);
+      console.error('❌ vehicleService.createVehicle error:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        response: error.response,
+        data: error.response?.data
+      });
+
       throw new Error(error.message || 'Araç oluşturulurken hata oluştu');
     }
   }
@@ -97,7 +138,7 @@ class VehicleService {
       // Delete all vehicles in parallel
       const deletePromises = vehicleIds.map(id => this.deleteVehicle(id));
       await Promise.all(deletePromises);
-      
+
       return { success: true, deletedCount: vehicleIds.length };
     } catch (error) {
       console.error('Error bulk deleting vehicles:', error);
@@ -176,7 +217,7 @@ class VehicleService {
   // Format date to ensure consistency
   formatDate(date) {
     if (!date) return null;
-    
+
     const dateObj = date instanceof Date ? date : new Date(date);
     return dateObj.toISOString().split('T')[0]; // YYYY-MM-DD format
   }

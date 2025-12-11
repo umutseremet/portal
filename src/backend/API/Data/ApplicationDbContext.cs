@@ -187,34 +187,43 @@ namespace API.Data
                 entity.HasIndex(e => e.Company).HasDatabaseName("IX_Visitors_Company");
             });
 
-            // NEW - Vehicle entity configuration
             modelBuilder.Entity<Vehicle>(entity =>
             {
                 entity.ToTable("Vehicles");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                
-                // String properties
+
+                // ✅ ZORUNLU ALANLAR - SADECE 3 TANE
                 entity.Property(e => e.LicensePlate).HasMaxLength(20).IsRequired();
                 entity.Property(e => e.Brand).HasMaxLength(50).IsRequired();
                 entity.Property(e => e.Model).HasMaxLength(50).IsRequired();
-                entity.Property(e => e.VIN).HasMaxLength(50).IsRequired();
-                entity.Property(e => e.CompanyName).HasMaxLength(100).IsRequired();
-                entity.Property(e => e.Insurance).HasMaxLength(100).IsRequired();
-                entity.Property(e => e.TireCondition).HasMaxLength(20).IsRequired();
-                entity.Property(e => e.RegistrationInfo).HasMaxLength(100).IsRequired();
-                entity.Property(e => e.OwnershipType).HasMaxLength(50).IsRequired();
-                entity.Property(e => e.AssignedUserName).HasMaxLength(100).IsRequired();
-                entity.Property(e => e.AssignedUserPhone).HasMaxLength(20).IsRequired();
-                entity.Property(e => e.Location).HasMaxLength(100).IsRequired();
-                entity.Property(e => e.VehicleImageUrl).HasMaxLength(500);
-                
+
+                // ✅ OPSİYONEL ALANLAR - NULLABLE
+                entity.Property(e => e.Year).IsRequired(false);
+                entity.Property(e => e.VIN).HasMaxLength(50).IsRequired(false);
+                entity.Property(e => e.CompanyName).HasMaxLength(100).IsRequired(false);
+                entity.Property(e => e.Insurance).HasMaxLength(100).IsRequired(false);
+                entity.Property(e => e.TireCondition).HasMaxLength(20).IsRequired(false);
+                entity.Property(e => e.RegistrationInfo).HasMaxLength(100).IsRequired(false);
+                entity.Property(e => e.OwnershipType).HasMaxLength(50).IsRequired(false).HasDefaultValue("company");
+                entity.Property(e => e.AssignedUserName).HasMaxLength(100).IsRequired(false);
+                entity.Property(e => e.AssignedUserPhone).HasMaxLength(20).IsRequired(false);
+                entity.Property(e => e.Location).HasMaxLength(100).IsRequired(false);
+                entity.Property(e => e.VehicleImageUrl).HasMaxLength(500).IsRequired(false);
+                entity.Property(e => e.CurrentMileage).IsRequired(false);
+
                 // Decimal property
-                entity.Property(e => e.FuelConsumption).HasPrecision(4, 1);
-                
+                entity.Property(e => e.FuelConsumption).HasPrecision(4, 1).IsRequired(false);
+
+                // Date properties - nullable
+                entity.Property(e => e.InspectionDate).IsRequired(false);
+                entity.Property(e => e.InsuranceExpiryDate).IsRequired(false);
+                entity.Property(e => e.LastServiceDate).IsRequired(false);
+
                 // Audit fields
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
-                
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.UpdatedAt).IsRequired(false);
+
                 // Indexes for performance
                 entity.HasIndex(e => e.LicensePlate).IsUnique().HasDatabaseName("IX_Vehicles_LicensePlate");
                 entity.HasIndex(e => e.AssignedUserName).HasDatabaseName("IX_Vehicles_AssignedUserName");

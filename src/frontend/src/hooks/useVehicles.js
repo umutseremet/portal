@@ -82,7 +82,7 @@ export const useVehicles = (initialFilters = {}) => {
 
       // API yanıtını kontrol et ve doğru formatta state'e yaz
       let vehiclesArray = [];
-      
+
       if (response) {
         // API service'ten mappedResponse geldiği için direkt data property'sini kullan
         if (response.data && Array.isArray(response.data)) {
@@ -149,7 +149,8 @@ export const useVehicles = (initialFilters = {}) => {
     }
   }, [filters, pagination.pageSize, clearError]);
 
-  // Create vehicle
+
+  // Create vehicle - DÜZELTİLMİŞ VERSİYON
   const createVehicle = useCallback(async (vehicleData) => {
     if (!mountedRef.current) return;
 
@@ -157,22 +158,86 @@ export const useVehicles = (initialFilters = {}) => {
       setLoading(true);
       clearError();
 
-      console.log('Creating vehicle:', vehicleData);
+      console.log('📤 Creating vehicle with data:', vehicleData);
 
-      const response = await vehicleService.createVehicle(vehicleData);
-      console.log('Create API response:', response);
+      // ✅ Data validation ve cleaning
+      const cleanedData = {
+        // Zorunlu alanlar
+        licensePlate: vehicleData.licensePlate?.trim().toUpperCase() || '',
+        brand: vehicleData.brand?.trim() || '',
+        model: vehicleData.model?.trim() || '',
+
+        // Opsiyonel alanlar - null yerine undefined gönder
+        year: vehicleData.year || null,
+        vin: vehicleData.vin?.trim() || null,
+        companyName: vehicleData.companyName?.trim() || null,
+        location: vehicleData.location?.trim() || null,
+        assignedUserName: vehicleData.assignedUserName?.trim() || null,
+        assignedUserPhone: vehicleData.assignedUserPhone?.trim() || null,
+        currentMileage: vehicleData.currentMileage || null,
+        fuelConsumption: vehicleData.fuelConsumption || null,
+        tireCondition: vehicleData.tireCondition?.trim() || null,
+        lastServiceDate: vehicleData.lastServiceDate || null,
+        insurance: vehicleData.insurance?.trim() || null,
+        insuranceExpiryDate: vehicleData.insuranceExpiryDate || null,
+        inspectionDate: vehicleData.inspectionDate || null,
+        ownershipType: vehicleData.ownershipType?.trim() || 'company',
+        vehicleImageUrl: vehicleData.vehicleImageUrl?.trim() || null,
+        registrationInfo: vehicleData.registrationInfo?.trim() || null,
+        notes: vehicleData.notes?.trim() || null
+      };
+
+      // Remove undefined values
+      Object.keys(cleanedData).forEach(key => {
+        if (cleanedData[key] === undefined) {
+          delete cleanedData[key];
+        }
+      });
+
+      console.log('✨ Cleaned data to send:', cleanedData);
+
+      // API call
+      const response = await vehicleService.createVehicle(cleanedData);
+      console.log('✅ Create API response:', response);
 
       if (!mountedRef.current) return;
 
-      showAlert('Araç başarıyla eklendi.', 'success');
+      // ✅ Response handling
+      const newVehicle = response?.data || response?.vehicle || response;
 
-      // Reload vehicles to get updated list
-      await loadVehicles(1, true, filters);
+      if (newVehicle) {
+        // Add to vehicles list
+        setVehicles(prevVehicles => [newVehicle, ...prevVehicles]);
 
-      return { success: true, vehicle: response };
+        // Update pagination
+        setPagination(prev => ({
+          ...prev,
+          totalCount: prev.totalCount + 1
+        }));
+
+        console.log('✅ Vehicle added to state successfully');
+        showAlert('Araç başarıyla eklendi.', 'success');
+
+        return { success: true, vehicle: newVehicle };
+      } else {
+        throw new Error('API yanıtında araç bilgisi bulunamadı');
+      }
+
     } catch (err) {
+      console.error('❌ Create vehicle error:', err);
+      console.error('❌ Error details:', {
+        message: err.message,
+        response: err.response,
+        data: err.response?.data
+      });
+
       if (mountedRef.current) {
-        setError(err.message || 'Araç oluşturulurken hata oluştu');
+        const errorMessage = err.response?.data?.message
+          || err.message
+          || 'Araç oluşturulurken hata oluştu';
+
+        setError(errorMessage);
+        showAlert(errorMessage, 'error');
       }
       throw err;
     } finally {
@@ -180,7 +245,8 @@ export const useVehicles = (initialFilters = {}) => {
         setLoading(false);
       }
     }
-  }, [loadVehicles, filters, clearError]);
+  }, [clearError]);
+
 
   // Update vehicle
   const updateVehicle = useCallback(async (id, vehicleData) => {
@@ -392,7 +458,7 @@ export const useVehicles = (initialFilters = {}) => {
       initialLoadDone: initialLoadDoneRef.current,
       mounted: mountedRef.current
     });
-    
+
     if (!initialLoadDoneRef.current && mountedRef.current) {
       console.log('🔄 Calling loadVehicles for initial load');
       loadVehicles();
@@ -406,7 +472,7 @@ export const useVehicles = (initialFilters = {}) => {
       currentPage: pagination.currentPage,
       filters
     });
-    
+
     if (initialLoadDoneRef.current && mountedRef.current) {
       console.log('🔄 Calling loadVehicles due to filter/pagination change');
       loadVehicles(pagination.currentPage, true);
@@ -426,7 +492,7 @@ export const useVehicles = (initialFilters = {}) => {
   const hasFilters = Object.values(filters).some(value => value && value !== '' && value !== 'createdAt' && value !== 'desc');
   const selectedCount = selectedVehicles.length;
   const isAllSelected = vehicles.length > 0 && selectedVehicles.length === vehicles.length;
-  
+
   const filterSummary = {
     search: filters.search,
     brand: filters.brand,

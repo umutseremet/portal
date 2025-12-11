@@ -1,5 +1,5 @@
 // src/frontend/src/pages/VehicleFormPage.js
-// ✅ TAM DÜZELTİLMİŞ VERSİYON - Resim yükleme ile (Sürükle-Bırak)
+// ✅ TAM DÜZELTİLMİŞ VERSİYON - SADECE PLAKA, MARKA, MODEL ZORUNLU
 // PART 1: Imports ve State
 
 import React, { useState, useEffect } from 'react';
@@ -103,7 +103,8 @@ const VehicleFormPage = () => {
       }));
     }
   };
-// PART 2: Image Upload Functions
+
+  // PART 2: Image Upload Functions
 
   // Resim seçme
   const handleImageSelect = (e) => {
@@ -211,7 +212,7 @@ const VehicleFormPage = () => {
     }
   };
 
-  // Validate form
+  // ✅ Validate form - SADECE 3 ALAN ZORUNLU
   const validateForm = () => {
     const newErrors = {};
 
@@ -227,15 +228,11 @@ const VehicleFormPage = () => {
       newErrors.model = 'Model zorunludur';
     }
 
-    if (!formData.year || formData.year < 1980 || formData.year > new Date().getFullYear() + 1) {
-      newErrors.year = 'Geçerli bir yıl giriniz';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
+  // ✅ Handle form submission - TÜM ALANLAR OPSİYONEL
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -247,31 +244,36 @@ const VehicleFormPage = () => {
     
     try {
       const submitData = {
+        // ✅ ZORUNLU ALANLAR
         licensePlate: formData.licensePlate.trim().toUpperCase(),
         brand: formData.brand.trim(),
         model: formData.model.trim(),
-        year: parseInt(formData.year),
-        vin: formData.vin.trim(),
-        companyName: formData.companyName.trim(),
-        location: formData.location.trim(),
-        assignedUserName: formData.assignedUserName.trim(),
-        assignedUserPhone: formData.assignedUserPhone.trim(),
+        
+        // ✅ OPSİYONEL ALANLAR - Boşsa null gönder
+        year: formData.year && formData.year !== '' ? parseInt(formData.year) : null,
+        vin: formData.vin?.trim() || null,
+        companyName: formData.companyName?.trim() || null,
+        location: formData.location?.trim() || null,
+        assignedUserName: formData.assignedUserName?.trim() || null,
+        assignedUserPhone: formData.assignedUserPhone?.trim() || null,
         currentMileage: formData.currentMileage && formData.currentMileage !== '' 
           ? parseInt(formData.currentMileage) 
           : null,
         fuelConsumption: formData.fuelConsumption && formData.fuelConsumption !== '' 
           ? parseFloat(formData.fuelConsumption) 
           : null,
-        tireCondition: formData.tireCondition,
+        tireCondition: formData.tireCondition?.trim() || null,
         lastServiceDate: formData.lastServiceDate || null,
-        insurance: formData.insurance.trim(),
+        insurance: formData.insurance?.trim() || null,
         insuranceExpiryDate: formData.insuranceExpiryDate || null,
         inspectionDate: formData.inspectionDate || null,
-        ownershipType: formData.ownershipType,
-        vehicleImageUrl: formData.vehicleImageUrl,
-        registrationInfo: formData.registrationInfo.trim(),
-        notes: formData.notes.trim()
+        ownershipType: formData.ownershipType || 'company',
+        vehicleImageUrl: formData.vehicleImageUrl || null,
+        registrationInfo: formData.registrationInfo?.trim() || null,
+        notes: formData.notes?.trim() || null
       };
+
+      console.log('📤 Submitting vehicle data:', submitData);
 
       let savedVehicle;
       if (isEdit) {
@@ -281,6 +283,8 @@ const VehicleFormPage = () => {
         savedVehicle = await createVehicle(submitData);
       }
 
+      console.log('✅ Vehicle saved:', savedVehicle);
+
       // Resim yükleme
       if (imageFile && savedVehicle.id) {
         await uploadImage(savedVehicle.id);
@@ -289,7 +293,7 @@ const VehicleFormPage = () => {
       toast.success(isEdit ? 'Araç başarıyla güncellendi' : 'Araç başarıyla eklendi');
       navigate('/vehicles');
     } catch (err) {
-      console.error('Error saving vehicle:', err);
+      console.error('❌ Error saving vehicle:', err);
       toast.error(err.message || 'Araç kaydedilirken bir hata oluştu');
     } finally {
       setSubmitting(false);
@@ -299,7 +303,8 @@ const VehicleFormPage = () => {
   const handleCancel = () => {
     navigate('/vehicles');
   };
-// PART 3: JSX Return - Form Render
+
+  // PART 3: JSX Return - Form Render
 
   return (
     <div className="container-fluid py-4">
@@ -357,7 +362,7 @@ const VehicleFormPage = () => {
                       name="brand"
                       value={formData.brand}
                       onChange={handleChange}
-                      placeholder="Ford"
+                      placeholder="Ford, Mercedes, vs."
                     />
                     {errors.brand && (
                       <div className="invalid-feedback">{errors.brand}</div>
@@ -374,7 +379,7 @@ const VehicleFormPage = () => {
                       name="model"
                       value={formData.model}
                       onChange={handleChange}
-                      placeholder="Transit"
+                      placeholder="Transit, Sprinter, vs."
                     />
                     {errors.model && (
                       <div className="invalid-feedback">{errors.model}</div>
@@ -382,32 +387,27 @@ const VehicleFormPage = () => {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label">
-                      Yıl <span className="text-danger">*</span>
-                    </label>
+                    <label className="form-label">Model Yılı</label>
                     <input
                       type="number"
-                      className={`form-control ${errors.year ? 'is-invalid' : ''}`}
+                      className="form-control"
                       name="year"
                       value={formData.year}
                       onChange={handleChange}
                       min="1980"
                       max={new Date().getFullYear() + 1}
                     />
-                    {errors.year && (
-                      <div className="invalid-feedback">{errors.year}</div>
-                    )}
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label">Şasi No (VIN)</label>
+                    <label className="form-label">VIN / Şase No</label>
                     <input
                       type="text"
                       className="form-control"
                       name="vin"
                       value={formData.vin}
                       onChange={handleChange}
-                      placeholder="17 haneli şasi numarası"
+                      placeholder="VIN numarası"
                     />
                   </div>
 
@@ -422,20 +422,6 @@ const VehicleFormPage = () => {
                       placeholder="Şirket adı"
                     />
                   </div>
-
-                  <div className="col-md-12">
-                    <label className="form-label">Sahiplik Tipi</label>
-                    <select
-                      className="form-select"
-                      name="ownershipType"
-                      value={formData.ownershipType}
-                      onChange={handleChange}
-                    >
-                      <option value="company">Şirket</option>
-                      <option value="rental">Kiralık</option>
-                      <option value="personal">Kişisel</option>
-                    </select>
-                  </div>
                 </div>
 
                 {/* Kullanıcı Bilgileri */}
@@ -445,14 +431,14 @@ const VehicleFormPage = () => {
                 </h5>
                 <div className="row g-3 mb-4">
                   <div className="col-md-6">
-                    <label className="form-label">Atanan Kullanıcı</label>
+                    <label className="form-label">Kullanıcı Adı</label>
                     <input
                       type="text"
                       className="form-control"
                       name="assignedUserName"
                       value={formData.assignedUserName}
                       onChange={handleChange}
-                      placeholder="Ad Soyad"
+                      placeholder="Araç kullanıcısı"
                     />
                   </div>
 
@@ -464,7 +450,7 @@ const VehicleFormPage = () => {
                       name="assignedUserPhone"
                       value={formData.assignedUserPhone}
                       onChange={handleChange}
-                      placeholder="0532 123 45 67"
+                      placeholder="0555 555 55 55"
                     />
                   </div>
 
@@ -476,15 +462,15 @@ const VehicleFormPage = () => {
                       name="location"
                       value={formData.location}
                       onChange={handleChange}
-                      placeholder="İstanbul Şube"
+                      placeholder="Araç konumu"
                     />
                   </div>
                 </div>
 
-                {/* Teknik Bilgiler */}
+                {/* Araç Durumu */}
                 <h5 className="card-title border-bottom pb-2 mb-3">
-                  <i className="bi bi-gear me-2 text-warning"></i>
-                  Teknik Bilgiler
+                  <i className="bi bi-speedometer2 me-2 text-warning"></i>
+                  Araç Durumu
                 </h5>
                 <div className="row g-3 mb-4">
                   <div className="col-md-6">
@@ -495,7 +481,8 @@ const VehicleFormPage = () => {
                       name="currentMileage"
                       value={formData.currentMileage}
                       onChange={handleChange}
-                      placeholder="150000"
+                      placeholder="0"
+                      min="0"
                     />
                   </div>
 
@@ -503,16 +490,18 @@ const VehicleFormPage = () => {
                     <label className="form-label">Yakıt Tüketimi (L/100km)</label>
                     <input
                       type="number"
-                      step="0.1"
                       className="form-control"
                       name="fuelConsumption"
                       value={formData.fuelConsumption}
                       onChange={handleChange}
-                      placeholder="8.5"
+                      placeholder="0.0"
+                      step="0.1"
+                      min="0"
+                      max="99.9"
                     />
                   </div>
 
-                  <div className="col-md-12">
+                  <div className="col-md-6">
                     <label className="form-label">Lastik Durumu</label>
                     <select
                       className="form-select"
@@ -520,28 +509,52 @@ const VehicleFormPage = () => {
                       value={formData.tireCondition}
                       onChange={handleChange}
                     >
+                      <option value="">Seçiniz</option>
                       <option value="excellent">Mükemmel</option>
                       <option value="good">İyi</option>
                       <option value="fair">Orta</option>
                       <option value="poor">Kötü</option>
-                      <option value="needsReplacement">Değiştirilmeli</option>
+                      <option value="needReplacement">Değişmeli</option>
                     </select>
                   </div>
-                </div>
 
-                {/* Bakım ve Sigorta */}
-                <h5 className="card-title border-bottom pb-2 mb-3">
-                  <i className="bi bi-tools me-2 text-danger"></i>
-                  Bakım ve Sigorta
-                </h5>
-                <div className="row g-3 mb-4">
                   <div className="col-md-6">
-                    <label className="form-label">Son Servis Tarihi</label>
+                    <label className="form-label">Son Bakım Tarihi</label>
                     <input
                       type="date"
                       className="form-control"
                       name="lastServiceDate"
                       value={formData.lastServiceDate}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Sigorta ve Muayene */}
+                <h5 className="card-title border-bottom pb-2 mb-3">
+                  <i className="bi bi-shield-check me-2 text-primary"></i>
+                  Sigorta ve Muayene
+                </h5>
+                <div className="row g-3 mb-4">
+                  <div className="col-md-6">
+                    <label className="form-label">Sigorta Şirketi</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="insurance"
+                      value={formData.insurance}
+                      onChange={handleChange}
+                      placeholder="Sigorta şirketi adı"
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Sigorta Bitiş Tarihi</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      name="insuranceExpiryDate"
+                      value={formData.insuranceExpiryDate}
                       onChange={handleChange}
                     />
                   </div>
@@ -558,26 +571,18 @@ const VehicleFormPage = () => {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label">Sigorta Şirketi</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="insurance"
-                      value={formData.insurance}
+                    <label className="form-label">Sahiplik Tipi</label>
+                    <select
+                      className="form-select"
+                      name="ownershipType"
+                      value={formData.ownershipType}
                       onChange={handleChange}
-                      placeholder="Anadolu Sigorta"
-                    />
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label">Sigorta Bitiş Tarihi</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      name="insuranceExpiryDate"
-                      value={formData.insuranceExpiryDate}
-                      onChange={handleChange}
-                    />
+                    >
+                      <option value="company">Şirket</option>
+                      <option value="rental">Kiralık</option>
+                      <option value="leased">Leasing</option>
+                      <option value="personal">Şahıs</option>
+                    </select>
                   </div>
 
                   <div className="col-md-12">
