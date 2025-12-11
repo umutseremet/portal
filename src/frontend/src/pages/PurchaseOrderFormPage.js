@@ -105,11 +105,13 @@ const PurchaseOrderFormPage = () => {
       // Onaylanmış talepleri yükle - TÜM ONAY AŞAMALARINDAKİ TALEPLERİ DAHİL ET
       console.log('📦 Fetching purchase requests (all approval stages)...');
       
-      // Tüm talepleri çek
-      const allRequestsResponse = await api.getPurchaseRequests({});
+      // Tüm talepleri çek - ✅ includeDetails=true parametresi ekle
+      const allRequestsResponse = await api.getPurchaseRequests({ 
+        includeDetails: true 
+      });
       console.log('📦 Full API Response:', allRequestsResponse);
       
-      const allRequests = allRequestsResponse.items                  // ← ÖNCE BU!
+      const allRequests = allRequestsResponse.items
                  || allRequestsResponse.data?.items 
                  || allRequestsResponse.data?.requests 
                  || allRequestsResponse.data 
@@ -144,6 +146,16 @@ const PurchaseOrderFormPage = () => {
       
       setApprovedRequests(requestsData);
       console.log('✅ Set', requestsData.length, 'requests to state');
+      
+      // ✅ EKLEME: Her talebin detaylarını da logla
+      requestsData.forEach(req => {
+        console.log(`📋 Request ${req.requestNumber}:`, {
+          id: req.id,
+          status: req.status,
+          detailCount: req.details?.length || 0,
+          details: req.details
+        });
+      });
       
     } catch (error) {
       console.error('❌ Veri yükleme hatası:', error);
@@ -258,28 +270,42 @@ const PurchaseOrderFormPage = () => {
     setSearchTerm('');
   };
 
-  // Talepten ürün ekleme
+  // Talepten ürün ekleme - ✅ DÜZELTİLMİŞ
   const handleSelectRequest = (requestId) => {
     if (!requestId) return;
 
+    console.log('🔍 handleSelectRequest called with requestId:', requestId);
     const request = approvedRequests.find(r => r.id === parseInt(requestId));
+    console.log('📋 Found request:', request);
     
     if (request && request.details) {
-      const newDetails = request.details.map(detail => ({
-        requestDetailId: detail.id,
-        requestId: request.id,
-        requestNumber: request.requestNumber,
-        itemId: detail.itemId,
-        itemCode: detail.itemCode,
-        itemName: detail.itemName,
-        quantity: detail.quantity,
-        unit: detail.unit,
-        description: detail.description,
-        orderedQuantity: detail.quantity,
-        unitPrice: detail.estimatedUnitPrice || 0
-      }));
+      console.log('📦 Request has', request.details.length, 'details');
       
-      setSelectedRequestDetails(prev => [...prev, ...newDetails]);
+      const newDetails = request.details.map(detail => {
+        console.log('🔧 Mapping detail:', detail);
+        return {
+          requestDetailId: detail.id,
+          requestId: request.id,
+          requestNumber: request.requestNumber,
+          itemId: detail.itemId,
+          itemCode: detail.itemCode,
+          itemName: detail.itemName,
+          itemGroupName: detail.itemGroupName || '', // ✅ EKLEME
+          orderedQuantity: detail.quantity, // ✅ API'ye gönderilecek alan
+          unit: detail.unit,
+          unitPrice: detail.estimatedUnitPrice || 0,
+          description: detail.description || ''
+        };
+      });
+      
+      console.log('✅ Mapped details:', newDetails);
+      setSelectedRequestDetails(prev => {
+        const updated = [...prev, ...newDetails];
+        console.log('📊 Updated selectedRequestDetails:', updated);
+        return updated;
+      });
+    } else {
+      console.warn('⚠️ Request or details not found!');
     }
   };
 
@@ -456,7 +482,7 @@ const PurchaseOrderFormPage = () => {
                   value={orderData.supplierPhone}
                   onChange={handleOrderDataChange}
                   disabled={submitting}
-                  placeholder="+90 (___) ___ __ __"
+                  placeholder="Telefon"
                 />
               </div>
 
@@ -469,7 +495,7 @@ const PurchaseOrderFormPage = () => {
                   value={orderData.supplierEmail}
                   onChange={handleOrderDataChange}
                   disabled={submitting}
-                  placeholder="tedarikci@firma.com"
+                  placeholder="E-posta"
                 />
               </div>
 
@@ -590,14 +616,18 @@ const PurchaseOrderFormPage = () => {
                   <label className="form-label fw-bold">Onaylanmış Talep Seçiniz</label>
                   <select
                     className="form-select"
-                    onChange={(e) => handleSelectRequest(e.target.value)}
+                    onChange={(e) => {
+                      console.log('📝 Dropdown changed, value:', e.target.value);
+                      handleSelectRequest(e.target.value);
+                      e.target.value = ''; // ✅ Seçimden sonra reset
+                    }}
                     disabled={submitting}
-                    defaultValue=""
+                    value="" // ✅ Kontrollü component
                   >
                     <option value="">Talep Seçiniz</option>
                     {approvedRequests.map(request => (
                       <option key={request.id} value={request.id}>
-                        {request.requestNumber} - {request.requesterName} 
+                        {request.requestNumber} - {request.requesterName || request.userName} 
                         {request.details && ` (${request.details.length} ürün)`}
                       </option>
                     ))}
@@ -725,9 +755,6 @@ const PurchaseOrderFormPage = () => {
                                     {item.docNumber && ` • ${item.docNumber}`}
                                   </small>
                                 </div>
-                                {item.unit && (
-                                  <span className="badge bg-info ms-2">{item.unit}</span>
-                                )}
                               </div>
                             </div>
                           ))}
@@ -736,12 +763,6 @@ const PurchaseOrderFormPage = () => {
                     </div>
                   )}
                 </div>
-                {productForm.itemGroupName && (
-                  <small className="text-muted d-block mt-1">
-                    <i className="bi bi-tag me-1"></i>
-                    Grup: {productForm.itemGroupName}
-                  </small>
-                )}
               </div>
 
               {/* Miktar */}
@@ -836,26 +857,25 @@ const PurchaseOrderFormPage = () => {
           </div>
           <div className="card-body p-0">
             {selectedRequestDetails.length === 0 ? (
-              <div className="text-center py-5 text-muted">
-                <i className="bi bi-inbox display-1"></i>
-                <p className="mt-3">Henüz ürün eklenmedi</p>
-                <small>Manuel ürün ekleyin veya onaylanmış talepten ürün seçin</small>
+              <div className="text-center py-5">
+                <i className="bi bi-inbox" style={{ fontSize: '3rem', color: '#ccc' }}></i>
+                <p className="text-muted mt-3">Henüz ürün eklenmedi</p>
+                <p className="text-muted small">Manuel ürün ekleyin veya onaylanmış talepten seçim yapın</p>
               </div>
             ) : (
               <div className="table-responsive">
                 <table className="table table-hover align-middle mb-0">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ width: '50px' }}>#</th>
-                      <th>Kaynak</th>
-                      <th>Ürün Kodu</th>
-                      <th>Ürün Adı</th>
-                      <th className="text-end">Talep Mik.</th>
-                      <th className="text-end">Sipariş Mik.</th>
-                      <th>Birim</th>
-                      <th className="text-end">Birim Fiyat</th>
-                      <th className="text-end">Toplam</th>
-                      <th className="text-center" style={{ width: '100px' }}>İşlem</th>
+                      <th style={{ width: '5%' }}>#</th>
+                      <th style={{ width: '15%' }}>Ürün Kodu</th>
+                      <th style={{ width: '20%' }}>Ürün Adı</th>
+                      <th style={{ width: '10%' }}>Miktar</th>
+                      <th style={{ width: '8%' }}>Birim</th>
+                      <th style={{ width: '12%' }}>Birim Fiyat</th>
+                      <th style={{ width: '12%' }}>Toplam</th>
+                      <th style={{ width: '10%' }}>Talep No</th>
+                      <th style={{ width: '8%' }} className="text-center">İşlem</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -863,21 +883,18 @@ const PurchaseOrderFormPage = () => {
                       <tr key={index}>
                         <td>{index + 1}</td>
                         <td>
-                          {detail.requestNumber && detail.requestNumber !== 'Manuel' ? (
-                            <span className="badge bg-secondary">{detail.requestNumber}</span>
-                          ) : (
-                            <span className="badge bg-info">Manuel</span>
+                          <span className="badge bg-secondary">{detail.itemCode}</span>
+                        </td>
+                        <td>
+                          <div>{detail.itemName}</div>
+                          {detail.itemGroupName && (
+                            <small className="text-muted">{detail.itemGroupName}</small>
                           )}
                         </td>
                         <td>
-                          <span className="badge bg-secondary">{detail.itemCode}</span>
-                        </td>
-                        <td>{detail.itemName}</td>
-                        <td className="text-end text-muted">{detail.quantity || '-'}</td>
-                        <td>
                           <input
                             type="number"
-                            className="form-control form-control-sm text-end"
+                            className="form-control form-control-sm"
                             value={detail.orderedQuantity}
                             onChange={(e) => handleDetailChange(index, 'orderedQuantity', e.target.value)}
                             step="0.01"
@@ -889,7 +906,7 @@ const PurchaseOrderFormPage = () => {
                         <td>
                           <input
                             type="number"
-                            className="form-control form-control-sm text-end"
+                            className="form-control form-control-sm"
                             value={detail.unitPrice}
                             onChange={(e) => handleDetailChange(index, 'unitPrice', e.target.value)}
                             step="0.01"
@@ -897,8 +914,18 @@ const PurchaseOrderFormPage = () => {
                             disabled={submitting}
                           />
                         </td>
-                        <td className="text-end fw-bold">
-                          ₺{(detail.orderedQuantity * detail.unitPrice).toFixed(2)}
+                        <td className="fw-bold">
+                          {(detail.orderedQuantity * detail.unitPrice).toLocaleString('tr-TR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })} ₺
+                        </td>
+                        <td>
+                          {detail.requestNumber ? (
+                            <span className="badge bg-info">{detail.requestNumber}</span>
+                          ) : (
+                            <span className="badge bg-secondary">Manuel</span>
+                          )}
                         </td>
                         <td className="text-center">
                           <button
@@ -912,12 +939,19 @@ const PurchaseOrderFormPage = () => {
                         </td>
                       </tr>
                     ))}
-                    <tr className="table-warning fw-bold">
-                      <td colSpan="8" className="text-end">GENEL TOPLAM:</td>
-                      <td className="text-end">₺{calculateTotal().toFixed(2)}</td>
-                      <td></td>
-                    </tr>
                   </tbody>
+                  <tfoot className="table-light">
+                    <tr>
+                      <td colSpan="6" className="text-end fw-bold">Genel Toplam:</td>
+                      <td className="fw-bold text-primary" style={{ fontSize: '1.1rem' }}>
+                        {calculateTotal().toLocaleString('tr-TR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })} ₺
+                      </td>
+                      <td colSpan="2"></td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             )}

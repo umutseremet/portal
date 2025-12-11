@@ -188,6 +188,7 @@ namespace API.Controllers
                         Id = r.Id,
                         RequestNumber = r.RequestNumber,
                         RequestDate = r.RequestDate,
+                        RequesterName = r.UserName, // ✅ EKLE
                         UserId = r.UserId,
                         UserName = r.UserName,
                         DepartmentId = r.DepartmentId,
@@ -201,7 +202,27 @@ namespace API.Controllers
                         SubmittedDate = r.SubmittedDate,
                         PurchaseOrderId = r.PurchaseOrderId,
                         PurchaseOrderNumber = r.PurchaseOrder != null ? r.PurchaseOrder.OrderNumber : null,
-                        CreatedAt = r.CreatedAt
+                        CreatedAt = r.CreatedAt,
+                        // ✅ DETAYLARI EKLE
+                        Details = r.Details.Select(d => new PurchaseRequestDetailDto
+                        {
+                            Id = d.Id,
+                            RequestId = d.RequestId,
+                            ItemId = d.ItemId,
+                            ItemCode = d.ItemCode,
+                            ItemName = d.ItemName,
+                            ItemGroupId = d.ItemGroupId,
+                            ItemGroupName = d.ItemGroupName,
+                            Quantity = d.Quantity,
+                            Unit = d.Unit,
+                            Description = d.Description,
+                            RequiredDate = d.RequiredDate,
+                            EstimatedUnitPrice = d.EstimatedUnitPrice,
+                            EstimatedTotalPrice = d.EstimatedTotalPrice,
+                            Currency = d.Currency,
+                            CreatedAt = d.CreatedAt,
+                            UpdatedAt = d.UpdatedAt
+                        }).ToList()
                     })
                     .ToListAsync();
 

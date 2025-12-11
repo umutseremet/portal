@@ -62,6 +62,8 @@ namespace API.Models
         public int? PurchaseOrderId { get; set; }
         public string? PurchaseOrderNumber { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string RequesterName { get; set; } = string.Empty; // ✅ EKLE
+        public List<PurchaseRequestDetailDto> Details { get; set; } = new(); // ✅ EKLE
     }
 
     /// <summary>

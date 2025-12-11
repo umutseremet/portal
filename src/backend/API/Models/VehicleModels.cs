@@ -22,32 +22,26 @@ namespace API.Models
     /// </summary>
     public class VehicleInfoUpdateDto
     {
-        [Required(ErrorMessage = "License plate is required")]
         [MaxLength(20, ErrorMessage = "License plate cannot exceed 20 characters")]
         public string LicensePlate { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Brand is required")]
         [MaxLength(50, ErrorMessage = "Brand cannot exceed 50 characters")]
         public string Brand { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Model is required")]
         [MaxLength(50, ErrorMessage = "Model cannot exceed 50 characters")]
         public string Model { get; set; } = string.Empty;
 
         [Range(1900, 2100, ErrorMessage = "Please enter a valid year")]
         public int Year { get; set; }
 
-        [Required(ErrorMessage = "VIN number is required")]
         [MaxLength(50, ErrorMessage = "VIN cannot exceed 50 characters")]
         public string VIN { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Company name is required")]
         [MaxLength(100, ErrorMessage = "Company name cannot exceed 100 characters")]
         public string CompanyName { get; set; } = string.Empty;
 
         public DateTime? InspectionDate { get; set; }
 
-        [Required(ErrorMessage = "Insurance information is required")]
         [MaxLength(100, ErrorMessage = "Insurance info cannot exceed 100 characters")]
         public string Insurance { get; set; } = string.Empty;
 
@@ -61,23 +55,18 @@ namespace API.Models
         [Range(0, 99.9, ErrorMessage = "Fuel consumption must be between 0-99.9")]
         public decimal FuelConsumption { get; set; }
 
-        [Required(ErrorMessage = "Tire condition is required")]
         [MaxLength(20, ErrorMessage = "Tire condition cannot exceed 20 characters")]
         public string TireCondition { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Registration info is required")]
         [MaxLength(100, ErrorMessage = "Registration info cannot exceed 100 characters")]
         public string RegistrationInfo { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Ownership type is required")]
         [MaxLength(50, ErrorMessage = "Ownership type cannot exceed 50 characters")]
         public string OwnershipType { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Location is required")]
         [MaxLength(100, ErrorMessage = "Location cannot exceed 100 characters")]
         public string Location { get; set; } = string.Empty;
 
-        [MaxLength(500, ErrorMessage = "Image URL cannot exceed 500 characters")]
         [Url(ErrorMessage = "Please enter a valid URL")]
         public string? VehicleImageUrl { get; set; }
     }
@@ -87,33 +76,26 @@ namespace API.Models
     /// </summary>
     public class VehicleCreateDto
     {
-        [Required(ErrorMessage = "License plate is required")]
         [MaxLength(20, ErrorMessage = "License plate cannot exceed 20 characters")]
         public string LicensePlate { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Brand is required")]
         [MaxLength(50, ErrorMessage = "Brand cannot exceed 50 characters")]
         public string Brand { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Model is required")]
         [MaxLength(50, ErrorMessage = "Model cannot exceed 50 characters")]
         public string Model { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Year is required")]
         [Range(1900, 2100, ErrorMessage = "Please enter a valid year")]
         public int Year { get; set; }
 
-        [Required(ErrorMessage = "VIN number is required")]
         [MaxLength(50, ErrorMessage = "VIN cannot exceed 50 characters")]
         public string VIN { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Company name is required")]
         [MaxLength(100, ErrorMessage = "Company name cannot exceed 100 characters")]
         public string CompanyName { get; set; } = string.Empty;
 
         public DateTime? InspectionDate { get; set; }
 
-        [Required(ErrorMessage = "Insurance information is required")]
         [MaxLength(100, ErrorMessage = "Insurance info cannot exceed 100 characters")]
         public string Insurance { get; set; } = string.Empty;
 
@@ -127,33 +109,26 @@ namespace API.Models
         [Range(0, 99.9, ErrorMessage = "Fuel consumption must be between 0-99.9")]
         public decimal FuelConsumption { get; set; }
 
-        [Required(ErrorMessage = "Tire condition is required")]
         [MaxLength(20, ErrorMessage = "Tire condition cannot exceed 20 characters")]
         public string TireCondition { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Registration info is required")]
         [MaxLength(100, ErrorMessage = "Registration info cannot exceed 100 characters")]
         public string RegistrationInfo { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Ownership type is required")]
         [MaxLength(50, ErrorMessage = "Ownership type cannot exceed 50 characters")]
         public string OwnershipType { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "User name is required")]
         [MaxLength(100, ErrorMessage = "User name cannot exceed 100 characters")]
         public string AssignedUserName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "User phone is required")]
         [MaxLength(20, ErrorMessage = "Phone number cannot exceed 20 characters")]
         [Phone(ErrorMessage = "Please enter a valid phone number")]
         public string AssignedUserPhone { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Location is required")]
         [MaxLength(100, ErrorMessage = "Location cannot exceed 100 characters")]
         public string Location { get; set; } = string.Empty;
 
         [MaxLength(500, ErrorMessage = "Image URL cannot exceed 500 characters")]
-        [Url(ErrorMessage = "Please enter a valid URL")]
         public string? VehicleImageUrl { get; set; }
     }
 
