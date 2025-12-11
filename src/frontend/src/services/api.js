@@ -393,13 +393,93 @@ class ApiService {
     }
     return this.get(`/Vehicles/${id}`);
   }
-
   async createVehicle(vehicleData) {
-    if (!vehicleData) {
-      throw new Error('Vehicle data is required');
-    }
-    return this.post('/Vehicles', vehicleData);
+  if (!vehicleData) {
+    throw new Error('Vehicle data is required');
   }
+
+  console.log('🚗 API createVehicle called with (camelCase):', vehicleData);
+
+  // Helper: camelCase → PascalCase
+  const toPascalCase = (str) => {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
+  // Step 1: Boş değerleri temizle
+  const cleanedData = {};
+  Object.keys(vehicleData).forEach(key => {
+    const value = vehicleData[key];
+    if (value !== null && value !== undefined && value !== '') {
+      cleanedData[key] = value;
+    }
+  });
+
+  console.log('✨ Cleaned data:', cleanedData);
+
+  // Step 2: camelCase → PascalCase dönüştür
+  const pascalCaseData = {};
+  Object.keys(cleanedData).forEach(key => {
+    pascalCaseData[toPascalCase(key)] = cleanedData[key];
+  });
+
+  console.log('🔄 Converted to PascalCase:', pascalCaseData);
+
+  // Step 3: Direkt fetch kullan
+  const url = `${this.baseURL}/Vehicles`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.getAuthToken()}`
+      },
+      body: JSON.stringify(pascalCaseData)
+    });
+
+    console.log('📡 Response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Response error:', errorText);
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    // ✅ Response text al
+    const responseText = await response.text();
+    console.log('📄 Response text:', responseText);
+
+    // ✅ Parse et
+    let data;
+    if (responseText) {
+      data = JSON.parse(responseText);
+      console.log('📦 Parsed response:', data);
+    }
+
+    // ✅ CRITICAL: Backend array döndürüyor, son eklenen araç ilk sırada
+    if (Array.isArray(data)) {
+      console.log('⚠️ Backend returned array instead of single vehicle');
+      console.log('📊 Array length:', data.length);
+      
+      // İlk eleman yeni eklenen araç olmalı (en yüksek ID)
+      const sortedByDate = [...data].sort((a, b) => {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+      
+      const newVehicle = sortedByDate[0];
+      console.log('✅ Extracted new vehicle:', newVehicle);
+      
+      return newVehicle;
+    }
+
+    // ✅ Tek araç döndüyse direkt döndür
+    return data;
+    
+  } catch (error) {
+    console.error('❌ API createVehicle failed:', error);
+    throw error;
+  }
+}
 
   async updateVehicle(id, vehicleData) {
     if (!id) {
@@ -2101,28 +2181,28 @@ class ApiService {
 
 
     const userStr = localStorage.getItem('user');
-      let username = '';
-      let password = '';
+    let username = '';
+    let password = '';
 
-      console.log('umut');
-      console.log(userStr);
-      
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          username = user.login || user.username || user.email || '';
-          password = user.password || '';
-        } catch (e) {
-          console.warn('User bilgisi parse edilemedi:', e);
-        }
+    console.log('umut');
+    console.log(userStr);
+
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        username = user.login || user.username || user.email || '';
+        password = user.password || '';
+      } catch (e) {
+        console.warn('User bilgisi parse edilemedi:', e);
       }
+    }
 
-      // ✅ Backend POST /api/BomWorks/list bekliyor + credentials
-      const requestBody = { 
-        username,
-        password
-      };
-      
+    // ✅ Backend POST /api/BomWorks/list bekliyor + credentials
+    const requestBody = {
+      username,
+      password
+    };
+
     try {
       // Body boş gönder - backend JWT'den alacak
       const response = await this.post('/Permissions/management', requestBody);
@@ -2288,8 +2368,8 @@ class ApiService {
       const queryString = new URLSearchParams(
         Object.entries(params).filter(([_, v]) => v != null && v !== '')
       ).toString();
-      
-      const url = queryString 
+
+      const url = queryString
         ? `${API_ENDPOINTS.PURCHASE_REQUESTS.LIST}?${queryString}`
         : API_ENDPOINTS.PURCHASE_REQUESTS.LIST;
 
@@ -2308,7 +2388,7 @@ class ApiService {
       const queryString = new URLSearchParams(
         Object.entries(params).filter(([_, v]) => v != null && v !== '')
       ).toString();
-      
+
       const url = queryString
         ? `${API_ENDPOINTS.PURCHASE_REQUESTS.MY_REQUESTS}?${queryString}`
         : API_ENDPOINTS.PURCHASE_REQUESTS.MY_REQUESTS;
@@ -2328,7 +2408,7 @@ class ApiService {
       const queryString = new URLSearchParams(
         Object.entries(params).filter(([_, v]) => v != null && v !== '')
       ).toString();
-      
+
       const url = queryString
         ? `${API_ENDPOINTS.PURCHASE_REQUESTS.PENDING_MY_APPROVAL}?${queryString}`
         : API_ENDPOINTS.PURCHASE_REQUESTS.PENDING_MY_APPROVAL;
@@ -2460,8 +2540,8 @@ class ApiService {
       const queryString = new URLSearchParams(
         Object.entries(params).filter(([_, v]) => v != null && v !== '')
       ).toString();
-      
-      const url = queryString 
+
+      const url = queryString
         ? `${API_ENDPOINTS.PURCHASE_ORDERS.LIST}?${queryString}`
         : API_ENDPOINTS.PURCHASE_ORDERS.LIST;
 

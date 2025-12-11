@@ -15,6 +15,7 @@ builder.Services.AddControllers()
     {
         // JSON property names camelCase olsun (totalCount instead of TotalCount)
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
         options.JsonSerializerOptions.WriteIndented = true; // Development için readable JSON
     });
 builder.Services.AddEndpointsApiExplorer();

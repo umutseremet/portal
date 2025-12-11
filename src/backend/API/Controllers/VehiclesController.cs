@@ -396,7 +396,7 @@ namespace API.Controllers
                     _logger.LogError(logEx, "Error logging vehicle creation");
                 }
 
-                return CreatedAtAction(nameof(GetVehicle), new { id = vehicle.Id }, vehicle);
+                return StatusCode(201, vehicle);
             }
             catch (Exception ex)
             {
