@@ -113,8 +113,8 @@ const PurchaseOrdersListPage = () => {
                     Toplam {pagination.totalCount} sipariş
                   </p>
                 </div>
-                <button
-                  className="btn btn-primary"
+                <button 
+                  className="btn btn-danger"
                   onClick={() => navigate('/purchase-orders/new')}
                 >
                   <i className="bi bi-plus-lg me-2"></i>

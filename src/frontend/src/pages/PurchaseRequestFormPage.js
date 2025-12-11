@@ -1,80 +1,140 @@
 // src/frontend/src/pages/PurchaseRequestFormPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  REQUEST_PRIORITY_LABELS, 
-  REQUEST_TYPE_LABELS,
-  PURCHASE_REQUEST_STATUS 
-} from '../utils/constants';
 import api from '../services/api';
+import {
+  REQUEST_PRIORITY_LABELS,
+  REQUEST_TYPE_LABELS
+} from '../../src/utils/constants';
 
 const PurchaseRequestFormPage = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const isEdit = !!id;
+  const { id } = useParams();
+  const isEdit = Boolean(id);
 
-  // State
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [items, setItems] = useState([]);
-  const [itemGroups, setItemGroups] = useState([]);
-  
-  // Form verileri
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Form state
   const [formData, setFormData] = useState({
-    description: '',
     priority: 'Normal',
-    requestType: 'Standard'
+    requestType: 'Standard',
+    description: ''
   });
 
-  // Ürün ekleme formu
+  // Product form state
   const [productForm, setProductForm] = useState({
     itemId: '',
     itemCode: '',
     itemName: '',
-    itemGroupId: '',
-    itemGroupName: '',
     quantity: '',
     unit: '',
     description: '',
     requiredDate: '',
     estimatedUnitPrice: '',
-    estimatedTotalPrice: ''
+    itemGroupName: ''
   });
 
-  // Eklenen ürünler listesi
+  // Added products list
   const [addedProducts, setAddedProducts] = useState([]);
 
+  // Load items
   useEffect(() => {
-    loadData();
-  }, [id]);
+    loadItems();
+  }, []);
 
-  const loadData = async () => {
+  // Load existing request if edit mode
+  useEffect(() => {
+    if (isEdit) {
+      loadRequest();
+    }
+  }, [id, isEdit]);
+
+  // Filter items when search term changes
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredItems(items.slice(0, 50)); // İlk 50 ürünü göster
+    } else {
+      const filtered = items.filter(item => 
+        item.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.docNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredItems(filtered.slice(0, 50)); // Max 50 sonuç
+    }
+  }, [searchTerm, items]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const loadItems = async () => {
+    try {
+      console.log('📦 Loading items...');
+      const response = await api.getItems({ 
+        pageSize: 1000, 
+        includeCancelled: false 
+      });
+      
+      console.log('📦 Items API Response:', response);
+      
+      // API response yapısına göre items'ı al
+      const itemsData = response.items || response.data?.items || response.data || [];
+      
+      console.log('✅ Items loaded:', itemsData.length);
+      setItems(itemsData);
+      setFilteredItems(itemsData.slice(0, 50));
+    } catch (error) {
+      console.error('❌ Ürünler yüklenemedi:', error);
+      alert('Ürünler yüklenirken bir hata oluştu.');
+    }
+  };
+
+  const loadRequest = async () => {
     setLoading(true);
     try {
-      // Ürünleri yükle
-      const itemsResponse = await api.getItems();
-      setItems(itemsResponse.data || []);
+      const response = await api.getPurchaseRequest(id);
+      const request = response.data;
+      
+      setFormData({
+        priority: request.priority,
+        requestType: request.requestType,
+        description: request.description || ''
+      });
 
-      // Ürün gruplarını yükle
-      const groupsResponse = await api.getItemGroups();
-      setItemGroups(groupsResponse.data || []);
-
-      // Düzenleme modundaysa, mevcut talebi yükle
-      if (isEdit) {
-        const response = await api.getPurchaseRequest(id);
-        const request = response.data;
-        
-        setFormData({
-          description: request.description || '',
-          priority: request.priority || 'Normal',
-          requestType: request.requestType || 'Standard'
-        });
-
-        setAddedProducts(request.details || []);
+      if (request.details && request.details.length > 0) {
+        const products = request.details.map(detail => ({
+          itemId: detail.itemId,
+          itemCode: detail.itemCode,
+          itemName: detail.itemName,
+          itemGroupName: detail.itemGroupName,
+          quantity: detail.quantity,
+          unit: detail.unit,
+          description: detail.description || '',
+          requiredDate: detail.requiredDate || '',
+          estimatedUnitPrice: detail.estimatedUnitPrice || ''
+        }));
+        setAddedProducts(products);
       }
     } catch (error) {
-      console.error('Veri yükleme hatası:', error);
-      alert('Veriler yüklenirken bir hata oluştu.');
+      console.error('Talep yüklenirken hata:', error);
+      alert('Talep bilgileri yüklenemedi.');
+      navigate('/purchase-requests');
     } finally {
       setLoading(false);
     }
@@ -90,78 +150,67 @@ const PurchaseRequestFormPage = () => {
 
   const handleProductFormChange = (e) => {
     const { name, value } = e.target;
-    
-    // Ürün seçildiğinde
-    if (name === 'itemId') {
-      const selectedItem = items.find(item => item.id === parseInt(value));
-      if (selectedItem) {
-        setProductForm(prev => ({
-          ...prev,
-          itemId: value,
-          itemCode: selectedItem.code,
-          itemName: selectedItem.name,
-          itemGroupId: selectedItem.groupId,
-          itemGroupName: selectedItem.itemGroup?.name || '',
-          unit: selectedItem.unit || ''
-        }));
-      }
-    } else if (name === 'quantity' || name === 'estimatedUnitPrice') {
-      // Miktar veya birim fiyat değiştiğinde toplam fiyatı hesapla
-      const qty = name === 'quantity' ? parseFloat(value) || 0 : parseFloat(productForm.quantity) || 0;
-      const price = name === 'estimatedUnitPrice' ? parseFloat(value) || 0 : parseFloat(productForm.estimatedUnitPrice) || 0;
-      
-      setProductForm(prev => ({
-        ...prev,
-        [name]: value,
-        estimatedTotalPrice: qty * price
-      }));
-    } else {
-      setProductForm(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    setProductForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setShowDropdown(true);
+  };
+
+  const handleSelectItem = (item) => {
+    setProductForm(prev => ({
+      ...prev,
+      itemId: item.id,
+      itemCode: item.code,
+      itemName: item.name,
+      unit: item.unit || '',
+      itemGroupName: item.groupName || item.itemGroupName || ''
+    }));
+    setSearchTerm(`${item.code} - ${item.name}`);
+    setShowDropdown(false);
+  };
+
+  const handleSearchFocus = () => {
+    setShowDropdown(true);
   };
 
   const handleAddProduct = () => {
-    // Validasyon
     if (!productForm.itemId || !productForm.quantity) {
-      alert('Lütfen en az ürün ve miktar bilgilerini giriniz.');
+      alert('Lütfen ürün ve miktar seçiniz.');
       return;
     }
 
-    // Ürünü listeye ekle
     const newProduct = {
-      itemId: parseInt(productForm.itemId),
+      itemId: productForm.itemId,
       itemCode: productForm.itemCode,
       itemName: productForm.itemName,
-      itemGroupId: productForm.itemGroupId,
       itemGroupName: productForm.itemGroupName,
       quantity: parseFloat(productForm.quantity),
       unit: productForm.unit,
       description: productForm.description,
       requiredDate: productForm.requiredDate,
-      estimatedUnitPrice: productForm.estimatedUnitPrice ? parseFloat(productForm.estimatedUnitPrice) : null,
-      estimatedTotalPrice: productForm.estimatedTotalPrice ? parseFloat(productForm.estimatedTotalPrice) : null,
-      currency: 'TRY'
+      estimatedUnitPrice: productForm.estimatedUnitPrice ? parseFloat(productForm.estimatedUnitPrice) : null
     };
 
     setAddedProducts(prev => [...prev, newProduct]);
-
-    // Formu temizle
+    
+    // Reset form
     setProductForm({
       itemId: '',
       itemCode: '',
       itemName: '',
-      itemGroupId: '',
-      itemGroupName: '',
       quantity: '',
       unit: '',
       description: '',
       requiredDate: '',
       estimatedUnitPrice: '',
-      estimatedTotalPrice: ''
+      itemGroupName: ''
     });
+    setSearchTerm('');
   };
 
   const handleRemoveProduct = (index) => {
@@ -214,7 +263,7 @@ const PurchaseRequestFormPage = () => {
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
-        <div className="spinner-border text-primary" role="status">
+        <div className="spinner-border" style={{ color: '#4dd4d4' }} role="status">
           <span className="visually-hidden">Yükleniyor...</span>
         </div>
       </div>
@@ -228,7 +277,7 @@ const PurchaseRequestFormPage = () => {
         <div className="d-flex justify-content-between align-items-center">
           <div>
             <h2 className="mb-1">
-              <i className={`bi ${isEdit ? 'bi-pencil-square' : 'bi-plus-circle'} text-primary me-2`}></i>
+              <i className={`bi ${isEdit ? 'bi-pencil-square' : 'bi-plus-circle'} me-2`} style={{ color: '#4dd4d4' }}></i>
               {isEdit ? 'Talep Düzenle' : 'Yeni Satınalma Talebi'}
             </h2>
             <p className="text-muted mb-0">
@@ -249,13 +298,18 @@ const PurchaseRequestFormPage = () => {
       <form onSubmit={handleSubmit}>
         {/* ===== 1. TEMEL BİLGİLER ===== */}
         <div className="card shadow-sm mb-4">
-          <div className="card-header bg-primary text-white">
+          <div className="card-header" style={{ 
+            backgroundColor: '#fef7e6', 
+            color: '#333',
+            fontWeight: '500',
+            border: 'none'
+          }}>
             <h5 className="mb-0">
               <i className="bi bi-info-circle me-2"></i>
               Talep Bilgileri
             </h5>
           </div>
-          <div className="card-body">
+          <div className="card-body bg-light">
             <div className="row">
               <div className="col-md-4 mb-3">
                 <label className="form-label fw-bold">
@@ -311,35 +365,111 @@ const PurchaseRequestFormPage = () => {
 
         {/* ===== 2. ÜRÜN EKLEME FORMU ===== */}
         <div className="card shadow-sm mb-4">
-          <div className="card-header bg-success text-white">
+          <div className="card-header" style={{ 
+            backgroundColor: '#4dd4d4', 
+            color: '#fff',
+            fontWeight: '500',
+            border: 'none'
+          }}>
             <h5 className="mb-0">
               <i className="bi bi-plus-circle me-2"></i>
               Ürün Ekle
             </h5>
           </div>
-          <div className="card-body">
+          <div className="card-body bg-light">
             <div className="row">
-              {/* Ürün Seçimi */}
+              {/* Ürün Seçimi - Arama Özellikli Dropdown */}
               <div className="col-md-4 mb-3">
                 <label className="form-label fw-bold">
-                  Ürün <span className="text-danger">*</span>
+                  Ürün Ara ve Seç <span className="text-danger">*</span>
                 </label>
-                <select
-                  className="form-select"
-                  name="itemId"
-                  value={productForm.itemId}
-                  onChange={handleProductFormChange}
-                  disabled={submitting}
-                >
-                  <option value="">Ürün Seçiniz</option>
-                  {items.map(item => (
-                    <option key={item.id} value={item.id}>
-                      {item.code} - {item.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="position-relative" ref={dropdownRef}>
+                  <div className="input-group">
+                    <span className="input-group-text">
+                      <i className="bi bi-search"></i>
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ürün kodu, adı veya doküman no..."
+                      value={searchTerm}
+                      onChange={handleSearchChange}
+                      onFocus={handleSearchFocus}
+                      disabled={submitting}
+                    />
+                    {searchTerm && (
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => {
+                          setSearchTerm('');
+                          setProductForm(prev => ({ ...prev, itemId: '', itemCode: '', itemName: '' }));
+                        }}
+                      >
+                        <i className="bi bi-x"></i>
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Dropdown Liste */}
+                  {showDropdown && (
+                    <div 
+                      className="position-absolute w-100 bg-white border rounded shadow-lg mt-1" 
+                      style={{ 
+                        maxHeight: '300px', 
+                        overflowY: 'auto', 
+                        zIndex: 1000 
+                      }}
+                    >
+                      {filteredItems.length === 0 ? (
+                        <div className="p-3 text-center text-muted">
+                          <i className="bi bi-inbox"></i>
+                          <p className="mb-0 mt-2">Ürün bulunamadı</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="p-2 bg-light border-bottom">
+                            <small className="text-muted">
+                              <i className="bi bi-info-circle me-1"></i>
+                              {filteredItems.length} ürün gösteriliyor
+                            </small>
+                          </div>
+                          {filteredItems.map(item => (
+                            <div
+                              key={item.id}
+                              className="p-2 border-bottom cursor-pointer hover-bg-light"
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => handleSelectItem(item)}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                            >
+                              <div className="d-flex justify-content-between align-items-start">
+                                <div className="flex-grow-1">
+                                  <div>
+                                    <span className="badge bg-secondary me-2">{item.code}</span>
+                                    <strong>{item.name}</strong>
+                                  </div>
+                                  <small className="text-muted d-block mt-1">
+                                    {item.groupName || item.itemGroupName || 'Grup yok'}
+                                    {item.docNumber && ` • ${item.docNumber}`}
+                                  </small>
+                                </div>
+                                {item.unit && (
+                                  <span className="badge bg-info ms-2">{item.unit}</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
                 {productForm.itemGroupName && (
-                  <small className="text-muted">Grup: {productForm.itemGroupName}</small>
+                  <small className="text-muted d-block mt-1">
+                    <i className="bi bi-tag me-1"></i>
+                    Grup: {productForm.itemGroupName}
+                  </small>
                 )}
               </div>
 
@@ -375,9 +505,23 @@ const PurchaseRequestFormPage = () => {
                 />
               </div>
 
-              {/* İhtiyaç Tarihi */}
-              <div className="col-md-2 mb-3">
-                <label className="form-label fw-bold">İhtiyaç Tarihi</label>
+              {/* Açıklama */}
+              <div className="col-md-4 mb-3">
+                <label className="form-label fw-bold">Açıklama</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="description"
+                  value={productForm.description}
+                  onChange={handleProductFormChange}
+                  placeholder="Ürün açıklaması"
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* Gerekli Tarih */}
+              <div className="col-md-3 mb-3">
+                <label className="form-label fw-bold">Gerekli Tarih</label>
                 <input
                   type="date"
                   className="form-control"
@@ -389,127 +533,98 @@ const PurchaseRequestFormPage = () => {
               </div>
 
               {/* Tahmini Birim Fiyat */}
-              <div className="col-md-2 mb-3">
+              <div className="col-md-3 mb-3">
                 <label className="form-label fw-bold">Tahmini Birim Fiyat</label>
-                <div className="input-group">
-                  <input
-                    type="number"
-                    className="form-control"
-                    name="estimatedUnitPrice"
-                    value={productForm.estimatedUnitPrice}
-                    onChange={handleProductFormChange}
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    disabled={submitting}
-                  />
-                  <span className="input-group-text">₺</span>
-                </div>
-              </div>
-
-              {/* Açıklama */}
-              <div className="col-md-12 mb-3">
-                <label className="form-label fw-bold">Ürün Açıklaması</label>
-                <textarea
+                <input
+                  type="number"
                   className="form-control"
-                  name="description"
-                  value={productForm.description}
+                  name="estimatedUnitPrice"
+                  value={productForm.estimatedUnitPrice}
                   onChange={handleProductFormChange}
-                  rows="2"
-                  placeholder="İsteğe bağlı ürün açıklaması"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
                   disabled={submitting}
                 />
               </div>
-            </div>
 
-            {/* Tahmini Toplam Fiyat (Hesaplanan) */}
-            {productForm.estimatedTotalPrice > 0 && (
-              <div className="alert alert-info d-flex align-items-center mb-3">
-                <i className="bi bi-calculator me-2 fs-4"></i>
-                <div>
-                  <strong>Tahmini Toplam:</strong> {productForm.estimatedTotalPrice.toFixed(2)} ₺
-                </div>
+              {/* Ekle Butonu */}
+              <div className="col-md-6 mb-3 d-flex align-items-end">
+                <button
+                  type="button"
+                  className="btn w-100"
+                  style={{ backgroundColor: '#4dd4d4', color: '#fff', border: 'none' }}
+                  onClick={handleAddProduct}
+                  disabled={submitting}
+                >
+                  <i className="bi bi-plus-circle me-2"></i>
+                  Ürün Ekle
+                </button>
               </div>
-            )}
-
-            {/* Ekle Butonu */}
-            <div className="d-flex justify-content-end">
-              <button
-                type="button"
-                className="btn btn-success btn-lg"
-                onClick={handleAddProduct}
-                disabled={submitting || !productForm.itemId || !productForm.quantity}
-              >
-                <i className="bi bi-plus-circle me-2"></i>
-                Ürünü Listeye Ekle
-              </button>
             </div>
           </div>
         </div>
 
         {/* ===== 3. EKLENEN ÜRÜNLER LİSTESİ ===== */}
         <div className="card shadow-sm mb-4">
-          <div className="card-header bg-info text-white">
+          <div className="card-header" style={{ 
+            backgroundColor: '#ff6b6b', 
+            color: '#fff',
+            fontWeight: '500',
+            border: 'none'
+          }}>
             <h5 className="mb-0">
-              <i className="bi bi-list-ul me-2"></i>
+              <i className="bi bi-list-check me-2"></i>
               Eklenen Ürünler ({addedProducts.length})
             </h5>
           </div>
-          <div className="card-body">
+          <div className="card-body p-0">
             {addedProducts.length === 0 ? (
               <div className="text-center py-5 text-muted">
-                <i className="bi bi-inbox fs-1 d-block mb-3"></i>
-                <p className="mb-0">Henüz ürün eklenmedi. Yukarıdaki formdan ürün ekleyiniz.</p>
+                <i className="bi bi-inbox display-1"></i>
+                <p className="mt-3">Henüz ürün eklenmedi</p>
               </div>
             ) : (
               <div className="table-responsive">
-                <table className="table table-hover table-bordered align-middle">
+                <table className="table table-hover align-middle mb-0">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ width: '5%' }}>#</th>
-                      <th style={{ width: '12%' }}>Ürün Kodu</th>
-                      <th style={{ width: '20%' }}>Ürün Adı</th>
-                      <th style={{ width: '12%' }}>Grup</th>
-                      <th style={{ width: '8%' }} className="text-end">Miktar</th>
-                      <th style={{ width: '6%' }}>Birim</th>
-                      <th style={{ width: '10%' }}>İhtiyaç Tarihi</th>
-                      <th style={{ width: '10%' }} className="text-end">Birim Fiyat</th>
-                      <th style={{ width: '10%' }} className="text-end">Toplam</th>
-                      <th style={{ width: '7%' }} className="text-center">İşlem</th>
+                      <th style={{ width: '50px' }}>#</th>
+                      <th>Ürün Kodu</th>
+                      <th>Ürün Adı</th>
+                      <th>Grup</th>
+                      <th className="text-end">Miktar</th>
+                      <th>Birim</th>
+                      <th>Açıklama</th>
+                      <th>Gerekli Tarih</th>
+                      <th className="text-end">Tahmini Fiyat</th>
+                      <th className="text-center" style={{ width: '100px' }}>İşlem</th>
                     </tr>
                   </thead>
                   <tbody>
                     {addedProducts.map((product, index) => (
                       <tr key={index}>
-                        <td className="text-center fw-bold">{index + 1}</td>
+                        <td>{index + 1}</td>
                         <td>
                           <span className="badge bg-secondary">{product.itemCode}</span>
                         </td>
+                        <td>{product.itemName}</td>
                         <td>
-                          <strong>{product.itemName}</strong>
-                          {product.description && (
-                            <div className="text-muted small">{product.description}</div>
-                          )}
-                        </td>
-                        <td>
-                          <span className="badge bg-light text-dark">{product.itemGroupName}</span>
+                          <small className="text-muted">{product.itemGroupName || '-'}</small>
                         </td>
                         <td className="text-end fw-bold">{product.quantity}</td>
                         <td>{product.unit}</td>
                         <td>
-                          {product.requiredDate 
-                            ? new Date(product.requiredDate).toLocaleDateString('tr-TR')
-                            : '-'}
+                          <small>{product.description || '-'}</small>
+                        </td>
+                        <td>
+                          <small>{product.requiredDate || '-'}</small>
                         </td>
                         <td className="text-end">
                           {product.estimatedUnitPrice 
-                            ? `${product.estimatedUnitPrice.toFixed(2)} ₺`
-                            : '-'}
-                        </td>
-                        <td className="text-end fw-bold text-success">
-                          {product.estimatedTotalPrice 
-                            ? `${product.estimatedTotalPrice.toFixed(2)} ₺`
-                            : '-'}
+                            ? `₺${product.estimatedUnitPrice.toFixed(2)}` 
+                            : '-'
+                          }
                         </td>
                         <td className="text-center">
                           <button
@@ -517,7 +632,6 @@ const PurchaseRequestFormPage = () => {
                             className="btn btn-sm btn-outline-danger"
                             onClick={() => handleRemoveProduct(index)}
                             disabled={submitting}
-                            title="Sil"
                           >
                             <i className="bi bi-trash"></i>
                           </button>
@@ -525,37 +639,27 @@ const PurchaseRequestFormPage = () => {
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="table-light">
-                    <tr>
-                      <td colSpan="8" className="text-end fw-bold">Genel Toplam:</td>
-                      <td className="text-end fw-bold text-success fs-5">
-                        {addedProducts
-                          .reduce((sum, p) => sum + (p.estimatedTotalPrice || 0), 0)
-                          .toFixed(2)} ₺
-                      </td>
-                      <td></td>
-                    </tr>
-                  </tfoot>
                 </table>
               </div>
             )}
           </div>
         </div>
 
-        {/* ===== 4. KAYDET BUTONU ===== */}
-        <div className="d-flex justify-content-end gap-2">
-          <button 
-            type="button" 
-            className="btn btn-secondary btn-lg"
+        {/* ===== 4. FORM BUTONLARI ===== */}
+        <div className="d-flex justify-content-end gap-3">
+          <button
+            type="button"
+            className="btn btn-outline-secondary btn-lg"
             onClick={handleCancel}
             disabled={submitting}
           >
             <i className="bi bi-x-circle me-2"></i>
             İptal
           </button>
-          <button 
-            type="submit" 
-            className="btn btn-primary btn-lg"
+          <button
+            type="submit"
+            className="btn btn-lg"
+            style={{ backgroundColor: '#4dd4d4', color: '#fff', border: 'none' }}
             disabled={submitting || addedProducts.length === 0}
           >
             {submitting ? (
@@ -566,7 +670,7 @@ const PurchaseRequestFormPage = () => {
             ) : (
               <>
                 <i className="bi bi-check-circle me-2"></i>
-                {isEdit ? 'Değişiklikleri Kaydet' : 'Talebi Oluştur'}
+                {isEdit ? 'Güncelle' : 'Talebi Oluştur'}
               </>
             )}
           </button>

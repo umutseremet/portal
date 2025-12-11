@@ -12,7 +12,7 @@ const BOMWorkList = ({ existingWorks, onOpenWork, onDeleteWork, onCreateWork, on
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-    
+
     // Debounce için timeout kullanabilirsiniz
     if (onSearch) {
       onSearch(value);
@@ -68,13 +68,13 @@ const BOMWorkList = ({ existingWorks, onOpenWork, onDeleteWork, onCreateWork, on
           <div className="card">
             <div className="card-header d-flex justify-content-between align-items-center">
               <h5 className="card-title mb-0">
-                Mevcut Çalışmalar 
+                Mevcut Çalışmalar
                 {!loading && <span className="badge bg-primary ms-2">{existingWorks.length}</span>}
               </h5>
-              
+
               <div className="position-relative" style={{ width: '320px' }}>
-                <Search 
-                  size={16} 
+                <Search
+                  size={16}
                   style={{
                     position: 'absolute',
                     left: '12px',

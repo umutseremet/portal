@@ -1,5 +1,5 @@
 // src/frontend/src/pages/PurchaseRequestsListPage.js
-// ⚠️ NOT: Bu dosya direkt pages klasörü altına konulacak (PurchaseManagement alt klasörü YOK)
+// ✅ Tüm onay aşamalarındaki talepleri gösterir (ManagerApproval, PurchasingReview, Approved)
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -55,16 +55,31 @@ const PurchaseRequestsListPage = () => {
         sortOrder: 'desc'
       };
 
+      console.log('📦 Loading requests with params:', params);
       const response = await apiService.getPurchaseRequests(params);
+      console.log('📦 API Response:', response);
 
-      setRequests(response.items || []);
+      // Response yapısını kontrol et
+      const items = response.items || response.data?.items || response.data?.requests || [];
+      const totalCount = response.totalCount || response.data?.totalCount || 0;
+      const totalPages = response.totalPages || response.data?.totalPages || 0;
+
+      console.log('✅ Loaded requests:', items.length);
+      console.log('📊 Status distribution:');
+      const statusCounts = {};
+      items.forEach(req => {
+        statusCounts[req.status] = (statusCounts[req.status] || 0) + 1;
+      });
+      console.table(statusCounts);
+
+      setRequests(items);
       setPagination({
         ...pagination,
-        totalCount: response.totalCount,
-        totalPages: response.totalPages
+        totalCount: totalCount,
+        totalPages: totalPages
       });
     } catch (error) {
-      console.error('Error loading purchase requests:', error);
+      console.error('❌ Error loading purchase requests:', error);
       alert('Talep listesi yüklenirken hata oluştu: ' + error.message);
     } finally {
       setLoading(false);
@@ -132,6 +147,11 @@ const PurchaseRequestsListPage = () => {
     }).format(amount);
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('tr-TR');
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
@@ -151,7 +171,10 @@ const PurchaseRequestsListPage = () => {
             <i className="bi bi-file-earmark-text text-primary me-2"></i>
             Satınalma Talepleri
           </h2>
-          <p className="text-muted mb-0">Tüm satınalma taleplerini görüntüleyin ve yönetin</p>
+          <p className="text-muted mb-0">
+            Tüm satınalma taleplerini görüntüleyin ve yönetin
+            <small className="ms-2">({pagination.totalCount} talep)</small>
+          </p>
         </div>
         <button className="btn btn-primary" onClick={handleCreateNew}>
           <i className="bi bi-plus-circle me-2"></i>
@@ -185,7 +208,9 @@ const PurchaseRequestsListPage = () => {
               >
                 <option value="">Tümü</option>
                 {Object.entries(PURCHASE_REQUEST_STATUS_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -200,12 +225,14 @@ const PurchaseRequestsListPage = () => {
               >
                 <option value="">Tümü</option>
                 {Object.entries(REQUEST_PRIORITY_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
                 ))}
               </select>
             </div>
 
-            {/* Başlangıç Tarihi */}
+            {/* Tarih Aralığı */}
             <div className="col-md-2">
               <label className="form-label">Başlangıç</label>
               <input
@@ -216,7 +243,6 @@ const PurchaseRequestsListPage = () => {
               />
             </div>
 
-            {/* Bitiş Tarihi */}
             <div className="col-md-2">
               <label className="form-label">Bitiş</label>
               <input
@@ -225,22 +251,6 @@ const PurchaseRequestsListPage = () => {
                 value={filters.toDate}
                 onChange={(e) => handleFilterChange('toDate', e.target.value)}
               />
-            </div>
-
-            {/* İptal edilenleri göster */}
-            <div className="col-md-12">
-              <div className="form-check">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="includeCancelled"
-                  checked={filters.includeCancelled}
-                  onChange={(e) => handleFilterChange('includeCancelled', e.target.checked)}
-                />
-                <label className="form-check-label" htmlFor="includeCancelled">
-                  İptal edilenleri göster
-                </label>
-              </div>
             </div>
 
             {/* Buttons */}
@@ -253,86 +263,102 @@ const PurchaseRequestsListPage = () => {
                 <i className="bi bi-x-circle me-2"></i>
                 Temizle
               </button>
+
+              <div className="form-check form-switch d-inline-block ms-3">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="includeCancelled"
+                  checked={filters.includeCancelled}
+                  onChange={(e) => handleFilterChange('includeCancelled', e.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="includeCancelled">
+                  İptal edilenleri göster
+                </label>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Table Card */}
+      {/* Results Table */}
       <div className="card">
-        <div className="card-body">
-          {/* Results Info */}
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h5 className="card-title mb-0">
-              Talep Listesi ({pagination.totalCount} kayıt)
-            </h5>
-          </div>
-
-          {/* Table */}
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="table-light">
-                <tr>
-                  <th>Talep No</th>
-                  <th>Tarih</th>
-                  <th>Talep Eden</th>
-                  <th>Departman</th>
-                  <th>Öncelik</th>
-                  <th>Durum</th>
-                  <th className="text-end">Kalem Sayısı</th>
-                  <th className="text-end">Tahmini Tutar</th>
-                  <th className="text-center">İşlemler</th>
-                </tr>
-              </thead>
-              <tbody>
-                {requests.length === 0 ? (
+        <div className="card-body p-0">
+          {requests.length === 0 ? (
+            <div className="text-center py-5 text-muted">
+              <i className="bi bi-inbox display-1"></i>
+              <p className="mt-3">Talep bulunamadı</p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead className="table-light">
                   <tr>
-                    <td colSpan="9" className="text-center py-4">
-                      <i className="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
-                      <p className="text-muted mb-0">Kayıt bulunamadı</p>
-                    </td>
+                    <th style={{ width: '50px' }}>#</th>
+                    <th>Talep No</th>
+                    <th>Talep Tarihi</th>
+                    <th>Talep Eden</th>
+                    <th>Durum</th>
+                    <th>Öncelik</th>
+                    <th className="text-end">Ürün Sayısı</th>
+                    <th className="text-end">Tahmini Tutar</th>
+                    <th className="text-center">İşlemler</th>
                   </tr>
-                ) : (
-                  requests.map(request => (
-                    <tr key={request.id} style={{ cursor: 'pointer' }} onClick={() => handleViewDetail(request.id)}>
+                </thead>
+                <tbody>
+                  {requests.map((request, index) => (
+                    <tr key={request.id}>
+                      <td>{(pagination.page - 1) * pagination.pageSize + index + 1}</td>
                       <td>
-                        <strong className="text-primary">{request.requestNumber}</strong>
+                        <strong>{request.requestNumber}</strong>
                       </td>
-                      <td>{new Date(request.requestDate).toLocaleDateString('tr-TR')}</td>
-                      <td>{request.userName}</td>
-                      <td>{request.departmentName || '-'}</td>
-                      <td>{getPriorityBadge(request.priority)}</td>
-                      <td>{getStatusBadge(request.status)}</td>
-                      <td className="text-end">{request.detailCount}</td>
-                      <td className="text-end">{formatCurrency(request.totalEstimatedAmount)}</td>
-                      <td className="text-center">
-                        <button
-                          className="btn btn-sm btn-outline-primary me-1"
-                          onClick={(e) => { e.stopPropagation(); handleViewDetail(request.id); }}
-                          title="Detay Görüntüle"
-                        >
-                          <i className="bi bi-eye"></i>
-                        </button>
-                        {request.status === PURCHASE_REQUEST_STATUS.DRAFT && (
-                          <button
-                            className="btn btn-sm btn-outline-warning"
-                            onClick={(e) => { e.stopPropagation(); handleEdit(request.id); }}
-                            title="Düzenle"
-                          >
-                            <i className="bi bi-pencil"></i>
-                          </button>
+                      <td>{formatDate(request.requestDate)}</td>
+                      <td>
+                        {request.userName || request.requesterName || '-'}
+                        {request.departmentName && (
+                          <small className="d-block text-muted">{request.departmentName}</small>
                         )}
                       </td>
+                      <td>{getStatusBadge(request.status)}</td>
+                      <td>{getPriorityBadge(request.priority)}</td>
+                      <td className="text-end">
+                        <span className="badge bg-info">{request.detailCount || request.details?.length || 0}</span>
+                      </td>
+                      <td className="text-end">
+                        {formatCurrency(request.totalEstimatedAmount)}
+                      </td>
+                      <td className="text-center">
+                        <div className="btn-group btn-group-sm">
+                          <button
+                            className="btn btn-outline-primary"
+                            onClick={() => handleViewDetail(request.id)}
+                            title="Detay"
+                          >
+                            <i className="bi bi-eye"></i>
+                          </button>
+                          {request.status === 'Draft' && (
+                            <button
+                              className="btn btn-outline-secondary"
+                              onClick={() => handleEdit(request.id)}
+                              title="Düzenle"
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
 
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <nav className="mt-4">
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="card-footer">
+            <nav>
               <ul className="pagination justify-content-center mb-0">
                 <li className={`page-item ${pagination.page === 1 ? 'disabled' : ''}`}>
                   <button
@@ -364,8 +390,8 @@ const PurchaseRequestsListPage = () => {
                 </li>
               </ul>
             </nav>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
