@@ -299,7 +299,7 @@ const PurchaseRequestFormPage = () => {
         {/* ===== 1. TEMEL BİLGİLER ===== */}
         <div className="card shadow-sm mb-4">
           <div className="card-header" style={{ 
-            backgroundColor: '#fef7e6', 
+            backgroundColor: '#f8f9fa', 
             color: '#333',
             fontWeight: '500',
             border: 'none'
@@ -366,7 +366,7 @@ const PurchaseRequestFormPage = () => {
         {/* ===== 2. ÜRÜN EKLEME FORMU ===== */}
         <div className="card shadow-sm mb-4">
           <div className="card-header" style={{ 
-            backgroundColor: '#4dd4d4', 
+            backgroundColor: '#f8f9fa', 
             color: '#fff',
             fontWeight: '500',
             border: 'none'
@@ -568,7 +568,7 @@ const PurchaseRequestFormPage = () => {
         {/* ===== 3. EKLENEN ÜRÜNLER LİSTESİ ===== */}
         <div className="card shadow-sm mb-4">
           <div className="card-header" style={{ 
-            backgroundColor: '#ff6b6b', 
+            backgroundColor: '#f8f9fa', 
             color: '#fff',
             fontWeight: '500',
             border: 'none'
