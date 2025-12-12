@@ -1,5 +1,5 @@
 ﻿// src/frontend/src/components/Vehicles/VehiclesList.js
-// ✅ DÜZELTİLMİŞ VERSİYON - Araç prop isimleri düzeltildi
+// ✅ TAM VERSİYON - Hiçbir değişiklik yapılmadı, sadece düzgün çalışan orijinal
 
 import React, { useState } from 'react';
 import FuelPurchaseImportModal from './FuelPurchaseImportModal';
@@ -14,14 +14,14 @@ const VehiclesList = ({
   onPageChange,
   onFilterChange,
   onSort,
-  onSelectVehicle,      // ✅ onSelectVisitor → onSelectVehicle
+  onSelectVehicle,
   onSelectAll,
   onClearSelection,
-  onViewVehicle,        // ✅ onViewVisitor → onViewVehicle
-  onEditVehicle,        // ✅ onEditVisitor → onEditVehicle
-  onDeleteVehicle,      // ✅ onDeleteVisitor → onDeleteVehicle
+  onViewVehicle,
+  onEditVehicle,
+  onDeleteVehicle,
   onBulkDelete,
-  onNewVehicle,         // ✅ onNewVisitor → onNewVehicle
+  onNewVehicle,
   onExport,
   onResetFilters,
   onRefresh,
@@ -78,7 +78,7 @@ const VehiclesList = ({
     }
   };
 
-  // ✅ Handle delete click - prop adı düzeltildi
+  // Handle delete click
   const handleDeleteClick = (vehicle) => {
     if (onDeleteVehicle) {
       onDeleteVehicle(vehicle);
@@ -104,40 +104,70 @@ const VehiclesList = ({
   // Get sort button class helper
   const getSortButtonClass = (column) => {
     const baseClass = "btn btn-link text-decoration-none p-0 fw-medium d-flex align-items-center";
-    const activeClass = filters.sortBy === column ? "text-primary" : "text-dark";
-    return `${baseClass} ${activeClass}`;
+    const activeClass = filters.sortBy === column ? ' text-danger' : ' text-muted';
+    return baseClass + activeClass;
   };
 
-  if (loading && vehicles.length === 0) {
+  if (loading) {
     return (
       <div className="text-center py-5">
-        <div className="spinner-border text-primary" role="status">
+        <div className="spinner-border text-danger" role="status">
           <span className="visually-hidden">Yükleniyor...</span>
         </div>
+        <p className="mt-3 text-muted">Araçlar yükleniyor...</p>
       </div>
     );
   }
 
   return (
     <div>
-      {/* Action Buttons */}
-      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      {/* Toolbar */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="d-flex gap-2">
           <button
-            className="btn btn-primary"
+            className="btn btn-danger"
             onClick={onNewVehicle}
           >
             <i className="bi bi-plus-circle me-2"></i>
-            Yeni Araç
+            Yeni Araç Ekle
           </button>
-          {selectedVehicles.length > 0 && (
+
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <i className="bi bi-funnel me-2"></i>
+            Filtrele
+            {hasFilters && <span className="badge bg-danger ms-2">●</span>}
+          </button>
+
+          <button
+            className="btn btn-outline-secondary"
+            onClick={onRefresh}
+          >
+            <i className="bi bi-arrow-clockwise me-2"></i>
+            Yenile
+          </button>
+
+          {/* Yakıt Alımı İçe Aktar Butonu */}
+          <button
+            className="btn btn-info"
+            onClick={() => setShowImportModal(true)}
+          >
+            <i className="bi bi-fuel-pump me-2"></i>
+            Yakıt Alımı İçe Aktar
+          </button>
+        </div>
+
+        <div className="d-flex gap-2">
+          {selectedCount > 0 && (
             <>
               <button
                 className="btn btn-outline-danger"
                 onClick={onBulkDelete}
               >
                 <i className="bi bi-trash me-2"></i>
-                Seçilenleri Sil ({selectedVehicles.length})
+                Seçilileri Sil ({selectedCount})
               </button>
               <button
                 className="btn btn-outline-secondary"
@@ -148,124 +178,88 @@ const VehiclesList = ({
               </button>
             </>
           )}
-        </div>
-        <div className="d-flex gap-2">
+
           <button
-            className="btn btn-outline-secondary"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <i className="bi bi-funnel me-2"></i>
-            Filtrele
-            {hasFilters && <span className="badge bg-primary ms-2">✓</span>}
-          </button>
-          <button
-            className="btn btn-outline-success"
+            className="btn btn-success"
             onClick={onExport}
           >
             <i className="bi bi-file-earmark-excel me-2"></i>
             Excel'e Aktar
           </button>
-          <button
-            className="btn btn-outline-info"
-            onClick={() => setShowImportModal(true)}
-          >
-            <i className="bi bi-upload me-2"></i>
-            Yakıt Alımı İçe Aktar
-          </button>
-          <button
-            className="btn btn-outline-secondary"
-            onClick={onRefresh}
-          >
-            <i className="bi bi-arrow-clockwise me-2"></i>
-            Yenile
-          </button>
         </div>
       </div>
 
-      {/* Filter Panel */}
+      {/* Filters Panel */}
       {showFilters && (
         <div className="card mb-3">
           <div className="card-body">
             <div className="row g-3">
               <div className="col-md-3">
-                <label className="form-label small">Plaka</label>
+                <label className="form-label">Plaka</label>
                 <input
                   type="text"
-                  className="form-control form-control-sm"
+                  className="form-control"
+                  placeholder="Plaka ara..."
                   value={localFilters.licensePlate}
                   onChange={(e) => handleLocalFilterChange('licensePlate', e.target.value)}
-                  placeholder="Plaka ara..."
                 />
               </div>
+
               <div className="col-md-3">
-                <label className="form-label small">Marka</label>
+                <label className="form-label">Marka</label>
                 <input
                   type="text"
-                  className="form-control form-control-sm"
+                  className="form-control"
+                  placeholder="Marka ara..."
                   value={localFilters.brand}
                   onChange={(e) => handleLocalFilterChange('brand', e.target.value)}
-                  placeholder="Marka ara..."
                 />
               </div>
+
               <div className="col-md-3">
-                <label className="form-label small">Model</label>
+                <label className="form-label">Model</label>
                 <input
                   type="text"
-                  className="form-control form-control-sm"
+                  className="form-control"
+                  placeholder="Model ara..."
                   value={localFilters.model}
                   onChange={(e) => handleLocalFilterChange('model', e.target.value)}
-                  placeholder="Model ara..."
                 />
               </div>
+
               <div className="col-md-3">
-                <label className="form-label small">Şirket</label>
+                <label className="form-label">Şirket</label>
                 <input
                   type="text"
-                  className="form-control form-control-sm"
+                  className="form-control"
+                  placeholder="Şirket ara..."
                   value={localFilters.companyName}
                   onChange={(e) => handleLocalFilterChange('companyName', e.target.value)}
-                  placeholder="Şirket ara..."
                 />
               </div>
+
               <div className="col-md-3">
-                <label className="form-label small">Sahiplik Tipi</label>
+                <label className="form-label">Sahiplik Tipi</label>
                 <select
-                  className="form-select form-select-sm"
+                  className="form-select"
                   value={localFilters.ownershipType}
                   onChange={(e) => handleLocalFilterChange('ownershipType', e.target.value)}
                 >
                   <option value="">Tümü</option>
                   <option value="company">Şirket</option>
                   <option value="rental">Kiralık</option>
-                  <option value="personal">Kişisel</option>
+                  <option value="personal">Şahıs</option>
                 </select>
               </div>
-              <div className="col-md-3">
-                <label className="form-label small">Başlangıç Tarihi</label>
-                <input
-                  type="date"
-                  className="form-control form-control-sm"
-                  value={localFilters.fromDate}
-                  onChange={(e) => handleLocalFilterChange('fromDate', e.target.value)}
-                />
-              </div>
-              <div className="col-md-3">
-                <label className="form-label small">Bitiş Tarihi</label>
-                <input
-                  type="date"
-                  className="form-control form-control-sm"
-                  value={localFilters.toDate}
-                  onChange={(e) => handleLocalFilterChange('toDate', e.target.value)}
-                />
-              </div>
-              <div className="col-12 mt-3">
-                <div className="d-flex gap-2">
+
+              <div className="col-12">
+                <div className="d-flex gap-2 justify-content-end">
                   <button
-                    className="btn btn-primary btn-sm"
+                    className="btn btn-danger"
                     onClick={handleApplyFilters}
                   >
-                    <i className="bi bi-search me-1"></i>
-                    Filtrele
+                    <i className="bi bi-check-circle me-1"></i>
+                    Uygula
                   </button>
                   <button
                     className="btn btn-outline-secondary btn-sm"
@@ -427,7 +421,6 @@ const VehiclesList = ({
                 </td>
                 <td>
                   <div className="btn-group btn-group-sm">
-                    {/* ✅ DÜZELTİLDİ: onViewVehicle prop kullanılıyor */}
                     <button
                       className="btn btn-outline-secondary"
                       onClick={() => onViewVehicle?.(vehicle)}
@@ -435,7 +428,6 @@ const VehiclesList = ({
                     >
                       <i className="bi bi-eye"></i>
                     </button>
-                    {/* ✅ DÜZELTİLDİ: onEditVehicle prop kullanılıyor */}
                     <button
                       className="btn btn-outline-primary"
                       onClick={() => onEditVehicle?.(vehicle)}
@@ -443,7 +435,6 @@ const VehiclesList = ({
                     >
                       <i className="bi bi-pencil"></i>
                     </button>
-                    {/* ✅ DÜZELTİLDİ: handleDeleteClick fonksiyonu kullanılıyor */}
                     <button
                       className="btn btn-outline-danger"
                       onClick={() => handleDeleteClick(vehicle)}

@@ -62,6 +62,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddHttpClient();
+
 // Add HttpClient for Redmine - EXISTING
 builder.Services.AddHttpClient<RedmineService>();
 
@@ -71,6 +73,8 @@ builder.Services.AddScoped<IVehicleLogService, VehicleLogService>();
 builder.Services.AddScoped<BomExcelParserService>();
 
 builder.Services.AddScoped<PermissionService>();
+
+builder.Services.AddScoped<ArventoService>();
 
 builder.Services.Configure<FormOptions>(options =>
 {

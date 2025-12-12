@@ -399,67 +399,67 @@ class ApiService {
   }
 
   async createVehicle(vehicleData) {
-  try {
-    console.log('🚀 vehicleService.createVehicle - Input:', vehicleData);
+    try {
+      console.log('🚀 vehicleService.createVehicle - Input:', vehicleData);
 
-    // Validation
-    if (!vehicleData.licensePlate?.trim()) {
-      throw new Error('Plaka zorunludur');
-    }
-    if (!vehicleData.brand?.trim()) {
-      throw new Error('Marka zorunludur');
-    }
-    if (!vehicleData.model?.trim()) {
-      throw new Error('Model zorunludur');
-    }
-
-    // Boş değerleri temizle
-    const cleanedData = {};
-    Object.keys(vehicleData).forEach(key => {
-      const value = vehicleData[key];
-      if (value !== null && value !== undefined && value !== '') {
-        cleanedData[key] = value;
+      // Validation
+      if (!vehicleData.licensePlate?.trim()) {
+        throw new Error('Plaka zorunludur');
       }
-    });
+      if (!vehicleData.brand?.trim()) {
+        throw new Error('Marka zorunludur');
+      }
+      if (!vehicleData.model?.trim()) {
+        throw new Error('Model zorunludur');
+      }
 
-    // camelCase → PascalCase
-    const pascalData = {};
-    Object.keys(cleanedData).forEach(key => {
-      const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
-      pascalData[pascalKey] = cleanedData[key];
-    });
+      // Boş değerleri temizle
+      const cleanedData = {};
+      Object.keys(vehicleData).forEach(key => {
+        const value = vehicleData[key];
+        if (value !== null && value !== undefined && value !== '') {
+          cleanedData[key] = value;
+        }
+      });
 
-    console.log('📤 Sending to backend:', pascalData);
+      // camelCase → PascalCase
+      const pascalData = {};
+      Object.keys(cleanedData).forEach(key => {
+        const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
+        pascalData[pascalKey] = cleanedData[key];
+      });
 
-    // ✅ DIREKT FETCH KULLAN - apiService'i bypass et
-    const url = `${apiService.baseURL}/Vehicles`;
-    const token = localStorage.getItem('authToken');
+      console.log('📤 Sending to backend:', pascalData);
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(pascalData)
-    });
+      // ✅ DIREKT FETCH KULLAN - apiService'i bypass et
+      const url = `${apiService.baseURL}/Vehicles`;
+      const token = localStorage.getItem('authToken');
 
-    console.log('📡 Response status:', response.status);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(pascalData)
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+      console.log('📡 Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Create vehicle result:', result);
+
+      return result;
+    } catch (error) {
+      console.error('❌ vehicleService.createVehicle error:', error);
+      throw error;
     }
-
-    const result = await response.json();
-    console.log('✅ Create vehicle result:', result);
-
-    return result;
-  } catch (error) {
-    console.error('❌ vehicleService.createVehicle error:', error);
-    throw error;
   }
-}
 
   async deleteVehicle(id) {
     if (!id) {
@@ -2643,7 +2643,92 @@ class ApiService {
       throw error;
     }
   }
+
+  // ===== ARVENTO ENDPOINTS =====
+
+  /**
+   * Arvento araç durumunu getirir (GetVehicleStatus)
+   * @param {Object} params - Query parametreleri
+   * @param {string} params.language - Dil kodu (0: Türkçe, 1: İngilizce)
+   */
+  async getArventoVehicleStatus(params = {}) {
+    try {
+      console.log('📡 API getArventoVehicleStatus call with params:', params);
+
+      const queryParams = new URLSearchParams();
+      if (params.language) queryParams.append('language', params.language);
+
+      const endpoint = queryParams.toString()
+        ? `/Arvento/vehicle-status?${queryParams.toString()}`
+        : '/Arvento/vehicle-status';
+
+      const response = await this.get(endpoint);
+      console.log('✅ Arvento vehicle status response:', response);
+
+      return response;
+    } catch (error) {
+      console.error('❌ Error getting Arvento vehicle status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Arvento araç çalışma raporunu getirir (IgnitionBasedDeviceWorking)
+   * @param {Object} params - Query parametreleri
+   * @param {string} params.startDate - Başlangıç tarihi (ISO format)
+   * @param {string} params.endDate - Bitiş tarihi (ISO format)
+   * @param {string} params.node - Cihaz numarası (opsiyonel)
+   * @param {string} params.group - Araç grubu (opsiyonel)
+   * @param {string} params.locale - Yerel ayar (varsayılan: 'tr')
+   * @param {string} params.language - Dil kodu (0: Türkçe, 1: İngilizce)
+   */
+  async getArventoWorkingReport(params = {}) {
+    try {
+      console.log('📊 API getArventoWorkingReport call with params:', params);
+
+      const queryParams = new URLSearchParams();
+
+      // Zorunlu parametreler
+      if (params.startDate) queryParams.append('startDate', params.startDate);
+      if (params.endDate) queryParams.append('endDate', params.endDate);
+
+      // Opsiyonel parametreler
+      if (params.node) queryParams.append('node', params.node);
+      if (params.group) queryParams.append('group', params.group);
+      if (params.locale) queryParams.append('locale', params.locale);
+      if (params.language) queryParams.append('language', params.language);
+
+      const endpoint = `/Arvento/working-report?${queryParams.toString()}`;
+
+      const response = await this.get(endpoint);
+      console.log('✅ Arvento working report response:', response);
+
+      return response;
+    } catch (error) {
+      console.error('❌ Error getting Arvento working report:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Arvento bağlantısını test eder
+   */
+  async testArventoConnection() {
+    try {
+      console.log('🔌 API testArventoConnection call');
+
+      const response = await this.get('/Arvento/test-connection');
+      console.log('✅ Arvento connection test response:', response);
+
+      return response;
+    } catch (error) {
+      console.error('❌ Arvento connection test failed:', error);
+      throw error;
+    }
+  }
 }
+
+
 
 // Create a single instance
 const apiService = new ApiService();

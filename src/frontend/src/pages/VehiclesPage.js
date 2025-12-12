@@ -1,5 +1,5 @@
 // src/frontend/src/pages/VehiclesPage.js
-// ✅ TAM DÜZELTİLMİŞ VERSİYON - Tüm prop isimleri araç sistemine göre güncellendi
+// ✅ GÜNCELLENMIŞ VERSİYON - Normal sayfalara yönlendirme
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -122,60 +122,54 @@ const VehiclesPage = () => {
     }
   };
 
-  // ✅ Handle new vehicle - Tam sayfaya yönlendir
+  // Handle new vehicle
   const handleNewVehicle = () => {
-    try {
-      navigate('/vehicles/new');
-    } catch (error) {
-      console.error('Error navigating to new vehicle:', error);
-    }
+    navigate('/vehicles/new');
   };
 
-  // ✅ Handle view vehicle - Detay sayfasına yönlendir
+  // Handle view vehicle
   const handleViewVehicle = (vehicle) => {
-    try {
-      navigate(`/vehicles/detail/${vehicle.id}`, { state: { vehicle } });
-    } catch (error) {
-      console.error('Error viewing vehicle:', error);
-    }
+    navigate(`/vehicles/${vehicle.id}`);
   };
 
-  // ✅ Handle edit vehicle - Düzenleme sayfasına yönlendir
+  // Handle edit vehicle
   const handleEditVehicle = (vehicle) => {
-    try {
-      console.log('🖱️ Edit button clicked for vehicle:', vehicle);
-      navigate(`/vehicles/edit/${vehicle.id}`, { state: { vehicle } });
-    } catch (error) {
-      console.error('Error editing vehicle:', error);
-    }
+    navigate(`/vehicles/${vehicle.id}/edit`);
   };
 
   // Handle delete vehicle
   const handleDeleteVehicle = async (vehicle) => {
-    try {
-      if (window.confirm(`${vehicle.licensePlate} plakalı aracı silmek istediğinize emin misiniz?`)) {
+    if (window.confirm(`${vehicle.licensePlate} plakalı aracı silmek istediğinizden emin misiniz?`)) {
+      try {
         await deleteVehicle(vehicle.id);
+        toast.success('Araç başarıyla silindi');
+      } catch (error) {
+        toast.error('Araç silinirken hata oluştu');
       }
-    } catch (error) {
-      console.error('Error deleting vehicle:', error);
     }
   };
 
   // Handle bulk delete
   const handleBulkDelete = async () => {
-    try {
-      if (window.confirm(`${selectedCount} aracı silmek istediğinize emin misiniz?`)) {
+    if (selectedVehicles.length === 0) {
+      toast.warning('Lütfen silmek için araç seçin');
+      return;
+    }
+
+    if (window.confirm(`${selectedVehicles.length} adet aracı silmek istediğinizden emin misiniz?`)) {
+      try {
         await deleteSelectedVehicles();
+        toast.success(`${selectedVehicles.length} araç başarıyla silindi`);
+      } catch (error) {
+        toast.error('Araçlar silinirken hata oluştu');
       }
-    } catch (error) {
-      console.error('Error bulk deleting:', error);
     }
   };
 
   return (
     <div className="container-fluid py-4">
-      <div className="row">
-        <div className="col-12">
+      <div className="vehicles-page">
+        <div className="container-fluid">
           {/* Error Alert */}
           {error && (
             <div className="alert alert-danger alert-dismissible fade show" role="alert">
@@ -200,6 +194,27 @@ const VehiclesPage = () => {
               <p className="text-muted mb-0">
                 Şirket araçlarını takip edin ve yönetin
               </p>
+            </div>
+
+            {/* ✅ ARVENTO BUTONLARI - SAYFALARA YÖNLENDİRME */}
+            <div className="d-flex gap-2 flex-wrap">
+              <button
+                className="btn btn-danger"
+                onClick={() => navigate('/vehicles/arvento/working-report')}
+                title="Arvento Araç Çalışma Raporu"
+              >
+                <i className="bi bi-file-earmark-bar-graph me-2"></i>
+                Araç Çalışma Raporu (Arvento)
+              </button>
+
+              <button
+                className="btn btn-success"
+                onClick={() => navigate('/vehicles/arvento/location-map')}
+                title="Arvento Anlık Konum"
+              >
+                <i className="bi bi-geo-alt me-2"></i>
+                Anlık Konum (Arvento)
+              </button>
             </div>
           </div>
 
