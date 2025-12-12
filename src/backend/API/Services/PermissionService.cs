@@ -42,7 +42,7 @@ public class PermissionService
     /// </summary>
     private string GetRedmineConnectionString()
     {
-        return _configuration["ConnectionStrings:DefaultConnection"]
+        return _configuration["ConnectionStrings:RedmineConnection"]
             ?? throw new InvalidOperationException("Redmine connection string not found");
     }
 

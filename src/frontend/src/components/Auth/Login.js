@@ -73,8 +73,8 @@ const Login = () => {
               <div className="mb-4">
                 <i className="bi bi-calendar-event-fill display-1"></i>
               </div>
-              <h1 className="display-4 fw-bold mb-0">VERVO PORTAL</h1>
-              <p className="lead mb-0">Vervo İş Yönetim Sistemi</p>
+              <h1 className="display-4 fw-bold mb-0">ASLAN GROUP PORTAL</h1>
+              <p className="lead mb-0">Aslan Group İş Yönetim Sistemi</p>
             </div>
           </div>
 

@@ -17,58 +17,72 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       path: '/dashboard',
       permission: null // Dashboard herkese açık
     },
-    {
-      id: 'production',
-      label: 'Üretim',
-      icon: 'bi-tools',
-      permission: null, // Ana grup herkese açık, alt öğeler kendi yetkilerini kontrol eder
-      children: [
-        { 
-          id: 'bom-transfer', 
-          label: 'BOM Listesi Aktarımı', 
-          path: '/production/bom-transfer',
-          permission: 'yetki_kullanici_bom_listesi_aktarim'
-        },
-        { 
-          id: 'data-cam', 
-          label: 'Data / CAM Hazırlama', 
-          path: '/production/technical-drawing-preparation',
-          permission: 'yetki_kullanici_data_cam_hazirlama'
-        },
-        {
-          id: 'weekly-calendar',
-          label: 'Haftalık Üretim Planı',
-          icon: 'bi-calendar3',
-          path: '/production/weekly-calendar',
-          permission: null // Herkes görebilir, sadece düzenleme yetkili
-        }
-      ]
-    },
+    // {
+    //   id: 'production',
+    //   label: 'Üretim',
+    //   icon: 'bi-tools',
+    //   permission: null, // Ana grup herkese açık, alt öğeler kendi yetkilerini kontrol eder
+    //   children: [
+    //     { 
+    //       id: 'bom-transfer', 
+    //       label: 'BOM Listesi Aktarımı', 
+    //       path: '/production/bom-transfer',
+    //       permission: 'yetki_kullanici_bom_listesi_aktarim'
+    //     },
+    //     { 
+    //       id: 'data-cam', 
+    //       label: 'Data / CAM Hazırlama', 
+    //       path: '/production/technical-drawing-preparation',
+    //       permission: 'yetki_kullanici_data_cam_hazirlama'
+    //     },
+    //     {
+    //       id: 'weekly-calendar',
+    //       label: 'Haftalık Üretim Planı',
+    //       icon: 'bi-calendar3',
+    //       path: '/production/weekly-calendar',
+    //       permission: null // Herkes görebilir, sadece düzenleme yetkili
+    //     }
+    //   ]
+    // },
     // ✅ YENİ MENÜ: Talep ve Satınalma Yönetimi
     {
       id: 'purchase-management',
       label: 'Talep ve Satınalma Yönetimi',
       icon: 'bi-cart-check-fill',
       children: [
-        { 
-          id: 'purchase-requests', 
-          label: 'Satınalma Talepleri', 
+        {
+          id: 'purchase-requests',
+          label: 'Satınalma Talepleri',
           path: '/purchase-requests',  // ✅ DÜZELTİLDİ
           icon: 'bi-file-earmark-text'
         },
-        { 
-          id: 'purchase-orders', 
-          label: 'Satınalma Siparişleri', 
+        {
+          id: 'purchase-orders',
+          label: 'Satınalma Siparişleri',
           path: '/purchase-orders',    // ✅ DÜZELTİLDİ
           icon: 'bi-receipt'
         },
-        { 
-          id: 'pending-approvals', 
-          label: 'Onay Bekleyenler', 
+        {
+          id: 'pending-approvals',
+          label: 'Onay Bekleyenler',
           path: '/pending-approvals',  // ✅ DÜZELTİLDİ
           icon: 'bi-hourglass-split'
         }
       ]
+    },
+    {
+      id: 'vehicles',
+      label: 'Araç Yönetimi',
+      icon: 'bi-truck',
+      path: '/vehicles',
+      permission: null
+    },
+    {
+      id: 'visitors',
+      label: 'Ziyaretçi Yönetimi',
+      icon: 'bi-people-fill',
+      path: '/visitors',
+      permission: null
     },
     {
       id: 'definitions',
@@ -76,40 +90,26 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       icon: 'bi-gear-fill',
       permission: null,
       children: [
-        { 
-          id: 'items', 
-          label: 'Ürünler', 
+        {
+          id: 'items',
+          label: 'Ürünler',
           path: '/definitions/items',
           permission: 'yetki_kullanici_urun_guncelle'
         },
-        { 
-          id: 'item-groups', 
-          label: 'Ürün Grupları', 
+        {
+          id: 'item-groups',
+          label: 'Ürün Grupları',
           path: '/definitions/item-groups',
           permission: 'yetki_kullanici_urun_guncelle'
         },
-        { 
-          id: 'permissions', 
-          label: 'Yetki Yönetimi', 
+        {
+          id: 'permissions',
+          label: 'Yetki Yönetimi',
           path: '/definitions/permissions',
           permission: null, // Admin kontrolü ayrıca yapılacak
           requireAdmin: true // Bu menü sadece admin'e gösterilir
         }
       ]
-    },
-    {
-      id: 'vehicles',
-      label: 'Araç Takip',
-      icon: 'bi-truck',
-      path: '/vehicles',
-      permission: null
-    },
-    {
-      id: 'visitors',
-      label: 'Ziyaretçi Takip',
-      icon: 'bi-people-fill',
-      path: '/visitors',
-      permission: null
     }
   ];
 
@@ -127,18 +127,18 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           if (item.children) {
             // Alt öğeleri filtrele
             const filteredChildren = filterMenuItems(item.children);
-            
+
             // Eğer hiç alt öğe kalmadıysa, bu grubu gösterme
             if (filteredChildren.length === 0) {
               return null;
             }
-            
+
             return {
               ...item,
               children: filteredChildren
             };
           }
-          
+
           // Tekil menü öğesi - yetki kontrolü
           if (item.permission) {
             // Yetki kontrolü yap
@@ -146,7 +146,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
               return null; // Yetkisi yoksa gösterme
             }
           }
-          
+
           return item;
         })
         .filter(item => item !== null); // null olanları çıkar
@@ -344,7 +344,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
                 margin: 0
               }}
             >
-              Vervo Portal
+              Aslan Group Portal
             </h4>
           </div>
         </div>
