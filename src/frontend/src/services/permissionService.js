@@ -162,7 +162,8 @@ class PermissionService {
     HAFTALIK_URETIM_RAPORU: 'yetki_kullanici_haftalik_uretim_raporu',
     DATA_CAM_HAZIRLAMA: 'yetki_kullanici_data_cam_hazirlama',
     URUN_GUNCELLE: 'yetki_kullanici_urun_guncelle',
-    BOM_LISTESI_AKTARIM: 'yetki_kullanici_bom_listesi_aktarim'
+    BOM_LISTESI_AKTARIM: 'yetki_kullanici_bom_listesi_aktarim',
+    ARAC_BILGILERI: 'yetki_arac_bilgileri'
   };
 }
 

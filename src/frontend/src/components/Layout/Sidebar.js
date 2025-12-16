@@ -75,7 +75,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       label: 'Araç Yönetimi',
       icon: 'bi-truck',
       path: '/vehicles',
-      permission: null
+      permission: 'yetki_arac_bilgileri'
     },
     {
       id: 'visitors',
