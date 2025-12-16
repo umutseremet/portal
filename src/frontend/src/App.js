@@ -1,5 +1,5 @@
 // src/frontend/src/App.js
-// ✅ ARAÇ YÖNETİMİ ROUTE DÜZELTMESİ - Arvento sayfaları eklendi
+// ✅ TAMAMEN DÜZELTİLMİŞ VERSİYON - Route sıralaması doğru
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -165,11 +165,11 @@ function App() {
             />
 
             {/* ========================================
-                ARAÇ YÖNETİMİ - DÜZELTİLDİ ✅
-                ⚠️ DİKKAT: Spesifik route'lar parametrik route'lardan ÖNCE!
+                ARAÇ YÖNETİMİ - TAM DÜZELTİLDİ ✅
+                ⚠️ KRİTİK: Spesifik route'lar parametrik route'lardan MUTLAKA ÖNCE!
                 ======================================== */}
 
-            {/* ✅ ARVENTO ROUTE'LARI - EN ÜSTTE OLMALI */}
+            {/* ✅ ARVENTO ROUTE'LARI - EN ÜST ÖNCE */}
             <Route
               path="/vehicles/arvento/working-report"
               element={
@@ -191,7 +191,7 @@ function App() {
               }
             />
 
-            {/* Yeni Araç */}
+            {/* ✅ YENİ ARAÇ */}
             <Route
               path="/vehicles/new"
               element={
@@ -203,7 +203,7 @@ function App() {
               }
             />
 
-            {/* Araç Düzenleme - SPECIFIC ROUTE ÖNCE */}
+            {/* ✅ ARAÇ DÜZENLEME - SPECIFIC ROUTE ÖNCE */}
             <Route
               path="/vehicles/edit/:id"
               element={
@@ -214,24 +214,38 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/vehicles/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <VehicleFormPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
 
-            {/* Araç Detay - SPECIFIC ROUTE ÖNCE */}
+            {/* ✅ ARAÇ DETAY - SPECIFIC ROUTE ÖNCE */}
             <Route
               path="/vehicles/detail/:id"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <VehicleDetailPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ YAKIT ALIMLARI */}
+            <Route
+              path="/vehicles/:id/fuel-purchases"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehicleFuelPurchasesPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ ALTERNATİF FORMAT ROUTE'LARI - SONRA */}
+            <Route
+              path="/vehicles/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehicleFormPage />
                   </Layout>
                 </ProtectedRoute>
               }
@@ -247,19 +261,7 @@ function App() {
               }
             />
 
-            {/* Yakıt Alımları */}
-            <Route
-              path="/vehicles/:id/fuel-purchases"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <VehicleFuelPurchasesPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Araç Listesi - En sonda olmalı */}
+            {/* ✅ ARAÇ LİSTESİ - EN SONDA */}
             <Route
               path="/vehicles"
               element={

@@ -1,23 +1,66 @@
 // src/frontend/src/pages/VehicleDetailPage.js
-// ✅ TAM DÜZELTİLMİŞ VERSİYON - Ürün detay sayfası stil ve yapısı
+// ✅ TAM DÜZELTİLMİŞ VERSİYON - API'den veri çekme eklendi
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
-import { vehicleService } from '../services/vehicleService';
+import vehicleService from '../services/vehicleService';
 
 const VehicleDetailPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
   const toast = useToast();
-  const vehicle = location.state?.vehicle;
+
+  const [vehicle, setVehicle] = useState(location.state?.vehicle || null);
+  const [loading, setLoading] = useState(false);
 
   // Resim URL'sini oluştur
   const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5154/api';
   const baseUrl = apiBaseUrl.replace('/api', '');
   const imageUrl = vehicle?.vehicleImageUrl ? `${baseUrl}${vehicle.vehicleImageUrl}` : null;
 
+  // ✅ API'den veri çek (eğer state'te yoksa)
+  useEffect(() => {
+    if (!vehicle && id) {
+      loadVehicle();
+    }
+  }, [id]);
+
+  const loadVehicle = async () => {
+    try {
+      setLoading(true);
+      console.log('🔍 Loading vehicle with ID:', id);
+      
+      const data = await vehicleService.getVehicle(id);
+      console.log('✅ Vehicle loaded:', data);
+      
+      setVehicle(data);
+    } catch (error) {
+      console.error('❌ Error loading vehicle:', error);
+      toast.error('Araç bilgisi yüklenirken hata oluştu: ' + error.message);
+      // Hata durumunda listeye yönlendir
+      setTimeout(() => navigate('/vehicles'), 2000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container-fluid py-4">
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Yükleniyor...</span>
+          </div>
+          <p className="mt-3 text-muted">Araç bilgileri yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No vehicle state
   if (!vehicle) {
     return (
       <div className="container-fluid py-4">
@@ -100,7 +143,7 @@ const VehicleDetailPage = () => {
   };
 
   const handleViewFuelPurchases = () => {
-    navigate('/vehicles/fuel-purchases', { state: { vehicle } });
+    navigate(`/vehicles/${vehicle.id}/fuel-purchases`, { state: { vehicle } });
   };
 
   const handleBack = () => {
@@ -160,85 +203,91 @@ const VehicleDetailPage = () => {
 
       <div className="row g-4">
         {/* Sol Kolon - Bilgiler */}
-        <div className={`${imageUrl ? 'col-12 col-lg-7' : 'col-12'}`}>
-          <div className="card shadow-sm">
-            <div className="card-body">
-              {/* Temel Bilgiler */}
-              <h5 className="card-title border-bottom pb-2 mb-3">
-                <i className="bi bi-info-circle me-2 text-primary"></i>
+        <div className={`${imageUrl ? 'col-lg-8' : 'col-12'}`}>
+          {/* Temel Bilgiler */}
+          <div className="card mb-4">
+            <div className="card-header bg-light">
+              <h5 className="card-title mb-0">
+                <i className="bi bi-info-circle me-2"></i>
                 Temel Bilgiler
               </h5>
-              <div className="row g-3 mb-4">
+            </div>
+            <div className="card-body">
+              <div className="row g-3">
                 <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Plaka</label>
-                  <div className="fw-semibold">{vehicle.licensePlate}</div>
+                  <label className="form-label text-muted small">Plaka</label>
+                  <div className="fw-bold text-primary">{vehicle.licensePlate}</div>
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Marka</label>
-                  <div className="fw-semibold">{vehicle.brand || '-'}</div>
+                  <label className="form-label text-muted small">Marka</label>
+                  <div>{vehicle.brand}</div>
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Model</label>
-                  <div className="fw-semibold">{vehicle.model || '-'}</div>
+                  <label className="form-label text-muted small">Model</label>
+                  <div>{vehicle.model}</div>
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Yıl</label>
-                  <div className="fw-semibold">{vehicle.year || '-'}</div>
+                  <label className="form-label text-muted small">Yıl</label>
+                  <div>{vehicle.year}</div>
                 </div>
-                <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Şasi No (VIN)</label>
-                  <div className="fw-semibold">{vehicle.vin || '-'}</div>
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Şirket</label>
-                  <div>
-                    <span className="badge bg-light text-dark">
-                      {vehicle.companyName || 'Belirtilmemiş'}
-                    </span>
-                  </div>
+                <div className="col-12">
+                  <label className="form-label text-muted small">VIN Numarası</label>
+                  <div className="font-monospace small">{vehicle.vin || 'Belirtilmemiş'}</div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* Kullanıcı Bilgileri */}
-              <h5 className="card-title border-bottom pb-2 mb-3">
-                <i className="bi bi-person me-2 text-success"></i>
-                Kullanıcı Bilgileri
+          {/* Şirket & Konum */}
+          <div className="card mb-4">
+            <div className="card-header bg-light">
+              <h5 className="card-title mb-0">
+                <i className="bi bi-building me-2"></i>
+                Şirket & Konum
               </h5>
-              <div className="row g-3 mb-4">
+            </div>
+            <div className="card-body">
+              <div className="row g-3">
                 <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Atanan Kullanıcı</label>
-                  <div className="fw-semibold">{vehicle.assignedUserName || '-'}</div>
+                  <label className="form-label text-muted small">Şirket Adı</label>
+                  <div className="fw-medium">{vehicle.companyName || 'Belirtilmemiş'}</div>
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Telefon</label>
-                  <div className="fw-semibold">{vehicle.assignedUserPhone || '-'}</div>
+                  <label className="form-label text-muted small">Konum</label>
+                  <div>{vehicle.location || 'Belirtilmemiş'}</div>
                 </div>
-                <div className="col-md-12">
-                  <label className="form-label text-muted small mb-1">Konum</label>
-                  <div className="fw-semibold">{vehicle.location || '-'}</div>
+                <div className="col-md-6">
+                  <label className="form-label text-muted small">Atanan Kullanıcı</label>
+                  <div>{vehicle.assignedUserName || 'Belirtilmemiş'}</div>
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label text-muted small">Telefon</label>
+                  <div>{vehicle.assignedUserPhone || 'Belirtilmemiş'}</div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* Teknik Bilgiler */}
-              <h5 className="card-title border-bottom pb-2 mb-3">
-                <i className="bi bi-gear me-2 text-warning"></i>
-                Teknik Bilgiler
+          {/* Araç Durumu */}
+          <div className="card mb-4">
+            <div className="card-header bg-light">
+              <h5 className="card-title mb-0">
+                <i className="bi bi-speedometer2 me-2"></i>
+                Araç Durumu
               </h5>
-              <div className="row g-3 mb-4">
-                <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Kilometre</label>
-                  <div className="fw-semibold">
-                    {vehicle.currentMileage ? `${vehicle.currentMileage.toLocaleString()} km` : '-'}
-                  </div>
+            </div>
+            <div className="card-body">
+              <div className="row g-3">
+                <div className="col-md-4">
+                  <label className="form-label text-muted small">Kilometre</label>
+                  <div className="fw-bold">{vehicle.currentMileage ? vehicle.currentMileage.toLocaleString() : '-'} km</div>
                 </div>
-                <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Yakıt Tüketimi</label>
-                  <div className="fw-semibold">
-                    {vehicle.fuelConsumption ? `${vehicle.fuelConsumption} L/100km` : '-'}
-                  </div>
+                <div className="col-md-4">
+                  <label className="form-label text-muted small">Yakıt Tüketimi</label>
+                  <div>{vehicle.fuelConsumption || '-'} L/100km</div>
                 </div>
-                <div className="col-md-12">
-                  <label className="form-label text-muted small mb-1">Lastik Durumu</label>
+                <div className="col-md-4">
+                  <label className="form-label text-muted small">Lastik Durumu</label>
                   <div>
                     <span className={`badge bg-${getTireConditionBadge(vehicle.tireCondition)}`}>
                       {getTireConditionText(vehicle.tireCondition)}
@@ -246,70 +295,60 @@ const VehicleDetailPage = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* Bakım ve Sigorta */}
-              <h5 className="card-title border-bottom pb-2 mb-3">
-                <i className="bi bi-tools me-2 text-danger"></i>
-                Bakım ve Sigorta
+          {/* Bakım & Sigorta */}
+          <div className="card">
+            <div className="card-header bg-light">
+              <h5 className="card-title mb-0">
+                <i className="bi bi-shield-check me-2"></i>
+                Bakım & Sigorta
               </h5>
-              <div className="row g-3 mb-4">
+            </div>
+            <div className="card-body">
+              <div className="row g-3">
                 <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Son Servis Tarihi</label>
-                  <div className="fw-semibold">{formatDate(vehicle.lastServiceDate)}</div>
+                  <label className="form-label text-muted small">Son Servis Tarihi</label>
+                  <div>{formatDate(vehicle.lastServiceDate)}</div>
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Muayene Tarihi</label>
-                  <div className="fw-semibold">{formatDate(vehicle.inspectionDate)}</div>
+                  <label className="form-label text-muted small">Muayene Tarihi</label>
+                  <div>{formatDate(vehicle.inspectionDate)}</div>
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Sigorta Şirketi</label>
-                  <div className="fw-semibold">{vehicle.insurance || '-'}</div>
+                  <label className="form-label text-muted small">Sigorta</label>
+                  <div>{vehicle.insurance || 'Belirtilmemiş'}</div>
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small mb-1">Sigorta Bitiş Tarihi</label>
-                  <div className="fw-semibold">{formatDate(vehicle.insuranceExpiryDate)}</div>
+                  <label className="form-label text-muted small">Sigorta Bitiş</label>
+                  <div>{formatDate(vehicle.insuranceExpiryDate)}</div>
                 </div>
-                <div className="col-md-12">
-                  <label className="form-label text-muted small mb-1">Ruhsat Bilgisi</label>
-                  <div className="fw-semibold">{vehicle.registrationInfo || '-'}</div>
+                <div className="col-12">
+                  <label className="form-label text-muted small">Ruhsat Bilgisi</label>
+                  <div>{vehicle.registrationInfo || 'Belirtilmemiş'}</div>
                 </div>
               </div>
-
-              {/* Notlar */}
-              {vehicle.notes && (
-                <>
-                  <h5 className="card-title border-bottom pb-2 mb-3">
-                    <i className="bi bi-journal-text me-2 text-info"></i>
-                    Notlar
-                  </h5>
-                  <div className="alert alert-light">
-                    {vehicle.notes}
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Sağ Kolon - Resim (Varsa) */}
+        {/* Sağ Kolon - Resim */}
         {imageUrl && (
-          <div className="col-12 col-lg-5">
-            <div className="card shadow-sm">
-              <div className="card-header bg-white">
-                <h6 className="mb-0">
+          <div className="col-lg-4">
+            <div className="card sticky-top" style={{ top: '100px' }}>
+              <div className="card-header bg-light">
+                <h5 className="card-title mb-0">
                   <i className="bi bi-image me-2"></i>
                   Araç Resmi
-                </h6>
+                </h5>
               </div>
-              <div className="card-body text-center">
-                <img
-                  src={imageUrl}
+              <div className="card-body p-0">
+                <img 
+                  src={imageUrl} 
                   alt={`${vehicle.brand} ${vehicle.model}`}
-                  className="img-fluid rounded"
-                  style={{ maxHeight: '400px', objectFit: 'contain' }}
-                  onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/400x300?text=Resim+Yüklenemedi';
-                  }}
+                  className="img-fluid w-100"
+                  style={{ objectFit: 'cover', maxHeight: '400px' }}
                 />
               </div>
             </div>
