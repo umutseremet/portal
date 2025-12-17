@@ -1,5 +1,5 @@
 // src/frontend/src/App.js
-// ✅ TAMAMEN DÜZELTİLMİŞ VERSİYON - Route sıralaması doğru
+// ✅ ARAÇ YÖNETİMİ ROUTE SIRALAMA SORUNU DÜZELTİLDİ
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -64,8 +64,7 @@ function App() {
             />
 
             {/* ========================================
-                SATINALMA YÖNETİMİ - DOĞRU SIRALAMA
-                ⚠️ ÖNEMLİ: Spesifik route'lar (:id) parametrik route'lardan ÖNCE!
+                SATINALMA YÖNETİMİ
                 ======================================== */}
 
             {/* SATINALMA TALEPLERİ */}
@@ -165,8 +164,8 @@ function App() {
             />
 
             {/* ========================================
-                ARAÇ YÖNETİMİ - TAM DÜZELTİLDİ ✅
-                ⚠️ KRİTİK: Spesifik route'lar parametrik route'lardan MUTLAKA ÖNCE!
+                ARAÇ YÖNETİMİ - ✅ SIRALAMA DÜZELTİLDİ
+                ⚠️ KRİTİK: Spesifik route'lar MUTLAKA parametrik route'lardan ÖNCE!
                 ======================================== */}
 
             {/* ✅ ARVENTO ROUTE'LARI - EN ÜST ÖNCE */}
@@ -191,7 +190,7 @@ function App() {
               }
             />
 
-            {/* ✅ YENİ ARAÇ */}
+            {/* ✅ YENİ ARAÇ - ÖNCE */}
             <Route
               path="/vehicles/new"
               element={
@@ -203,19 +202,7 @@ function App() {
               }
             />
 
-            {/* ✅ ARAÇ DÜZENLEME - SPECIFIC ROUTE ÖNCE */}
-            <Route
-              path="/vehicles/edit/:id"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <VehicleFormPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* ✅ ARAÇ DETAY - SPECIFIC ROUTE ÖNCE */}
+            {/* ✅ ARAÇ DETAY - SPESİFİK ROUTE ÖNCE */}
             <Route
               path="/vehicles/detail/:id"
               element={
@@ -227,7 +214,19 @@ function App() {
               }
             />
 
-            {/* ✅ YAKIT ALIMLARI */}
+            {/* ✅ ARAÇ DÜZENLEME - SPESİFİK ROUTE ÖNCE */}
+            <Route
+              path="/vehicles/edit/:id"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VehicleFormPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ YAKIT ALIMLARI - SPESİFİK ROUTE */}
             <Route
               path="/vehicles/:id/fuel-purchases"
               element={
@@ -239,7 +238,7 @@ function App() {
               }
             />
 
-            {/* ✅ ALTERNATİF FORMAT ROUTE'LARI - SONRA */}
+            {/* ⚠️ ALTERNATİF FORMAT ROUTE'LARI - UYUMLULUK İÇİN (SONRA) */}
             <Route
               path="/vehicles/:id/edit"
               element={

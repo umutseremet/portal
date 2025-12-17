@@ -1,5 +1,5 @@
 // src/frontend/src/pages/VehiclesPage.js
-// ✅ GÜNCELLENMIŞ VERSİYON - Normal sayfalara yönlendirme
+// ✅ ROUTE DÜZELTİLDİ - detail ve edit URL'leri düzeltildi
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -127,14 +127,14 @@ const VehiclesPage = () => {
     navigate('/vehicles/new');
   };
 
-  // Handle view vehicle
+  // ✅ DÜZELTİLDİ - /vehicles/detail/:id formatına uygun
   const handleViewVehicle = (vehicle) => {
-    navigate(`/vehicles/${vehicle.id}`);
+    navigate(`/vehicles/detail/${vehicle.id}`);
   };
 
-  // Handle edit vehicle
+  // ✅ DÜZELTİLDİ - /vehicles/edit/:id formatına uygun
   const handleEditVehicle = (vehicle) => {
-    navigate(`/vehicles/${vehicle.id}/edit`);
+    navigate(`/vehicles/edit/${vehicle.id}`);
   };
 
   // Handle delete vehicle
@@ -188,32 +188,36 @@ const VehiclesPage = () => {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
               <h2 className="h3 mb-1">
-                <i className="bi bi-truck me-2"></i>
-                Araç Takip Sistemi
+                <i className="bi bi-truck me-2 text-danger"></i>
+                Araç Yönetimi
               </h2>
               <p className="text-muted mb-0">
-                Şirket araçlarını takip edin ve yönetin
+                Şirket araçlarını görüntüleyin, düzenleyin ve yönetin
               </p>
             </div>
-
-            {/* ✅ ARVENTO BUTONLARI - SAYFALARA YÖNLENDİRME */}
-            <div className="d-flex gap-2 flex-wrap">
+            <div className="d-flex gap-2">
+              <button
+                className="btn btn-outline-secondary"
+                onClick={handleRefresh}
+                disabled={loading}
+              >
+                <i className="bi bi-arrow-clockwise me-2"></i>
+                Yenile
+              </button>
+              <button
+                className="btn btn-outline-success"
+                onClick={handleExport}
+                disabled={loading || vehicles.length === 0}
+              >
+                <i className="bi bi-file-earmark-excel me-2"></i>
+                Excel'e Aktar
+              </button>
               <button
                 className="btn btn-danger"
-                onClick={() => navigate('/vehicles/arvento/working-report')}
-                title="Arvento Araç Çalışma Raporu"
+                onClick={handleNewVehicle}
               >
-                <i className="bi bi-file-earmark-bar-graph me-2"></i>
-                Araç Çalışma Raporu (Arvento)
-              </button>
-
-              <button
-                className="btn btn-success"
-                onClick={() => navigate('/vehicles/arvento/location-map')}
-                title="Arvento Anlık Konum"
-              >
-                <i className="bi bi-geo-alt me-2"></i>
-                Anlık Konum (Arvento)
+                <i className="bi bi-plus-circle me-2"></i>
+                Yeni Araç Ekle
               </button>
             </div>
           </div>
@@ -224,9 +228,14 @@ const VehiclesPage = () => {
               <div>
                 <i className="bi bi-funnel me-2"></i>
                 <strong>Aktif Filtreler:</strong>
-                <span className="ms-2">{filterSummary?.text || 'Filtre uygulandı'}</span>
+                {Object.entries(filterSummary).map(([key, value]) => (
+                  value && <span key={key} className="ms-2 badge bg-primary">{value}</span>
+                ))}
               </div>
-              <button className="btn btn-sm btn-outline-secondary" onClick={resetFilters}>
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                onClick={resetFilters}
+              >
                 <i className="bi bi-x-circle me-1"></i>
                 Filtreleri Temizle
               </button>

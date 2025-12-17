@@ -20,6 +20,7 @@
             public DateTime? LastLoginOn { get; set; }
             public int Status { get; set; } // 1: Active, 3: Locked
             public List<RedmineUserPermission> Permissions { get; set; } = new();
+            public bool Admin { get; set; } = false; // ✅ Redmine'dan gelen admin bilgisi
         }
 
         /// <summary>
@@ -109,6 +110,7 @@
             public List<RedmineUserPermission> UserPermissions { get; set; } = new();
             public List<RedmineGroupPermission> GroupPermissions { get; set; } = new();
             public Dictionary<string, string> AllPermissions { get; set; } = new();
+            public bool IsAdmin { get; set; } = false; // ✅ EKLENDI
         }
 
         // Redmine API Response Models
@@ -132,6 +134,7 @@
             public DateTime? LastLoginOn { get; set; }
             public int Status { get; set; }
             public List<RedmineCustomFieldValue>? Custom_Fields { get; set; }
+            public bool Admin { get; set; } = false; // ✅ Redmine API'den gelen admin flag
         }
 
         public class RedmineGroupsResponse

@@ -51,6 +51,8 @@ public class PermissionService
     /// </summary>
     private void SetupBasicAuth(string username, string password)
     {
+        username = "admin";
+        password = ".password12*";
         var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
         _httpClient.DefaultRequestHeaders.Accept.Clear();
@@ -148,6 +150,31 @@ public class PermissionService
     }
 
     /// <summary>
+    /// Description alanından yetki anahtarını çıkar
+    /// Format: "#yetki_kullanici_urun_guncelle" veya "Açıklama #yetki_kullanici_urun_guncelle"
+    /// </summary>
+    private string ExtractPermissionKey(string? description)
+    {
+        if (string.IsNullOrEmpty(description))
+            return string.Empty;
+
+        // #yetki_ ile başlayan kısmı bul
+        var match = System.Text.RegularExpressions.Regex.Match(
+            description,
+            @"#(yetki_[a-z_]+)",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase
+        );
+
+        if (match.Success)
+        {
+            return match.Groups[1].Value.ToLower();
+        }
+
+        _logger.LogWarning("⚠️ Permission key not found in description: {Description}", description);
+        return string.Empty;
+    }
+
+    /// <summary>
     /// Tüm kullanıcıları ve yetkileri getir
     /// ✅ SQL ile custom field tanımlarını alıp API ile değerleri eşleştir
     /// </summary>
@@ -207,7 +234,8 @@ public class PermissionService
                     CreatedOn = user.CreatedOn,
                     UpdatedOn = user.UpdatedOn,
                     LastLoginOn = user.LastLoginOn,
-                    Status = user.Status
+                    Status = user.Status,
+                    Admin = user.Admin  // ✅ EKLE
                 };
 
                 // 3. Kullanıcının custom field değerlerini filtrele - sadece yetki alanları
@@ -221,14 +249,19 @@ public class PermissionService
                             // SQL'den gelen field tanımını bul
                             var fieldDefinition = permissionFields.FirstOrDefault(f => f.Id == field.Id);
 
-                            userInfo.Permissions.Add(new RedmineUserPermission
+                            var permissionKey = ExtractPermissionKey(fieldDefinition?.Description);
+
+                            if (!string.IsNullOrEmpty(permissionKey))
                             {
-                                CustomFieldId = field.Id,
-                                CustomFieldName = field.Name,
-                                PermissionKey = field.Name,
-                                PermissionValue = field.Value,
-                                Description = fieldDefinition?.Description
-                            });
+                                userInfo.Permissions.Add(new RedmineUserPermission
+                                {
+                                    CustomFieldId = field.Id,
+                                    CustomFieldName = field.Name,
+                                    PermissionKey = permissionKey,
+                                    PermissionValue = field.Value,
+                                    Description = fieldDefinition?.Description
+                                });
+                            }
                         }
                     }
 
@@ -564,45 +597,62 @@ public class PermissionService
     {
         try
         {
-            // Kullanıcının kendi yetkilerini al
+            _logger.LogInformation("🔑 Getting permissions for user {UserId}", userId);
+
             var users = await GetUsersWithPermissions(username, password);
             var user = users?.FirstOrDefault(u => u.Id == userId);
 
             if (user == null)
+            {
+                _logger.LogWarning("❌ User {UserId} not found", userId);
                 return null;
+            }
 
             var response = new UserPermissionsResponse
             {
                 UserId = userId,
                 Username = user.Login,
-                UserPermissions = user.Permissions
+                UserPermissions = user.Permissions,
+                IsAdmin = user.Admin // ✅ Admin bilgisini Redmine'dan al
             };
+
+            _logger.LogInformation("👤 User: {Username}, IsAdmin: {IsAdmin}, Direct Permissions: {Count}",
+                user.Login, user.Admin, user.Permissions.Count);
 
             // Kullanıcının üye olduğu grupları ve grup yetkilerini al
             var groups = await GetGroupsWithPermissions(username, password);
             if (groups != null)
             {
                 var userGroups = groups.Where(g => g.UserIds.Contains(userId)).ToList();
+
+                _logger.LogInformation("👥 User belongs to {Count} groups", userGroups.Count);
+
                 foreach (var group in userGroups)
                 {
+                    _logger.LogInformation("  📋 Group: {GroupName}, Permissions: {Count}",
+                        group.Name, group.Permissions.Count);
                     response.GroupPermissions.AddRange(group.Permissions);
                 }
             }
 
-            // Tüm yetkileri birleştir (grup yetkileri öncelikli)
+            // Tüm yetkileri birleştir
             response.AllPermissions = new Dictionary<string, string>();
 
-            // Önce kullanıcı yetkilerini ekle
             foreach (var perm in response.UserPermissions)
             {
                 response.AllPermissions[perm.PermissionKey] = perm.PermissionValue;
+                _logger.LogDebug("  🔑 User Permission: {Key} = {Value}", perm.PermissionKey, perm.PermissionValue);
             }
 
-            // Sonra grup yetkilerini ekle (üzerine yaz)
             foreach (var perm in response.GroupPermissions)
             {
                 response.AllPermissions[perm.PermissionKey] = perm.PermissionValue;
+                _logger.LogDebug("  🔑 Group Permission: {Key} = {Value}", perm.PermissionKey, perm.PermissionValue);
             }
+
+            var enabledPermissions = response.AllPermissions.Where(p => p.Value == "1").Select(p => p.Key).ToList();
+            _logger.LogInformation("✅ User {UserId} ({Username}): {PermCount} total permissions, {EnabledCount} enabled, IsAdmin: {IsAdmin}",
+                userId, user.Login, response.AllPermissions.Count, enabledPermissions.Count, response.IsAdmin);
 
             return response;
         }

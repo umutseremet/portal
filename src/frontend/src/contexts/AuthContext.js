@@ -75,39 +75,56 @@ export const AuthProvider = ({ children }) => {
 
       if (result.success) {
         clearAllFilters();
-        
+
+        // ✅ YENİ: Login sonrası kullanıcı yetkilerini çek
         // ✅ YENİ: Login sonrası kullanıcı yetkilerini çek
         try {
           console.log('🔑 Fetching user permissions for userId:', result.user.id);
-          
-          // apiService'i import et
+
           const apiService = (await import('../services/api')).default;
           const permissionsResult = await apiService.getUserLoginPermissions(result.user.id);
-          
-          console.log('🔑 Permissions API response:', permissionsResult);
-          
-          if (permissionsResult && permissionsResult.permissions) {
-            // Kullanıcı bilgilerine yetkileri ekle
+
+          console.log('🔑 Permissions API raw response:', permissionsResult);
+
+          if (permissionsResult && permissionsResult.allPermissions) {
+            // ✅ AllPermissions Dictionary'den {key, value} array'e dönüştür
+            const permissionsArray = Object.entries(permissionsResult.allPermissions).map(([key, value]) => ({
+              key: key,
+              value: value
+            }));
+
+            console.log('🔑 Transformed permissions array:', {
+              count: permissionsArray.length,
+              sample: permissionsArray.slice(0, 3),
+              all: permissionsArray
+            });
+
+            // ✅ Kullanıcı bilgilerine yetkileri ekle
             const updatedUser = {
               ...result.user,
-              permissions: permissionsResult.permissions,
-              isAdmin: permissionsResult.isAdmin || false
+              permissions: permissionsArray,
+              isAdmin: permissionsResult.isAdmin || false  // ✅ Backend'den gelen isAdmin
             };
-            
-            // localStorage'ı güncelle
+
             localStorage.setItem('user', JSON.stringify(updatedUser));
-            
             setUser(updatedUser);
             setIsAuthenticated(true);
+
             console.log('✅ Login successful with permissions:', {
               user: updatedUser.login || updatedUser.username,
               isAdmin: updatedUser.isAdmin,
-              permissionCount: updatedUser.permissions.length
+              permissionCount: updatedUser.permissions.length,
+              samplePermission: updatedUser.permissions[0],
+              enabledPermissions: updatedUser.permissions.filter(p => p.value === '1').length
             });
-            
+
+            console.log('📋 All permissions:', updatedUser.permissions);
+            console.log('✅ Enabled permissions:',
+              updatedUser.permissions.filter(p => p.value === '1').map(p => p.key)
+            );
+
             return { success: true, user: updatedUser };
           } else {
-            // Yetkiler alınamadıysa da giriş başarılı
             console.warn('⚠️ Permissions not loaded, continuing with basic user info');
             setUser(result.user);
             setIsAuthenticated(true);

@@ -310,10 +310,11 @@ public class PermissionsController : ControllerBase
 
             if (string.IsNullOrEmpty(jwtRedminePassword))
             {
+                _logger.LogWarning("❌ Redmine password not found in JWT for user: {Username}", jwtUsername);
                 return BadRequest(new { message = "Redmine şifresi bulunamadı" });
             }
 
-            _logger.LogInformation("Getting login permissions for user {UserId} by {Username}",
+            _logger.LogInformation("🔑 Getting login permissions for user {UserId} by {Username}",
                 request.UserId, jwtRedmineUsername);
 
             var permissions = await _permissionService.GetUserPermissionsForLogin(
@@ -323,14 +324,29 @@ public class PermissionsController : ControllerBase
 
             if (permissions == null)
             {
+                _logger.LogWarning("❌ User {UserId} not found", request.UserId);
                 return NotFound(new { message = "Kullanıcı bulunamadı" });
             }
 
-            return Ok(permissions);
+            // ✅ Response formatı - frontend'in beklediği yapı
+            var response = new
+            {
+                userId = permissions.UserId,
+                username = permissions.Username,
+                allPermissions = permissions.AllPermissions,  // Dictionary<string, string>
+                userPermissions = permissions.UserPermissions,
+                groupPermissions = permissions.GroupPermissions,
+                isAdmin = permissions.IsAdmin  // ✅ IsAdmin eklendi
+            };
+
+            _logger.LogInformation("✅ Permissions returned for user {UserId}: {PermCount} total, isAdmin: {IsAdmin}",
+                request.UserId, permissions.AllPermissions.Count, permissions.IsAdmin);
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting user login permissions");
+            _logger.LogError(ex, "❌ Error getting user login permissions");
             return StatusCode(500, new { message = "Sunucu hatası", error = ex.Message });
         }
     }

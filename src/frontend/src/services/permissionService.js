@@ -5,22 +5,77 @@
  * Kullanıcı yetkilerini kontrol eden merkezi servis
  */
 class PermissionService {
-  
+
+
   /**
    * Kullanıcının yetkilerini localStorage'dan al
    * @returns {Array} Kullanıcı yetkileri dizisi
    */
+
   getUserPermissions() {
     try {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        return user.permissions || [];
+        const permissions = user.permissions || [];
+
+        console.log('📋 getUserPermissions called:', {
+          userFound: !!user,
+          username: user.login || user.username,
+          isAdmin: user.isAdmin,
+          permissionsCount: permissions.length,
+          permissionsSample: permissions.slice(0, 3),
+          permissionsStructure: permissions.length > 0 ? typeof permissions[0] : 'empty'
+        });
+
+        if (permissions.length > 0 && !permissions[0].key) {
+          console.error('❌ PERMISSIONS WRONG FORMAT! Expected [{key, value}] but got:', permissions[0]);
+        }
+
+        return permissions;
       }
     } catch (error) {
-      console.error('Error getting user permissions:', error);
+      console.error('❌ Error getting user permissions:', error);
     }
     return [];
+  }
+
+  hasPermission(permissionKey) {
+    if (this.isAdmin()) {
+      console.log(`✅ Admin user has permission: ${permissionKey}`);
+      return true;
+    }
+
+    const permissions = this.getUserPermissions();
+
+    console.log(`🔍 Checking permission: ${permissionKey}`, {
+      totalPermissions: permissions.length,
+      permissionStructure: permissions.length > 0 ? permissions[0] : 'no permissions'
+    });
+
+    const hasPermission = permissions.some(p => {
+      const matches = p.key === permissionKey && p.value === '1';
+
+      if (p.key === permissionKey) {
+        console.log(`🔍 Found permission key: ${permissionKey}, value: ${p.value}, matches: ${matches}`);
+      }
+
+      return matches;
+    });
+
+    if (hasPermission) {
+      console.log(`✅ User has permission: ${permissionKey}`);
+    } else {
+      console.log(`❌ User does NOT have permission: ${permissionKey}`);
+      const similarPerms = permissions
+        .filter(p => p.key.toLowerCase().includes(permissionKey.toLowerCase().split('_').pop()))
+        .map(p => `${p.key}=${p.value}`);
+      if (similarPerms.length > 0) {
+        console.log(`💡 Similar permissions found:`, similarPerms);
+      }
+    }
+
+    return hasPermission;
   }
 
   /**
@@ -33,8 +88,13 @@ class PermissionService {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        // Redmine'da admin yetkisi kontrolü
-        return user.isAdmin === true || user.admin === true;
+        const isAdmin = user.isAdmin === true || user.admin === true;
+
+        if (isAdmin) {
+          console.log('👑 User is ADMIN');
+        }
+
+        return isAdmin;
       }
     } catch (error) {
       console.error('Error checking admin status:', error);
@@ -103,7 +163,7 @@ class PermissionService {
     }
 
     const hasAny = permissionKeys.some(key => this.hasPermission(key));
-    
+
     if (hasAny) {
       console.log(`✅ User has at least one permission from:`, permissionKeys);
     } else {
@@ -130,7 +190,7 @@ class PermissionService {
     }
 
     const hasAll = permissionKeys.every(key => this.hasPermission(key));
-    
+
     if (hasAll) {
       console.log(`✅ User has all permissions:`, permissionKeys);
     } else {
@@ -163,7 +223,7 @@ class PermissionService {
     DATA_CAM_HAZIRLAMA: 'yetki_kullanici_data_cam_hazirlama',
     URUN_GUNCELLE: 'yetki_kullanici_urun_guncelle',
     BOM_LISTESI_AKTARIM: 'yetki_kullanici_bom_listesi_aktarim',
-    ARAC_BILGILERI: 'yetki_arac_bilgileri'
+    ARAC_BILGILERI: 'yetki_kullanici_aracbilgileri'
   };
 }
 
