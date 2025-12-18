@@ -377,6 +377,17 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* ✅ YENİ EKLEME - ISSUE DETAILS SPESİFİK ROUTE */}
+            <Route
+              path="/production/issue-details"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <IssueDetailsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/production/issue/:issueId"
               element={
