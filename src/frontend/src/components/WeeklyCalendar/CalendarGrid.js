@@ -1,22 +1,35 @@
-// src/frontend/src/components/WeeklyCalendar/CalendarGrid.js
-// ✅ DÜZELTME: Gecikme kontrolü mantığı düzeltildi
+// CalendarGrid.js - TÜM SPLIT HATALARI DÜZELTİLDİ
+// ✅ FIX: Değişken isim çakışması çözüldü, tüm split'ler güvenli hale getirildi
 
 import React, { useState, useEffect } from 'react';
 import GroupedIssueCard from './GroupedIssueCard';
 import apiService from '../../services/api';
 
 const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
-  console.log('🎨 CalendarGrid rendered');
+  console.log('🎨 CalendarGrid rendered with days:', days);
 
   const [overdueMap, setOverdueMap] = useState(new Map());
   const [loading, setLoading] = useState(false);
 
-  // Gecikme kontrolü - her grup için
-  // CalendarGrid.js içindeki useEffect'i tamamen bu kodla değiştirin
+  // ✅ Helper function: Tarih string'ini güvenli şekilde al
+  const getDateString = (dateValue) => {
+    if (!dateValue) return null;
+    if (typeof dateValue === 'string') {
+      return dateValue.includes('T') ? dateValue.split('T')[0] : dateValue;
+    }
+    if (dateValue instanceof Date) {
+      return dateValue.toISOString().split('T')[0];
+    }
+    return null;
+  };
 
+  // Gecikme kontrolü - her grup için
   useEffect(() => {
     const checkOverdue = async () => {
-      if (!days || days.length === 0) return;
+      if (!days || days.length === 0) {
+        console.log('⚠️ No days to check');
+        return;
+      }
 
       setLoading(true);
       const newMap = new Map();
@@ -24,65 +37,75 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
       today.setHours(0, 0, 0, 0);
 
       try {
-        for (const day of days) {
-          const dayDate = new Date(day.date);
+        // ✅ "dayItem" kullan - "day" ile karışmasın
+        for (const dayItem of days) {
+          // ✅ Güvenli kontrol
+          if (!dayItem || !dayItem.date) {
+            console.warn('⚠️ Invalid day item:', dayItem);
+            continue;
+          }
+
+          const dayDate = new Date(dayItem.date);
           dayDate.setHours(0, 0, 0, 0);
 
           // Sadece bugün ve geçmiş günler için kontrol et
           if (dayDate <= today) {
-            for (const group of day.groupedProductions || []) {
+            for (const group of dayItem.groupedProductions || []) {
               try {
+                // ✅ Güvenli tarih string
+                const dateStr = getDateString(dayItem.date);
+                if (!dateStr) {
+                  console.warn('⚠️ Could not get date string for:', dayItem.date);
+                  continue;
+                }
+
                 console.log('📅 Checking day:', {
-                  date: day.date.split('T')[0],
+                  date: dateStr,
                   projectId: group.projectId,
                   projectName: group.projectName,
                   productionType: group.productionType
                 });
 
                 const response = await apiService.getIssuesByDateAndType({
-                  date: day.date.split('T')[0],
+                  date: dateStr,
                   projectId: group.projectId,
                   productionType: group.productionType
                 });
 
                 // Bu grupta gecikmiş iş var mı?
-                // CalendarGrid.js - hasOverdueIssue fonksiyonunu bu şekilde değiştirin
-
                 const hasOverdueIssue = response.issues?.some(issue => {
-                  if (!issue.plannedEndDate) return false;
+                  // ✅ Revize tarih varsa onu kullan
+                  const effectiveEndDate = issue.revisedPlannedEndDate || issue.plannedEndDate;
+                  if (!effectiveEndDate) return false;
 
-                  const plannedEnd = new Date(issue.plannedEndDate);
+                  const plannedEnd = new Date(effectiveEndDate);
                   plannedEnd.setHours(0, 0, 0, 0);
 
-                  console.log('🔍 Checking issue on day ' + day.date.split('T')[0] + ':', {
+                  console.log('🔍 Checking issue:', {
                     issueId: issue.issueId,
                     subject: issue.subject?.substring(0, 40),
                     isClosed: issue.isClosed,
-                    closedOn: issue.closedOn,
-                    plannedStart: issue.plannedStartDate,
-                    plannedEnd: plannedEnd.toISOString().split('T')[0],
-                    dayDate: dayDate.toISOString().split('T')[0],
-                    trackerName: issue.trackerName
+                    effectiveEndDate: getDateString(effectiveEndDate),
+                    dayDate: getDateString(dayDate)
                   });
 
                   // İş kapalıysa, kapanma tarihini kontrol et
                   if (issue.isClosed && issue.closedOn) {
-                    // ✅ KESIN ÇÖZÜM: Manuel tarih parse - timezone tamamen bypass
-                    const closedDateStr = issue.closedOn.split('T')[0]; // "2025-10-23"
-                    const [year, month, day] = closedDateStr.split('-').map(Number);
-                    const closedDate = new Date(year, month - 1, day); // Local timezone, month 0-indexed
+                    // ✅ Manuel tarih parse - timezone bypass
+                    const closedDateStr = getDateString(issue.closedOn);
+                    if (!closedDateStr) return false;
+
+                    const [year, month, dayOfMonth] = closedDateStr.split('-').map(Number);
+                    const closedDate = new Date(year, month - 1, dayOfMonth);
                     closedDate.setHours(0, 0, 0, 0);
 
                     const isOverdue = closedDate > plannedEnd;
 
-                    console.log('   ✅ Closed issue on day ' + day.date.split('T')[0] + ':', {
-                      closedOnRaw: issue.closedOn,
-                      closedDateStr: closedDateStr,
-                      closedDate: closedDate.toISOString().split('T')[0],
-                      plannedEnd: plannedEnd.toISOString().split('T')[0],
+                    console.log('   ✅ Closed issue:', {
+                      closedDate: getDateString(closedDate),
+                      plannedEnd: getDateString(plannedEnd),
                       isOverdue: isOverdue,
-                      calculation: `${closedDate.toISOString().split('T')[0]} > ${plannedEnd.toISOString().split('T')[0]} = ${isOverdue}`,
-                      willShowWarning: isOverdue ? '❗ YES - Will show warning icon' : '✅ NO - Will NOT show warning'
+                      calculation: `${getDateString(closedDate)} > ${getDateString(plannedEnd)} = ${isOverdue}`
                     });
 
                     return isOverdue;
@@ -90,29 +113,28 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
 
                   // İş açıksa, bugünü kontrol et
                   const isOpenOverdue = dayDate > plannedEnd;
-                  console.log('   📌 Open issue on day ' + day.date.split('T')[0] + ':', {
-                    dayDate: dayDate.toISOString().split('T')[0],
-                    plannedEnd: plannedEnd.toISOString().split('T')[0],
-                    isOverdue: isOpenOverdue,
-                    calculation: `${dayDate.toISOString().split('T')[0]} > ${plannedEnd.toISOString().split('T')[0]} = ${isOpenOverdue}`,
-                    willShowWarning: isOpenOverdue ? '❗ YES - Will show warning icon' : '✅ NO - Will NOT show warning'
+                  console.log('   📌 Open issue:', {
+                    dayDate: getDateString(dayDate),
+                    plannedEnd: getDateString(plannedEnd),
+                    isOverdue: isOpenOverdue
                   });
 
                   return isOpenOverdue;
                 });
 
                 if (hasOverdueIssue) {
-                  const key = `${day.date}_${group.projectId}_${group.productionType}`;
-                  console.log('❗❗❗ OVERDUE FOUND! Will show warning on:', {
-                    day: day.date.split('T')[0],
-                    dayName: day.dayName,
+                  const key = `${dayItem.date}_${group.projectId}_${group.productionType}`;
+                  console.log('❗ OVERDUE FOUND:', {
+                    day: dateStr,
+                    dayName: dayItem.dayName,
                     projectId: group.projectId,
                     productionType: group.productionType,
                     key: key
                   });
                   newMap.set(key, true);
                 } else {
-                  console.log('✅ No overdue on day ' + day.date.split('T')[0] + ' for:', {
+                  console.log('✅ No overdue:', {
+                    day: dateStr,
                     projectId: group.projectId,
                     productionType: group.productionType
                   });
@@ -161,24 +183,30 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
 
   return (
     <div className="calendar-grid">
-      {days?.map((day, index) => {
+      {days?.map((dayItem, index) => {
+        // ✅ Güvenli kontrol
+        if (!dayItem || !dayItem.date) {
+          console.warn('⚠️ Skipping invalid day at index:', index);
+          return null;
+        }
+
         return (
           <div
             key={index}
-            className={`calendar-day-card ${isToday(day.date) ? 'today' : ''}`}
+            className={`calendar-day-card ${isToday(dayItem.date) ? 'today' : ''}`}
           >
             <div
               className="day-header clickable-date-header"
-              onClick={(e) => handleDateHeaderClick(day.date, e)}
+              onClick={(e) => handleDateHeaderClick(dayItem.date, e)}
               role="button"
               tabIndex={0}
             >
-              <div className="day-name">{day.dayName}</div>
-              <div className="day-date">{formatDate(day.date)}</div>
+              <div className="day-name">{dayItem.dayName}</div>
+              <div className="day-date">{formatDate(dayItem.date)}</div>
 
-              {(day.groupedProductions?.length > 0) && (
+              {(dayItem.groupedProductions?.length > 0) && (
                 <span className="badge bg-light text-dark position-absolute top-0 end-0 m-2">
-                  {day.groupedProductions?.length || 0}
+                  {dayItem.groupedProductions?.length || 0}
                 </span>
               )}
 
@@ -196,18 +224,18 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
                 </div>
               )}
 
-              {day.groupedProductions && day.groupedProductions.length > 0 ? (
-                day.groupedProductions.map((group, groupIndex) => {
-                  // Bu grup için gecikme var mı?
-                  const key = `${day.date}_${group.projectId}_${group.productionType}`;
+              {dayItem.groupedProductions && dayItem.groupedProductions.length > 0 ? (
+                dayItem.groupedProductions.map((group, groupIndex) => {
+                  // ✅ Güvenli key oluşturma
+                  const key = `${dayItem.date}_${group.projectId}_${group.productionType}`;
                   const hasOverdue = overdueMap.has(key);
 
-                  console.log('🎨 Rendering card:', {
-                    key,
-                    hasOverdue,
-                    group: group.productionType,
-                    date: day.date.split('T')[0]
-                  });
+                  // console.log('🎨 Rendering card:', {
+                  //   key,
+                  //   hasOverdue,
+                  //   group: group.productionType,
+                  //   date: getDateString(dayItem.date)
+                  // });
 
                   return (
                     <GroupedIssueCard
@@ -216,7 +244,7 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
                       hasOverdue={hasOverdue}
                       onClick={() => {
                         if (onCardClick) {
-                          onCardClick(group, day.date);
+                          onCardClick(group, dayItem.date);
                         }
                       }}
                     />

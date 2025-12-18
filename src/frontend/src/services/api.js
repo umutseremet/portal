@@ -672,25 +672,27 @@ class ApiService {
   // src/services/api.js içine eklenecek yeni method
 
   /**
-   * Get issues by date and production type
-   * @param {Object} params - Request parameters
-   * @param {string} params.date - Target date (yyyy-MM-dd)
-   * @param {number} params.projectId - Project ID
-   * @param {string} params.productionType - Production type
-   * @returns {Promise<Object>} Issues list response
-   */
+ * Get issues by date and production type
+ * @param {Object} params - Request parameters
+ * @param {string} params.date - Target date (yyyy-MM-dd)
+ * @param {number} params.projectId - Project ID
+ * @param {string} params.productionType - Production type
+ * @returns {Promise<Object>} Issues list response
+ */
   async getIssuesByDateAndType(params = {}) {
     try {
       console.log('📋 API getIssuesByDateAndType request:', params);
 
-      // ✅ Credentials GEREKMİYOR - SQL Server'dan veri çekiliyor
-      const requestBody = {
+      // ✅ GET KULLAN - Query string ile
+      const queryParams = new URLSearchParams({
         date: params.date,
         projectId: params.projectId,
         productionType: params.productionType
-      };
+      }).toString();
 
-      const response = await this.post('/RedmineWeeklyCalendar/GetIssuesByDateAndType', requestBody);
+      console.log('🔗 Request URL:', `/RedmineWeeklyCalendar/GetIssuesByDateAndType?${queryParams}`);
+
+      const response = await this.get(`/RedmineWeeklyCalendar/GetIssuesByDateAndType?${queryParams}`);
 
       console.log('📋 API getIssuesByDateAndType raw response:', response);
 
@@ -715,21 +717,24 @@ class ApiService {
           assignedTo: issue.assignedTo || issue.AssignedTo || '',
           plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
           plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
+          // ✅ YENİ: Revize plan tarihleri
+          revisedPlannedStartDate: issue.revisedPlannedStartDate || issue.RevisedPlannedStartDate,
+          revisedPlannedEndDate: issue.revisedPlannedEndDate || issue.RevisedPlannedEndDate,
+          revisedPlanDescription: issue.revisedPlanDescription || issue.RevisedPlanDescription,
           productionType: issue.productionType || issue.ProductionType || '',
-          closedOn: issue.closedOn || issue.ClosedOn,  // ✅ EKLENEN
+          closedOn: issue.closedOn || issue.ClosedOn,
         }))
       };
 
       console.log('📋 Mapped issues response:', mappedResponse);
+      console.log('📊 Total issues:', mappedResponse.issues.length);
+
       return mappedResponse;
     } catch (error) {
       console.error('❌ getIssuesByDateAndType error:', error);
       throw error;
     }
   }
-
-  // src/services/api.js içine eklenecek yeni method
-  // ApiService class'ının içine ekleyin
 
   /**
    * Get ALL issues by date (without type filter)
@@ -739,6 +744,7 @@ class ApiService {
   async getIssuesByDate(date) {
     try {
       console.log('📋 API getIssuesByDate request:', date);
+      console.log('🔗 Request URL:', `/RedmineWeeklyCalendar/GetIssuesByDate?date=${date}`);
 
       const response = await this.get(`/RedmineWeeklyCalendar/GetIssuesByDate?date=${date}`);
 
@@ -763,13 +769,19 @@ class ApiService {
           assignedTo: issue.assignedTo || issue.AssignedTo || '',
           plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
           plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
-          closedOn: issue.closedOn || issue.ClosedOn,  // ✅ EKLENEN
+          // ✅ YENİ: Revize plan tarihleri
+          revisedPlannedStartDate: issue.revisedPlannedStartDate || issue.RevisedPlannedStartDate,
+          revisedPlannedEndDate: issue.revisedPlannedEndDate || issue.RevisedPlannedEndDate,
+          revisedPlanDescription: issue.revisedPlanDescription || issue.RevisedPlanDescription,
+          closedOn: issue.closedOn || issue.ClosedOn,
           productionType: issue.productionType || issue.ProductionType ||
             (issue.trackerName || issue.TrackerName || '').replace('Üretim - ', '').trim()
         }))
       };
 
       console.log('📋 Mapped all issues response:', mappedResponse);
+      console.log('📊 Total issues:', mappedResponse.issues.length);
+
       return mappedResponse;
     } catch (error) {
       console.error('❌ getIssuesByDate error:', error);

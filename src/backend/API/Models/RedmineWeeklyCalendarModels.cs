@@ -74,6 +74,14 @@ namespace API.Models
         public DateTime? PlannedStartDate { get; set; }
         public DateTime? PlannedEndDate { get; set; }
 
+        public DateTime? RevisedPlannedStartDate { get; set; }
+        public DateTime? RevisedPlannedEndDate { get; set; }
+        public string? RevisedPlanDescription { get; set; }
+
+        // Computed properties
+        public DateTime? EffectiveStartDate => RevisedPlannedStartDate ?? PlannedStartDate;
+        public DateTime? EffectiveEndDate => RevisedPlannedEndDate ?? PlannedEndDate;
+
         // ✅ YENİ: Kapanma tarihi
         public DateTime? ClosedOn { get; set; }
 
@@ -197,6 +205,10 @@ namespace API.Models
         /// Güncellemeyi yapan kullanıcı adı
         /// </summary>
         public string? UpdatedBy { get; set; }
+
+        public string? RevisedPlannedStartDate { get; set; }
+        public string? RevisedPlannedEndDate { get; set; }
+        public string? RevisedPlanDescription { get; set; }
     }
 
     /// <summary>
@@ -212,5 +224,10 @@ namespace API.Models
         public DateTime? NewPlannedStartDate { get; set; }
         public DateTime? NewPlannedEndDate { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public DateTime? OldRevisedPlannedStartDate { get; set; }
+        public DateTime? OldRevisedPlannedEndDate { get; set; }
+        public DateTime? NewRevisedPlannedStartDate { get; set; }
+        public DateTime? NewRevisedPlannedEndDate { get; set; }
+        public string? RevisedPlanDescription { get; set; }
     }
 }

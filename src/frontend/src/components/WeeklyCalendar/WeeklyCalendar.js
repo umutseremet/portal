@@ -45,17 +45,85 @@ const WeeklyCalendar = () => {
   } = useWeeklyCalendar();
 
   // ✅ Kart tıklama handler - Hafta bilgisini de gönder
-  const handleCardClick = (group, date) => {
-    console.log('🖱️ Card clicked - handleCardClick called:', { group, date });
-    navigate('/production/issue-details', {
-      state: {
-        selectedGroup: group,
-        selectedDate: date,
-        viewType: 'filtered',
-        currentWeek: currentWeek.toISOString() // ✅ Hafta bilgisini gönder
-      }
-    });
+  // WeeklyCalendar.js - handleCardClick fonksiyonu
+// ✅ Detaylı log'larla debug versiyonu
+
+const handleCardClick = (group, date) => {
+  console.log('🖱️ ===== CARD CLICKED =====');
+  
+  // Gelen parametreleri kontrol et
+  console.log('📥 Received parameters:', { group, date });
+  
+  // Group objesi yapısını kontrol et
+  console.log('📦 Group object details:', {
+    isNull: group === null,
+    isUndefined: group === undefined,
+    type: typeof group,
+    keys: group ? Object.keys(group) : 'N/A',
+    projectId: group?.projectId,
+    projectCode: group?.projectCode,
+    projectName: group?.projectName,
+    productionType: group?.productionType,
+    issueCount: group?.issueCount
+  });
+  
+  // Date kontrol et
+  console.log('📅 Date details:', {
+    isNull: date === null,
+    isUndefined: date === undefined,
+    type: typeof date,
+    value: date,
+    isDate: date instanceof Date,
+    isString: typeof date === 'string'
+  });
+  
+  // Navigation state'i hazırla
+  const navigationState = {
+    selectedGroup: group,
+    selectedDate: date,
+    viewType: 'filtered',
+    currentWeek: currentWeek.toISOString()
   };
+  
+  console.log('🚀 Navigation state:', navigationState);
+  
+  // Kritik validasyon
+  if (!group) {
+    console.error('❌ HATA: group objesi yok!');
+    alert('Grup bilgisi bulunamadı. Lütfen tekrar deneyin.');
+    return;
+  }
+  
+  if (!group.projectId) {
+    console.error('❌ HATA: group.projectId yok!', group);
+    alert('Proje ID bulunamadı. Lütfen tekrar deneyin.');
+    return;
+  }
+  
+  if (!group.productionType) {
+    console.error('❌ HATA: group.productionType yok!', group);
+    alert('Üretim tipi bulunamadı. Lütfen tekrar deneyin.');
+    return;
+  }
+  
+  if (!date) {
+    console.error('❌ HATA: date yok!');
+    alert('Tarih bilgisi bulunamadı. Lütfen tekrar deneyin.');
+    return;
+  }
+  
+  console.log('✅ Validation passed, navigating...');
+  
+  try {
+    navigate('/production/issue-details', {
+      state: navigationState
+    });
+    console.log('✅ Navigation completed');
+  } catch (error) {
+    console.error('❌ Navigation error:', error);
+    alert('Sayfa geçişi sırasında hata oluştu: ' + error.message);
+  }
+};
 
   // ✅ Tarih başlığı tıklama handler - Hafta bilgisini de gönder
   const handleDateClick = (date) => {

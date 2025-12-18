@@ -65,14 +65,21 @@ namespace API.Controllers
             }
         }
 
-        [HttpPost("GetIssuesByDateAndType")]
+
+        // RedmineWeeklyCalendarController.cs - GetIssuesByDateAndType metodu
+        // ✅ FIX: [HttpGet] attribute eklendi - 405 Method Not Allowed hatası düzeltildi
+
+        [HttpGet("GetIssuesByDateAndType")]  // ✅ GET metodu olarak işaretle
 #if DEBUG
         [AllowAnonymous]
 #endif
-        public async Task<IActionResult> GetIssuesByDateAndType([FromBody] GetIssuesByDateAndTypeRequest request)
+        public async Task<IActionResult> GetIssuesByDateAndType([FromQuery] GetIssuesByDateAndTypeRequest request)
         {
             try
             {
+                _logger.LogInformation("Getting issues by date and type - Date: {Date}, ProjectId: {ProjectId}, Type: {ProductionType}",
+                    request.Date, request.ProjectId, request.ProductionType);
+
                 if (!DateTime.TryParse(request.Date, out DateTime targetDate))
                 {
                     return BadRequest(new ErrorResponse { Message = "Geçersiz tarih formatı" });
@@ -84,56 +91,84 @@ namespace API.Controllers
                 var issues = new List<ProductionIssueData>();
 
                 var sql = @"
-                    SELECT 
-                        i.id, i.project_id,
-                        p.name AS project_name,
-                        cv_proje_kodu.value AS proje_kodu,
-                        i.subject,
-                        t.name AS tracker_name,
-                        i.done_ratio AS completion_percentage,
-                        i.estimated_hours,
-                        i.closed_on,
-                        status.name AS status_name,
-                        status.is_closed,
-                        priority.name AS priority_name,
-                        ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') AS assigned_to,
-                        cv_pbaslangic.value AS planlanan_baslangic,
-                        cv_pbitis.value AS planlanan_bitis
-                    FROM issues i
-                    JOIN trackers t ON i.tracker_id = t.id
-                    LEFT JOIN projects p ON i.project_id = p.id
-                    LEFT JOIN issue_statuses status ON i.status_id = status.id
-                    LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
-                    LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
-                    LEFT JOIN custom_values cv_pbaslangic 
-                        ON cv_pbaslangic.customized_id = i.id 
-                        AND cv_pbaslangic.customized_type = 'Issue'
-                        AND cv_pbaslangic.custom_field_id = 12
-                    LEFT JOIN custom_values cv_pbitis 
-                        ON cv_pbitis.customized_id = i.id 
-                        AND cv_pbitis.customized_type = 'Issue'
-                        AND cv_pbitis.custom_field_id = 4
-                    LEFT JOIN custom_values cv_proje_kodu 
-                        ON cv_proje_kodu.customized_id = p.id 
-                        AND cv_proje_kodu.customized_type = 'Project'
-                        AND cv_proje_kodu.custom_field_id = 3
-                        WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
-                            --AND t.name != 'Üretim'
-                            AND i.project_id = @ProjectId
-                            AND t.name LIKE @ProductionType
-                            AND ISNULL(cv_pbaslangic.value,'') != ''
-                            AND ISNULL(cv_pbitis.value,'') != ''
-                            AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
-                            AND (
-                                TRY_CAST(cv_pbitis.value AS DATE) >= @Date
-                                OR
-                            (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date AND @Date <= GETDATE())
-                            OR
-                            (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
-                             TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
-                             @Date <= CAST(i.closed_on AS DATE))
-                        )
-                    ORDER BY i.id";
+            SELECT 
+                i.id, i.project_id,
+                p.name AS project_name,
+                cv_proje_kodu.value AS proje_kodu,
+                i.subject,
+                t.name AS tracker_name,
+                i.done_ratio AS completion_percentage,
+                i.estimated_hours,
+                i.closed_on,
+                status.name AS status_name,
+                status.is_closed,
+                priority.name AS priority_name,
+                ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') AS assigned_to,
+                cv_pbaslangic.value AS planlanan_baslangic,
+                cv_pbitis.value AS planlanan_bitis,
+                cv_revize_baslangic.value AS revize_plan_baslangic,
+                cv_revize_bitis.value AS revize_plan_bitis,
+                cv_revize_aciklama.value AS revize_plan_aciklama
+            FROM issues i
+            JOIN trackers t ON i.tracker_id = t.id
+            LEFT JOIN projects p ON i.project_id = p.id
+            LEFT JOIN issue_statuses status ON i.status_id = status.id
+            LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
+            LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
+            LEFT JOIN custom_values cv_pbaslangic 
+                ON cv_pbaslangic.customized_id = i.id 
+                AND cv_pbaslangic.customized_type = 'Issue'
+                AND cv_pbaslangic.custom_field_id = 12
+            LEFT JOIN custom_values cv_pbitis 
+                ON cv_pbitis.customized_id = i.id 
+                AND cv_pbitis.customized_type = 'Issue'
+                AND cv_pbitis.custom_field_id = 4
+            LEFT JOIN custom_values cv_revize_baslangic 
+                ON cv_revize_baslangic.customized_id = i.id 
+                AND cv_revize_baslangic.customized_type = 'Issue'
+                AND cv_revize_baslangic.custom_field_id = 20
+            LEFT JOIN custom_values cv_revize_bitis 
+                ON cv_revize_bitis.customized_id = i.id 
+                AND cv_revize_bitis.customized_type = 'Issue'
+                AND cv_revize_bitis.custom_field_id = 21
+            LEFT JOIN custom_values cv_revize_aciklama 
+                ON cv_revize_aciklama.customized_id = i.id 
+                AND cv_revize_aciklama.customized_type = 'Issue'
+                AND cv_revize_aciklama.custom_field_id = 46
+            LEFT JOIN custom_values cv_proje_kodu 
+                ON cv_proje_kodu.customized_id = p.id 
+                AND cv_proje_kodu.customized_type = 'Project'
+                AND cv_proje_kodu.custom_field_id = 3
+            WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
+                AND i.project_id = @ProjectId
+                AND t.name LIKE @ProductionType
+                AND ISNULL(cv_pbaslangic.value,'') != ''
+                AND ISNULL(cv_pbitis.value,'') != ''
+                AND (
+                    -- Revize tarih varsa onu kontrol et, yoksa planlanan tarihi kontrol et
+                    (ISNULL(cv_revize_baslangic.value, '') != '' AND TRY_CAST(cv_revize_baslangic.value AS DATE) <= @Date)
+                    OR
+                    (ISNULL(cv_revize_baslangic.value, '') = '' AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date)
+                )
+                AND (
+                    -- Revize bitiş tarih varsa onu kontrol et, yoksa planlanan bitiş tarihini kontrol et
+                    (ISNULL(cv_revize_bitis.value, '') != '' AND TRY_CAST(cv_revize_bitis.value AS DATE) >= @Date)
+                    OR
+                    (ISNULL(cv_revize_bitis.value, '') != '' AND status.is_closed = 0 AND TRY_CAST(cv_revize_bitis.value AS DATE) < @Date AND @Date <= GETDATE())
+                    OR
+                    (ISNULL(cv_revize_bitis.value, '') != '' AND status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
+                     TRY_CAST(cv_revize_bitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
+                     @Date <= CAST(i.closed_on AS DATE))
+                    OR
+                    (ISNULL(cv_revize_bitis.value, '') = '' AND TRY_CAST(cv_pbitis.value AS DATE) >= @Date)
+                    OR
+                    (ISNULL(cv_revize_bitis.value, '') = '' AND status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date AND @Date <= GETDATE())
+                    OR
+                    (ISNULL(cv_revize_bitis.value, '') = '' AND status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
+                     TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
+                     @Date <= CAST(i.closed_on AS DATE))
+                )
+            ORDER BY i.id";
 
                 using (var connection = new SqlConnection(connectionString))
                 {
@@ -151,8 +186,12 @@ namespace API.Controllers
                             {
                                 DateTime? plannedStart = null;
                                 DateTime? plannedEnd = null;
+                                DateTime? revisedStart = null;
+                                DateTime? revisedEnd = null;
                                 DateTime? closedOn = null;
+                                string? revisedDescription = null;
 
+                                // Planlanan başlangıç
                                 if (!reader.IsDBNull(reader.GetOrdinal("planlanan_baslangic")))
                                 {
                                     var startValue = reader.GetString(reader.GetOrdinal("planlanan_baslangic"));
@@ -160,6 +199,7 @@ namespace API.Controllers
                                     plannedStart = tempStart;
                                 }
 
+                                // Planlanan bitiş
                                 if (!reader.IsDBNull(reader.GetOrdinal("planlanan_bitis")))
                                 {
                                     var endValue = reader.GetString(reader.GetOrdinal("planlanan_bitis"));
@@ -167,6 +207,29 @@ namespace API.Controllers
                                     plannedEnd = tempEnd;
                                 }
 
+                                // ✅ Revize plan başlangıç
+                                if (!reader.IsDBNull(reader.GetOrdinal("revize_plan_baslangic")))
+                                {
+                                    var revisedStartValue = reader.GetString(reader.GetOrdinal("revize_plan_baslangic"));
+                                    DateTime.TryParse(revisedStartValue, out var tempRevisedStart);
+                                    revisedStart = tempRevisedStart;
+                                }
+
+                                // ✅ Revize plan bitiş
+                                if (!reader.IsDBNull(reader.GetOrdinal("revize_plan_bitis")))
+                                {
+                                    var revisedEndValue = reader.GetString(reader.GetOrdinal("revize_plan_bitis"));
+                                    DateTime.TryParse(revisedEndValue, out var tempRevisedEnd);
+                                    revisedEnd = tempRevisedEnd;
+                                }
+
+                                // ✅ Revize plan açıklaması
+                                if (!reader.IsDBNull(reader.GetOrdinal("revize_plan_aciklama")))
+                                {
+                                    revisedDescription = reader.GetString(reader.GetOrdinal("revize_plan_aciklama"));
+                                }
+
+                                // Kapanma tarihi
                                 if (!reader.IsDBNull(reader.GetOrdinal("closed_on")))
                                 {
                                     closedOn = reader.GetDateTime(reader.GetOrdinal("closed_on"));
@@ -196,6 +259,9 @@ namespace API.Controllers
                                         ? "Atanmamış" : reader.GetString(reader.GetOrdinal("assigned_to")),
                                     PlannedStartDate = plannedStart,
                                     PlannedEndDate = plannedEnd,
+                                    RevisedPlannedStartDate = revisedStart,
+                                    RevisedPlannedEndDate = revisedEnd,
+                                    RevisedPlanDescription = revisedDescription,
                                     ClosedOn = closedOn
                                 });
                             }
@@ -203,7 +269,7 @@ namespace API.Controllers
                     }
                 }
 
-                return Ok(new GetIssuesByDateAndTypeResponse
+                return Ok(new
                 {
                     Date = targetDate,
                     ProjectId = request.ProjectId,
@@ -372,7 +438,7 @@ namespace API.Controllers
 
         /// <summary>
         /// İşin planlanan tarihlerini günceller
-        /// </summary>
+        /// </summary> 
         [HttpPost("UpdateIssueDates")]
 #if DEBUG
         [AllowAnonymous]
@@ -389,18 +455,28 @@ namespace API.Controllers
                 // Önce mevcut tarihleri al
                 DateTime? oldStartDate = null;
                 DateTime? oldEndDate = null;
-                // Tarihleri güncelle
+                DateTime? oldRevisedStartDate = null;
+                DateTime? oldRevisedEndDate = null;
+                string? oldRevisedDescription = null;
+
+                // Yeni tarihler
                 DateTime? newStartDate = null;
                 DateTime? newEndDate = null;
+                DateTime? newRevisedStartDate = null;
+                DateTime? newRevisedEndDate = null;
+
                 using (var connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
 
-                    // Mevcut tarihleri oku
+                    // ✅ Mevcut tüm tarihleri oku (planlanan + revize)
                     var selectQuery = @"
                 SELECT 
                     cf_start.value as PlannedStartDate,
-                    cf_end.value as PlannedEndDate
+                    cf_end.value as PlannedEndDate,
+                    cf_rev_start.value as RevisedPlannedStartDate,
+                    cf_rev_end.value as RevisedPlannedEndDate,
+                    cf_rev_desc.value as RevisedPlanDescription
                 FROM issues i
                 LEFT JOIN custom_values cf_start ON cf_start.customized_id = i.id 
                     AND cf_start.customized_type = 'Issue' 
@@ -408,6 +484,15 @@ namespace API.Controllers
                 LEFT JOIN custom_values cf_end ON cf_end.customized_id = i.id 
                     AND cf_end.customized_type = 'Issue' 
                     AND cf_end.custom_field_id = 4
+                LEFT JOIN custom_values cf_rev_start ON cf_rev_start.customized_id = i.id 
+                    AND cf_rev_start.customized_type = 'Issue' 
+                    AND cf_rev_start.custom_field_id = 20
+                LEFT JOIN custom_values cf_rev_end ON cf_rev_end.customized_id = i.id 
+                    AND cf_rev_end.customized_type = 'Issue' 
+                    AND cf_rev_end.custom_field_id = 21
+                LEFT JOIN custom_values cf_rev_desc ON cf_rev_desc.customized_id = i.id 
+                    AND cf_rev_desc.customized_type = 'Issue' 
+                    AND cf_rev_desc.custom_field_id = 46
                 WHERE i.id = @IssueId";
 
                     using (var selectCommand = new SqlCommand(selectQuery, connection))
@@ -418,7 +503,7 @@ namespace API.Controllers
                         {
                             if (await reader.ReadAsync())
                             {
-                                // ✅ String olarak saklanan tarihleri parse et
+                                // Planlanan başlangıç
                                 if (!reader.IsDBNull(reader.GetOrdinal("PlannedStartDate")))
                                 {
                                     var startValue = reader.GetString(reader.GetOrdinal("PlannedStartDate"));
@@ -427,6 +512,8 @@ namespace API.Controllers
                                         oldStartDate = tempStart;
                                     }
                                 }
+
+                                // Planlanan bitiş
                                 if (!reader.IsDBNull(reader.GetOrdinal("PlannedEndDate")))
                                 {
                                     var endValue = reader.GetString(reader.GetOrdinal("PlannedEndDate"));
@@ -435,22 +522,44 @@ namespace API.Controllers
                                         oldEndDate = tempEnd;
                                     }
                                 }
+
+                                // ✅ Revize başlangıç
+                                if (!reader.IsDBNull(reader.GetOrdinal("RevisedPlannedStartDate")))
+                                {
+                                    var revStartValue = reader.GetString(reader.GetOrdinal("RevisedPlannedStartDate"));
+                                    if (DateTime.TryParse(revStartValue, out DateTime tempRevStart))
+                                    {
+                                        oldRevisedStartDate = tempRevStart;
+                                    }
+                                }
+
+                                // ✅ Revize bitiş
+                                if (!reader.IsDBNull(reader.GetOrdinal("RevisedPlannedEndDate")))
+                                {
+                                    var revEndValue = reader.GetString(reader.GetOrdinal("RevisedPlannedEndDate"));
+                                    if (DateTime.TryParse(revEndValue, out DateTime tempRevEnd))
+                                    {
+                                        oldRevisedEndDate = tempRevEnd;
+                                    }
+                                }
+
+                                // ✅ Revize açıklama
+                                if (!reader.IsDBNull(reader.GetOrdinal("RevisedPlanDescription")))
+                                {
+                                    oldRevisedDescription = reader.GetString(reader.GetOrdinal("RevisedPlanDescription"));
+                                }
                             }
                         }
                     }
 
-                    
-
+                    // ✅ PLANLANAN BAŞLANGIÇ TARİHİ GÜNCELLE
                     if (!string.IsNullOrEmpty(request.PlannedStartDate))
                     {
                         if (DateTime.TryParse(request.PlannedStartDate, out DateTime parsedStart))
                         {
                             newStartDate = parsedStart;
-
-                            // ✅ Sadece tarihi kaydet (saat 00:00:00)
                             var dateOnlyString = newStartDate.Value.ToString("yyyy-MM-dd");
 
-                            // custom_field_id = 8 (Planlanan Başlangıç)
                             var updateStartQuery = @"
                         MERGE INTO custom_values AS target
                         USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 12 AS custom_field_id) AS source
@@ -472,16 +581,14 @@ namespace API.Controllers
                         }
                     }
 
+                    // ✅ PLANLANAN BİTİŞ TARİHİ GÜNCELLE
                     if (!string.IsNullOrEmpty(request.PlannedEndDate))
                     {
                         if (DateTime.TryParse(request.PlannedEndDate, out DateTime parsedEnd))
                         {
                             newEndDate = parsedEnd;
-
-                            // ✅ Sadece tarihi kaydet (saat 00:00:00)
                             var dateOnlyString = newEndDate.Value.ToString("yyyy-MM-dd");
 
-                            // custom_field_id = 9 (Planlanan Bitiş)
                             var updateEndQuery = @"
                         MERGE INTO custom_values AS target
                         USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 4 AS custom_field_id) AS source
@@ -503,6 +610,88 @@ namespace API.Controllers
                         }
                     }
 
+                    // ✅ YENİ: REVİZE PLAN BAŞLANGIÇ TARİHİ GÜNCELLE
+                    if (!string.IsNullOrEmpty(request.RevisedPlannedStartDate))
+                    {
+                        if (DateTime.TryParse(request.RevisedPlannedStartDate, out DateTime parsedRevStart))
+                        {
+                            newRevisedStartDate = parsedRevStart;
+                            var dateOnlyString = newRevisedStartDate.Value.ToString("yyyy-MM-dd");
+
+                            var updateRevStartQuery = @"
+                        MERGE INTO custom_values AS target
+                        USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 20 AS custom_field_id) AS source
+                        ON target.customized_id = source.customized_id 
+                            AND target.customized_type = source.customized_type 
+                            AND target.custom_field_id = source.custom_field_id
+                        WHEN MATCHED THEN
+                            UPDATE SET value = @NewDate
+                        WHEN NOT MATCHED THEN
+                            INSERT (customized_type, customized_id, custom_field_id, value)
+                            VALUES ('Issue', @IssueId, 20, @NewDate);";
+
+                            using (var updateCommand = new SqlCommand(updateRevStartQuery, connection))
+                            {
+                                updateCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
+                                updateCommand.Parameters.AddWithValue("@NewDate", dateOnlyString);
+                                await updateCommand.ExecuteNonQueryAsync();
+                            }
+                        }
+                    }
+
+                    // ✅ YENİ: REVİZE PLAN BİTİŞ TARİHİ GÜNCELLE
+                    if (!string.IsNullOrEmpty(request.RevisedPlannedEndDate))
+                    {
+                        if (DateTime.TryParse(request.RevisedPlannedEndDate, out DateTime parsedRevEnd))
+                        {
+                            newRevisedEndDate = parsedRevEnd;
+                            var dateOnlyString = newRevisedEndDate.Value.ToString("yyyy-MM-dd");
+
+                            var updateRevEndQuery = @"
+                        MERGE INTO custom_values AS target
+                        USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 21 AS custom_field_id) AS source
+                        ON target.customized_id = source.customized_id 
+                            AND target.customized_type = source.customized_type 
+                            AND target.custom_field_id = source.custom_field_id
+                        WHEN MATCHED THEN
+                            UPDATE SET value = @NewDate
+                        WHEN NOT MATCHED THEN
+                            INSERT (customized_type, customized_id, custom_field_id, value)
+                            VALUES ('Issue', @IssueId, 21, @NewDate);";
+
+                            using (var updateCommand = new SqlCommand(updateRevEndQuery, connection))
+                            {
+                                updateCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
+                                updateCommand.Parameters.AddWithValue("@NewDate", dateOnlyString);
+                                await updateCommand.ExecuteNonQueryAsync();
+                            }
+                        }
+                    }
+
+                    // ✅ YENİ: REVİZE PLAN AÇIKLAMA GÜNCELLE
+                    if (request.RevisedPlanDescription != null) // null değilse (boş string bile olsa güncelle)
+                    {
+                        var updateRevDescQuery = @"
+                    MERGE INTO custom_values AS target
+                    USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 46 AS custom_field_id) AS source
+                    ON target.customized_id = source.customized_id 
+                        AND target.customized_type = source.customized_type 
+                        AND target.custom_field_id = source.custom_field_id
+                    WHEN MATCHED THEN
+                        UPDATE SET value = @Description
+                    WHEN NOT MATCHED THEN
+                        INSERT (customized_type, customized_id, custom_field_id, value)
+                        VALUES ('Issue', @IssueId, 46, @Description);";
+
+                        using (var updateCommand = new SqlCommand(updateRevDescQuery, connection))
+                        {
+                            updateCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
+                            updateCommand.Parameters.AddWithValue("@Description",
+                                string.IsNullOrEmpty(request.RevisedPlanDescription) ? (object)DBNull.Value : request.RevisedPlanDescription);
+                            await updateCommand.ExecuteNonQueryAsync();
+                        }
+                    }
+
                     // İşin güncelleme tarihini güncelle
                     var updateIssueQuery = @"UPDATE issues SET updated_on = GETDATE() WHERE id = @IssueId";
                     using (var updateIssueCommand = new SqlCommand(updateIssueQuery, connection))
@@ -519,10 +708,20 @@ namespace API.Controllers
                     Success = true,
                     Message = "Tarihler başarıyla güncellendi",
                     IssueId = request.IssueId,
+
+                    // Planlanan tarihler
                     OldPlannedStartDate = oldStartDate,
                     OldPlannedEndDate = oldEndDate,
                     NewPlannedStartDate = newStartDate ?? oldStartDate,
                     NewPlannedEndDate = newEndDate ?? oldEndDate,
+
+                    // ✅ Revize tarihler
+                    OldRevisedPlannedStartDate = oldRevisedStartDate,
+                    OldRevisedPlannedEndDate = oldRevisedEndDate,
+                    NewRevisedPlannedStartDate = newRevisedStartDate ?? oldRevisedStartDate,
+                    NewRevisedPlannedEndDate = newRevisedEndDate ?? oldRevisedEndDate,
+                    RevisedPlanDescription = request.RevisedPlanDescription ?? oldRevisedDescription,
+
                     UpdatedAt = DateTime.Now
                 });
             }
@@ -653,7 +852,20 @@ namespace API.Controllers
                         ON cv_proje_kodu.customized_id = p.id 
                         AND cv_proje_kodu.customized_type = 'Project'
                         AND cv_proje_kodu.custom_field_id = 3
+                    LEFT JOIN custom_values cv_revize_baslangic 
+                          ON cv_revize_baslangic.customized_id = i.id 
+                          AND cv_revize_baslangic.custom_field_id = 20
+                      LEFT JOIN custom_values cv_revize_bitis 
+                          ON cv_revize_bitis.customized_id = i.id 
+                          AND cv_revize_bitis.custom_field_id = 21
+                      LEFT JOIN custom_values cv_revize_aciklama 
+                          ON cv_revize_aciklama.customized_id = i.id 
+                          AND cv_revize_aciklama.custom_field_id = 46
                     WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
+                        -- Revize tarih varsa onu kontrol et, yoksa planlanan tarihi kontrol et
+                          (ISNULL(cv_revize_baslangic.value, '') != '' AND TRY_CAST(cv_revize_baslangic.value AS DATE) <= @Date)
+                          OR
+                          (ISNULL(cv_revize_baslangic.value, '') = '' AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date)
                        -- AND t.name != 'Üretim'
                         AND ISNULL(cv_pbaslangic.value,'') != ''
                         AND ISNULL(cv_pbitis.value,'') != ''
