@@ -1,5 +1,5 @@
 // src/frontend/src/pages/VehicleLocationMapPage.js
-// ✅ MAINLAYOUT UYUMLU VERSİYON - Sol menü görünür
+// ✅ ARAÇ LİSTESİ VE DETAYLARI GÜNCELLENMİŞ
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -11,15 +11,17 @@ const VehicleLocationMapPage = () => {
   const toast = useToast();
 
   const [loading, setLoading] = useState(false);
-  const [vehicles, setVehicles] = useState([]);
+  const [vehicleMappings, setVehicleMappings] = useState([]); // ✅ Plaka-cihaz eşleşmeleri
+  const [vehicleStatuses, setVehicleStatuses] = useState([]); // ✅ Konum bilgileri
+  const [combinedVehicles, setCombinedVehicles] = useState([]); // ✅ Birleştirilmiş veri
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(false);
   const autoRefreshInterval = useRef(null);
 
-  // Load vehicles on mount
+  // ✅ Component mount olduğunda verileri yükle
   useEffect(() => {
-    loadVehicles();
+    loadAllData();
     return () => {
       if (autoRefreshInterval.current) {
         clearInterval(autoRefreshInterval.current);
@@ -27,11 +29,11 @@ const VehicleLocationMapPage = () => {
     };
   }, []);
 
-  // Auto refresh
+  // ✅ Auto refresh
   useEffect(() => {
     if (autoRefresh) {
       autoRefreshInterval.current = setInterval(() => {
-        loadVehicles(true);
+        loadVehicleStatuses(true);
       }, 30000); // 30 seconds
     } else {
       if (autoRefreshInterval.current) {
@@ -47,60 +49,149 @@ const VehicleLocationMapPage = () => {
     };
   }, [autoRefresh]);
 
-  // Load vehicles
-  const loadVehicles = async (silent = false) => {
+  // ✅ Tüm verileri yükle (mappings + statuses)
+  const loadAllData = async () => {
+    try {
+      setLoading(true);
+
+      console.log('📡 Loading all vehicle data...');
+
+      // Paralel olarak her iki servisi de çağır
+      const [mappings, statuses] = await Promise.all([
+        arventoService.getVehicleMappings({ language: '0' }),
+        arventoService.getVehicleStatus({ language: '0' })
+      ]);
+
+      console.log('✅ Mappings loaded:', mappings);
+      console.log('✅ Statuses loaded:', statuses);
+
+      setVehicleMappings(mappings);
+      setVehicleStatuses(statuses);
+
+      // ✅ Verileri birleştir
+      combineVehicleData(mappings, statuses);
+
+      toast.success(`${mappings.length} araç yüklendi`);
+    } catch (error) {
+      console.error('❌ Load all data error:', error);
+      toast.error('Veriler yüklenirken hata oluştu: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Sadece konum bilgilerini yenile (auto-refresh için)
+  const loadVehicleStatuses = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
 
-      const data = await arventoService.getVehicleStatus({ language: '0' });
+      const statuses = await arventoService.getVehicleStatus({ language: '0' });
 
-      if (data && Array.isArray(data) && data.length > 0) {
-        setVehicles(data);
-        if (!silent) {
-          toast.success(`${data.length} araç yüklendi`);
-        }
-        
-        // Auto-select first vehicle if none selected
-        if (!selectedVehicle && data.length > 0) {
-          setSelectedVehicle(data[0]);
-        }
-      } else {
-        setVehicles([]);
-        if (!silent) {
-          toast.info('Araç bulunamadı');
-        }
+      setVehicleStatuses(statuses);
+
+      // Mevcut mappings ile birleştir
+      combineVehicleData(vehicleMappings, statuses);
+
+      if (!silent) {
+        toast.success('Konum bilgileri güncellendi');
       }
     } catch (error) {
-      console.error('Load vehicles error:', error);
+      console.error('❌ Load statuses error:', error);
       if (!silent) {
-        toast.error('Araçlar yüklenirken hata oluştu: ' + error.message);
+        toast.error('Konum bilgileri yüklenirken hata oluştu: ' + error.message);
       }
     } finally {
       if (!silent) setLoading(false);
     }
   };
 
+  // ✅ Plaka-cihaz eşleşmelerini ve konum bilgilerini birleştir
+  const combineVehicleData = (mappings, statuses) => {
+    if (!mappings || !statuses) {
+      setCombinedVehicles([]);
+      return;
+    }
+
+    const combined = mappings.map(mapping => {
+      // Cihaz numarasına göre konum bilgisini bul
+      const status = statuses.find(s => s.deviceNo === mapping.deviceNo);
+
+      return {
+        // Mapping bilgileri
+        recordNo: mapping.recordNo,
+        deviceNo: mapping.deviceNo,
+        licensePlate: mapping.licensePlate,
+        vehicleGsmNo: mapping.vehicleGsmNo,
+        notes: mapping.notes,
+        load: mapping.load,
+        vehicleType: mapping.vehicleType,
+        vehicleBrand: mapping.vehicleBrand,
+        vehicleCategory: mapping.vehicleCategory,
+        vehicleModel: mapping.vehicleModel,
+        createdBy: mapping.createdBy,
+        createdDate: mapping.createdDate,
+
+        // Status bilgileri (varsa)
+        latitude: status?.latitude,
+        longitude: status?.longitude,
+        speed: status?.speed,
+        address: status?.address,
+        buildingRegion: status?.buildingRegion,
+        lastUpdate: status?.dateTime,
+        hasLocation: !!(status?.latitude && status?.longitude)
+      };
+    });
+
+    console.log('✅ Combined vehicle data:', combined);
+
+    setCombinedVehicles(combined);
+
+    // İlk aracı otomatik seç (eğer konum bilgisi varsa)
+    if (combined.length > 0 && !selectedVehicle) {
+      const firstWithLocation = combined.find(v => v.hasLocation);
+      if (firstWithLocation) {
+        setSelectedVehicle(firstWithLocation);
+      }
+    }
+  };
+
   // Handle vehicle selection
   const handleSelectVehicle = (vehicle) => {
+    if (!vehicle.hasLocation) {
+      toast.warning('Bu araç için konum bilgisi bulunamadı');
+      return;
+    }
     setSelectedVehicle(vehicle);
   };
 
   // Filter vehicles
-  const filteredVehicles = vehicles.filter(vehicle =>
-    vehicle.deviceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredVehicles = combinedVehicles.filter(vehicle =>
+    vehicle.deviceNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehicle.licensePlate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehicle.vehicleBrand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehicle.vehicleModel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehicle.address?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Open in Google Maps
   const handleOpenInGoogleMaps = () => {
-    if (!selectedVehicle) return;
+    if (!selectedVehicle || !selectedVehicle.hasLocation) return;
 
     const url = `https://www.google.com/maps?q=${selectedVehicle.latitude},${selectedVehicle.longitude}`;
     window.open(url, '_blank');
   };
 
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      return new Date(dateString).toLocaleString('tr-TR');
+    } catch {
+      return '-';
+    }
+  };
+
   return (
-    // ✅ MainLayout içinde açılacak - padding ve margin yok
     <div style={{ width: '100%', height: '100%' }}>
       {/* Page Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -131,12 +222,12 @@ const VehicleLocationMapPage = () => {
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">
                   <i className="bi bi-list-ul me-2"></i>
-                  Araç Listesi ({vehicles.length})
+                  Araç Listesi ({combinedVehicles.length})
                 </h5>
                 <div className="d-flex gap-2">
                   <button
                     className="btn btn-sm btn-outline-secondary"
-                    onClick={() => loadVehicles()}
+                    onClick={() => loadAllData()}
                     disabled={loading}
                     title="Yenile"
                   >
@@ -163,7 +254,7 @@ const VehicleLocationMapPage = () => {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Cihaz no veya adres ara..."
+                    placeholder="Plaka, cihaz no, marka ara..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -195,25 +286,51 @@ const VehicleLocationMapPage = () => {
                     <button
                       key={index}
                       className={`list-group-item list-group-item-action ${
-                        selectedVehicle?.deviceNumber === vehicle.deviceNumber ? 'active' : ''
-                      }`}
+                        selectedVehicle?.deviceNo === vehicle.deviceNo ? 'active' : ''
+                      } ${!vehicle.hasLocation ? 'disabled' : ''}`}
                       onClick={() => handleSelectVehicle(vehicle)}
+                      disabled={!vehicle.hasLocation}
                     >
                       <div className="d-flex w-100 justify-content-between align-items-start">
                         <div className="flex-grow-1">
+                          {/* Plaka */}
                           <h6 className="mb-1">
-                            <i className="bi bi-geo-alt-fill me-2"></i>
-                            Cihaz: {vehicle.deviceNumber || 'Bilinmiyor'}
+                            <i className="bi bi-card-text me-2"></i>
+                            <strong>{vehicle.licensePlate || 'Plaka Yok'}</strong>
                           </h6>
+
+                          {/* Marka/Model */}
+                          {(vehicle.vehicleBrand || vehicle.vehicleModel) && (
+                            <p className="mb-1 small">
+                              <i className="bi bi-truck me-1"></i>
+                              {vehicle.vehicleBrand} {vehicle.vehicleModel}
+                            </p>
+                          )}
+
+                          {/* Cihaz No */}
                           <p className="mb-1 small">
-                            <i className="bi bi-speedometer2 me-1"></i>
-                            Hız: <strong>{vehicle.speed || 0} km/h</strong>
+                            <i className="bi bi-cpu me-1"></i>
+                            Cihaz: {vehicle.deviceNo}
                           </p>
-                          <p className="mb-0 small text-muted" style={{ fontSize: '0.75rem' }}>
-                            {vehicle.address || 'Adres bilgisi yok'}
-                          </p>
+
+                          {/* Hız (varsa) */}
+                          {vehicle.hasLocation && (
+                            <p className="mb-1 small">
+                              <i className="bi bi-speedometer2 me-1"></i>
+                              Hız: <strong>{vehicle.speed || 0} km/h</strong>
+                            </p>
+                          )}
+
+                          {/* Konum durumu */}
+                          {!vehicle.hasLocation && (
+                            <p className="mb-0 small text-muted">
+                              <i className="bi bi-exclamation-circle me-1"></i>
+                              Konum bilgisi yok
+                            </p>
+                          )}
                         </div>
-                        {selectedVehicle?.deviceNumber === vehicle.deviceNumber && (
+
+                        {selectedVehicle?.deviceNo === vehicle.deviceNo && (
                           <i className="bi bi-check-circle-fill text-white"></i>
                         )}
                       </div>
@@ -244,7 +361,7 @@ const VehicleLocationMapPage = () => {
                   <i className="bi bi-map me-2"></i>
                   Harita Görünümü
                 </h5>
-                {selectedVehicle && (
+                {selectedVehicle && selectedVehicle.hasLocation && (
                   <button
                     className="btn btn-sm btn-success"
                     onClick={handleOpenInGoogleMaps}
@@ -257,27 +374,41 @@ const VehicleLocationMapPage = () => {
             </div>
 
             <div className="card-body p-0">
-              {selectedVehicle ? (
+              {selectedVehicle && selectedVehicle.hasLocation ? (
                 <>
                   {/* Vehicle Info Card */}
                   <div className="p-3 bg-light border-bottom">
                     <div className="row g-2">
+                      <div className="col-md-6">
+                        <small className="text-muted d-block">Plaka:</small>
+                        <strong>{selectedVehicle.licensePlate || '-'}</strong>
+                      </div>
+                      <div className="col-md-6">
+                        <small className="text-muted d-block">Marka/Model:</small>
+                        <strong>{selectedVehicle.vehicleBrand} {selectedVehicle.vehicleModel}</strong>
+                      </div>
                       <div className="col-md-3">
                         <small className="text-muted d-block">Cihaz No:</small>
-                        <strong>{selectedVehicle.deviceNumber || '-'}</strong>
+                        <strong>{selectedVehicle.deviceNo || '-'}</strong>
                       </div>
                       <div className="col-md-3">
                         <small className="text-muted d-block">Hız:</small>
                         <span className="badge bg-primary">{selectedVehicle.speed || 0} km/h</span>
                       </div>
                       <div className="col-md-6">
-                        <small className="text-muted d-block">Konum:</small>
-                        <small>{selectedVehicle.latitude}, {selectedVehicle.longitude}</small>
+                        <small className="text-muted d-block">Son Güncelleme:</small>
+                        <small>{formatDate(selectedVehicle.lastUpdate)}</small>
                       </div>
                       <div className="col-12">
-                        <small className="text-muted d-block">Bölge:</small>
-                        <small>{selectedVehicle.region || '-'}</small>
+                        <small className="text-muted d-block">Konum:</small>
+                        <small>{selectedVehicle.latitude?.toFixed(6)}, {selectedVehicle.longitude?.toFixed(6)}</small>
                       </div>
+                      {selectedVehicle.buildingRegion && (
+                        <div className="col-12">
+                          <small className="text-muted d-block">Bölge:</small>
+                          <small>{selectedVehicle.buildingRegion}</small>
+                        </div>
+                      )}
                       <div className="col-12">
                         <small className="text-muted d-block">Adres:</small>
                         <small>{selectedVehicle.address || 'Adres bilgisi yok'}</small>
@@ -293,7 +424,7 @@ const VehicleLocationMapPage = () => {
                     style={{ border: 0 }}
                     loading="lazy"
                     allowFullScreen
-                    src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD5pYrH4P0KhN9JhVZNlWq8X8kQ8gM8Y8Y&q=${selectedVehicle.latitude},${selectedVehicle.longitude}&zoom=15`}
+                    src={`https://www.google.com/maps?q=${selectedVehicle.latitude},${selectedVehicle.longitude}&output=embed`}
                   ></iframe>
                 </>
               ) : (
@@ -301,7 +432,9 @@ const VehicleLocationMapPage = () => {
                   <div className="text-center">
                     <i className="bi bi-map display-1 text-muted"></i>
                     <p className="mt-3 text-muted">
-                      Sol panelden bir araç seçerek konumunu görüntüleyin
+                      {selectedVehicle 
+                        ? 'Bu araç için konum bilgisi bulunamadı' 
+                        : 'Sol panelden bir araç seçerek konumunu görüntüleyin'}
                     </p>
                   </div>
                 </div>

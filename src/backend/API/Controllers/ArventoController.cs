@@ -1,3 +1,6 @@
+// src/backend/API/Controllers/ArventoController.cs
+// ✅ vehicle-mappings endpoint eklendi
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using API.Services;
@@ -7,7 +10,9 @@ using System.Threading.Tasks;
 
 namespace API.Controllers
 {
-    [Authorize]
+    #if !DEBUG
+    [Authorize] // Sadece Release modda JWT token gerekli
+#endif
     [ApiController]
     [Route("api/[controller]")]
     public class ArventoController : ControllerBase
@@ -21,6 +26,41 @@ namespace API.Controllers
         {
             _arventoService = arventoService;
             _logger = logger;
+        }
+
+        /// <summary>
+        /// ✅ YENİ: Araç plaka ve cihaz eşleşmelerini getirir
+        /// GET /api/Arvento/vehicle-mappings
+        /// </summary>
+        [HttpGet("vehicle-mappings")]
+        public async Task<ActionResult<VehicleMappingsResponse>> GetVehicleMappings([FromQuery] string language = "0")
+        {
+            try
+            {
+                _logger.LogInformation("Getting vehicle mappings. Language: {Language}", language);
+
+                var mappings = await _arventoService.GetLicensePlateNodeMappingsAsync(language);
+
+                var response = new VehicleMappingsResponse
+                {
+                    Success = true,
+                    Data = mappings,
+                    TotalCount = mappings.Count,
+                    Message = $"{mappings.Count} araç eşleşmesi getirildi"
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting vehicle mappings");
+                return StatusCode(500, new
+                {
+                    Success = false,
+                    Message = "Araç eşleşmeleri alınırken hata oluştu",
+                    Error = ex.Message
+                });
+            }
         }
 
         /// <summary>
@@ -134,14 +174,14 @@ namespace API.Controllers
             {
                 _logger.LogInformation("Testing Arvento connection");
 
-                // Basit bir test için GetVehicleStatus çağrısı yapıyoruz
-                var vehicles = await _arventoService.GetVehicleStatusAsync("0");
+                // Test için GetVehicleMappings çağrısı yapıyoruz
+                var mappings = await _arventoService.GetLicensePlateNodeMappingsAsync("0");
 
                 return Ok(new
                 {
                     Success = true,
                     Message = "Arvento bağlantısı başarılı",
-                    VehicleCount = vehicles.Count
+                    VehicleCount = mappings.Count
                 });
             }
             catch (Exception ex)
@@ -157,7 +197,21 @@ namespace API.Controllers
         }
     }
 
-    // Response Models
+    // ============================================================
+    // RESPONSE MODELS
+    // ============================================================
+
+    /// <summary>
+    /// ✅ YENİ: Araç eşleşmeleri response modeli
+    /// </summary>
+    public class VehicleMappingsResponse
+    {
+        public bool Success { get; set; }
+        public List<LicensePlateNodeMappingDto> Data { get; set; } = new();
+        public int TotalCount { get; set; }
+        public string? Message { get; set; }
+    }
+
     public class VehicleStatusResponse
     {
         public bool Success { get; set; }

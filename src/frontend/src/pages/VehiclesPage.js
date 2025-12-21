@@ -1,5 +1,5 @@
 // src/frontend/src/pages/VehiclesPage.js
-// ✅ ROUTE DÜZELTİLDİ - detail ve edit URL'leri düzeltildi
+// ✅ ARVENTO BUTONLARI EKLENMİŞ VERSİYON
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -122,117 +122,128 @@ const VehiclesPage = () => {
     }
   };
 
-  // Handle new vehicle
+  // ✅ Handle new vehicle
   const handleNewVehicle = () => {
-    navigate('/vehicles/new');
+    try {
+      console.log('🆕 New vehicle button clicked');
+      navigate('/vehicles/new');
+    } catch (error) {
+      console.error('Error navigating to new vehicle:', error);
+    }
   };
 
-  // ✅ DÜZELTİLDİ - /vehicles/detail/:id formatına uygun
+  // ✅ Handle view vehicle
   const handleViewVehicle = (vehicle) => {
-    navigate(`/vehicles/detail/${vehicle.id}`);
+    try {
+      console.log('👁️ VIEW BUTTON CLICKED - Vehicle:', vehicle);
+      console.log('👁️ Navigating to:', `/vehicles/detail/${vehicle.id}`);
+      
+      navigate(`/vehicles/detail/${vehicle.id}`, { state: { vehicle } });
+      
+      console.log('👁️ Navigate called successfully');
+    } catch (error) {
+      console.error('❌ Error viewing vehicle:', error);
+      toast.error('Detay sayfasına yönlendirme hatası: ' + error.message);
+    }
   };
 
-  // ✅ DÜZELTİLDİ - /vehicles/edit/:id formatına uygun
+  // ✅ Handle edit vehicle
   const handleEditVehicle = (vehicle) => {
-    navigate(`/vehicles/edit/${vehicle.id}`);
+    try {
+      console.log('✏️ EDIT BUTTON CLICKED - Vehicle:', vehicle);
+      console.log('✏️ Navigating to:', `/vehicles/edit/${vehicle.id}`);
+      
+      navigate(`/vehicles/edit/${vehicle.id}`, { state: { vehicle } });
+      
+      console.log('✏️ Navigate called successfully');
+    } catch (error) {
+      console.error('❌ Error editing vehicle:', error);
+      toast.error('Düzenleme sayfasına yönlendirme hatası: ' + error.message);
+    }
   };
 
   // Handle delete vehicle
   const handleDeleteVehicle = async (vehicle) => {
-    if (window.confirm(`${vehicle.licensePlate} plakalı aracı silmek istediğinizden emin misiniz?`)) {
-      try {
+    try {
+      if (window.confirm(`${vehicle.licensePlate} plakalı aracı silmek istediğinize emin misiniz?`)) {
         await deleteVehicle(vehicle.id);
-        toast.success('Araç başarıyla silindi');
-      } catch (error) {
-        toast.error('Araç silinirken hata oluştu');
       }
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
     }
   };
 
   // Handle bulk delete
   const handleBulkDelete = async () => {
-    if (selectedVehicles.length === 0) {
-      toast.warning('Lütfen silmek için araç seçin');
-      return;
-    }
-
-    if (window.confirm(`${selectedVehicles.length} adet aracı silmek istediğinizden emin misiniz?`)) {
-      try {
+    try {
+      if (window.confirm(`${selectedCount} aracı silmek istediğinize emin misiniz?`)) {
         await deleteSelectedVehicles();
-        toast.success(`${selectedVehicles.length} araç başarıyla silindi`);
-      } catch (error) {
-        toast.error('Araçlar silinirken hata oluştu');
       }
+    } catch (error) {
+      console.error('Error bulk deleting:', error);
     }
   };
 
   return (
     <div className="container-fluid py-4">
-      <div className="vehicles-page">
-        <div className="container-fluid">
-          {/* Error Alert */}
+      <div className="row">
+        <div className="col-12">
+          {/* ========================================
+              PAGE HEADER - ARVENTO BUTONLARI İLE
+              ======================================== */}
+          <div className="page-header mb-4">
+            <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+              <div>
+                <h1 className="h3 mb-1">
+                  <i className="bi bi-truck me-2 text-danger"></i>
+                  Araç Yönetimi
+                </h1>
+                <p className="text-muted mb-0">
+                  Şirket araçlarını görüntüleyin ve yönetin
+                </p>
+              </div>
+
+              {/* ✅ ARVENTO BUTONLARI */}
+              <div className="d-flex gap-2 flex-wrap">
+                <button
+                  className="btn btn-success"
+                  onClick={() => navigate('/vehicles/arvento/working-report')}
+                >
+                  <i className="bi bi-file-earmark-bar-graph me-2"></i>
+                  Araç Çalışma Raporu (Arvento)
+                </button>
+                <button
+                  className="btn btn-info"
+                  onClick={() => navigate('/vehicles/arvento/location-map')}
+                >
+                  <i className="bi bi-geo-alt-fill me-2"></i>
+                  Anlık Araç Konumları (Arvento)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Error Display */}
           {error && (
             <div className="alert alert-danger alert-dismissible fade show" role="alert">
               <i className="bi bi-exclamation-triangle me-2"></i>
               {error}
-              <button
-                type="button"
-                className="btn-close"
+              <button 
+                type="button" 
+                className="btn-close" 
                 onClick={clearError}
-                aria-label="Close"
               ></button>
             </div>
           )}
-
-          {/* Page Header */}
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <div>
-              <h2 className="h3 mb-1">
-                <i className="bi bi-truck me-2 text-danger"></i>
-                Araç Yönetimi
-              </h2>
-              <p className="text-muted mb-0">
-                Şirket araçlarını görüntüleyin, düzenleyin ve yönetin
-              </p>
-            </div>
-            <div className="d-flex gap-2">
-              <button
-                className="btn btn-outline-secondary"
-                onClick={handleRefresh}
-                disabled={loading}
-              >
-                <i className="bi bi-arrow-clockwise me-2"></i>
-                Yenile
-              </button>
-              <button
-                className="btn btn-outline-success"
-                onClick={handleExport}
-                disabled={loading || vehicles.length === 0}
-              >
-                <i className="bi bi-file-earmark-excel me-2"></i>
-                Excel'e Aktar
-              </button>
-              <button
-                className="btn btn-danger"
-                onClick={handleNewVehicle}
-              >
-                <i className="bi bi-plus-circle me-2"></i>
-                Yeni Araç Ekle
-              </button>
-            </div>
-          </div>
 
           {/* Filter Summary */}
           {hasFilters && (
             <div className="alert alert-info d-flex justify-content-between align-items-center">
               <div>
                 <i className="bi bi-funnel me-2"></i>
-                <strong>Aktif Filtreler:</strong>
-                {Object.entries(filterSummary).map(([key, value]) => (
-                  value && <span key={key} className="ms-2 badge bg-primary">{value}</span>
-                ))}
+                <strong>Aktif Filtreler:</strong> {filterSummary}
               </div>
-              <button
+              <button 
                 className="btn btn-sm btn-outline-secondary"
                 onClick={resetFilters}
               >
