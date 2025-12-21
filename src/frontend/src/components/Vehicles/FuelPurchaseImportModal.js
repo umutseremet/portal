@@ -1,4 +1,5 @@
 // src/frontend/src/components/Vehicles/FuelPurchaseImportModal.js
+// ✅ GÜNCELLENMIŞ VERSİYON - 40 kolonlu Excel formatı için uyarılar eklendi
 
 import React, { useState, useRef } from 'react';
 import apiService from '../../services/api';
@@ -124,17 +125,16 @@ const FuelPurchaseImportModal = ({ show, onHide, onSuccess }) => {
         {/* Errors */}
         {validationResult.errors && validationResult.errors.length > 0 && (
           <div className="alert alert-danger">
-            <h6 className="alert-heading mb-2">
-              <i className="bi bi-exclamation-triangle-fill me-2"></i>
-              Hatalar ({validationResult.errors.length})
-            </h6>
-            <ul className="mb-0 small" style={{ maxHeight: '150px', overflowY: 'auto' }}>
-              {validationResult.errors.slice(0, 10).map((error, index) => (
+            <div className="d-flex align-items-start mb-2">
+              <i className="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
+              <div className="flex-grow-1">
+                <strong>Doğrulama Hataları ({validationResult.errors.length})</strong>
+              </div>
+            </div>
+            <ul className="mb-0">
+              {validationResult.errors.map((error, index) => (
                 <li key={index}>{error}</li>
               ))}
-              {validationResult.errors.length > 10 && (
-                <li className="text-muted">... ve {validationResult.errors.length - 10} hata daha</li>
-              )}
             </ul>
           </div>
         )}
@@ -142,26 +142,34 @@ const FuelPurchaseImportModal = ({ show, onHide, onSuccess }) => {
         {/* Warnings */}
         {validationResult.warnings && validationResult.warnings.length > 0 && (
           <div className="alert alert-warning">
-            <h6 className="alert-heading mb-2">
-              <i className="bi bi-exclamation-circle-fill me-2"></i>
-              Uyarılar ({validationResult.warnings.length})
-            </h6>
-            <ul className="mb-0 small" style={{ maxHeight: '150px', overflowY: 'auto' }}>
-              {validationResult.warnings.slice(0, 10).map((warning, index) => (
+            <div className="d-flex align-items-start mb-2">
+              <i className="bi bi-exclamation-circle-fill me-2 mt-1"></i>
+              <div className="flex-grow-1">
+                <strong>Uyarılar ({validationResult.warnings.length})</strong>
+              </div>
+            </div>
+            <ul className="mb-0">
+              {validationResult.warnings.map((warning, index) => (
                 <li key={index}>{warning}</li>
               ))}
-              {validationResult.warnings.length > 10 && (
-                <li className="text-muted">... ve {validationResult.warnings.length - 10} uyarı daha</li>
-              )}
             </ul>
           </div>
         )}
 
-        {/* Success */}
+        {/* Success - Ready to import */}
         {validationResult.isValid && (
           <div className="alert alert-success">
-            <i className="bi bi-check-circle-fill me-2"></i>
-            Excel dosyası başarıyla doğrulandı. İçe aktarmaya hazır.
+            <div className="d-flex align-items-center">
+              <i className="bi bi-check-circle-fill me-2 fs-5"></i>
+              <div>
+                <strong>Doğrulama Başarılı!</strong>
+                <div className="small mt-1">
+                  {validationResult.totalRows} satır içe aktarılmaya hazır
+                  {validationResult.existingVehiclesCount > 0 && 
+                    ` (${validationResult.existingVehiclesCount} araç sistemde kayıtlı)`}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -172,66 +180,62 @@ const FuelPurchaseImportModal = ({ show, onHide, onSuccess }) => {
   const renderImportResults = () => {
     if (!importResult) return null;
 
-    const hasErrors = importResult.failCount > 0;
-
     return (
-      <div className="mt-3">
-        {/* Summary */}
-        <div className={`alert ${hasErrors ? 'alert-warning' : 'alert-success'}`}>
-          <h5 className="alert-heading">
-            <i className={`bi ${hasErrors ? 'bi-exclamation-triangle' : 'bi-check-circle'} me-2`}></i>
-            İçe Aktarma Tamamlandı
-          </h5>
-          <hr />
-          <div className="row text-center">
-            <div className="col-4">
-              <div className="fw-bold text-success" style={{ fontSize: '2rem' }}>
-                {importResult.successCount}
-              </div>
-              <small>Başarılı</small>
-            </div>
-            <div className="col-4">
-              <div className="fw-bold text-danger" style={{ fontSize: '2rem' }}>
-                {importResult.failCount}
-              </div>
-              <small>Hatalı</small>
-            </div>
-            <div className="col-4">
-              <div className="fw-bold text-warning" style={{ fontSize: '2rem' }}>
-                {importResult.skippedCount}
-              </div>
-              <small>Atlanan</small>
-            </div>
+      <div className="alert alert-info">
+        <h6 className="alert-heading">
+          <i className="bi bi-check-circle me-2"></i>
+          İçe Aktarma Tamamlandı
+        </h6>
+        <div className="row g-2 mt-2">
+          <div className="col-4">
+            <div className="small text-muted">Başarılı</div>
+            <div className="fs-5 fw-bold text-success">{importResult.successCount}</div>
+          </div>
+          <div className="col-4">
+            <div className="small text-muted">Atlanan</div>
+            <div className="fs-5 fw-bold text-warning">{importResult.skippedCount}</div>
+          </div>
+          <div className="col-4">
+            <div className="small text-muted">Başarısız</div>
+            <div className="fs-5 fw-bold text-danger">{importResult.failCount}</div>
           </div>
         </div>
 
-        {/* Errors */}
+        {/* Import Errors */}
         {importResult.errors && importResult.errors.length > 0 && (
-          <div className="alert alert-danger">
-            <h6 className="alert-heading mb-2">
-              <i className="bi bi-x-circle-fill me-2"></i>
-              Hatalar ({importResult.errors.length})
-            </h6>
-            <ul className="mb-0 small" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-              {importResult.errors.map((error, index) => (
-                <li key={index}>{error}</li>
-              ))}
-            </ul>
+          <div className="mt-3">
+            <details>
+              <summary className="fw-medium text-danger" style={{ cursor: 'pointer' }}>
+                Hatalar ({importResult.errors.length})
+              </summary>
+              <ul className="mt-2 mb-0 small">
+                {importResult.errors.slice(0, 20).map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+                {importResult.errors.length > 20 && (
+                  <li className="text-muted">... ve {importResult.errors.length - 20} hata daha</li>
+                )}
+              </ul>
+            </details>
           </div>
         )}
 
-        {/* Warnings */}
+        {/* Import Warnings */}
         {importResult.warnings && importResult.warnings.length > 0 && (
-          <div className="alert alert-warning">
-            <h6 className="alert-heading mb-2">
-              <i className="bi bi-info-circle-fill me-2"></i>
-              Uyarılar ({importResult.warnings.length})
-            </h6>
-            <ul className="mb-0 small" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-              {importResult.warnings.map((warning, index) => (
-                <li key={index}>{warning}</li>
-              ))}
-            </ul>
+          <div className="mt-3">
+            <details>
+              <summary className="fw-medium text-warning" style={{ cursor: 'pointer' }}>
+                Uyarılar ({importResult.warnings.length})
+              </summary>
+              <ul className="mt-2 mb-0 small">
+                {importResult.warnings.slice(0, 10).map((warning, index) => (
+                  <li key={index}>{warning}</li>
+                ))}
+                {importResult.warnings.length > 10 && (
+                  <li className="text-muted">... ve {importResult.warnings.length - 10} uyarı daha</li>
+                )}
+              </ul>
+            </details>
           </div>
         )}
       </div>
@@ -242,10 +246,9 @@ const FuelPurchaseImportModal = ({ show, onHide, onSuccess }) => {
 
   return (
     <>
-      {/* Modal Backdrop */}
+      {/* Backdrop */}
       <div 
         className="modal-backdrop fade show" 
-        onClick={handleClose}
         style={{ zIndex: 1040 }}
       ></div>
 
@@ -304,6 +307,22 @@ const FuelPurchaseImportModal = ({ show, onHide, onSuccess }) => {
                 </div>
               </div>
 
+              {/* ✅ YENİ: Excel Format Bilgisi */}
+              <div className="alert alert-info mb-4">
+                <div className="d-flex">
+                  <i className="bi bi-info-circle me-2 mt-1"></i>
+                  <div className="small">
+                    <strong>Excel Formatı Gereksinimleri:</strong>
+                    <ul className="mb-0 mt-1">
+                      <li>Excel dosyasında <strong>40 kolon</strong> olmalıdır</li>
+                      <li>Shell yakıt alım raporunu doğrudan kullanabilirsiniz</li>
+                      <li>Plaka kolonu (19. kolon) zorunludur ve araçlar sistemde kayıtlı olmalıdır</li>
+                      <li>Miktar, tutarlar ve tarihler doğru formatta olmalıdır</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               {/* File Selection */}
               <div className="mb-4">
                 <label className="form-label fw-medium">Excel Dosyası</label>
@@ -357,7 +376,14 @@ const FuelPurchaseImportModal = ({ show, onHide, onSuccess }) => {
                       </div>
                       <div className="col-6">
                         <div className="small text-muted">Toplam Kolon</div>
-                        <div className="fw-bold">{validationResult.totalColumns}</div>
+                        <div className="fw-bold">
+                          {validationResult.totalColumns}
+                          {validationResult.totalColumns !== 40 && (
+                            <span className="badge bg-warning text-dark ms-2">
+                              40 bekleniyor
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="col-6">
                         <div className="small text-muted">Mevcut Araçlar</div>
@@ -379,13 +405,12 @@ const FuelPurchaseImportModal = ({ show, onHide, onSuccess }) => {
               {importing && uploadProgress > 0 && (
                 <div className="mb-3">
                   <div className="d-flex justify-content-between mb-2">
-                    <span className="small">Yükleniyor...</span>
-                    <span className="small fw-bold">{uploadProgress}%</span>
+                    <span className="small text-muted">Yükleniyor...</span>
+                    <span className="small fw-medium">{uploadProgress}%</span>
                   </div>
-                  <div className="progress">
+                  <div className="progress" style={{ height: '8px' }}>
                     <div 
-                      className="progress-bar progress-bar-striped progress-bar-animated bg-danger" 
-                      role="progressbar" 
+                      className="progress-bar progress-bar-striped progress-bar-animated bg-success" 
                       style={{ width: `${uploadProgress}%` }}
                     ></div>
                   </div>
@@ -394,22 +419,6 @@ const FuelPurchaseImportModal = ({ show, onHide, onSuccess }) => {
 
               {/* Import Results */}
               {step === 'complete' && renderImportResults()}
-
-              {/* Instructions */}
-              {step === 'select' && !selectedFile && (
-                <div className="alert alert-info">
-                  <h6 className="alert-heading">
-                    <i className="bi bi-lightbulb me-2"></i>
-                    Bilgilendirme
-                  </h6>
-                  <ul className="mb-0 small">
-                    <li>Excel dosyanızda 32 kolon olmalıdır</li>
-                    <li>Plaka kolonu Vehicles tablosundaki plakalarla eşleşmelidir</li>
-                    <li>İşlem Numarası benzersiz olmalıdır (duplicate kayıtlar atlanır)</li>
-                    <li>Maksimum dosya boyutu: 10MB</li>
-                  </ul>
-                </div>
-              )}
             </div>
 
             {/* Footer */}

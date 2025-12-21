@@ -72,7 +72,7 @@ namespace API.Controllers
 
                         // Get all vehicles to cache license plate lookups
                         var vehicles = await _context.Vehicles
-                            .ToDictionaryAsync(v => v.LicensePlate.ToUpper(), v => v);
+                            .ToDictionaryAsync(v => v.LicensePlate.Replace(" ", "").ToUpper(), v => v);
 
                         // Get existing transaction numbers to avoid duplicates
                         var existingTransactionsList = await _context.VehicleFuelPurchases
@@ -84,12 +84,15 @@ namespace API.Controllers
                         {
                             try
                             {
-                                // Read Excel columns (adjust column indices based on your Excel structure)
-                                var licensePlate = worksheet.Cells[row, 11].Text.Trim().ToUpper(); // Plaka column
-                                var transactionNumber = worksheet.Cells[row, 27].Text.Trim(); // İşlem Numarası
+                                // ✅ GÜNCEL EXCEL KOLON İNDEKSLERİ (40 KOLONLU YENİ FORMAT)
+                                // Plaka kolonunu normalize et (boşlukları kaldır)
+                                var licensePlateRaw = worksheet.Cells[row, 19].Text.Trim(); // Kolon 19: Plaka
+                                var licensePlate = licensePlateRaw.Replace(" ", "").ToUpper();
+
+                                var transactionNumber = worksheet.Cells[row, 35].Text.Trim(); // Kolon 35: İşlem Numarası
 
                                 // Skip if already exists
-                                if (existingTransactions.Contains(transactionNumber))
+                                if (!string.IsNullOrEmpty(transactionNumber) && existingTransactions.Contains(transactionNumber))
                                 {
                                     skippedCount++;
                                     warnings.Add($"Row {row}: Transaction {transactionNumber} already exists, skipped.");
@@ -100,31 +103,35 @@ namespace API.Controllers
                                 if (!vehicles.TryGetValue(licensePlate, out var vehicle))
                                 {
                                     failCount++;
-                                    errors.Add($"Row {row}: Vehicle with license plate '{licensePlate}' not found.");
+                                    errors.Add($"Row {row}: Vehicle with license plate '{licensePlateRaw}' not found.");
                                     continue;
                                 }
 
                                 // Parse dates with error handling
                                 DateTime purchaseDate, period, invoiceDate, reflectionDate;
 
-                                if (!DateTime.TryParse(worksheet.Cells[row, 25].Text, out purchaseDate))
+                                // Kolon 33: Tarih (Purchase Date)
+                                if (!DateTime.TryParse(worksheet.Cells[row, 33].Text, out purchaseDate))
                                 {
                                     failCount++;
                                     errors.Add($"Row {row}: Invalid purchase date format.");
                                     continue;
                                 }
 
-                                if (!DateTime.TryParse(worksheet.Cells[row, 26].Text, out period))
+                                // Kolon 34: Dönem (Period)
+                                if (!DateTime.TryParse(worksheet.Cells[row, 34].Text, out period))
                                 {
                                     period = purchaseDate; // Default to purchase date
                                 }
 
-                                if (!DateTime.TryParse(worksheet.Cells[row, 28].Text, out invoiceDate))
+                                // Kolon 36: Fatura Tarihi (Invoice Date)
+                                if (!DateTime.TryParse(worksheet.Cells[row, 36].Text, out invoiceDate))
                                 {
                                     invoiceDate = purchaseDate; // Default to purchase date
                                 }
 
-                                if (!DateTime.TryParse(worksheet.Cells[row, 30].Text, out reflectionDate))
+                                // Kolon 38: Yansıma Tarihi (Reflection Date)
+                                if (!DateTime.TryParse(worksheet.Cells[row, 38].Text, out reflectionDate))
                                 {
                                     reflectionDate = purchaseDate; // Default to purchase date
                                 }
@@ -135,16 +142,51 @@ namespace API.Controllers
                                     purchaseId = 0;
                                 }
 
-                                if (!decimal.TryParse(worksheet.Cells[row, 16].Text, out decimal quantity))
+                                // Kolon 24: Miktar (Quantity)
+                                if (!decimal.TryParse(worksheet.Cells[row, 24].Text.Replace(",", "."),
+                                    System.Globalization.NumberStyles.Any,
+                                    System.Globalization.CultureInfo.InvariantCulture,
+                                    out decimal quantity))
                                 {
                                     failCount++;
                                     errors.Add($"Row {row}: Invalid quantity value.");
                                     continue;
                                 }
 
-                                if (!decimal.TryParse(worksheet.Cells[row, 18].Text, out decimal netAmount))
+                                // Kolon 26: Net Tutar (Net Amount)
+                                if (!decimal.TryParse(worksheet.Cells[row, 26].Text.Replace(",", "."),
+                                    System.Globalization.NumberStyles.Any,
+                                    System.Globalization.CultureInfo.InvariantCulture,
+                                    out decimal netAmount))
                                 {
                                     netAmount = 0;
+                                }
+
+                                // Kolon 25: Brüt Tutar (Gross Amount)
+                                if (!decimal.TryParse(worksheet.Cells[row, 25].Text.Replace(",", "."),
+                                    System.Globalization.NumberStyles.Any,
+                                    System.Globalization.CultureInfo.InvariantCulture,
+                                    out decimal grossAmount))
+                                {
+                                    grossAmount = netAmount; // Fallback to net amount
+                                }
+
+                                // Kolon 27: İskonto (Discount)
+                                if (!decimal.TryParse(worksheet.Cells[row, 27].Text.Replace(",", "."),
+                                    System.Globalization.NumberStyles.Any,
+                                    System.Globalization.CultureInfo.InvariantCulture,
+                                    out decimal discount))
+                                {
+                                    discount = 0;
+                                }
+
+                                // Kolon 29: Birim Fiyatı (Unit Price)
+                                if (!decimal.TryParse(worksheet.Cells[row, 29].Text.Replace(",", "."),
+                                    System.Globalization.NumberStyles.Any,
+                                    System.Globalization.CultureInfo.InvariantCulture,
+                                    out decimal unitPrice))
+                                {
+                                    unitPrice = 0;
                                 }
 
                                 // Create fuel purchase entity
@@ -160,33 +202,37 @@ namespace API.Controllers
                                     City = worksheet.Cells[row, 7].Text.Trim(),
                                     Station = worksheet.Cells[row, 8].Text.Trim(),
                                     StationCode = worksheet.Cells[row, 9].Text.Trim(),
-                                    DeviceGroups = worksheet.Cells[row, 10].Text.Trim(),
-                                    LicensePlate = licensePlate,
-                                    FuelType = worksheet.Cells[row, 13].Text.Trim(),
-                                    SalesType = worksheet.Cells[row, 14].Text.Trim(),
-                                    UTTS = worksheet.Cells[row, 15].Text.Trim(),
+                                    DeviceGroups = worksheet.Cells[row, 15].Text.Trim(), // Kolon 15: Cihaz Grupları
+                                    DeviceDescription = worksheet.Cells[row, 20].Text.Trim(), // Kolon 20: Cihaz Açıklaması
+                                    LicensePlate = licensePlateRaw, // Orijinal formatı sakla
+                                    FuelType = worksheet.Cells[row, 21].Text.Trim(), // Kolon 21: Tip
+                                    SalesType = worksheet.Cells[row, 22].Text.Trim(), // Kolon 22: Satış Tipi
+                                    UTTS = worksheet.Cells[row, 23].Text.Trim(), // Kolon 23: UTTS
                                     Quantity = quantity,
-                                    GrossAmount = decimal.TryParse(worksheet.Cells[row, 17].Text, out decimal gross) ? gross : 0,
+                                    GrossAmount = grossAmount,
                                     NetAmount = netAmount,
-                                    Discount = decimal.TryParse(worksheet.Cells[row, 19].Text, out decimal discount) ? discount : 0,
-                                    DiscountType = worksheet.Cells[row, 20].Text.Trim(),
-                                    UnitPrice = decimal.TryParse(worksheet.Cells[row, 21].Text, out decimal unitPrice) ? unitPrice : 0,
-                                    VATRate = worksheet.Cells[row, 22].Text.Trim(),
-                                    Mileage = int.TryParse(worksheet.Cells[row, 23].Text, out int mileage) ? mileage : 0,
-                                    Distributor = worksheet.Cells[row, 24].Text.Trim(),
+                                    Discount = discount,
+                                    DiscountType = worksheet.Cells[row, 28].Text.Trim(), // Kolon 28: İskonto Tipi
+                                    UnitPrice = unitPrice,
+                                    VATRate = worksheet.Cells[row, 30].Text.Trim(), // Kolon 30: KDV Oranı
+                                    Mileage = int.TryParse(worksheet.Cells[row, 31].Text, out int mileage) ? mileage : 0, // Kolon 31: Kilometre
+                                    Distributor = worksheet.Cells[row, 32].Text.Trim(), // Kolon 32: Distribütör
                                     PurchaseDate = purchaseDate,
                                     Period = period,
                                     TransactionNumber = transactionNumber,
                                     InvoiceDate = invoiceDate,
-                                    InvoiceNumber = worksheet.Cells[row, 29].Text.Trim(),
+                                    InvoiceNumber = worksheet.Cells[row, 37].Text.Trim(), // Kolon 37: Fatura Numarası
                                     ReflectionDate = reflectionDate,
-                                    SalesRepresentativeId = long.TryParse(worksheet.Cells[row, 31].Text, out long salesRepId) ? salesRepId : 0,
-                                    SalesRepresentative = worksheet.Cells[row, 32].Text.Trim(),
+                                    SalesRepresentativeId = long.TryParse(worksheet.Cells[row, 39].Text, out long salesRepId) ? salesRepId : 0, // Kolon 39
+                                    SalesRepresentative = worksheet.Cells[row, 40].Text.Trim(), // Kolon 40: Satış Temsilcisi
                                     CreatedAt = DateTime.Now
                                 };
 
                                 _context.VehicleFuelPurchases.Add(purchase);
-                                existingTransactions.Add(transactionNumber);
+                                if (!string.IsNullOrEmpty(transactionNumber))
+                                {
+                                    existingTransactions.Add(transactionNumber);
+                                }
                                 successCount++;
 
                                 // Save in batches of 50 for better performance
@@ -249,6 +295,11 @@ namespace API.Controllers
                 return BadRequest(new { message = "Please upload a valid Excel file." });
             }
 
+            if (!file.FileName.EndsWith(".xlsx") && !file.FileName.EndsWith(".xls"))
+            {
+                return BadRequest(new { message = "Only Excel files (.xlsx, .xls) are supported." });
+            }
+
             try
             {
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
@@ -264,7 +315,7 @@ namespace API.Controllers
                         var rowCount = worksheet.Dimension?.Rows ?? 0;
                         var colCount = worksheet.Dimension?.Columns ?? 0;
 
-                        // Expected columns
+                        // ✅ GÜNCEL BEKLENEN KOLONLAR (40 KOLONLU YENİ FORMAT)
                         var expectedColumns = new Dictionary<int, string>
                         {
                             { 1, "ID" },
@@ -276,48 +327,59 @@ namespace API.Controllers
                             { 7, "Şehir" },
                             { 8, "İstasyon" },
                             { 9, "İstasyon Kodu" },
-                            { 10, "Cihaz Grupları" },
-                            { 11, "Plaka" },
-                            {12, "Cihaz Açıklaması" },
-                            { 13, "Tip" },
-                            { 14, "Satış Tipi" },
-                            { 15, "UTTS" },
-                            { 16, "Miktar" },
-                            { 17, "Brüt Tutar" },
-                            { 18, "Net Tutar" },
-                            { 19, "İskonto" },
-                            { 20, "İskonto Tipi" },
-                            { 21, "Birim Fiyatı" },
-                            { 22, "KDV Oranı" },
-                            { 23, "Kilometre" },
-                            { 24, "Distribütör" },
-                            { 25, "Tarih" },
-                            { 26, "Dönem" },
-                            { 27, "İşlem Numarası" },
-                            { 28, "Fatura Tarihi" },
-                            { 29, "Fatura Numarası" },
-                            { 30, "Yansıma Tarihi" },
-                            { 31, "Satış Temsilcisi ID" },
-                            { 32, "Satış Temsilcisi" }
+                            { 10, "Terminal" },
+                            { 11, "Giriş Kapısı" },
+                            { 12, "Çıkış Kapısı" },
+                            { 13, "Giriş Tarihi" },
+                            { 14, "Çıkış Tarihi" },
+                            { 15, "Cihaz Grupları" },
+                            { 16, "Cihaz ID" },
+                            { 17, "Cihaz Numarası" },
+                            { 18, "Kart Numarası" },
+                            { 19, "Plaka" },
+                            { 20, "Cihaz Açıklaması" },
+                            { 21, "Tip" },
+                            { 22, "Satış Tipi" },
+                            { 23, "UTTS" },
+                            { 24, "Miktar" },
+                            { 25, "Brüt Tutar" },
+                            { 26, "Net Tutar" },
+                            { 27, "İskonto" },
+                            { 28, "İskonto Tipi" },
+                            { 29, "Birim Fiyatı" },
+                            { 30, "KDV Oranı" },
+                            { 31, "Kilometre" },
+                            { 32, "Distribütör" },
+                            { 33, "Tarih" },
+                            { 34, "Dönem" },
+                            { 35, "İşlem Numarası" },
+                            { 36, "Fatura Tarihi" },
+                            { 37, "Fatura Numarası" },
+                            { 38, "Yansıma Tarihi" },
+                            { 39, "Satış Temsilcisi ID" },
+                            { 40, "Satış Temsilcisi" }
                         };
 
                         var validationErrors = new List<string>();
                         var validationWarnings = new List<string>();
 
                         // Check column count
-                        if (colCount < 32)
+                        if (colCount < 40)
                         {
-                            validationErrors.Add($"Expected 32 columns, found {colCount}");
+                            validationErrors.Add($"Expected 40 columns, found {colCount}. Please use the latest Excel format.");
                         }
 
                         // Validate header row
                         foreach (var expectedCol in expectedColumns)
                         {
-                            var headerValue = worksheet.Cells[1, expectedCol.Key].Text.Trim();
-                            if (headerValue != expectedCol.Value)
+                            if (expectedCol.Key <= colCount)
                             {
-                                validationWarnings.Add(
-                                    $"Column {expectedCol.Key}: Expected '{expectedCol.Value}', found '{headerValue}'");
+                                var headerValue = worksheet.Cells[1, expectedCol.Key].Text.Trim();
+                                if (headerValue != expectedCol.Value)
+                                {
+                                    validationWarnings.Add(
+                                        $"Column {expectedCol.Key}: Expected '{expectedCol.Value}', found '{headerValue}'");
+                                }
                             }
                         }
 
@@ -333,17 +395,17 @@ namespace API.Controllers
 
                         for (int row = 2; row <= Math.Min(2 + sampleSize, rowCount); row++)
                         {
-                            var licensePlate = worksheet.Cells[row, 11].Text.Trim();
+                            var licensePlate = worksheet.Cells[row, 19].Text.Trim(); // Kolon 19: Plaka
                             if (!string.IsNullOrEmpty(licensePlate))
                             {
-                                licensePlates.Add(licensePlate.ToUpper());
+                                licensePlates.Add(licensePlate.Replace(" ", "").ToUpper());
                             }
                         }
 
                         // Check if vehicles exist
                         var existingVehicles = await _context.Vehicles
-                            .Where(v => licensePlates.Contains(v.LicensePlate.ToUpper()))
-                            .Select(v => v.LicensePlate.ToUpper())
+                            .Where(v => licensePlates.Contains(v.LicensePlate.Replace(" ", "").ToUpper()))
+                            .Select(v => v.LicensePlate.Replace(" ", "").ToUpper())
                             .ToListAsync();
 
                         var missingVehicles = licensePlates.Except(existingVehicles).ToList();
@@ -389,53 +451,29 @@ namespace API.Controllers
         [HttpGet("template")]
         public ActionResult<object> GetTemplateInfo()
         {
-            var templateInfo = new
+            return Ok(new
             {
-                requiredColumns = new[]
+                templateVersion = "2.0",
+                requiredColumns = 40,
+                columns = new[]
                 {
-                    new { column = "A", name = "ID", type = "number", required = true },
-                    new { column = "B", name = "Distributör ID", type = "number", required = true },
-                    new { column = "C", name = "Distribütör Kodu ID", type = "number", required = true },
-                    new { column = "D", name = "Kod", type = "text", required = true },
-                    new { column = "E", name = "Filo Kod Adı", type = "text", required = true },
-                    new { column = "F", name = "Filo", type = "text", required = true },
-                    new { column = "G", name = "Şehir", type = "text", required = true },
-                    new { column = "H", name = "İstasyon", type = "text", required = true },
-                    new { column = "I", name = "İstasyon Kodu", type = "text", required = true },
-                    new { column = "J", name = "Cihaz Grupları", type = "text", required = false },
-                    new { column = "K", name = "Plaka", type = "text", required = true },
-                    new { column = "L", name = "Tip", type = "text", required = true },
-                    new { column = "M", name = "Satış Tipi", type = "text", required = true },
-                    new { column = "N", name = "UTTS", type = "text", required = true },
-                    new { column = "O", name = "Miktar", type = "decimal", required = true },
-                    new { column = "P", name = "Brüt Tutar", type = "decimal", required = true },
-                    new { column = "Q", name = "Net Tutar", type = "decimal", required = true },
-                    new { column = "R", name = "İskonto", type = "decimal", required = true },
-                    new { column = "S", name = "İskonto Tipi", type = "text", required = true },
-                    new { column = "T", name = "Birim Fiyatı", type = "decimal", required = true },
-                    new { column = "U", name = "KDV Oranı", type = "text", required = true },
-                    new { column = "V", name = "Kilometre", type = "number", required = false },
-                    new { column = "W", name = "Distribütör", type = "text", required = true },
-                    new { column = "X", name = "Tarih", type = "datetime", required = true },
-                    new { column = "Y", name = "Dönem", type = "datetime", required = true },
-                    new { column = "Z", name = "İşlem Numarası", type = "text", required = true },
-                    new { column = "AA", name = "Fatura Tarihi", type = "datetime", required = true },
-                    new { column = "AB", name = "Fatura Numarası", type = "text", required = true },
-                    new { column = "AC", name = "Yansıma Tarihi", type = "datetime", required = true },
-                    new { column = "AD", name = "Satış Temsilcisi ID", type = "number", required = true },
-                    new { column = "AE", name = "Satış Temsilcisi", type = "text", required = true }
+                    "ID", "Distributör ID", "Distribütör Kodu ID", "Kod", "Filo Kod Adı",
+                    "Filo", "Şehir", "İstasyon", "İstasyon Kodu", "Terminal",
+                    "Giriş Kapısı", "Çıkış Kapısı", "Giriş Tarihi", "Çıkış Tarihi", "Cihaz Grupları",
+                    "Cihaz ID", "Cihaz Numarası", "Kart Numarası", "Plaka", "Cihaz Açıklaması",
+                    "Tip", "Satış Tipi", "UTTS", "Miktar", "Brüt Tutar",
+                    "Net Tutar", "İskonto", "İskonto Tipi", "Birim Fiyatı", "KDV Oranı",
+                    "Kilometre", "Distribütör", "Tarih", "Dönem", "İşlem Numarası",
+                    "Fatura Tarihi", "Fatura Numarası", "Yansıma Tarihi", "Satış Temsilcisi ID", "Satış Temsilcisi"
                 },
-                importNotes = new[]
+                notes = new[]
                 {
-                    "Plaka kolonu Vehicles tablosundaki LicensePlate ile eşleşmelidir",
-                    "İşlem Numarası (Transaction Number) benzersiz olmalıdır",
-                    "Tarih formatı: YYYY-MM-DD veya Excel date format",
-                    "Decimal değerler nokta (.) ile ayrılmalıdır",
-                    "Duplicate transaction numbers otomatik olarak atlanır"
+                    "Excel dosyasında 40 kolon olmalıdır",
+                    "Plaka kolonu (19. kolon) zorunludur",
+                    "Miktar, tutarlar ve tarihler doğru formatta olmalıdır",
+                    "İşlem Numarası (35. kolon) tekrarlayan kayıtları önler"
                 }
-            };
-
-            return Ok(templateInfo);
+            });
         }
     }
 }
