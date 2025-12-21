@@ -4,7 +4,7 @@
 // ==============================================
 // APP INFORMATION
 // ==============================================
-export const APP_NAME = process.env.REACT_APP_NAME || 'Aslan Group Portal';
+export const APP_NAME = process.env.REACT_APP_NAME || 'Vervo Portal';
 export const APP_VERSION = process.env.REACT_APP_VERSION || '1.0.0';
 export const APP_DESCRIPTION = process.env.REACT_APP_DESCRIPTION || 'Modern Üretim Yönetim Portalı';
 

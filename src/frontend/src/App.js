@@ -40,6 +40,8 @@ import PendingApprovalsPage from './pages/PendingApprovalsPage';
 import VehicleWorkingReportPage from './pages/VehicleWorkingReportPage';
 import VehicleLocationMapPage from './pages/VehicleLocationMapPage';
 
+import RevisedIssuesPage from './pages/RevisedIssuesPage';
+
 import './App.css';
 
 function App() {
@@ -377,6 +379,17 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* ✅ YENİ ROUTE: Revize İşler Listesi */}
+            <Route
+              path="/production/revised-issues"
+              element={
+                <ProtectedRoute>
+                  <RevisedIssuesPage />
+                </ProtectedRoute>
+              }
+            />
+
             {/* ✅ YENİ EKLEME - ISSUE DETAILS SPESİFİK ROUTE */}
             <Route
               path="/production/issue-details"

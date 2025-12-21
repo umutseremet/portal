@@ -17,33 +17,33 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       path: '/dashboard',
       permission: null // Dashboard herkese açık
     },
-    // {
-    //   id: 'production',
-    //   label: 'Üretim',
-    //   icon: 'bi-tools',
-    //   permission: null, // Ana grup herkese açık, alt öğeler kendi yetkilerini kontrol eder
-    //   children: [
-    //     { 
-    //       id: 'bom-transfer', 
-    //       label: 'BOM Listesi Aktarımı', 
-    //       path: '/production/bom-transfer',
-    //       permission: 'yetki_kullanici_bom_listesi_aktarim'
-    //     },
-    //     { 
-    //       id: 'data-cam', 
-    //       label: 'Data / CAM Hazırlama', 
-    //       path: '/production/technical-drawing-preparation',
-    //       permission: 'yetki_kullanici_data_cam_hazirlama'
-    //     },
-    //     {
-    //       id: 'weekly-calendar',
-    //       label: 'Haftalık Üretim Planı',
-    //       icon: 'bi-calendar3',
-    //       path: '/production/weekly-calendar',
-    //       permission: null // Herkes görebilir, sadece düzenleme yetkili
-    //     }
-    //   ]
-    // },
+    {
+      id: 'production',
+      label: 'Üretim',
+      icon: 'bi-tools',
+      permission: null, // Ana grup herkese açık, alt öğeler kendi yetkilerini kontrol eder
+      children: [
+        { 
+          id: 'bom-transfer', 
+          label: 'BOM Listesi Aktarımı', 
+          path: '/production/bom-transfer',
+          permission: 'yetki_kullanici_bom_listesi_aktarim'
+        },
+        { 
+          id: 'data-cam', 
+          label: 'Data / CAM Hazırlama', 
+          path: '/production/technical-drawing-preparation',
+          permission: 'yetki_kullanici_data_cam_hazirlama'
+        },
+        {
+          id: 'weekly-calendar',
+          label: 'Haftalık Üretim Planı',
+          icon: 'bi-calendar3',
+          path: '/production/weekly-calendar',
+          permission: null // Herkes görebilir, sadece düzenleme yetkili
+        }
+      ]
+    },
     // ✅ YENİ MENÜ: Talep ve Satınalma Yönetimi
     {
       id: 'purchase-management',
@@ -344,7 +344,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
                 margin: 0
               }}
             >
-              Aslan Group Portal
+              Vervo Portal
             </h4>
           </div>
         </div>

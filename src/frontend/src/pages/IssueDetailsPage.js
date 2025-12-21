@@ -1,5 +1,5 @@
 // src/frontend/src/pages/IssueDetailsPage.js
-// ✅ COMPLETE VERSION - Tüm fonksiyonlar dahil
+// ✅ COMPLETE VERSION - Revize İptal Özelliği Dahil
 
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -20,10 +20,19 @@ const IssueDetailsPage = () => {
     const [showFilters, setShowFilters] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // ✅ INLINE TARİH DÜZENLEME STATE'LERİ
+    // INLINE TARİH DÜZENLEME STATE'LERİ (Planlanan Tarihler için)
     const [editingDateCell, setEditingDateCell] = useState(null);
     const [tempDate, setTempDate] = useState('');
     const [savingDate, setSavingDate] = useState(false);
+
+    // REVİZE PLAN TARİHLERİ STATE'LERİ (Birleşik Modal)
+    const [showRevisedModal, setShowRevisedModal] = useState(false);
+    const [selectedIssueForRevise, setSelectedIssueForRevise] = useState(null);
+    const [tempRevisedStartDate, setTempRevisedStartDate] = useState('');
+    const [tempRevisedEndDate, setTempRevisedEndDate] = useState('');
+    const [tempRevisedDescription, setTempRevisedDescription] = useState('');
+    const [savingRevised, setSavingRevised] = useState(false);
+    const [clearingRevised, setClearingRevised] = useState(false); // ✅ YENİ
 
     const [filters, setFilters] = useState({
         projectId: '',
@@ -32,19 +41,16 @@ const IssueDetailsPage = () => {
         assignedTo: ''
     });
 
-    // ✅ Sayfa ilk yüklendiğinde işleri çek
     useEffect(() => {
         if (selectedDate) {
             fetchIssueDetails();
         }
     }, [selectedDate, selectedGroup]);
 
-    // ✅ Filtreleri uygula
     useEffect(() => {
         applyFilters();
     }, [filters, issues]);
 
-    // ✅ Arama işlevi
     useEffect(() => {
         if (!searchTerm) {
             applyFilters();
@@ -53,7 +59,6 @@ const IssueDetailsPage = () => {
 
         let filtered = [...issues];
 
-        // Önce diğer filtreleri uygula
         if (filters.projectId) {
             filtered = filtered.filter(i => i.projectId === parseInt(filters.projectId));
         }
@@ -69,7 +74,6 @@ const IssueDetailsPage = () => {
             filtered = filtered.filter(i => i.assignedTo === filters.assignedTo);
         }
 
-        // Sonra arama uygula
         const searchLower = searchTerm.toLowerCase();
         filtered = filtered.filter(issue => {
             return (
@@ -115,21 +119,17 @@ const IssueDetailsPage = () => {
             let formattedDate = selectedDate;
 
             if (selectedDate instanceof Date) {
-                // ✅ TIMEZONE-SAFE DÖNÜŞÜM
                 const year = selectedDate.getFullYear();
                 const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
                 const day = String(selectedDate.getDate()).padStart(2, '0');
                 formattedDate = `${year}-${month}-${day}`;
             } else if (typeof selectedDate === 'string') {
-                // ✅ String ise direkt split yap (timezone-safe)
                 if (selectedDate.includes('T')) {
                     formattedDate = selectedDate.split('T')[0];
                 } else {
                     formattedDate = selectedDate;
                 }
             }
-
-            console.log('📅 Formatted date for API:', formattedDate);
 
             let response;
 
@@ -139,14 +139,10 @@ const IssueDetailsPage = () => {
                     projectId: selectedGroup.projectId,
                     productionType: selectedGroup.productionType
                 };
-                console.log('📦 Calling getIssuesByDateAndType:', params);
                 response = await apiService.getIssuesByDateAndType(params);
             } else {
-                console.log('📅 Calling getIssuesByDate:', formattedDate);
                 response = await apiService.getIssuesByDate(formattedDate);
             }
-
-            console.log('✅ API Response:', response);
 
             const issuesData = response.issues || [];
             setIssues(issuesData);
@@ -159,22 +155,19 @@ const IssueDetailsPage = () => {
         }
     };
 
-    // ✅ INLINE TARİH KAYDETME FONKSİYONU
+    // PLANLANAN TARİH KAYDETME (Inline Edit)
     const handleSaveDate = async (issue, field) => {
-        // Boş tarih kontrolü
         if (!tempDate || tempDate.trim() === '') {
             setEditingDateCell(null);
             return;
         }
 
-        // Tarih değişmemişse kaydetme
         const originalDate = formatDateForInput(issue[field]);
         if (tempDate === originalDate) {
             setEditingDateCell(null);
             return;
         }
 
-        // Validasyon
         const otherField = field === 'plannedStartDate' ? 'plannedEndDate' : 'plannedStartDate';
         const otherDate = issue[otherField];
 
@@ -204,26 +197,18 @@ const IssueDetailsPage = () => {
                 updatedBy: 'User'
             };
 
-            console.log('📤 Saving date:', requestData);
-
             const response = await apiService.updateIssueDates(requestData);
 
             if (response.success) {
-                // State'i güncelle
                 setIssues(prevIssues =>
                     prevIssues.map(i =>
                         i.issueId === issue.issueId
-                            ? {
-                                ...i,
-                                [field]: tempDate,
-                                plannedStartDate: field === 'plannedStartDate' ? tempDate : i.plannedStartDate,
-                                plannedEndDate: field === 'plannedEndDate' ? tempDate : i.plannedEndDate
-                            }
+                            ? { ...i, [field]: tempDate }
                             : i
                     )
                 );
 
-                showSuccessFeedback();
+                showSuccessFeedback('Planlanan tarih güncellendi!');
             }
         } catch (error) {
             console.error('❌ Error updating date:', error);
@@ -234,7 +219,158 @@ const IssueDetailsPage = () => {
         }
     };
 
-    const showSuccessFeedback = () => {
+    // REVİZE MODAL AÇMA
+    const handleOpenRevisedModal = (issue) => {
+        setSelectedIssueForRevise(issue);
+        
+        const startDate = issue.revisedPlannedStartDate;
+        const endDate = issue.revisedPlannedEndDate;
+        
+        if (startDate && !startDate.startsWith('0001-01-01')) {
+            setTempRevisedStartDate(formatDateForInput(startDate));
+        } else {
+            setTempRevisedStartDate(formatDateForInput(issue.plannedStartDate) || '');
+        }
+        
+        if (endDate && !endDate.startsWith('0001-01-01')) {
+            setTempRevisedEndDate(formatDateForInput(endDate));
+        } else {
+            setTempRevisedEndDate(formatDateForInput(issue.plannedEndDate) || '');
+        }
+        
+        setTempRevisedDescription(issue.revisedPlanDescription || '');
+        setShowRevisedModal(true);
+    };
+
+    // REVİZE TARİHLER KAYDETME
+    const handleSaveRevisedDates = async () => {
+        if (!tempRevisedStartDate || tempRevisedStartDate.trim() === '') {
+            alert('Revize başlangıç tarihi boş olamaz!');
+            return;
+        }
+        
+        if (!tempRevisedEndDate || tempRevisedEndDate.trim() === '') {
+            alert('Revize bitiş tarihi boş olamaz!');
+            return;
+        }
+        
+        if (!tempRevisedDescription || tempRevisedDescription.trim() === '') {
+            alert('Revize açıklaması zorunludur!');
+            return;
+        }
+        
+        if (tempRevisedStartDate > tempRevisedEndDate) {
+            alert('Revize başlangıç tarihi, bitiş tarihinden sonra olamaz!');
+            return;
+        }
+        
+        const issue = selectedIssueForRevise;
+        const hasStartChanged = formatDateForInput(issue.revisedPlannedStartDate) !== tempRevisedStartDate;
+        const hasEndChanged = formatDateForInput(issue.revisedPlannedEndDate) !== tempRevisedEndDate;
+        const hasDescChanged = (issue.revisedPlanDescription || '') !== tempRevisedDescription;
+        
+        if (!hasStartChanged && !hasEndChanged && !hasDescChanged) {
+            setShowRevisedModal(false);
+            return;
+        }
+
+        setSavingRevised(true);
+
+        try {
+            const requestData = {
+                issueId: issue.issueId,
+                revisedPlannedStartDate: tempRevisedStartDate,
+                revisedPlannedEndDate: tempRevisedEndDate,
+                revisedPlanDescription: tempRevisedDescription,
+                updatedBy: 'User'
+            };
+
+            const response = await apiService.updateIssueDates(requestData);
+
+            if (response.success) {
+                setIssues(prevIssues =>
+                    prevIssues.map(i =>
+                        i.issueId === issue.issueId
+                            ? {
+                                ...i,
+                                revisedPlannedStartDate: tempRevisedStartDate,
+                                revisedPlannedEndDate: tempRevisedEndDate,
+                                revisedPlanDescription: tempRevisedDescription
+                            }
+                            : i
+                    )
+                );
+
+                setShowRevisedModal(false);
+                showSuccessFeedback('Revize plan tarihleri güncellendi!');
+            }
+        } catch (error) {
+            console.error('❌ Error updating revised dates:', error);
+            alert('Revize tarihler güncellenirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
+        } finally {
+            setSavingRevised(false);
+        }
+    };
+
+    // ✅ YENİ: REVİZE TARİHLER TEMİZLEME
+    const handleClearRevisedDates = async () => {
+        const confirmMessage = 
+            'Revize tarihler silinecek ve sistem planlanan tarihlere dönecek.\n\n' +
+            'Devam etmek istiyor musunuz?';
+        
+        if (!window.confirm(confirmMessage)) {
+            return;
+        }
+
+        setClearingRevised(true);
+
+        try {
+            const issue = selectedIssueForRevise;
+            
+            const existingDescription = issue.revisedPlanDescription || '';
+            const clearMessage = `[${new Date().toLocaleDateString('tr-TR')}] Revize tarihler iptal edildi.`;
+            const newDescription = existingDescription 
+                ? `${existingDescription}\n\n${clearMessage}`
+                : clearMessage;
+
+            const requestData = {
+                issueId: issue.issueId,
+                revisedPlannedStartDate: '', // ✅ Boş string gönder
+                revisedPlannedEndDate: '',   // ✅ Boş string gönder
+                revisedPlanDescription: newDescription,
+                updatedBy: 'User'
+            };
+
+            console.log('🗑️ Clearing revised dates:', requestData);
+
+            const response = await apiService.updateIssueDates(requestData);
+
+            if (response.success) {
+                setIssues(prevIssues =>
+                    prevIssues.map(i =>
+                        i.issueId === issue.issueId
+                            ? {
+                                ...i,
+                                revisedPlannedStartDate: null,
+                                revisedPlannedEndDate: null,
+                                revisedPlanDescription: newDescription
+                            }
+                            : i
+                    )
+                );
+
+                setShowRevisedModal(false);
+                showSuccessFeedback('Revize tarihler iptal edildi, sistem planlanan tarihlere döndü.');
+            }
+        } catch (error) {
+            console.error('❌ Error clearing revised dates:', error);
+            alert('Revize tarihler silinirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
+        } finally {
+            setClearingRevised(false);
+        }
+    };
+
+    const showSuccessFeedback = (message) => {
         const toast = document.createElement('div');
         toast.className = 'position-fixed top-0 end-0 p-3';
         toast.style.zIndex = '9999';
@@ -243,7 +379,7 @@ const IssueDetailsPage = () => {
                 <div class="d-flex">
                     <div class="toast-body">
                         <i class="bi bi-check-circle me-2"></i>
-                        Tarih başarıyla güncellendi!
+                        ${message}
                     </div>
                     <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
                 </div>
@@ -255,23 +391,42 @@ const IssueDetailsPage = () => {
 
     const formatDateForInput = (dateString) => {
         if (!dateString) return '';
+        
+        if (dateString.startsWith('0001-01-01') || dateString === '0001-01-01T00:00:00') {
+            return '';
+        }
+        
         try {
             const date = new Date(dateString);
             const year = date.getFullYear();
+            
+            if (year < 1900) {
+                return '';
+            }
+            
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         } catch (e) {
-            console.error('Date format error:', e);
             return '';
         }
     };
 
     const formatDate = (dateString) => {
         if (!dateString) return '-';
+        
+        if (dateString.startsWith('0001-01-01') || dateString === '0001-01-01T00:00:00') {
+            return '-';
+        }
+        
         try {
             const dateOnly = dateString.split('T')[0];
             const [year, month, day] = dateOnly.split('-');
+            
+            if (parseInt(year) < 1900) {
+                return '-';
+            }
+            
             return `${day}.${month}.${year}`;
         } catch (e) {
             return '-';
@@ -280,8 +435,19 @@ const IssueDetailsPage = () => {
 
     const formatDateForDisplay = (dateString) => {
         if (!dateString) return '-';
+        
+        if (dateString.startsWith('0001-01-01') || dateString === '0001-01-01T00:00:00') {
+            return '-';
+        }
+        
         try {
             const date = new Date(dateString);
+            const year = date.getFullYear();
+            
+            if (year < 1900) {
+                return '-';
+            }
+            
             return date.toLocaleDateString('tr-TR', {
                 day: '2-digit',
                 month: 'long',
@@ -292,7 +458,6 @@ const IssueDetailsPage = () => {
         }
     };
 
-    // ✅ INLINE DÜZENLENEBILIR TARİH HÜCRESİ RENDER
     const renderEditableDateCell = (issue, field, icon, color) => {
         const cellKey = `${issue.issueId}-${field}`;
         const isEditing = editingDateCell === cellKey;
@@ -380,6 +545,53 @@ const IssueDetailsPage = () => {
         );
     };
 
+    const renderRevisedDatesCell = (issue) => {
+        const hasRevisedStart = issue.revisedPlannedStartDate && 
+                               !issue.revisedPlannedStartDate.startsWith('0001-01-01');
+        const hasRevisedEnd = issue.revisedPlannedEndDate && 
+                             !issue.revisedPlannedEndDate.startsWith('0001-01-01');
+        const hasAnyRevised = hasRevisedStart || hasRevisedEnd;
+
+        return (
+            <td
+                className={`editable-date-cell ${hasAnyRevised ? 'table-warning' : ''}`}
+                onClick={() => handleOpenRevisedModal(issue)}
+                title={hasAnyRevised ? "Revize edilmiş - Düzenlemek için tıklayın" : "Revize plan eklemek için tıklayın"}
+                style={{ cursor: 'pointer' }}
+            >
+                <div className="d-flex flex-column gap-1">
+                    <div className="d-flex align-items-center justify-content-between">
+                        <div className="d-flex align-items-center">
+                            <i className="bi bi-calendar-event text-warning me-2" style={{ fontSize: '0.85rem' }}></i>
+                            <small className={hasRevisedStart ? 'fw-bold' : 'text-muted'}>
+                                {hasRevisedStart ? formatDate(issue.revisedPlannedStartDate) : '-'}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div className="d-flex align-items-center justify-content-between">
+                        <div className="d-flex align-items-center">
+                            <i className="bi bi-calendar-event-fill text-warning me-2" style={{ fontSize: '0.85rem' }}></i>
+                            <small className={hasRevisedEnd ? 'fw-bold' : 'text-muted'}>
+                                {hasRevisedEnd ? formatDate(issue.revisedPlannedEndDate) : '-'}
+                            </small>
+                        </div>
+                        <i className={`bi ${hasAnyRevised ? 'bi-pencil-fill' : 'bi-plus-circle'} edit-icon ms-2`}></i>
+                    </div>
+                </div>
+                
+                {issue.revisedPlanDescription && (
+                    <div className="small text-muted mt-1" style={{ fontSize: '0.7rem' }}>
+                        <i className="bi bi-info-circle me-1"></i>
+                        {issue.revisedPlanDescription.length > 25
+                            ? issue.revisedPlanDescription.substring(0, 25) + '...'
+                            : issue.revisedPlanDescription}
+                    </div>
+                )}
+            </td>
+        );
+    };
+
     const handleFilterChange = (field, value) => {
         setFilters(prev => ({ ...prev, [field]: value }));
     };
@@ -399,11 +611,24 @@ const IssueDetailsPage = () => {
         filters.status !== 'all' || filters.assignedTo || searchTerm;
 
     const checkIfIssueOverdue = (issue) => {
-        if (!issue.plannedEndDate) return false;
+        let effectiveEndDate = issue.revisedPlannedEndDate;
+        
+        if (!effectiveEndDate || 
+            effectiveEndDate.startsWith('0001-01-01') || 
+            effectiveEndDate === '0001-01-01T00:00:00') {
+            effectiveEndDate = issue.plannedEndDate;
+        }
+        
+        if (!effectiveEndDate || 
+            effectiveEndDate.startsWith('0001-01-01') || 
+            effectiveEndDate === '0001-01-01T00:00:00') {
+            return false;
+        }
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const plannedEnd = new Date(issue.plannedEndDate);
+        
+        const plannedEnd = new Date(effectiveEndDate);
         plannedEnd.setHours(0, 0, 0, 0);
 
         if (issue.isClosed && issue.closedOn) {
@@ -424,9 +649,7 @@ const IssueDetailsPage = () => {
 
     const handleBackToCalendar = () => {
         navigate('/production/weekly-calendar', {
-            state: {
-                currentWeek: currentWeek
-            }
+            state: { currentWeek: currentWeek }
         });
     };
 
@@ -441,7 +664,6 @@ const IssueDetailsPage = () => {
         );
     }
 
-    // Filtre için benzersiz değerleri al
     const uniqueProjects = [...new Map(issues.map(i => [i.projectId, { id: i.projectId, name: i.projectName, code: i.projectCode }])).values()];
     const productionTypeList = [...new Set(issues.map(i => i.trackerName?.replace('Üretim - ', '').trim()).filter(Boolean))];
     const statusList = [...new Set(issues.map(i => i.statusName).filter(Boolean))];
@@ -449,6 +671,169 @@ const IssueDetailsPage = () => {
 
     return (
         <div className="container-fluid py-4">
+            {/* Revize Plan Modal */}
+            {showRevisedModal && selectedIssueForRevise && (
+                <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content">
+                            <div className="modal-header bg-warning">
+                                <h5 className="modal-title">
+                                    <i className="bi bi-calendar-event me-2"></i>
+                                    Revize Plan Tarihleri Güncelle
+                                </h5>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => setShowRevisedModal(false)}
+                                    disabled={savingRevised || clearingRevised}
+                                ></button>
+                            </div>
+                            
+                            <div className="modal-body">
+                                {/* İş Bilgisi */}
+                                <div className="alert alert-info small mb-3">
+                                    <strong>#{selectedIssueForRevise.issueId}</strong> - {selectedIssueForRevise.subject}
+                                    <div className="mt-2">
+                                        <small className="text-muted">
+                                            <i className="bi bi-calendar-check me-1"></i>
+                                            Planlanan: {formatDate(selectedIssueForRevise.plannedStartDate)} → {formatDate(selectedIssueForRevise.plannedEndDate)}
+                                        </small>
+                                    </div>
+                                </div>
+
+                                {/* Mevcut Revize Durumu */}
+                                {(selectedIssueForRevise.revisedPlannedStartDate || selectedIssueForRevise.revisedPlannedEndDate) && 
+                                 !selectedIssueForRevise.revisedPlannedStartDate?.startsWith('0001-01-01') && (
+                                    <div className="alert alert-warning small mb-3">
+                                        <i className="bi bi-exclamation-triangle me-2"></i>
+                                        <strong>Mevcut Revize:</strong>
+                                        <div className="mt-1">
+                                            {formatDate(selectedIssueForRevise.revisedPlannedStartDate)} → {formatDate(selectedIssueForRevise.revisedPlannedEndDate)}
+                                        </div>
+                                        {selectedIssueForRevise.revisedPlanDescription && (
+                                            <div className="mt-1 small text-muted">
+                                                "{selectedIssueForRevise.revisedPlanDescription}"
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Revize Başlangıç */}
+                                <div className="mb-3">
+                                    <label className="form-label fw-bold">
+                                        <i className="bi bi-calendar-event text-warning me-2"></i>
+                                        Revize Başlangıç Tarihi <span className="text-danger">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        className="form-control"
+                                        value={tempRevisedStartDate}
+                                        onChange={(e) => setTempRevisedStartDate(e.target.value)}
+                                        disabled={savingRevised || clearingRevised}
+                                    />
+                                </div>
+
+                                {/* Revize Bitiş */}
+                                <div className="mb-3">
+                                    <label className="form-label fw-bold">
+                                        <i className="bi bi-calendar-event-fill text-warning me-2"></i>
+                                        Revize Bitiş Tarihi <span className="text-danger">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        className="form-control"
+                                        value={tempRevisedEndDate}
+                                        onChange={(e) => setTempRevisedEndDate(e.target.value)}
+                                        disabled={savingRevised || clearingRevised}
+                                    />
+                                </div>
+
+                                {/* Açıklama */}
+                                <div className="mb-3">
+                                    <label className="form-label fw-bold">
+                                        <i className="bi bi-chat-left-text text-warning me-2"></i>
+                                        Revize Açıklaması <span className="text-danger">*</span>
+                                    </label>
+                                    <textarea
+                                        className="form-control"
+                                        rows="3"
+                                        placeholder="Plan neden revize edildi? (Zorunlu)"
+                                        value={tempRevisedDescription}
+                                        onChange={(e) => setTempRevisedDescription(e.target.value)}
+                                        disabled={savingRevised || clearingRevised}
+                                    />
+                                    <small className="text-muted">
+                                        Örn: "Malzeme gecikmesi nedeniyle", "Müşteri talebi üzerine"
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            {/* Footer - 3 Buton */}
+                            <div className="modal-footer">
+                                <div className="d-flex justify-content-between w-100">
+                                    {/* Sol: Revize İptal */}
+                                    <div>
+                                        {(selectedIssueForRevise.revisedPlannedStartDate || 
+                                          selectedIssueForRevise.revisedPlannedEndDate) && 
+                                         !selectedIssueForRevise.revisedPlannedStartDate?.startsWith('0001-01-01') && (
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-danger"
+                                                onClick={handleClearRevisedDates}
+                                                disabled={savingRevised || clearingRevised}
+                                                title="Revize tarihlerini iptal et ve planlanan tarihlere dön"
+                                            >
+                                                {clearingRevised ? (
+                                                    <>
+                                                        <span className="spinner-border spinner-border-sm me-2"></span>
+                                                        İptal Ediliyor...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <i className="bi bi-x-circle me-2"></i>
+                                                        Revize İptal Et
+                                                    </>
+                                                )}
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Sağ: Vazgeç ve Kaydet */}
+                                    <div className="d-flex gap-2">
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary"
+                                            onClick={() => setShowRevisedModal(false)}
+                                            disabled={savingRevised || clearingRevised}
+                                        >
+                                            Vazgeç
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-warning"
+                                            onClick={handleSaveRevisedDates}
+                                            disabled={savingRevised || clearingRevised}
+                                        >
+                                            {savingRevised ? (
+                                                <>
+                                                    <span className="spinner-border spinner-border-sm me-2"></span>
+                                                    Kaydediliyor...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <i className="bi bi-check-lg me-2"></i>
+                                                    Kaydet
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="card mb-4" style={{
                 background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
@@ -631,30 +1016,42 @@ const IssueDetailsPage = () => {
                         </div>
                     ) : (
                         <>
+                            <div className="alert alert-info">
+                                <i className="bi bi-info-circle me-2"></i>
+                                <strong>Not:</strong> Sarı arka planlı hücre <strong>revize edilmiş</strong> tarihleri gösterir. 
+                                Hücreye tıklayarak başlangıç, bitiş ve açıklama bilgilerini birlikte güncelleyebilir veya revize iptal edebilirsiniz.
+                            </div>
+
                             <div className="table-responsive">
-                                <table className="table table-hover">
+                                <table className="table table-hover table-sm">
                                     <thead className="table-light sticky-top">
                                         <tr>
                                             <th style={{ width: '60px' }}>İş No</th>
-                                            <th>Proje</th>
+                                            <th style={{ width: '150px' }}>Proje</th>
                                             <th>Konu</th>
-                                            <th style={{ width: '120px' }}>İş Tipi</th>
-                                            <th style={{ width: '130px' }}>
+                                            <th style={{ width: '100px' }}>İş Tipi</th>
+                                            
+                                            <th style={{ width: '120px' }}>
                                                 <i className="bi bi-calendar-check text-primary me-1"></i>
                                                 Plan Başlangıç
                                             </th>
-                                            <th style={{ width: '130px' }}>
+                                            <th style={{ width: '120px' }}>
                                                 <i className="bi bi-calendar-x text-danger me-1"></i>
                                                 Plan Bitiş
                                             </th>
-                                            <th style={{ width: '130px' }}>
-                                                <i className="bi bi-calendar-check-fill text-success me-1"></i>
-                                                Kapanma Tarihi
+
+                                            <th style={{ width: '160px' }} className="table-warning">
+                                                <i className="bi bi-calendar-event text-warning me-1"></i>
+                                                Revize Tarihler
+                                                <div className="small fw-normal text-muted" style={{ fontSize: '0.7rem' }}>
+                                                    (Başlangıç / Bitiş)
+                                                </div>
                                             </th>
+
                                             <th style={{ width: '100px' }}>Durum</th>
-                                            <th style={{ width: '80px' }} className="text-center">İlerleme</th>
-                                            <th style={{ width: '120px' }}>Atanan</th>
-                                            <th style={{ width: '80px' }} className="text-center">İşlem</th>
+                                            <th style={{ width: '80px' }}>İlerleme</th>
+                                            <th style={{ width: '100px' }}>Atanan</th>
+                                            <th style={{ width: '60px' }}>İşlem</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -665,7 +1062,6 @@ const IssueDetailsPage = () => {
                                                     key={issue.issueId}
                                                     className={isOverdue && !issue.isClosed ? 'table-danger' : ''}
                                                 >
-                                                    {/* İş No */}
                                                     <td>
                                                         <a
                                                             href={`${REDMINE_BASE_URL}/issues/${issue.issueId}`}
@@ -676,18 +1072,14 @@ const IssueDetailsPage = () => {
                                                             #{issue.issueId}
                                                         </a>
                                                     </td>
-
-                                                    {/* Proje */}
                                                     <td>
                                                         <small className="text-muted d-block">{issue.projectCode}</small>
                                                         <span style={{ fontSize: '0.85rem' }}>
-                                                            {issue.projectName?.length > 40
-                                                                ? issue.projectName.substring(0, 40) + '...'
+                                                            {issue.projectName?.length > 20
+                                                                ? issue.projectName.substring(0, 20) + '...'
                                                                 : issue.projectName}
                                                         </span>
                                                     </td>
-
-                                                    {/* Konu */}
                                                     <td>
                                                         <div className="d-flex align-items-start gap-2">
                                                             <i
@@ -696,8 +1088,8 @@ const IssueDetailsPage = () => {
                                                             ></i>
                                                             <div>
                                                                 <div className="fw-medium" title={issue.subject}>
-                                                                    {issue.subject?.length > 60
-                                                                        ? issue.subject.substring(0, 60) + '...'
+                                                                    {issue.subject?.length > 40
+                                                                        ? issue.subject.substring(0, 40) + '...'
                                                                         : issue.subject}
                                                                 </div>
                                                                 {isOverdue && !issue.isClosed && (
@@ -709,41 +1101,23 @@ const IssueDetailsPage = () => {
                                                             </div>
                                                         </div>
                                                     </td>
-
-                                                    {/* İş Tipi */}
                                                     <td>
                                                         <span className="badge bg-secondary">
                                                             {issue.trackerName?.replace('Üretim - ', '')}
                                                         </span>
                                                     </td>
 
-                                                    {/* Plan Başlangıç - Düzenlenebilir */}
                                                     {renderEditableDateCell(issue, 'plannedStartDate', 'bi-calendar-check', 'primary')}
-
-                                                    {/* Plan Bitiş - Düzenlenebilir */}
                                                     {renderEditableDateCell(issue, 'plannedEndDate', 'bi-calendar-x', 'danger')}
 
-                                                    {/* Kapanma Tarihi - Sadece Okunabilir */}
-                                                    <td>
-                                                        {issue.closedOn ? (
-                                                            <div className="d-flex align-items-center">
-                                                                <i className="bi bi-calendar-check-fill text-success me-2"></i>
-                                                                <span>{formatDate(issue.closedOn)}</span>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-muted">-</span>
-                                                        )}
-                                                    </td>
+                                                    {renderRevisedDatesCell(issue)}
 
-                                                    {/* Durum */}
                                                     <td>
                                                         <span className={`badge ${getStatusBadgeClass(issue.statusName, issue.isClosed)}`}>
                                                             {issue.statusName}
                                                         </span>
                                                     </td>
-
-                                                    {/* İlerleme */}
-                                                    <td className="text-center">
+                                                    <td>
                                                         <div className="progress" style={{ height: '20px' }}>
                                                             <div
                                                                 className={`progress-bar ${issue.completionPercentage === 100 ? 'bg-success' : 'bg-primary'}`}
@@ -754,14 +1128,10 @@ const IssueDetailsPage = () => {
                                                             </div>
                                                         </div>
                                                     </td>
-
-                                                    {/* Atanan */}
                                                     <td>
                                                         <small>{issue.assignedTo || 'Atanmamış'}</small>
                                                     </td>
-
-                                                    {/* İşlem */}
-                                                    <td className="text-center">
+                                                    <td>
                                                         <a
                                                             href={`${REDMINE_BASE_URL}/issues/${issue.issueId}`}
                                                             target="_blank"
@@ -779,7 +1149,6 @@ const IssueDetailsPage = () => {
                                 </table>
                             </div>
 
-                            {/* Result Count */}
                             <div className="mt-3 text-muted small">
                                 <i className="bi bi-info-circle me-1"></i>
                                 Toplam {filteredIssues.length} iş gösteriliyor
@@ -795,13 +1164,13 @@ const IssueDetailsPage = () => {
                 <div className="card mt-4">
                     <div className="card-body">
                         <div className="row text-center">
-                            <div className="col-md-3">
+                            <div className="col-md-2">
                                 <div className="p-3">
                                     <h5 className="text-primary mb-1">{filteredIssues.length}</h5>
-                                    <small className="text-muted">Toplam İş</small>
+                                    <small className="text-muted">Toplam</small>
                                 </div>
                             </div>
-                            <div className="col-md-3">
+                            <div className="col-md-2">
                                 <div className="p-3">
                                     <h5 className="text-success mb-1">
                                         {filteredIssues.filter(i => i.isClosed).length}
@@ -809,7 +1178,7 @@ const IssueDetailsPage = () => {
                                     <small className="text-muted">Tamamlanan</small>
                                 </div>
                             </div>
-                            <div className="col-md-3">
+                            <div className="col-md-2">
                                 <div className="p-3">
                                     <h5 className="text-warning mb-1">
                                         {filteredIssues.filter(i => !i.isClosed).length}
@@ -817,12 +1186,32 @@ const IssueDetailsPage = () => {
                                     <small className="text-muted">Devam Eden</small>
                                 </div>
                             </div>
-                            <div className="col-md-3">
+                            <div className="col-md-2">
                                 <div className="p-3">
                                     <h5 className="text-danger mb-1">
                                         {filteredIssues.filter(i => checkIfIssueOverdue(i) && !i.isClosed).length}
                                     </h5>
                                     <small className="text-muted">Gecikmiş</small>
+                                </div>
+                            </div>
+                            <div className="col-md-2">
+                                <div className="p-3">
+                                    <h5 className="text-info mb-1">
+                                        {filteredIssues.filter(i => {
+                                            const hasStart = i.revisedPlannedStartDate && !i.revisedPlannedStartDate.startsWith('0001-01-01');
+                                            const hasEnd = i.revisedPlannedEndDate && !i.revisedPlannedEndDate.startsWith('0001-01-01');
+                                            return hasStart || hasEnd;
+                                        }).length}
+                                    </h5>
+                                    <small className="text-muted">Revize Edilmiş</small>
+                                </div>
+                            </div>
+                            <div className="col-md-2">
+                                <div className="p-3">
+                                    <h5 className="text-secondary mb-1">
+                                        {filteredIssues.filter(i => i.revisedPlanDescription && i.revisedPlanDescription.trim()).length}
+                                    </h5>
+                                    <small className="text-muted">Açıklamalı</small>
                                 </div>
                             </div>
                         </div>

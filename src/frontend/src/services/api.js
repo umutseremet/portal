@@ -1046,23 +1046,29 @@ class ApiService {
   // ✅ Mevcut dosyanıza bu metodu EKLEYIN (ApiService class'ının içine)
 
   /**
-   * Update issue dates (planned start and end dates)
-   * @param {Object} data - Update request data
-   * @param {number} data.issueId - Issue ID
-   * @param {string} data.plannedStartDate - New planned start date (yyyy-MM-dd) or null
-   * @param {string} data.plannedEndDate - New planned end date (yyyy-MM-dd) or null
-   * @param {string} data.updatedBy - User making the update
-   * @returns {Promise<Object>} Update response
-   */
+ * Update issue dates (planned AND revised dates)
+ * @param {Object} data - Update request data
+ * @param {number} data.issueId - Issue ID
+ * @param {string} data.plannedStartDate - New planned start date (yyyy-MM-dd) or null
+ * @param {string} data.plannedEndDate - New planned end date (yyyy-MM-dd) or null
+ * @param {string} data.revisedPlannedStartDate - New revised start date (yyyy-MM-dd) or null
+ * @param {string} data.revisedPlannedEndDate - New revised end date (yyyy-MM-dd) or null
+ * @param {string} data.revisedPlanDescription - Revision description or null
+ * @param {string} data.updatedBy - User making the update
+ * @returns {Promise<Object>} Update response
+ */
   async updateIssueDates(data) {
     try {
       console.log('📅 API updateIssueDates request:', data);
 
-      // ✅ Tarihleri AYNEN gönder - herhangi bir dönüşüm yapma
+      // ✅ Tüm alanları gönder - revize tarihler dahil
       const requestBody = {
         issueId: data.issueId,
         plannedStartDate: data.plannedStartDate || null,
         plannedEndDate: data.plannedEndDate || null,
+        revisedPlannedStartDate: data.revisedPlannedStartDate || null,
+        revisedPlannedEndDate: data.revisedPlannedEndDate || null,
+        revisedPlanDescription: data.revisedPlanDescription || null,
         updatedBy: data.updatedBy || 'System'
       };
 
@@ -1070,21 +1076,31 @@ class ApiService {
 
       const response = await this.post('/RedmineWeeklyCalendar/UpdateIssueDates', requestBody);
 
-      console.log('📅 API updateIssueDates response:', response);
+      console.log('✅ API updateIssueDates response:', response);
 
       // Response formatını düzenle (camelCase'e çevir)
       const mappedResponse = {
         success: response.success ?? response.Success ?? false,
         message: response.message || response.Message || '',
         issueId: response.issueId || response.IssueId,
+
+        // Planlanan tarihler
         oldPlannedStartDate: response.oldPlannedStartDate || response.OldPlannedStartDate,
         oldPlannedEndDate: response.oldPlannedEndDate || response.OldPlannedEndDate,
         newPlannedStartDate: response.newPlannedStartDate || response.NewPlannedStartDate,
         newPlannedEndDate: response.newPlannedEndDate || response.NewPlannedEndDate,
+
+        // ✅ Revize tarihler
+        oldRevisedPlannedStartDate: response.oldRevisedPlannedStartDate || response.OldRevisedPlannedStartDate,
+        oldRevisedPlannedEndDate: response.oldRevisedPlannedEndDate || response.OldRevisedPlannedEndDate,
+        newRevisedPlannedStartDate: response.newRevisedPlannedStartDate || response.NewRevisedPlannedStartDate,
+        newRevisedPlannedEndDate: response.newRevisedPlannedEndDate || response.NewRevisedPlannedEndDate,
+        revisedPlanDescription: response.revisedPlanDescription || response.RevisedPlanDescription,
+
         updatedAt: response.updatedAt || response.UpdatedAt
       };
 
-      console.log('✅ Mapped response:', mappedResponse);
+      console.log('📋 Mapped updateIssueDates response:', mappedResponse);
 
       return mappedResponse;
     } catch (error) {

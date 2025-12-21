@@ -11,9 +11,6 @@ namespace API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-#if !DEBUG
-    [Authorize]
-#endif
     public class RedmineWeeklyCalendarController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -65,7 +62,6 @@ namespace API.Controllers
             }
         }
 
-
         // RedmineWeeklyCalendarController.cs - GetIssuesByDateAndType metodu
         // ✅ FIX: [HttpGet] attribute eklendi - 405 Method Not Allowed hatası düzeltildi
 
@@ -91,7 +87,7 @@ namespace API.Controllers
                 var issues = new List<ProductionIssueData>();
 
                 var sql = @"
-            SELECT 
+            SELECT
                 i.id, i.project_id,
                 p.name AS project_name,
                 cv_proje_kodu.value AS proje_kodu,
@@ -115,28 +111,28 @@ namespace API.Controllers
             LEFT JOIN issue_statuses status ON i.status_id = status.id
             LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
             LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
-            LEFT JOIN custom_values cv_pbaslangic 
-                ON cv_pbaslangic.customized_id = i.id 
+            LEFT JOIN custom_values cv_pbaslangic
+                ON cv_pbaslangic.customized_id = i.id
                 AND cv_pbaslangic.customized_type = 'Issue'
                 AND cv_pbaslangic.custom_field_id = 12
-            LEFT JOIN custom_values cv_pbitis 
-                ON cv_pbitis.customized_id = i.id 
+            LEFT JOIN custom_values cv_pbitis
+                ON cv_pbitis.customized_id = i.id
                 AND cv_pbitis.customized_type = 'Issue'
                 AND cv_pbitis.custom_field_id = 4
-            LEFT JOIN custom_values cv_revize_baslangic 
-                ON cv_revize_baslangic.customized_id = i.id 
+            LEFT JOIN custom_values cv_revize_baslangic
+                ON cv_revize_baslangic.customized_id = i.id
                 AND cv_revize_baslangic.customized_type = 'Issue'
                 AND cv_revize_baslangic.custom_field_id = 20
-            LEFT JOIN custom_values cv_revize_bitis 
-                ON cv_revize_bitis.customized_id = i.id 
+            LEFT JOIN custom_values cv_revize_bitis
+                ON cv_revize_bitis.customized_id = i.id
                 AND cv_revize_bitis.customized_type = 'Issue'
                 AND cv_revize_bitis.custom_field_id = 21
-            LEFT JOIN custom_values cv_revize_aciklama 
-                ON cv_revize_aciklama.customized_id = i.id 
+            LEFT JOIN custom_values cv_revize_aciklama
+                ON cv_revize_aciklama.customized_id = i.id
                 AND cv_revize_aciklama.customized_type = 'Issue'
                 AND cv_revize_aciklama.custom_field_id = 46
-            LEFT JOIN custom_values cv_proje_kodu 
-                ON cv_proje_kodu.customized_id = p.id 
+            LEFT JOIN custom_values cv_proje_kodu
+                ON cv_proje_kodu.customized_id = p.id
                 AND cv_proje_kodu.customized_type = 'Project'
                 AND cv_proje_kodu.custom_field_id = 3
             WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
@@ -156,7 +152,7 @@ namespace API.Controllers
                     OR
                     (ISNULL(cv_revize_bitis.value, '') != '' AND status.is_closed = 0 AND TRY_CAST(cv_revize_bitis.value AS DATE) < @Date AND @Date <= GETDATE())
                     OR
-                    (ISNULL(cv_revize_bitis.value, '') != '' AND status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
+                    (ISNULL(cv_revize_bitis.value, '') != '' AND status.is_closed = 1 AND i.closed_on IS NOT NULL AND
                      TRY_CAST(cv_revize_bitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
                      @Date <= CAST(i.closed_on AS DATE))
                     OR
@@ -164,7 +160,7 @@ namespace API.Controllers
                     OR
                     (ISNULL(cv_revize_bitis.value, '') = '' AND status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date AND @Date <= GETDATE())
                     OR
-                    (ISNULL(cv_revize_bitis.value, '') = '' AND status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
+                    (ISNULL(cv_revize_bitis.value, '') = '' AND status.is_closed = 1 AND i.closed_on IS NOT NULL AND
                      TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
                      @Date <= CAST(i.closed_on AS DATE))
                 )
@@ -304,7 +300,7 @@ namespace API.Controllers
                 var issues = new List<ProductionIssueData>();
 
                 var sql = @"
-                    SELECT 
+                    SELECT
                         i.id, i.project_id,
                         p.name AS project_name,
                         cv_proje_kodu.value AS proje_kodu,
@@ -325,16 +321,16 @@ namespace API.Controllers
                     LEFT JOIN issue_statuses status ON i.status_id = status.id
                     LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
                     LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
-                    LEFT JOIN custom_values cv_pbaslangic 
-                        ON cv_pbaslangic.customized_id = i.id 
+                    LEFT JOIN custom_values cv_pbaslangic
+                        ON cv_pbaslangic.customized_id = i.id
                         AND cv_pbaslangic.customized_type = 'Issue'
                         AND cv_pbaslangic.custom_field_id = 12
-                    LEFT JOIN custom_values cv_pbitis 
-                        ON cv_pbitis.customized_id = i.id 
+                    LEFT JOIN custom_values cv_pbitis
+                        ON cv_pbitis.customized_id = i.id
                         AND cv_pbitis.customized_type = 'Issue'
                         AND cv_pbitis.custom_field_id = 4
-                    LEFT JOIN custom_values cv_proje_kodu 
-                        ON cv_proje_kodu.customized_id = p.id 
+                    LEFT JOIN custom_values cv_proje_kodu
+                        ON cv_proje_kodu.customized_id = p.id
                         AND cv_proje_kodu.customized_type = 'Project'
                         AND cv_proje_kodu.custom_field_id = 3
                     WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
@@ -347,7 +343,7 @@ namespace API.Controllers
                             OR
                             (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date AND @Date <= GETDATE())
                             OR
-                            (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
+                            (status.is_closed = 1 AND i.closed_on IS NOT NULL AND
                              TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
                              @Date <= CAST(i.closed_on AS DATE))
                         )
@@ -438,7 +434,7 @@ namespace API.Controllers
 
         /// <summary>
         /// İşin planlanan tarihlerini günceller
-        /// </summary> 
+        /// </summary>
         [HttpPost("UpdateIssueDates")]
 #if DEBUG
         [AllowAnonymous]
@@ -471,27 +467,27 @@ namespace API.Controllers
 
                     // ✅ Mevcut tüm tarihleri oku (planlanan + revize)
                     var selectQuery = @"
-                SELECT 
+                SELECT
                     cf_start.value as PlannedStartDate,
                     cf_end.value as PlannedEndDate,
                     cf_rev_start.value as RevisedPlannedStartDate,
                     cf_rev_end.value as RevisedPlannedEndDate,
                     cf_rev_desc.value as RevisedPlanDescription
                 FROM issues i
-                LEFT JOIN custom_values cf_start ON cf_start.customized_id = i.id 
-                    AND cf_start.customized_type = 'Issue' 
+                LEFT JOIN custom_values cf_start ON cf_start.customized_id = i.id
+                    AND cf_start.customized_type = 'Issue'
                     AND cf_start.custom_field_id = 12
-                LEFT JOIN custom_values cf_end ON cf_end.customized_id = i.id 
-                    AND cf_end.customized_type = 'Issue' 
+                LEFT JOIN custom_values cf_end ON cf_end.customized_id = i.id
+                    AND cf_end.customized_type = 'Issue'
                     AND cf_end.custom_field_id = 4
-                LEFT JOIN custom_values cf_rev_start ON cf_rev_start.customized_id = i.id 
-                    AND cf_rev_start.customized_type = 'Issue' 
+                LEFT JOIN custom_values cf_rev_start ON cf_rev_start.customized_id = i.id
+                    AND cf_rev_start.customized_type = 'Issue'
                     AND cf_rev_start.custom_field_id = 20
-                LEFT JOIN custom_values cf_rev_end ON cf_rev_end.customized_id = i.id 
-                    AND cf_rev_end.customized_type = 'Issue' 
+                LEFT JOIN custom_values cf_rev_end ON cf_rev_end.customized_id = i.id
+                    AND cf_rev_end.customized_type = 'Issue'
                     AND cf_rev_end.custom_field_id = 21
-                LEFT JOIN custom_values cf_rev_desc ON cf_rev_desc.customized_id = i.id 
-                    AND cf_rev_desc.customized_type = 'Issue' 
+                LEFT JOIN custom_values cf_rev_desc ON cf_rev_desc.customized_id = i.id
+                    AND cf_rev_desc.customized_type = 'Issue'
                     AND cf_rev_desc.custom_field_id = 46
                 WHERE i.id = @IssueId";
 
@@ -563,8 +559,8 @@ namespace API.Controllers
                             var updateStartQuery = @"
                         MERGE INTO custom_values AS target
                         USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 12 AS custom_field_id) AS source
-                        ON target.customized_id = source.customized_id 
-                            AND target.customized_type = source.customized_type 
+                        ON target.customized_id = source.customized_id
+                            AND target.customized_type = source.customized_type
                             AND target.custom_field_id = source.custom_field_id
                         WHEN MATCHED THEN
                             UPDATE SET value = @NewDate
@@ -592,8 +588,8 @@ namespace API.Controllers
                             var updateEndQuery = @"
                         MERGE INTO custom_values AS target
                         USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 4 AS custom_field_id) AS source
-                        ON target.customized_id = source.customized_id 
-                            AND target.customized_type = source.customized_type 
+                        ON target.customized_id = source.customized_id
+                            AND target.customized_type = source.customized_type
                             AND target.custom_field_id = source.custom_field_id
                         WHEN MATCHED THEN
                             UPDATE SET value = @NewDate
@@ -610,61 +606,113 @@ namespace API.Controllers
                         }
                     }
 
-                    // ✅ YENİ: REVİZE PLAN BAŞLANGIÇ TARİHİ GÜNCELLE
-                    if (!string.IsNullOrEmpty(request.RevisedPlannedStartDate))
+                    // ============================================
+                    // REVİZE BAŞLANGIÇ TARİHİ GÜNCELLEME
+                    // ============================================
+
+                    if (request.RevisedPlannedStartDate == null || request.RevisedPlannedStartDate == "") // null değilse işlem yap
                     {
-                        if (DateTime.TryParse(request.RevisedPlannedStartDate, out DateTime parsedRevStart))
+                        var updateRevStartQuery = @"
+            MERGE INTO custom_values AS target
+            USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 20 AS custom_field_id) AS source
+            ON target.customized_id = source.customized_id
+                AND target.customized_type = source.customized_type
+                AND target.custom_field_id = source.custom_field_id
+            WHEN MATCHED THEN
+                UPDATE SET value = ''
+            WHEN NOT MATCHED THEN
+                INSERT (customized_type, customized_id, custom_field_id, value)
+                VALUES ('Issue', @IssueId, 20, '');";
+
+                        using (var updateCommand = new SqlCommand(updateRevStartQuery, connection))
                         {
-                            newRevisedStartDate = parsedRevStart;
-                            var dateOnlyString = newRevisedStartDate.Value.ToString("yyyy-MM-dd");
+                            updateCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
+                            await updateCommand.ExecuteNonQueryAsync();
 
-                            var updateRevStartQuery = @"
-                        MERGE INTO custom_values AS target
-                        USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 20 AS custom_field_id) AS source
-                        ON target.customized_id = source.customized_id 
-                            AND target.customized_type = source.customized_type 
-                            AND target.custom_field_id = source.custom_field_id
-                        WHEN MATCHED THEN
-                            UPDATE SET value = @NewDate
-                        WHEN NOT MATCHED THEN
-                            INSERT (customized_type, customized_id, custom_field_id, value)
-                            VALUES ('Issue', @IssueId, 20, @NewDate);";
+                            _logger.LogInformation("🗑️ Cleared revised start date for Issue #{IssueId} (set to empty string)",
+                                request.IssueId);
+                        }
 
-                            using (var updateCommand = new SqlCommand(updateRevStartQuery, connection))
-                            {
-                                updateCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
-                                updateCommand.Parameters.AddWithValue("@NewDate", dateOnlyString);
-                                await updateCommand.ExecuteNonQueryAsync();
-                            }
+                        newRevisedStartDate = null; // Response için null set et
+                    }
+                    else if (DateTime.TryParse(request.RevisedPlannedStartDate, out DateTime parsedRevStart))
+                    {
+                        // Normal güncelleme işlemi
+                        newRevisedStartDate = parsedRevStart;
+                        var dateOnlyString = newRevisedStartDate.Value.ToString("yyyy-MM-dd");
+
+                        var updateRevStartQuery = @"
+            MERGE INTO custom_values AS target
+            USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 20 AS custom_field_id) AS source
+            ON target.customized_id = source.customized_id
+                AND target.customized_type = source.customized_type
+                AND target.custom_field_id = source.custom_field_id
+            WHEN MATCHED THEN
+                UPDATE SET value = @NewDate
+            WHEN NOT MATCHED THEN
+                INSERT (customized_type, customized_id, custom_field_id, value)
+                VALUES ('Issue', @IssueId, 20, @NewDate);";
+
+                        using (var updateCommand = new SqlCommand(updateRevStartQuery, connection))
+                        {
+                            updateCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
+                            updateCommand.Parameters.AddWithValue("@NewDate", dateOnlyString);
+                            await updateCommand.ExecuteNonQueryAsync();
                         }
                     }
 
-                    // ✅ YENİ: REVİZE PLAN BİTİŞ TARİHİ GÜNCELLE
-                    if (!string.IsNullOrEmpty(request.RevisedPlannedEndDate))
+                    // ============================================
+                    // REVİZE BİTİŞ TARİHİ GÜNCELLEME
+                    // ============================================
+
+                    if (request.RevisedPlannedEndDate == null || request.RevisedPlannedEndDate == "") // ✅ BOŞ STRING İSE BOŞ STRING YAZAR
                     {
-                        if (DateTime.TryParse(request.RevisedPlannedEndDate, out DateTime parsedRevEnd))
+                        var updateRevEndQuery = @"
+            MERGE INTO custom_values AS target
+            USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 21 AS custom_field_id) AS source
+            ON target.customized_id = source.customized_id
+                AND target.customized_type = source.customized_type
+                AND target.custom_field_id = source.custom_field_id
+            WHEN MATCHED THEN
+                UPDATE SET value = ''
+            WHEN NOT MATCHED THEN
+                INSERT (customized_type, customized_id, custom_field_id, value)
+                VALUES ('Issue', @IssueId, 21, '');";
+
+                        using (var updateCommand = new SqlCommand(updateRevEndQuery, connection))
                         {
-                            newRevisedEndDate = parsedRevEnd;
-                            var dateOnlyString = newRevisedEndDate.Value.ToString("yyyy-MM-dd");
+                            updateCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
+                            await updateCommand.ExecuteNonQueryAsync();
 
-                            var updateRevEndQuery = @"
-                        MERGE INTO custom_values AS target
-                        USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 21 AS custom_field_id) AS source
-                        ON target.customized_id = source.customized_id 
-                            AND target.customized_type = source.customized_type 
-                            AND target.custom_field_id = source.custom_field_id
-                        WHEN MATCHED THEN
-                            UPDATE SET value = @NewDate
-                        WHEN NOT MATCHED THEN
-                            INSERT (customized_type, customized_id, custom_field_id, value)
-                            VALUES ('Issue', @IssueId, 21, @NewDate);";
+                            _logger.LogInformation("🗑️ Cleared revised end date for Issue #{IssueId} (set to empty string)",
+                                request.IssueId);
+                        }
 
-                            using (var updateCommand = new SqlCommand(updateRevEndQuery, connection))
-                            {
-                                updateCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
-                                updateCommand.Parameters.AddWithValue("@NewDate", dateOnlyString);
-                                await updateCommand.ExecuteNonQueryAsync();
-                            }
+                        newRevisedEndDate = null; // Response için null set et
+                    }
+                    else if (DateTime.TryParse(request.RevisedPlannedEndDate, out DateTime parsedRevEnd))
+                    {
+                        // Normal güncelleme işlemi
+                        newRevisedEndDate = parsedRevEnd;
+                        var dateOnlyString = newRevisedEndDate.Value.ToString("yyyy-MM-dd");
+
+                        var updateRevEndQuery = @"
+            MERGE INTO custom_values AS target
+            USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 21 AS custom_field_id) AS source
+            ON target.customized_id = source.customized_id
+                AND target.customized_type = source.customized_type
+                AND target.custom_field_id = source.custom_field_id
+            WHEN MATCHED THEN
+                UPDATE SET value = @NewDate
+            WHEN NOT MATCHED THEN
+                INSERT (customized_type, customized_id, custom_field_id, value)
+                VALUES ('Issue', @IssueId, 21, @NewDate);";
+
+                        using (var updateCommand = new SqlCommand(updateRevEndQuery, connection))
+                        {
+                            updateCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
+                            updateCommand.Parameters.AddWithValue("@NewDate", dateOnlyString);
+                            await updateCommand.ExecuteNonQueryAsync();
                         }
                     }
 
@@ -674,8 +722,8 @@ namespace API.Controllers
                         var updateRevDescQuery = @"
                     MERGE INTO custom_values AS target
                     USING (SELECT @IssueId AS customized_id, 'Issue' AS customized_type, 46 AS custom_field_id) AS source
-                    ON target.customized_id = source.customized_id 
-                        AND target.customized_type = source.customized_type 
+                    ON target.customized_id = source.customized_id
+                        AND target.customized_type = source.customized_type
                         AND target.custom_field_id = source.custom_field_id
                     WHEN MATCHED THEN
                         UPDATE SET value = @Description
@@ -734,6 +782,7 @@ namespace API.Controllers
                 });
             }
         }
+
         #region Private Methods
 
         private async Task<WeeklyProductionCalendarResponse> GetWeeklyProductionDataAsync(
@@ -800,6 +849,9 @@ namespace API.Controllers
             return response;
         }
 
+        // RedmineWeeklyCalendarController.cs
+        // ✅ GetProductionIssuesForDateAsync metodunu BUL ve SQL kısmını DEĞİŞTİR
+
         private async Task<List<ProductionIssueData>> GetProductionIssuesForDateAsync(
             SqlConnection connection,
             DateTime date,
@@ -812,125 +864,205 @@ namespace API.Controllers
 
             if (parentIssueId.HasValue)
             {
+                // ✅ PARENT ISSUE VAR - Revize tarihlerle güncellendi
                 sql = @"
-                    WITH RecursiveIssues AS (
-                        SELECT id, parent_id FROM issues WHERE id = @ParentIssueId
-                        UNION ALL
-                        SELECT i.id, i.parent_id FROM issues i
-                        INNER JOIN RecursiveIssues ri ON i.parent_id = ri.id
-                    )
-                    SELECT 
-                        i.id, i.project_id, i.subject,
-                        i.done_ratio as completion_percentage,
-                        i.estimated_hours,
-                        i.closed_on,
-                        t.name as tracker_name,
-                        p.name as project_name,
-                        status.name as status_name,
-                        status.is_closed,
-                        priority.name as priority_name,
-                        ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') as assigned_to,
-                        cv_pbaslangic.value AS planlanan_baslangic,
-                        cv_pbitis.value AS planlanan_bitis,
-                        cv_proje_kodu.value AS proje_kodu
-                    FROM issues i
-                    JOIN trackers t ON i.tracker_id = t.id
-                    INNER JOIN RecursiveIssues ri ON i.id = ri.id
-                    LEFT JOIN projects p ON i.project_id = p.id
-                    LEFT JOIN issue_statuses status ON i.status_id = status.id
-                    LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
-                    LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
-                    LEFT JOIN custom_values cv_pbaslangic 
-                        ON cv_pbaslangic.customized_id = i.id 
-                        AND cv_pbaslangic.customized_type = 'Issue'
-                        AND cv_pbaslangic.custom_field_id = 12
-                    LEFT JOIN custom_values cv_pbitis 
-                        ON cv_pbitis.customized_id = i.id 
-                        AND cv_pbitis.customized_type = 'Issue'
-                        AND cv_pbitis.custom_field_id = 4
-                    LEFT JOIN custom_values cv_proje_kodu 
-                        ON cv_proje_kodu.customized_id = p.id 
-                        AND cv_proje_kodu.customized_type = 'Project'
-                        AND cv_proje_kodu.custom_field_id = 3
-                    LEFT JOIN custom_values cv_revize_baslangic 
-                          ON cv_revize_baslangic.customized_id = i.id 
-                          AND cv_revize_baslangic.custom_field_id = 20
-                      LEFT JOIN custom_values cv_revize_bitis 
-                          ON cv_revize_bitis.customized_id = i.id 
-                          AND cv_revize_bitis.custom_field_id = 21
-                      LEFT JOIN custom_values cv_revize_aciklama 
-                          ON cv_revize_aciklama.customized_id = i.id 
-                          AND cv_revize_aciklama.custom_field_id = 46
-                    WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
-                        -- Revize tarih varsa onu kontrol et, yoksa planlanan tarihi kontrol et
-                          (ISNULL(cv_revize_baslangic.value, '') != '' AND TRY_CAST(cv_revize_baslangic.value AS DATE) <= @Date)
-                          OR
-                          (ISNULL(cv_revize_baslangic.value, '') = '' AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date)
-                       -- AND t.name != 'Üretim'
-                        AND ISNULL(cv_pbaslangic.value,'') != ''
-                        AND ISNULL(cv_pbitis.value,'') != ''
-                        AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
-                        AND (
-                            TRY_CAST(cv_pbitis.value AS DATE) >= @Date
-                            OR
-                            (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date AND @Date <= GETDATE())
-                            OR
-                            (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
-                             TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
-                             @Date <= CAST(i.closed_on AS DATE))
-                        )";
+            WITH RecursiveIssues AS (
+                SELECT id, parent_id FROM issues WHERE id = @ParentIssueId
+                UNION ALL
+                SELECT i.id, i.parent_id FROM issues i
+                INNER JOIN RecursiveIssues ri ON i.parent_id = ri.id
+            )
+            SELECT
+                i.id, i.project_id, i.subject,
+                i.done_ratio as completion_percentage,
+                i.estimated_hours,
+                i.closed_on,
+                t.name as tracker_name,
+                p.name as project_name,
+                status.name as status_name,
+                status.is_closed,
+                priority.name as priority_name,
+                ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') as assigned_to,
+                cv_pbaslangic.value AS planlanan_baslangic,
+                cv_pbitis.value AS planlanan_bitis,
+                cv_revize_baslangic.value AS revize_baslangic,
+                cv_revize_bitis.value AS revize_bitis,
+                cv_revize_aciklama.value AS revize_aciklama,
+                cv_proje_kodu.value AS proje_kodu
+            FROM issues i
+            JOIN trackers t ON i.tracker_id = t.id
+            INNER JOIN RecursiveIssues ri ON i.id = ri.id
+            LEFT JOIN projects p ON i.project_id = p.id
+            LEFT JOIN issue_statuses status ON i.status_id = status.id
+            LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
+            LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
+            LEFT JOIN custom_values cv_pbaslangic
+                ON cv_pbaslangic.customized_id = i.id
+                AND cv_pbaslangic.customized_type = 'Issue'
+                AND cv_pbaslangic.custom_field_id = 12
+            LEFT JOIN custom_values cv_pbitis
+                ON cv_pbitis.customized_id = i.id
+                AND cv_pbitis.customized_type = 'Issue'
+                AND cv_pbitis.custom_field_id = 4
+            LEFT JOIN custom_values cv_revize_baslangic
+                ON cv_revize_baslangic.customized_id = i.id
+                AND cv_revize_baslangic.customized_type = 'Issue'
+                AND cv_revize_baslangic.custom_field_id = 20
+            LEFT JOIN custom_values cv_revize_bitis
+                ON cv_revize_bitis.customized_id = i.id
+                AND cv_revize_bitis.customized_type = 'Issue'
+                AND cv_revize_bitis.custom_field_id = 21
+            LEFT JOIN custom_values cv_revize_aciklama
+                ON cv_revize_aciklama.customized_id = i.id
+                AND cv_revize_aciklama.customized_type = 'Issue'
+                AND cv_revize_aciklama.custom_field_id = 46
+            LEFT JOIN custom_values cv_proje_kodu
+                ON cv_proje_kodu.customized_id = p.id
+                AND cv_proje_kodu.customized_type = 'Project'
+                AND cv_proje_kodu.custom_field_id = 3
+            WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
+                AND ISNULL(cv_pbaslangic.value,'') != ''
+                AND ISNULL(cv_pbitis.value,'') != ''
+                -- ✅ REVİZE TARİHLERE GÖRE FİLTRELEME
+                AND (
+                    -- Revize başlangıç varsa onu kontrol et
+                    (ISNULL(cv_revize_baslangic.value, '') != ''
+                     AND TRY_CAST(cv_revize_baslangic.value AS DATE) <= @Date)
+                    OR
+                    -- Revize başlangıç yoksa planlanan başlangıcı kontrol et
+                    (ISNULL(cv_revize_baslangic.value, '') = ''
+                     AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date)
+                )
+                AND (
+                    -- Revize bitiş varsa onu kontrol et
+                    (ISNULL(cv_revize_bitis.value, '') != ''
+                     AND TRY_CAST(cv_revize_bitis.value AS DATE) >= @Date)
+                    OR
+                    -- Revize bitiş varsa ve iş açık ve gecikmiş
+                    (ISNULL(cv_revize_bitis.value, '') != ''
+                     AND status.is_closed = 0
+                     AND TRY_CAST(cv_revize_bitis.value AS DATE) < @Date
+                     AND @Date <= GETDATE())
+                    OR
+                    -- Revize bitiş varsa ve iş kapalı ama kapanma tarihi revize bitişten sonra
+                    (ISNULL(cv_revize_bitis.value, '') != ''
+                     AND status.is_closed = 1
+                     AND i.closed_on IS NOT NULL
+                     AND TRY_CAST(cv_revize_bitis.value AS DATE) < CAST(i.closed_on AS DATE)
+                     AND @Date <= CAST(i.closed_on AS DATE))
+                    OR
+                    -- Revize bitiş yoksa planlanan bitişi kontrol et
+                    (ISNULL(cv_revize_bitis.value, '') = ''
+                     AND TRY_CAST(cv_pbitis.value AS DATE) >= @Date)
+                    OR
+                    -- Revize bitiş yoksa ve iş açık ve gecikmiş
+                    (ISNULL(cv_revize_bitis.value, '') = ''
+                     AND status.is_closed = 0
+                     AND TRY_CAST(cv_pbitis.value AS DATE) < @Date
+                     AND @Date <= GETDATE())
+                    OR
+                    -- Revize bitiş yoksa ve iş kapalı ama kapanma tarihi planlanan bitişten sonra
+                    (ISNULL(cv_revize_bitis.value, '') = ''
+                     AND status.is_closed = 1
+                     AND i.closed_on IS NOT NULL
+                     AND TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE)
+                     AND @Date <= CAST(i.closed_on AS DATE))
+                )";
             }
             else
             {
+                // ✅ PARENT ISSUE YOK - Revize tarihlerle güncellendi
                 sql = @"
-                    SELECT 
-                        i.id, i.project_id, i.subject,
-                        i.done_ratio as completion_percentage,
-                        i.estimated_hours,
-                        i.closed_on,
-                        t.name as tracker_name,
-                        p.name as project_name,
-                        status.name as status_name,
-                        status.is_closed,
-                        priority.name as priority_name,
-                        ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') as assigned_to,
-                        cv_pbaslangic.value AS planlanan_baslangic,
-                        cv_pbitis.value AS planlanan_bitis,
-                        cv_proje_kodu.value AS proje_kodu
-                    FROM issues i
-                    JOIN trackers t ON i.tracker_id = t.id
-                    LEFT JOIN projects p ON i.project_id = p.id
-                    LEFT JOIN issue_statuses status ON i.status_id = status.id
-                    LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
-                    LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
-                    LEFT JOIN custom_values cv_pbaslangic 
-                        ON cv_pbaslangic.customized_id = i.id 
-                        AND cv_pbaslangic.customized_type = 'Issue'
-                        AND cv_pbaslangic.custom_field_id = 12
-                    LEFT JOIN custom_values cv_pbitis 
-                        ON cv_pbitis.customized_id = i.id 
-                        AND cv_pbitis.customized_type = 'Issue'
-                        AND cv_pbitis.custom_field_id = 4
-                    LEFT JOIN custom_values cv_proje_kodu 
-                        ON cv_proje_kodu.customized_id = p.id 
-                        AND cv_proje_kodu.customized_type = 'Project'
-                        AND cv_proje_kodu.custom_field_id = 3
-                    WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj') 
-                        --AND t.name != 'Üretim'
-                        AND ISNULL(cv_pbaslangic.value,'') != ''
-                        AND ISNULL(cv_pbitis.value,'') != ''
-                        AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
-                        AND (
-                            TRY_CAST(cv_pbitis.value AS DATE) >= @Date
-                            OR
-                            (status.is_closed = 0 AND TRY_CAST(cv_pbitis.value AS DATE) < @Date AND @Date <= GETDATE())
-                            OR
-                            (status.is_closed = 1 AND i.closed_on IS NOT NULL AND 
-                             TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE) AND
-                             @Date <= CAST(i.closed_on AS DATE))
-                        )";
+            SELECT
+                i.id, i.project_id, i.subject,
+                i.done_ratio as completion_percentage,
+                i.estimated_hours,
+                i.closed_on,
+                t.name as tracker_name,
+                p.name as project_name,
+                status.name as status_name,
+                status.is_closed,
+                priority.name as priority_name,
+                ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') as assigned_to,
+                cv_pbaslangic.value AS planlanan_baslangic,
+                cv_pbitis.value AS planlanan_bitis,
+                cv_revize_baslangic.value AS revize_baslangic,
+                cv_revize_bitis.value AS revize_bitis,
+                cv_revize_aciklama.value AS revize_aciklama,
+                cv_proje_kodu.value AS proje_kodu
+            FROM issues i
+            JOIN trackers t ON i.tracker_id = t.id
+            LEFT JOIN projects p ON i.project_id = p.id
+            LEFT JOIN issue_statuses status ON i.status_id = status.id
+            LEFT JOIN enumerations priority ON i.priority_id = priority.id AND priority.type = 'IssuePriority'
+            LEFT JOIN users assigned_user ON i.assigned_to_id = assigned_user.id
+            LEFT JOIN custom_values cv_pbaslangic
+                ON cv_pbaslangic.customized_id = i.id
+                AND cv_pbaslangic.customized_type = 'Issue'
+                AND cv_pbaslangic.custom_field_id = 12
+            LEFT JOIN custom_values cv_pbitis
+                ON cv_pbitis.customized_id = i.id
+                AND cv_pbitis.customized_type = 'Issue'
+                AND cv_pbitis.custom_field_id = 4
+            LEFT JOIN custom_values cv_revize_baslangic
+                ON cv_revize_baslangic.customized_id = i.id
+                AND cv_revize_baslangic.customized_type = 'Issue'
+                AND cv_revize_baslangic.custom_field_id = 20
+            LEFT JOIN custom_values cv_revize_bitis
+                ON cv_revize_bitis.customized_id = i.id
+                AND cv_revize_bitis.customized_type = 'Issue'
+                AND cv_revize_bitis.custom_field_id = 21
+            LEFT JOIN custom_values cv_revize_aciklama
+                ON cv_revize_aciklama.customized_id = i.id
+                AND cv_revize_aciklama.customized_type = 'Issue'
+                AND cv_revize_aciklama.custom_field_id = 46
+            LEFT JOIN custom_values cv_proje_kodu
+                ON cv_proje_kodu.customized_id = p.id
+                AND cv_proje_kodu.customized_type = 'Project'
+                AND cv_proje_kodu.custom_field_id = 3
+            WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
+                AND ISNULL(cv_pbaslangic.value,'') != ''
+                AND ISNULL(cv_pbitis.value,'') != ''
+                -- ✅ REVİZE TARİHLERE GÖRE FİLTRELEME (AYNI MANTIK)
+                AND (
+                    (ISNULL(cv_revize_baslangic.value, '') != ''
+                     AND TRY_CAST(cv_revize_baslangic.value AS DATE) <= @Date)
+                    OR
+                    (ISNULL(cv_revize_baslangic.value, '') = ''
+                     AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date)
+                )
+                AND (
+                    (ISNULL(cv_revize_bitis.value, '') != ''
+                     AND TRY_CAST(cv_revize_bitis.value AS DATE) >= @Date)
+                    OR
+                    (ISNULL(cv_revize_bitis.value, '') != ''
+                     AND status.is_closed = 0
+                     AND TRY_CAST(cv_revize_bitis.value AS DATE) < @Date
+                     AND @Date <= GETDATE())
+                    OR
+                    (ISNULL(cv_revize_bitis.value, '') != ''
+                     AND status.is_closed = 1
+                     AND i.closed_on IS NOT NULL
+                     AND TRY_CAST(cv_revize_bitis.value AS DATE) < CAST(i.closed_on AS DATE)
+                     AND @Date <= CAST(i.closed_on AS DATE))
+                    OR
+                    (ISNULL(cv_revize_bitis.value, '') = ''
+                     AND TRY_CAST(cv_pbitis.value AS DATE) >= @Date)
+                    OR
+                    (ISNULL(cv_revize_bitis.value, '') = ''
+                     AND status.is_closed = 0
+                     AND TRY_CAST(cv_pbitis.value AS DATE) < @Date
+                     AND @Date <= GETDATE())
+                    OR
+                    (ISNULL(cv_revize_bitis.value, '') = ''
+                     AND status.is_closed = 1
+                     AND i.closed_on IS NOT NULL
+                     AND TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE)
+                     AND @Date <= CAST(i.closed_on AS DATE))
+                )";
             }
 
+            // ✅ Ek filtreler ekle (projectId, productionType)
             if (projectId.HasValue)
             {
                 sql += " AND i.project_id = @ProjectId";
@@ -959,22 +1091,50 @@ namespace API.Controllers
                     {
                         DateTime? plannedStart = null;
                         DateTime? plannedEnd = null;
+                        DateTime? revisedStart = null;
+                        DateTime? revisedEnd = null;
                         DateTime? closedOn = null;
+                        string? revisedDescription = null;
 
+                        // Planlanan başlangıç
                         if (!reader.IsDBNull(reader.GetOrdinal("planlanan_baslangic")))
                         {
-                            var startValue = reader.GetString(reader.GetOrdinal("planlanan_baslangic"));
-                            DateTime.TryParse(startValue, out var tempStart);
-                            plannedStart = tempStart;
+                            var value = reader.GetString(reader.GetOrdinal("planlanan_baslangic"));
+                            if (DateTime.TryParse(value, out DateTime temp))
+                                plannedStart = temp;
                         }
 
+                        // Planlanan bitiş
                         if (!reader.IsDBNull(reader.GetOrdinal("planlanan_bitis")))
                         {
-                            var endValue = reader.GetString(reader.GetOrdinal("planlanan_bitis"));
-                            DateTime.TryParse(endValue, out var tempEnd);
-                            plannedEnd = tempEnd;
+                            var value = reader.GetString(reader.GetOrdinal("planlanan_bitis"));
+                            if (DateTime.TryParse(value, out DateTime temp))
+                                plannedEnd = temp;
                         }
 
+                        // ✅ Revize başlangıç
+                        if (!reader.IsDBNull(reader.GetOrdinal("revize_baslangic")))
+                        {
+                            var value = reader.GetString(reader.GetOrdinal("revize_baslangic"));
+                            if (DateTime.TryParse(value, out DateTime temp))
+                                revisedStart = temp;
+                        }
+
+                        // ✅ Revize bitiş
+                        if (!reader.IsDBNull(reader.GetOrdinal("revize_bitis")))
+                        {
+                            var value = reader.GetString(reader.GetOrdinal("revize_bitis"));
+                            if (DateTime.TryParse(value, out DateTime temp))
+                                revisedEnd = temp;
+                        }
+
+                        // ✅ Revize açıklama
+                        if (!reader.IsDBNull(reader.GetOrdinal("revize_aciklama")))
+                        {
+                            revisedDescription = reader.GetString(reader.GetOrdinal("revize_aciklama"));
+                        }
+
+                        // Kapanma tarihi
                         if (!reader.IsDBNull(reader.GetOrdinal("closed_on")))
                         {
                             closedOn = reader.GetDateTime(reader.GetOrdinal("closed_on"));
@@ -984,14 +1144,11 @@ namespace API.Controllers
                         {
                             IssueId = reader.GetInt32(reader.GetOrdinal("id")),
                             ProjectId = reader.GetInt32(reader.GetOrdinal("project_id")),
-                            ProjectName = reader.IsDBNull(reader.GetOrdinal("project_name"))
-                                ? string.Empty : reader.GetString(reader.GetOrdinal("project_name")),
+                            ProjectName = reader.GetString(reader.GetOrdinal("project_name")),
                             ProjectCode = reader.IsDBNull(reader.GetOrdinal("proje_kodu"))
                                 ? string.Empty : reader.GetString(reader.GetOrdinal("proje_kodu")),
-                            Subject = reader.IsDBNull(reader.GetOrdinal("subject"))
-                                ? string.Empty : reader.GetString(reader.GetOrdinal("subject")),
-                            TrackerName = reader.IsDBNull(reader.GetOrdinal("tracker_name"))
-                                ? string.Empty : reader.GetString(reader.GetOrdinal("tracker_name")),
+                            Subject = reader.GetString(reader.GetOrdinal("subject")),
+                            TrackerName = reader.GetString(reader.GetOrdinal("tracker_name")),
                             CompletionPercentage = reader.GetInt32(reader.GetOrdinal("completion_percentage")),
                             EstimatedHours = reader.IsDBNull(reader.GetOrdinal("estimated_hours"))
                                 ? null : reader.GetDecimal(reader.GetOrdinal("estimated_hours")),
@@ -1000,10 +1157,13 @@ namespace API.Controllers
                             IsClosed = reader.GetBoolean(reader.GetOrdinal("is_closed")),
                             PriorityName = reader.IsDBNull(reader.GetOrdinal("priority_name"))
                                 ? "Normal" : reader.GetString(reader.GetOrdinal("priority_name")),
-                            AssignedTo = reader.IsDBNull(reader.GetOrdinal("assigned_to"))
-                                ? "Atanmamış" : reader.GetString(reader.GetOrdinal("assigned_to")),
+                            AssignedTo = reader.GetString(reader.GetOrdinal("assigned_to")),
                             PlannedStartDate = plannedStart,
                             PlannedEndDate = plannedEnd,
+                            // ✅ Revize alanları ekle
+                            RevisedPlannedStartDate = revisedStart,
+                            RevisedPlannedEndDate = revisedEnd,
+                            RevisedPlanDescription = revisedDescription,
                             ClosedOn = closedOn
                         });
                     }
@@ -1034,6 +1194,6 @@ namespace API.Controllers
             };
         }
 
-        #endregion
+        #endregion Private Methods
     }
 }

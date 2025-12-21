@@ -1,5 +1,5 @@
-// CalendarGrid.js - TÜM SPLIT HATALARI DÜZELTİLDİ
-// ✅ FIX: Değişken isim çakışması çözüldü, tüm split'ler güvenli hale getirildi
+// src/frontend/src/components/WeeklyCalendar/CalendarGrid.js
+// ✅ COMPLETE VERSION - Gecikme ve Revize Kontrolü ile
 
 import React, { useState, useEffect } from 'react';
 import GroupedIssueCard from './GroupedIssueCard';
@@ -9,9 +9,10 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
   console.log('🎨 CalendarGrid rendered with days:', days);
 
   const [overdueMap, setOverdueMap] = useState(new Map());
+  const [revisedMap, setRevisedMap] = useState(new Map()); // ✅ YENİ
   const [loading, setLoading] = useState(false);
 
-  // ✅ Helper function: Tarih string'ini güvenli şekilde al
+  // Helper function: Tarih string'ini güvenli şekilde al
   const getDateString = (dateValue) => {
     if (!dateValue) return null;
     if (typeof dateValue === 'string') {
@@ -23,75 +24,59 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
     return null;
   };
 
-  // Gecikme kontrolü - her grup için
+  // ✅ Gecikme ve Revize kontrolü - her grup için
   useEffect(() => {
-    const checkOverdue = async () => {
+    const checkOverdueAndRevised = async () => {
       if (!days || days.length === 0) {
         console.log('⚠️ No days to check');
         return;
       }
 
       setLoading(true);
-      const newMap = new Map();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const newOverdueMap = new Map();
+      const newRevisedMap = new Map(); // ✅ YENİ
 
       try {
-        // ✅ "dayItem" kullan - "day" ile karışmasın
         for (const dayItem of days) {
-          // ✅ Güvenli kontrol
           if (!dayItem || !dayItem.date) {
             console.warn('⚠️ Invalid day item:', dayItem);
             continue;
           }
 
-          const dayDate = new Date(dayItem.date);
+          const dateStr = getDateString(dayItem.date);
+          if (!dateStr) continue;
+
+          const dayDate = new Date(dateStr + 'T00:00:00');
           dayDate.setHours(0, 0, 0, 0);
 
-          // Sadece bugün ve geçmiş günler için kontrol et
-          if (dayDate <= today) {
-            for (const group of dayItem.groupedProductions || []) {
-              try {
-                // ✅ Güvenli tarih string
-                const dateStr = getDateString(dayItem.date);
-                if (!dateStr) {
-                  console.warn('⚠️ Could not get date string for:', dayItem.date);
-                  continue;
-                }
+          for (const group of dayItem.groupedProductions || []) {
+            if (!group || !group.projectId || !group.productionType) continue;
 
-                console.log('📅 Checking day:', {
-                  date: dateStr,
-                  projectId: group.projectId,
-                  projectName: group.projectName,
-                  productionType: group.productionType
-                });
+            const key = `${dayItem.date}_${group.projectId}_${group.productionType}`;
 
-                const response = await apiService.getIssuesByDateAndType({
-                  date: dateStr,
-                  projectId: group.projectId,
-                  productionType: group.productionType
-                });
+            try {
+              console.log('📅 Checking:', {
+                date: dateStr,
+                project: group.projectCode,
+                type: group.productionType
+              });
 
-                // Bu grupta gecikmiş iş var mı?
+              const response = await apiService.getIssuesByDateAndType({
+                date: dateStr,
+                projectId: group.projectId,
+                productionType: group.productionType
+              });
+
+              if (response && response.issues) {
+                // ✅ GECIKME KONTROLÜ
                 const hasOverdueIssue = response.issues?.some(issue => {
-                  // ✅ Revize tarih varsa onu kullan
                   const effectiveEndDate = issue.revisedPlannedEndDate || issue.plannedEndDate;
                   if (!effectiveEndDate) return false;
 
                   const plannedEnd = new Date(effectiveEndDate);
                   plannedEnd.setHours(0, 0, 0, 0);
 
-                  console.log('🔍 Checking issue:', {
-                    issueId: issue.issueId,
-                    subject: issue.subject?.substring(0, 40),
-                    isClosed: issue.isClosed,
-                    effectiveEndDate: getDateString(effectiveEndDate),
-                    dayDate: getDateString(dayDate)
-                  });
-
-                  // İş kapalıysa, kapanma tarihini kontrol et
                   if (issue.isClosed && issue.closedOn) {
-                    // ✅ Manuel tarih parse - timezone bypass
                     const closedDateStr = getDateString(issue.closedOn);
                     if (!closedDateStr) return false;
 
@@ -99,63 +84,51 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
                     const closedDate = new Date(year, month - 1, dayOfMonth);
                     closedDate.setHours(0, 0, 0, 0);
 
-                    const isOverdue = closedDate > plannedEnd;
-
-                    console.log('   ✅ Closed issue:', {
-                      closedDate: getDateString(closedDate),
-                      plannedEnd: getDateString(plannedEnd),
-                      isOverdue: isOverdue,
-                      calculation: `${getDateString(closedDate)} > ${getDateString(plannedEnd)} = ${isOverdue}`
-                    });
-
-                    return isOverdue;
+                    return closedDate > plannedEnd;
                   }
 
-                  // İş açıksa, bugünü kontrol et
-                  const isOpenOverdue = dayDate > plannedEnd;
-                  console.log('   📌 Open issue:', {
-                    dayDate: getDateString(dayDate),
-                    plannedEnd: getDateString(plannedEnd),
-                    isOverdue: isOpenOverdue
-                  });
+                  return dayDate > plannedEnd;
+                });
 
-                  return isOpenOverdue;
+                // ✅ YENİ: REVİZE KONTROLÜ
+                const hasRevisedIssue = response.issues?.some(issue => {
+                  const hasRevisedStart = issue.revisedPlannedStartDate && 
+                                         !issue.revisedPlannedStartDate.startsWith('0001-01-01');
+                  const hasRevisedEnd = issue.revisedPlannedEndDate && 
+                                       !issue.revisedPlannedEndDate.startsWith('0001-01-01');
+                  
+                  return hasRevisedStart || hasRevisedEnd;
                 });
 
                 if (hasOverdueIssue) {
-                  const key = `${dayItem.date}_${group.projectId}_${group.productionType}`;
-                  console.log('❗ OVERDUE FOUND:', {
-                    day: dateStr,
-                    dayName: dayItem.dayName,
-                    projectId: group.projectId,
-                    productionType: group.productionType,
-                    key: key
-                  });
-                  newMap.set(key, true);
-                } else {
-                  console.log('✅ No overdue:', {
-                    day: dateStr,
-                    projectId: group.projectId,
-                    productionType: group.productionType
-                  });
+                  console.log('❗ OVERDUE:', key);
+                  newOverdueMap.set(key, true);
                 }
-              } catch (error) {
-                console.error('Error checking overdue for group:', error);
+
+                if (hasRevisedIssue) {
+                  console.log('📝 REVISED:', key);
+                  newRevisedMap.set(key, true);
+                }
               }
+            } catch (error) {
+              console.error('Error checking group:', error);
             }
           }
         }
 
-        console.log('📊 Final overdueMap:', Array.from(newMap.keys()));
-        setOverdueMap(newMap);
+        console.log('📊 Final overdueMap:', Array.from(newOverdueMap.keys()));
+        console.log('📊 Final revisedMap:', Array.from(newRevisedMap.keys()));
+
+        setOverdueMap(newOverdueMap);
+        setRevisedMap(newRevisedMap);
       } catch (error) {
-        console.error('Error in checkOverdue:', error);
+        console.error('Error in checkOverdueAndRevised:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    checkOverdue();
+    checkOverdueAndRevised();
   }, [days]);
 
   const isToday = (dateInput) => {
@@ -184,7 +157,6 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
   return (
     <div className="calendar-grid">
       {days?.map((dayItem, index) => {
-        // ✅ Güvenli kontrol
         if (!dayItem || !dayItem.date) {
           console.warn('⚠️ Skipping invalid day at index:', index);
           return null;
@@ -195,11 +167,14 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
             key={index}
             className={`calendar-day-card ${isToday(dayItem.date) ? 'today' : ''}`}
           >
+            {/* Day Header - Tıklanabilir */}
             <div
               className="day-header clickable-date-header"
               onClick={(e) => handleDateHeaderClick(dayItem.date, e)}
               role="button"
               tabIndex={0}
+              style={{ cursor: 'pointer' }}
+              title="Bu günün tüm işlerini görmek için tıklayın"
             >
               <div className="day-name">{dayItem.dayName}</div>
               <div className="day-date">{formatDate(dayItem.date)}</div>
@@ -215,6 +190,7 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
               </div>
             </div>
 
+            {/* Issues Container */}
             <div className="day-issues">
               {loading && (
                 <div className="text-center py-2">
@@ -226,22 +202,16 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
 
               {dayItem.groupedProductions && dayItem.groupedProductions.length > 0 ? (
                 dayItem.groupedProductions.map((group, groupIndex) => {
-                  // ✅ Güvenli key oluşturma
                   const key = `${dayItem.date}_${group.projectId}_${group.productionType}`;
                   const hasOverdue = overdueMap.has(key);
-
-                  // console.log('🎨 Rendering card:', {
-                  //   key,
-                  //   hasOverdue,
-                  //   group: group.productionType,
-                  //   date: getDateString(dayItem.date)
-                  // });
+                  const hasRevised = revisedMap.has(key); // ✅ YENİ
 
                   return (
                     <GroupedIssueCard
                       key={`card-${groupIndex}`}
                       group={group}
                       hasOverdue={hasOverdue}
+                      hasRevised={hasRevised} // ✅ YENİ PROP
                       onClick={() => {
                         if (onCardClick) {
                           onCardClick(group, dayItem.date);

@@ -1,0 +1,70 @@
+/* src/frontend/src/pages/RevisedIssuesPage.css */
+
+.revised-issues-page {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.revised-issues-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.filter-card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 1.5rem;
+}
+
+.stats-card {
+    transition: transform 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    border: none;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.table-warning {
+    background-color: #fff3cd !important;
+}
+
+.badge-revision-positive {
+    background-color: #dc3545;
+}
+
+.badge-revision-negative {
+    background-color: #28a745;
+}
+
+.badge-revision-neutral {
+    background-color: #6c757d;
+}
+
+.revision-description {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table-responsive {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+}
