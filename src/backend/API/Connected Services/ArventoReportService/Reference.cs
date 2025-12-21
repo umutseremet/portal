@@ -7,18 +7,18 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ArventoService
+namespace ArventoReportService
 {
     
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ServiceModel.ServiceContractAttribute(Namespace="http://www.arvento.com/", ConfigurationName="ArventoService.ArventoReportWebServiceSoap")]
+    [System.ServiceModel.ServiceContractAttribute(Namespace="http://www.arvento.com/", ConfigurationName="ArventoReportService.ArventoReportWebServiceSoap")]
     public interface ArventoReportWebServiceSoap
     {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleAlarmStatus", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleAlarmStatusAsync(string Username, string PIN1, string PIN2, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleAlarmStatusAsync(string Username, string PIN1, string PIN2, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleAlarmStatusReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -30,7 +30,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleAlarmStatusV2", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleAlarmStatusV2Async(string Username, string PIN1, string PIN2, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleAlarmStatusV2Async(string Username, string PIN1, string PIN2, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleAlarmStatusV2ReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -38,7 +38,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/TechnicalPerformanceReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> TechnicalPerformanceReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string DriverName, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> TechnicalPerformanceReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string DriverName, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/TechnicalPerformanceReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -50,7 +50,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/DriverInformation", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DriverInformationAsync(string Username, string PIN1, string PIN2, string StartDate, string Node, string Plate);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DriverInformationAsync(string Username, string PIN1, string PIN2, string StartDate, string Node, string Plate);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/DriverInformationReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -58,11 +58,11 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleHYBSInfo", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleHYBSInfoAsync(string Username, string PIN1, string PIN2, string Node);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleHYBSInfoAsync(string Username, string PIN1, string PIN2, string Node);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/IdleVehiclesReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> IdleVehiclesReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> IdleVehiclesReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/IdleVehiclesReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -70,7 +70,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleMovedWithoutDriverIdentificationSummaryReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleMovedWithoutDriverIdentificationSummaryReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleMovedWithoutDriverIdentificationSummaryReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleMovedWithoutDriverIdentificationSummaryReportReturn" +
             "Object", ReplyAction="*")]
@@ -79,7 +79,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/OvertimeUsageReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> OvertimeUsageReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string WorkingHoursStartTime, string WorkingHoursEndTime, string WorkingDays, string Node, string Group, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> OvertimeUsageReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string WorkingHoursStartTime, string WorkingHoursEndTime, string WorkingDays, string Node, string Group, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/OvertimeUsageReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -87,7 +87,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/TachographActiveFleetReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> TachographActiveFleetReportAsync(string Username, string PIN1, string PIN2, string Driver, string ShowToday, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> TachographActiveFleetReportAsync(string Username, string PIN1, string PIN2, string Driver, string ShowToday, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/TachographActiveFleetReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -95,7 +95,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/RouteInformation", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> RouteInformationAsync(string Username, string PIN1, string PIN2, string RouteGroup);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> RouteInformationAsync(string Username, string PIN1, string PIN2, string RouteGroup);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/RouteInformationReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -103,7 +103,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/CANBUSTachographLastStatus", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> CANBUSTachographLastStatusAsync(string Username, string PIN1, string PIN2, string Node, string Group, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> CANBUSTachographLastStatusAsync(string Username, string PIN1, string PIN2, string Node, string Group, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetLocalDateTime", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -111,7 +111,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetNodes", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetNodesAsync(string Username, string PIN1, string PIN2, string Group);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetNodesAsync(string Username, string PIN1, string PIN2, string Group);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetNodesReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -119,7 +119,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetGroups", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetGroupsAsync(string Username, string PIN1, string PIN2);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetGroupsAsync(string Username, string PIN1, string PIN2);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetGroupsReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -127,7 +127,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetNearestNodes", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetNearestNodesAsync(string Username, string PIN1, string PIN2, string LongitudeX, string LatitudeY, string Radius, string DisplayDurationInMinutes, string Language, string Locale);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetNearestNodesAsync(string Username, string PIN1, string PIN2, string LongitudeX, string LatitudeY, string Radius, string DisplayDurationInMinutes, string Language, string Locale);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetNearestNodesReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -135,7 +135,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetIMSIList", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetIMSIListAsync(string Username, string PIN1, string PIN2);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetIMSIListAsync(string Username, string PIN1, string PIN2);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetIMSIListReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -155,7 +155,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetLicensePlateNodeMappings", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetLicensePlateNodeMappingsAsync(string Username, string PIN1, string PIN2, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetLicensePlateNodeMappingsAsync(string Username, string PIN1, string PIN2, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetLicensePlateNodeMappingsReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -171,7 +171,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetDriverNodeMappings", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetDriverNodeMappingsAsync(string Username, string PIN1, string PIN2, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetDriverNodeMappingsAsync(string Username, string PIN1, string PIN2, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetDriverNodeMappingsReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -187,7 +187,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GeneralReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GeneralReportAsync(
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GeneralReportAsync(
                     string Username, 
                     string PIN1, 
                     string PIN2, 
@@ -285,7 +285,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GeneralReport2", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GeneralReport2Async(
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GeneralReport2Async(
                     string Username, 
                     string PIN1, 
                     string PIN2, 
@@ -387,7 +387,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GeneralReportWithDistance", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GeneralReportWithDistanceAsync(
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GeneralReportWithDistanceAsync(
                     string Username, 
                     string PIN1, 
                     string PIN2, 
@@ -489,7 +489,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/UserLoginReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> UserLoginReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Compress, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> UserLoginReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Compress, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/UserLoginReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -497,7 +497,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/FuelConsumptionReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> FuelConsumptionReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string IncludeSuddenFuelDecrease, string Compress, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> FuelConsumptionReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string IncludeSuddenFuelDecrease, string Compress, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/FuelConsumptionReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -505,7 +505,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/ParallelTimingReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> ParallelTimingReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string IncludeSuddenFuelDecrease, string Compress, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> ParallelTimingReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string IncludeSuddenFuelDecrease, string Compress, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/ParallelTimingReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -513,7 +513,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleProgramReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleProgramReportAsync(string Username, string PIN1, string PIN2, string Node, string Group, string chkAllVehicles, string Compress, string Language, string ProgrammingVehicles);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleProgramReportAsync(string Username, string PIN1, string PIN2, string Node, string Group, string chkAllVehicles, string Compress, string Language, string ProgrammingVehicles);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleProgramReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -533,7 +533,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/ContactAlarm", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> ContactAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> ContactAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/ContactAlarmReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -545,7 +545,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/IdlingDurationReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> IdlingDurationReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> IdlingDurationReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/IdlingDurationReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -553,7 +553,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/IgnitionDurationReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> IgnitionDurationReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> IgnitionDurationReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/IgnitionDurationReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -561,7 +561,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/PauseDurationReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> PauseDurationReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> PauseDurationReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/PauseDurationReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -569,7 +569,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/PauseDurationReport2", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> PauseDurationReport2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language, string MinDuration);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> PauseDurationReport2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language, string MinDuration);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/PauseDurationReport2ReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -577,11 +577,11 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/IgnitionBasedDeviceWorking", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> IgnitionBasedDeviceWorkingAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> IgnitionBasedDeviceWorkingAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleOperatingReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleOperatingReportAsync(
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleOperatingReportAsync(
                     string Username, 
                     string PIN1, 
                     string PIN2, 
@@ -629,7 +629,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleOperatingReport2", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleOperatingReport2Async(
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleOperatingReport2Async(
                     string Username, 
                     string PIN1, 
                     string PIN2, 
@@ -677,7 +677,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/RegionAlarm", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> RegionAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Region, string Compress, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> RegionAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Region, string Compress, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/RegionAlarmReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -685,11 +685,11 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleDistanceReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleDistanceReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleDistanceReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/MaximumSpeedReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> MaximumSpeedReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> MaximumSpeedReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleDistanceReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -697,7 +697,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/CanBusOBDFuelInfoReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> CanBusOBDFuelInfoReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> CanBusOBDFuelInfoReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/CanBusOBDFuelInfoReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -705,7 +705,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/CanBusOBDOdometerInfoReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> CanBusOBDOdometerInfoReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> CanBusOBDOdometerInfoReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/CanBusOBDOdometerInfoReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -713,7 +713,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/RegionTravelReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> RegionTravelReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string MinInterval, string Compress, string Locale, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> RegionTravelReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string MinInterval, string Compress, string Locale, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/RegionTravelReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -721,7 +721,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/OutRegionTravelReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> OutRegionTravelReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string MinDistance, string Compress, string Locale, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> OutRegionTravelReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string MinDistance, string Compress, string Locale, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/OutRegionTravelReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -729,7 +729,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleDistanceReport2", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleDistanceReport2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language, string showSCDriver, string Detailed);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleDistanceReport2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language, string showSCDriver, string Detailed);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleDistanceReport2ReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -737,7 +737,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleInfo", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleInfoAsync(string Username, string PIN1, string PIN2);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleInfoAsync(string Username, string PIN1, string PIN2);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleInfoReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -745,7 +745,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetDriverInfo", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetDriverInfoAsync(string Username, string PIN1, string PIN2);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetDriverInfoAsync(string Username, string PIN1, string PIN2);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetDriverInfoReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -753,11 +753,11 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleOperatingReport3", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleOperatingReport3Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Compress, string Node, string Group, string Language, string MinuteDif);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleOperatingReport3Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Compress, string Node, string Group, string Language, string MinuteDif);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleLastStateReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleLastStateReportAsync(string Username, string PIN1, string PIN2, string Date, string Node, string Group, string MinuteDif);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleLastStateReportAsync(string Username, string PIN1, string PIN2, string Date, string Node, string Group, string MinuteDif);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleLastStateReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -765,7 +765,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleLastStateReport2", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleLastStateReport2Async(string Username, string PIN1, string PIN2, string Date, string Node, string Group, string Locale);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleLastStateReport2Async(string Username, string PIN1, string PIN2, string Date, string Node, string Group, string Locale);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/VehicleLastStateReport2ReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -773,7 +773,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/SpeedReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> SpeedReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinSpeed, string MaxSpeed, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> SpeedReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinSpeed, string MaxSpeed, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/SpeedReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -781,7 +781,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/SpeedAlarm", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> SpeedAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> SpeedAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/SpeedAlarmReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -789,7 +789,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/SpeedAlarmV2", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> SpeedAlarmV2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language, string Duration);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> SpeedAlarmV2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language, string Duration);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/SpeedAlarmV2ReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -797,7 +797,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/TemperatureAlarm", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> TemperatureAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> TemperatureAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/TemperatureAlarmReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -805,7 +805,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/PauseAlarm", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> PauseAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> PauseAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/PauseAlarmReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -813,7 +813,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/PauseAlarm2", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> PauseAlarm2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> PauseAlarm2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/PauseAlarm2ReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -821,7 +821,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/MotionAlarm", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> MotionAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> MotionAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/MotionAlarmReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -829,7 +829,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/EmergencyAlarm", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> EmergencyAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> EmergencyAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/EmergencyAlarmReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -837,7 +837,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/CanBusOBDGeneralReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> CanBusOBDGeneralReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> CanBusOBDGeneralReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/CanBusOBDGeneralReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -845,7 +845,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/CanBusFuelInfo", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> CanBusFuelInfoAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> CanBusFuelInfoAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/CanBusFuelInfoReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -853,7 +853,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/CanBusEmptyInfo", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> CanBusEmptyInfoAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> CanBusEmptyInfoAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/CanBusEmptyInfoReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -861,11 +861,11 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/DoorAlarm", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DoorAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DoorAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/DoorAlarmDuration", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DoorAlarmDurationAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DoorAlarmDurationAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/DoorAlarmReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -873,7 +873,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/PeriodicRegionTrackingReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> PeriodicRegionTrackingReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> PeriodicRegionTrackingReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/PeriodicRegionTrackingReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -881,7 +881,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/DoorAlarm2", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DoorAlarm2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Locale, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DoorAlarm2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Locale, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/DoorAlarm2ReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -889,7 +889,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/IdlingAlarm", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> IdlingAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> IdlingAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/IdlingAlarmReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -897,7 +897,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/DevicePoweredUpAlarm", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DevicePoweredUpAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DevicePoweredUpAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/DevicePoweredUpAlarmReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -905,15 +905,15 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/DriverBehaviorReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DriverBehaviorReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DriverBehaviorReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/DriveSafeReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DriveSafeReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DriveSafeReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/BuildingListReport", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> BuildingListReportAsync(string Username, string PIN1, string PIN2, string Compress);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> BuildingListReportAsync(string Username, string PIN1, string PIN2, string Compress);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/BuildingListReportReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -921,7 +921,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleStatusByNode", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleStatusByNodeAsync(string Username, string PIN1, string PIN2, string Node, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleStatusByNodeAsync(string Username, string PIN1, string PIN2, string Node, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleStatusByNodeReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -929,7 +929,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleStatus", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleStatusAsync(string Username, string PIN1, string PIN2, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleStatusAsync(string Username, string PIN1, string PIN2, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleStatusReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -937,7 +937,7 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleStatusWithCourse", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleStatusWithCourseAsync(string Username, string PIN1, string PIN2, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleStatusWithCourseAsync(string Username, string PIN1, string PIN2, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleStatusWithCourseReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -945,23 +945,23 @@ namespace ArventoService
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleStatusV4", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.LastPacket[]> GetVehicleStatusV4Async(string Username, string PIN1, string PIN2, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.LastPacket[]> GetVehicleStatusV4Async(string Username, string PIN1, string PIN2, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetTemperatureInfo", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.PacketTemperature[]> GetTemperatureInfoAsync(string Username, string PIN1, string PIN2, string MinuteDif, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.PacketTemperature[]> GetTemperatureInfoAsync(string Username, string PIN1, string PIN2, string MinuteDif, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleStatusV3", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.LastPacket[]> GetVehicleStatusV3Async(string Username, string PIN1, string PIN2, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.LastPacket[]> GetVehicleStatusV3Async(string Username, string PIN1, string PIN2, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleStatusByNodeV3", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.LastPacket[]> GetVehicleStatusByNodeV3Async(string Username, string PIN1, string PIN2, string Node, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.LastPacket[]> GetVehicleStatusByNodeV3Async(string Username, string PIN1, string PIN2, string Node, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleStatusV2", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleStatusV2Async(string Username, string PIN1, string PIN2, string Language);
+        System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleStatusV2Async(string Username, string PIN1, string PIN2, string Language);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://www.arvento.com/GetVehicleStatusV2ReturnObject", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -1437,13 +1437,13 @@ namespace ArventoService
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    public interface ArventoReportWebServiceSoapChannel : ArventoService.ArventoReportWebServiceSoap, System.ServiceModel.IClientChannel
+    public interface ArventoReportWebServiceSoapChannel : ArventoReportService.ArventoReportWebServiceSoap, System.ServiceModel.IClientChannel
     {
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    public partial class ArventoReportWebServiceSoapClient : System.ServiceModel.ClientBase<ArventoService.ArventoReportWebServiceSoap>, ArventoService.ArventoReportWebServiceSoap
+    public partial class ArventoReportWebServiceSoapClient : System.ServiceModel.ClientBase<ArventoReportService.ArventoReportWebServiceSoap>, ArventoReportService.ArventoReportWebServiceSoap
     {
         
         /// <summary>
@@ -1479,7 +1479,7 @@ namespace ArventoService
         {
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleAlarmStatusAsync(string Username, string PIN1, string PIN2, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleAlarmStatusAsync(string Username, string PIN1, string PIN2, string Language)
         {
             return base.Channel.GetVehicleAlarmStatusAsync(Username, PIN1, PIN2, Language);
         }
@@ -1494,7 +1494,7 @@ namespace ArventoService
             return base.Channel.GetVehicleAlarmStatusJsonAsync(Username, PIN1, PIN2, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleAlarmStatusV2Async(string Username, string PIN1, string PIN2, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleAlarmStatusV2Async(string Username, string PIN1, string PIN2, string Language)
         {
             return base.Channel.GetVehicleAlarmStatusV2Async(Username, PIN1, PIN2, Language);
         }
@@ -1504,7 +1504,7 @@ namespace ArventoService
             return base.Channel.GetVehicleAlarmStatusV2ReturnObjectAsync(Username, PIN1, PIN2, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> TechnicalPerformanceReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string DriverName, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> TechnicalPerformanceReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string DriverName, string Language)
         {
             return base.Channel.TechnicalPerformanceReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, DriverName, Language);
         }
@@ -1519,7 +1519,7 @@ namespace ArventoService
             return base.Channel.VehicleDailyStatusReportAsync(Username, PIN1, PIN2, _callback);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DriverInformationAsync(string Username, string PIN1, string PIN2, string StartDate, string Node, string Plate)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DriverInformationAsync(string Username, string PIN1, string PIN2, string StartDate, string Node, string Plate)
         {
             return base.Channel.DriverInformationAsync(Username, PIN1, PIN2, StartDate, Node, Plate);
         }
@@ -1529,12 +1529,12 @@ namespace ArventoService
             return base.Channel.DriverInformationReturnObjectAsync(Username, PIN1, PIN2, StartDate, Node, Plate);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleHYBSInfoAsync(string Username, string PIN1, string PIN2, string Node)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleHYBSInfoAsync(string Username, string PIN1, string PIN2, string Node)
         {
             return base.Channel.GetVehicleHYBSInfoAsync(Username, PIN1, PIN2, Node);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> IdleVehiclesReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> IdleVehiclesReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Language)
         {
             return base.Channel.IdleVehiclesReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Language);
         }
@@ -1544,7 +1544,7 @@ namespace ArventoService
             return base.Channel.IdleVehiclesReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleMovedWithoutDriverIdentificationSummaryReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleMovedWithoutDriverIdentificationSummaryReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Language)
         {
             return base.Channel.VehicleMovedWithoutDriverIdentificationSummaryReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Language);
         }
@@ -1554,7 +1554,7 @@ namespace ArventoService
             return base.Channel.VehicleMovedWithoutDriverIdentificationSummaryReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> OvertimeUsageReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string WorkingHoursStartTime, string WorkingHoursEndTime, string WorkingDays, string Node, string Group, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> OvertimeUsageReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string WorkingHoursStartTime, string WorkingHoursEndTime, string WorkingDays, string Node, string Group, string Language)
         {
             return base.Channel.OvertimeUsageReportAsync(Username, PIN1, PIN2, StartDate, EndDate, WorkingHoursStartTime, WorkingHoursEndTime, WorkingDays, Node, Group, Language);
         }
@@ -1564,7 +1564,7 @@ namespace ArventoService
             return base.Channel.OvertimeUsageReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, WorkingHoursStartTime, WorkingHoursEndTime, WorkingDays, Node, Group, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> TachographActiveFleetReportAsync(string Username, string PIN1, string PIN2, string Driver, string ShowToday, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> TachographActiveFleetReportAsync(string Username, string PIN1, string PIN2, string Driver, string ShowToday, string Language)
         {
             return base.Channel.TachographActiveFleetReportAsync(Username, PIN1, PIN2, Driver, ShowToday, Language);
         }
@@ -1574,7 +1574,7 @@ namespace ArventoService
             return base.Channel.TachographActiveFleetReportReturnObjectAsync(Username, PIN1, PIN2, Driver, ShowToday, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> RouteInformationAsync(string Username, string PIN1, string PIN2, string RouteGroup)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> RouteInformationAsync(string Username, string PIN1, string PIN2, string RouteGroup)
         {
             return base.Channel.RouteInformationAsync(Username, PIN1, PIN2, RouteGroup);
         }
@@ -1584,7 +1584,7 @@ namespace ArventoService
             return base.Channel.RouteInformationReturnObjectAsync(Username, PIN1, PIN2, RouteGroup);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> CANBUSTachographLastStatusAsync(string Username, string PIN1, string PIN2, string Node, string Group, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> CANBUSTachographLastStatusAsync(string Username, string PIN1, string PIN2, string Node, string Group, string Language)
         {
             return base.Channel.CANBUSTachographLastStatusAsync(Username, PIN1, PIN2, Node, Group, Language);
         }
@@ -1594,7 +1594,7 @@ namespace ArventoService
             return base.Channel.GetLocalDateTimeAsync(Username, PIN1, PIN2);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetNodesAsync(string Username, string PIN1, string PIN2, string Group)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetNodesAsync(string Username, string PIN1, string PIN2, string Group)
         {
             return base.Channel.GetNodesAsync(Username, PIN1, PIN2, Group);
         }
@@ -1604,7 +1604,7 @@ namespace ArventoService
             return base.Channel.GetNodesReturnObjectAsync(Username, PIN1, PIN2, Group);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetGroupsAsync(string Username, string PIN1, string PIN2)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetGroupsAsync(string Username, string PIN1, string PIN2)
         {
             return base.Channel.GetGroupsAsync(Username, PIN1, PIN2);
         }
@@ -1614,7 +1614,7 @@ namespace ArventoService
             return base.Channel.GetGroupsReturnObjectAsync(Username, PIN1, PIN2);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetNearestNodesAsync(string Username, string PIN1, string PIN2, string LongitudeX, string LatitudeY, string Radius, string DisplayDurationInMinutes, string Language, string Locale)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetNearestNodesAsync(string Username, string PIN1, string PIN2, string LongitudeX, string LatitudeY, string Radius, string DisplayDurationInMinutes, string Language, string Locale)
         {
             return base.Channel.GetNearestNodesAsync(Username, PIN1, PIN2, LongitudeX, LatitudeY, Radius, DisplayDurationInMinutes, Language, Locale);
         }
@@ -1624,7 +1624,7 @@ namespace ArventoService
             return base.Channel.GetNearestNodesReturnObjectAsync(Username, PIN1, PIN2, LongitudeX, LatitudeY, Radius, DisplayDurationInMinutes, Language, Locale);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetIMSIListAsync(string Username, string PIN1, string PIN2)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetIMSIListAsync(string Username, string PIN1, string PIN2)
         {
             return base.Channel.GetIMSIListAsync(Username, PIN1, PIN2);
         }
@@ -1649,7 +1649,7 @@ namespace ArventoService
             return base.Channel.GetTrailerIdFromLicensePlateAsync(Username, PIN1, PIN2, LicensePlate);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetLicensePlateNodeMappingsAsync(string Username, string PIN1, string PIN2, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetLicensePlateNodeMappingsAsync(string Username, string PIN1, string PIN2, string Language)
         {
             return base.Channel.GetLicensePlateNodeMappingsAsync(Username, PIN1, PIN2, Language);
         }
@@ -1669,7 +1669,7 @@ namespace ArventoService
             return base.Channel.GetNodeFromDriverAsync(Username, PIN1, PIN2, Driver);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetDriverNodeMappingsAsync(string Username, string PIN1, string PIN2, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetDriverNodeMappingsAsync(string Username, string PIN1, string PIN2, string Language)
         {
             return base.Channel.GetDriverNodeMappingsAsync(Username, PIN1, PIN2, Language);
         }
@@ -1689,7 +1689,7 @@ namespace ArventoService
             return base.Channel.GetNodeFromCrewAsync(Username, PIN1, PIN2, Crew);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GeneralReportAsync(
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GeneralReportAsync(
                     string Username, 
                     string PIN1, 
                     string PIN2, 
@@ -1789,7 +1789,7 @@ namespace ArventoService
             return base.Channel.GeneralReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, chkLocation, chkSpeed, chkPause, chkMotion, chkRegion, txtSpeedMin, txtSpeedMax, chkTemperatureSensor1, chkTemperatureSensorPer1, chkTemperatureSensorAlm1, chkTemperatureSensor2, chkTemperatureSensorPer2, chkTemperatureSensorAlm2, chkTemperatureSensor3, chkTemperatureSensorPer3, chkTemperatureSensorAlm3, chkTemperatureSensor4, chkTemperatureSensorPer4, chkTemperatureSensorAlm4, txtTemperatureMin, txtTemperatureMax, chkEmergency, chkDoor, chkPauseTime, chkContactAlarm, chkIdlingTime, chkIdlingAlarm, chkFuelLevel, chkPower, chkDriverIdentification, chkHumiditySensor1, chkHumiditySensor2, chkHumiditySensor3, chkHumiditySensor4, chkDeviceInformation, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GeneralReport2Async(
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GeneralReport2Async(
                     string Username, 
                     string PIN1, 
                     string PIN2, 
@@ -1893,7 +1893,7 @@ namespace ArventoService
             return base.Channel.GeneralReport2ReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, chkLocation, chkSpeed, chkPause, chkMotion, chkRegion, txtSpeedMin, txtSpeedMax, chkTemperatureSensor1, chkTemperatureSensorPer1, chkTemperatureSensorAlm1, chkTemperatureSensor2, chkTemperatureSensorPer2, chkTemperatureSensorAlm2, chkTemperatureSensor3, chkTemperatureSensorPer3, chkTemperatureSensorAlm3, chkTemperatureSensor4, chkTemperatureSensorPer4, chkTemperatureSensorAlm4, txtTemperatureMin, txtTemperatureMax, chkEmergency, chkDoor, chkPauseTime, chkContactAlarm, chkIdlingTime, chkIdlingAlarm, chkFuelLevel, chkPower, chkDriverIdentification, chkHumiditySensor1, chkHumiditySensor2, chkHumiditySensor3, chkHumiditySensor4, chkPossibleAccident, chkAcceleration, chkVehicleMovedWithoutDriverCard, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GeneralReportWithDistanceAsync(
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GeneralReportWithDistanceAsync(
                     string Username, 
                     string PIN1, 
                     string PIN2, 
@@ -1997,7 +1997,7 @@ namespace ArventoService
             return base.Channel.GeneralReportWithDistanceReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, chkLocation, chkSpeed, chkPause, chkMotion, chkRegion, txtSpeedMin, txtSpeedMax, chkTemperatureSensor1, chkTemperatureSensorPer1, chkTemperatureSensorAlm1, chkTemperatureSensor2, chkTemperatureSensorPer2, chkTemperatureSensorAlm2, chkTemperatureSensor3, chkTemperatureSensorPer3, chkTemperatureSensorAlm3, chkTemperatureSensor4, chkTemperatureSensorPer4, chkTemperatureSensorAlm4, txtTemperatureMin, txtTemperatureMax, chkEmergency, chkDoor, chkPauseTime, chkContactAlarm, chkIdlingTime, chkIdlingAlarm, chkFuelLevel, chkPower, chkDriverIdentification, chkHumiditySensor1, chkHumiditySensor2, chkHumiditySensor3, chkHumiditySensor4, chkPossibleAccident, chkAcceleration, chkVehicleMovedWithoutDriverCard, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> UserLoginReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Compress, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> UserLoginReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Compress, string Language)
         {
             return base.Channel.UserLoginReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Compress, Language);
         }
@@ -2007,7 +2007,7 @@ namespace ArventoService
             return base.Channel.UserLoginReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Compress, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> FuelConsumptionReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string IncludeSuddenFuelDecrease, string Compress, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> FuelConsumptionReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string IncludeSuddenFuelDecrease, string Compress, string Language)
         {
             return base.Channel.FuelConsumptionReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, IncludeSuddenFuelDecrease, Compress, Language);
         }
@@ -2017,7 +2017,7 @@ namespace ArventoService
             return base.Channel.FuelConsumptionReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, IncludeSuddenFuelDecrease, Compress, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> ParallelTimingReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string IncludeSuddenFuelDecrease, string Compress, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> ParallelTimingReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string IncludeSuddenFuelDecrease, string Compress, string Language)
         {
             return base.Channel.ParallelTimingReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, IncludeSuddenFuelDecrease, Compress, Language);
         }
@@ -2027,7 +2027,7 @@ namespace ArventoService
             return base.Channel.ParallelTimingReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, IncludeSuddenFuelDecrease, Compress, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleProgramReportAsync(string Username, string PIN1, string PIN2, string Node, string Group, string chkAllVehicles, string Compress, string Language, string ProgrammingVehicles)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleProgramReportAsync(string Username, string PIN1, string PIN2, string Node, string Group, string chkAllVehicles, string Compress, string Language, string ProgrammingVehicles)
         {
             return base.Channel.VehicleProgramReportAsync(Username, PIN1, PIN2, Node, Group, chkAllVehicles, Compress, Language, ProgrammingVehicles);
         }
@@ -2052,7 +2052,7 @@ namespace ArventoService
             return base.Channel.TotalRunningTimeAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, MinuteDif);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> ContactAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> ContactAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
         {
             return base.Channel.ContactAlarmAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
@@ -2067,7 +2067,7 @@ namespace ArventoService
             return base.Channel.IgnitionAlarmReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> IdlingDurationReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> IdlingDurationReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
         {
             return base.Channel.IdlingDurationReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
@@ -2077,7 +2077,7 @@ namespace ArventoService
             return base.Channel.IdlingDurationReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> IgnitionDurationReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> IgnitionDurationReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
         {
             return base.Channel.IgnitionDurationReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
@@ -2087,7 +2087,7 @@ namespace ArventoService
             return base.Channel.IgnitionDurationReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> PauseDurationReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> PauseDurationReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
         {
             return base.Channel.PauseDurationReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
@@ -2097,7 +2097,7 @@ namespace ArventoService
             return base.Channel.PauseDurationReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> PauseDurationReport2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language, string MinDuration)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> PauseDurationReport2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language, string MinDuration)
         {
             return base.Channel.PauseDurationReport2Async(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language, MinDuration);
         }
@@ -2107,12 +2107,12 @@ namespace ArventoService
             return base.Channel.PauseDurationReport2ReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language, MinDuration);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> IgnitionBasedDeviceWorkingAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> IgnitionBasedDeviceWorkingAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language)
         {
             return base.Channel.IgnitionBasedDeviceWorkingAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleOperatingReportAsync(
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleOperatingReportAsync(
                     string Username, 
                     string PIN1, 
                     string PIN2, 
@@ -2162,7 +2162,7 @@ namespace ArventoService
             return base.Channel.VehicleOperatingReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language, ShowDayByDay, ShowLastLocationInformation, ShowDistance, ShowStandStill, ShowIdling, ShowIgnition, ShowMaxSpeed, ShowAlarmCounts, ShowAlarmInformation, ShowMotionDuration);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleOperatingReport2Async(
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleOperatingReport2Async(
                     string Username, 
                     string PIN1, 
                     string PIN2, 
@@ -2212,7 +2212,7 @@ namespace ArventoService
             return base.Channel.VehicleOperatingReport2ReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language, ShowDayByDay, ShowLastLocationInformation, ShowDistance, ShowStandStill, ShowIdling, ShowIgnition, ShowMaxSpeed, ShowAlarmCounts, ShowAlarmInformation, ShowMotionDuration);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> RegionAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Region, string Compress, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> RegionAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Region, string Compress, string MinuteDif, string Language)
         {
             return base.Channel.RegionAlarmAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Region, Compress, MinuteDif, Language);
         }
@@ -2222,12 +2222,12 @@ namespace ArventoService
             return base.Channel.RegionAlarmReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Region, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleDistanceReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleDistanceReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
         {
             return base.Channel.VehicleDistanceReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> MaximumSpeedReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> MaximumSpeedReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language)
         {
             return base.Channel.MaximumSpeedReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Language);
         }
@@ -2237,7 +2237,7 @@ namespace ArventoService
             return base.Channel.VehicleDistanceReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> CanBusOBDFuelInfoReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> CanBusOBDFuelInfoReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
         {
             return base.Channel.CanBusOBDFuelInfoReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
@@ -2247,7 +2247,7 @@ namespace ArventoService
             return base.Channel.CanBusOBDFuelInfoReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> CanBusOBDOdometerInfoReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> CanBusOBDOdometerInfoReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
         {
             return base.Channel.CanBusOBDOdometerInfoReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
@@ -2257,7 +2257,7 @@ namespace ArventoService
             return base.Channel.CanBusOBDOdometerInfoReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> RegionTravelReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string MinInterval, string Compress, string Locale, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> RegionTravelReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string MinInterval, string Compress, string Locale, string Language)
         {
             return base.Channel.RegionTravelReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, MinInterval, Compress, Locale, Language);
         }
@@ -2267,7 +2267,7 @@ namespace ArventoService
             return base.Channel.RegionTravelReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, MinInterval, Compress, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> OutRegionTravelReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string MinDistance, string Compress, string Locale, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> OutRegionTravelReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string MinDistance, string Compress, string Locale, string Language)
         {
             return base.Channel.OutRegionTravelReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, MinDistance, Compress, Locale, Language);
         }
@@ -2277,7 +2277,7 @@ namespace ArventoService
             return base.Channel.OutRegionTravelReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, MinDistance, Compress, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleDistanceReport2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language, string showSCDriver, string Detailed)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleDistanceReport2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language, string showSCDriver, string Detailed)
         {
             return base.Channel.VehicleDistanceReport2Async(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language, showSCDriver, Detailed);
         }
@@ -2287,7 +2287,7 @@ namespace ArventoService
             return base.Channel.VehicleDistanceReport2ReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language, showSCDriver, Detailed);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleInfoAsync(string Username, string PIN1, string PIN2)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleInfoAsync(string Username, string PIN1, string PIN2)
         {
             return base.Channel.GetVehicleInfoAsync(Username, PIN1, PIN2);
         }
@@ -2297,7 +2297,7 @@ namespace ArventoService
             return base.Channel.GetVehicleInfoReturnObjectAsync(Username, PIN1, PIN2, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetDriverInfoAsync(string Username, string PIN1, string PIN2)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetDriverInfoAsync(string Username, string PIN1, string PIN2)
         {
             return base.Channel.GetDriverInfoAsync(Username, PIN1, PIN2);
         }
@@ -2307,12 +2307,12 @@ namespace ArventoService
             return base.Channel.GetDriverInfoReturnObjectAsync(Username, PIN1, PIN2);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleOperatingReport3Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Compress, string Node, string Group, string Language, string MinuteDif)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleOperatingReport3Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Compress, string Node, string Group, string Language, string MinuteDif)
         {
             return base.Channel.VehicleOperatingReport3Async(Username, PIN1, PIN2, StartDate, EndDate, Compress, Node, Group, Language, MinuteDif);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleLastStateReportAsync(string Username, string PIN1, string PIN2, string Date, string Node, string Group, string MinuteDif)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleLastStateReportAsync(string Username, string PIN1, string PIN2, string Date, string Node, string Group, string MinuteDif)
         {
             return base.Channel.VehicleLastStateReportAsync(Username, PIN1, PIN2, Date, Node, Group, MinuteDif);
         }
@@ -2322,7 +2322,7 @@ namespace ArventoService
             return base.Channel.VehicleLastStateReportReturnObjectAsync(Username, PIN1, PIN2, Date, Node, Group, MinuteDif);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> VehicleLastStateReport2Async(string Username, string PIN1, string PIN2, string Date, string Node, string Group, string Locale)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> VehicleLastStateReport2Async(string Username, string PIN1, string PIN2, string Date, string Node, string Group, string Locale)
         {
             return base.Channel.VehicleLastStateReport2Async(Username, PIN1, PIN2, Date, Node, Group, Locale);
         }
@@ -2332,7 +2332,7 @@ namespace ArventoService
             return base.Channel.VehicleLastStateReport2ReturnObjectAsync(Username, PIN1, PIN2, Date, Node, Group, Locale);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> SpeedReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinSpeed, string MaxSpeed, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> SpeedReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinSpeed, string MaxSpeed, string MinuteDif, string Language)
         {
             return base.Channel.SpeedReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinSpeed, MaxSpeed, MinuteDif, Language);
         }
@@ -2342,7 +2342,7 @@ namespace ArventoService
             return base.Channel.SpeedReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinSpeed, MaxSpeed, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> SpeedAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> SpeedAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
         {
             return base.Channel.SpeedAlarmAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
@@ -2352,7 +2352,7 @@ namespace ArventoService
             return base.Channel.SpeedAlarmReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> SpeedAlarmV2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language, string Duration)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> SpeedAlarmV2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language, string Duration)
         {
             return base.Channel.SpeedAlarmV2Async(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language, Duration);
         }
@@ -2362,7 +2362,7 @@ namespace ArventoService
             return base.Channel.SpeedAlarmV2ReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language, Duration);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> TemperatureAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> TemperatureAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
         {
             return base.Channel.TemperatureAlarmAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
@@ -2372,7 +2372,7 @@ namespace ArventoService
             return base.Channel.TemperatureAlarmReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> PauseAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> PauseAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
         {
             return base.Channel.PauseAlarmAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
@@ -2382,7 +2382,7 @@ namespace ArventoService
             return base.Channel.PauseAlarmReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> PauseAlarm2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> PauseAlarm2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
         {
             return base.Channel.PauseAlarm2Async(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
@@ -2392,7 +2392,7 @@ namespace ArventoService
             return base.Channel.PauseAlarm2ReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> MotionAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> MotionAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
         {
             return base.Channel.MotionAlarmAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
@@ -2402,7 +2402,7 @@ namespace ArventoService
             return base.Channel.MotionAlarmReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> EmergencyAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> EmergencyAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
         {
             return base.Channel.EmergencyAlarmAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
@@ -2412,7 +2412,7 @@ namespace ArventoService
             return base.Channel.EmergencyAlarmReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> CanBusOBDGeneralReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> CanBusOBDGeneralReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
         {
             return base.Channel.CanBusOBDGeneralReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
@@ -2422,7 +2422,7 @@ namespace ArventoService
             return base.Channel.CanBusOBDGeneralReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> CanBusFuelInfoAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> CanBusFuelInfoAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
         {
             return base.Channel.CanBusFuelInfoAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
@@ -2432,7 +2432,7 @@ namespace ArventoService
             return base.Channel.CanBusFuelInfoReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> CanBusEmptyInfoAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> CanBusEmptyInfoAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
         {
             return base.Channel.CanBusEmptyInfoAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
@@ -2442,12 +2442,12 @@ namespace ArventoService
             return base.Channel.CanBusEmptyInfoReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DoorAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DoorAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
         {
             return base.Channel.DoorAlarmAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DoorAlarmDurationAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DoorAlarmDurationAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language)
         {
             return base.Channel.DoorAlarmDurationAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Language);
         }
@@ -2457,7 +2457,7 @@ namespace ArventoService
             return base.Channel.DoorAlarmReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> PeriodicRegionTrackingReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> PeriodicRegionTrackingReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Locale, string Language)
         {
             return base.Channel.PeriodicRegionTrackingReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
@@ -2467,7 +2467,7 @@ namespace ArventoService
             return base.Channel.PeriodicRegionTrackingReportReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DoorAlarm2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Locale, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DoorAlarm2Async(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Locale, string Language)
         {
             return base.Channel.DoorAlarm2Async(Username, PIN1, PIN2, StartDate, EndDate, Locale, Language);
         }
@@ -2477,7 +2477,7 @@ namespace ArventoService
             return base.Channel.DoorAlarm2ReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Locale, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> IdlingAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> IdlingAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
         {
             return base.Channel.IdlingAlarmAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
@@ -2487,7 +2487,7 @@ namespace ArventoService
             return base.Channel.IdlingAlarmReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DevicePoweredUpAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DevicePoweredUpAlarmAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string MinuteDif, string Language)
         {
             return base.Channel.DevicePoweredUpAlarmAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
@@ -2497,17 +2497,17 @@ namespace ArventoService
             return base.Channel.DevicePoweredUpAlarmReturnObjectAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DriverBehaviorReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DriverBehaviorReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language)
         {
             return base.Channel.DriverBehaviorReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> DriveSafeReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> DriveSafeReportAsync(string Username, string PIN1, string PIN2, string StartDate, string EndDate, string Node, string Group, string Compress, string Language)
         {
             return base.Channel.DriveSafeReportAsync(Username, PIN1, PIN2, StartDate, EndDate, Node, Group, Compress, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> BuildingListReportAsync(string Username, string PIN1, string PIN2, string Compress)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> BuildingListReportAsync(string Username, string PIN1, string PIN2, string Compress)
         {
             return base.Channel.BuildingListReportAsync(Username, PIN1, PIN2, Compress);
         }
@@ -2517,7 +2517,7 @@ namespace ArventoService
             return base.Channel.BuildingListReportReturnObjectAsync(Username, PIN1, PIN2, Compress);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleStatusByNodeAsync(string Username, string PIN1, string PIN2, string Node, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleStatusByNodeAsync(string Username, string PIN1, string PIN2, string Node, string Language)
         {
             return base.Channel.GetVehicleStatusByNodeAsync(Username, PIN1, PIN2, Node, Language);
         }
@@ -2527,7 +2527,7 @@ namespace ArventoService
             return base.Channel.GetVehicleStatusByNodeReturnObjectAsync(Username, PIN1, PIN2, Node, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleStatusAsync(string Username, string PIN1, string PIN2, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleStatusAsync(string Username, string PIN1, string PIN2, string Language)
         {
             return base.Channel.GetVehicleStatusAsync(Username, PIN1, PIN2, Language);
         }
@@ -2537,7 +2537,7 @@ namespace ArventoService
             return base.Channel.GetVehicleStatusReturnObjectAsync(Username, PIN1, PIN2, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleStatusWithCourseAsync(string Username, string PIN1, string PIN2, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleStatusWithCourseAsync(string Username, string PIN1, string PIN2, string Language)
         {
             return base.Channel.GetVehicleStatusWithCourseAsync(Username, PIN1, PIN2, Language);
         }
@@ -2547,27 +2547,27 @@ namespace ArventoService
             return base.Channel.GetVehicleStatusWithCourseReturnObjectAsync(Username, PIN1, PIN2, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.LastPacket[]> GetVehicleStatusV4Async(string Username, string PIN1, string PIN2, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.LastPacket[]> GetVehicleStatusV4Async(string Username, string PIN1, string PIN2, string Language)
         {
             return base.Channel.GetVehicleStatusV4Async(Username, PIN1, PIN2, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.PacketTemperature[]> GetTemperatureInfoAsync(string Username, string PIN1, string PIN2, string MinuteDif, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.PacketTemperature[]> GetTemperatureInfoAsync(string Username, string PIN1, string PIN2, string MinuteDif, string Language)
         {
             return base.Channel.GetTemperatureInfoAsync(Username, PIN1, PIN2, MinuteDif, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.LastPacket[]> GetVehicleStatusV3Async(string Username, string PIN1, string PIN2, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.LastPacket[]> GetVehicleStatusV3Async(string Username, string PIN1, string PIN2, string Language)
         {
             return base.Channel.GetVehicleStatusV3Async(Username, PIN1, PIN2, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.LastPacket[]> GetVehicleStatusByNodeV3Async(string Username, string PIN1, string PIN2, string Node, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.LastPacket[]> GetVehicleStatusByNodeV3Async(string Username, string PIN1, string PIN2, string Node, string Language)
         {
             return base.Channel.GetVehicleStatusByNodeV3Async(Username, PIN1, PIN2, Node, Language);
         }
         
-        public System.Threading.Tasks.Task<ArventoService.ArrayOfXElement> GetVehicleStatusV2Async(string Username, string PIN1, string PIN2, string Language)
+        public System.Threading.Tasks.Task<ArventoReportService.ArrayOfXElement> GetVehicleStatusV2Async(string Username, string PIN1, string PIN2, string Language)
         {
             return base.Channel.GetVehicleStatusV2Async(Username, PIN1, PIN2, Language);
         }
