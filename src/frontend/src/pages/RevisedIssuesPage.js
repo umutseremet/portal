@@ -232,7 +232,7 @@ const RevisedIssuesPage = () => {
                         <div className="mb-2 mb-md-0">
                             <h4 className="mb-2">
                                 <i className="bi bi-arrow-repeat me-2"></i>
-                                Revize Edilmiş İşler
+                                Plan Tarihi Revize Edilmiş İşler
                             </h4>
                             <p className="mb-0 opacity-75">
                                 <i className="bi bi-calendar-range me-2"></i>
@@ -284,7 +284,7 @@ const RevisedIssuesPage = () => {
                                 value={dateFilter}
                                 onChange={(e) => setDateFilter(e.target.value)}
                             >
-                                <option value="all">Tüm Revize İşler</option>
+                                <option value="all">Plan Tarihi Revize Edilen İşler</option>
                                 <option value="planned">Planlanan Tarih Bu Hafta</option>
                                 <option value="revised">Revize Tarih Bu Hafta</option>
                             </select>

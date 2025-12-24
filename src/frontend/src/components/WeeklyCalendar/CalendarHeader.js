@@ -28,7 +28,7 @@ const CalendarHeader = ({ onRefresh, loading, onShowRevisedIssues, weekStart }) 
               title="Bu hafta planı revize edilmiş işleri göster"
             >
               <i className="bi bi-arrow-repeat me-2"></i>
-              Revize İşler
+              Plan Tarihi Revize Edilen İşler
             </button>
 
             {/* Yazdır Butonu */}
