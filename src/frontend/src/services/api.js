@@ -1109,6 +1109,75 @@ class ApiService {
     }
   }
 
+  // src/frontend/src/services/api.js
+  // ✅ YENİ METOD: getRevisedIssues - Backend'de filtreleme yapan optimized endpoint
+
+  /**
+   * Get revised issues with backend filtering
+   * @param {Object} filters - Filter parameters
+   * @returns {Promise<Object>} Filtered revised issues
+   */
+  async getRevisedIssues(filters) {
+    try {
+      console.log('📋 API getRevisedIssues request:', filters);
+
+      const requestBody = {
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        dateFilterType: filters.dateFilterType || 'planned_this_week',
+        customStartDate: filters.customStartDate || null,
+        customEndDate: filters.customEndDate || null,
+        projectId: filters.projectId || null,
+        productionType: filters.productionType || null,
+        statusName: filters.statusName || null,
+        searchTerm: filters.searchTerm || null
+      };
+
+      console.log('📦 Request body:', requestBody);
+
+      const response = await this.post('/RedmineWeeklyCalendar/GetRevisedIssues', requestBody);
+
+      console.log('📋 API getRevisedIssues raw response:', response);
+
+      // Response formatını düzenle (camelCase'e çevir)
+      const mappedResponse = {
+        startDate: response.startDate || response.StartDate,
+        endDate: response.endDate || response.EndDate,
+        filters: response.filters || response.Filters,
+        totalCount: response.totalCount || response.TotalCount || 0,
+        issues: (response.issues || response.Issues || []).map(issue => ({
+          issueId: issue.issueId || issue.IssueId,
+          projectId: issue.projectId || issue.ProjectId,
+          projectName: issue.projectName || issue.ProjectName || '',
+          projectCode: issue.projectCode || issue.ProjectCode || '',
+          subject: issue.subject || issue.Subject || '',
+          trackerName: issue.trackerName || issue.TrackerName || '',
+          completionPercentage: issue.completionPercentage ?? issue.CompletionPercentage ?? 0,
+          estimatedHours: issue.estimatedHours ?? issue.EstimatedHours ?? null,
+          statusName: issue.statusName || issue.StatusName || '',
+          isClosed: issue.isClosed ?? issue.IsClosed ?? false,
+          priorityName: issue.priorityName || issue.PriorityName || '',
+          assignedTo: issue.assignedTo || issue.AssignedTo || '',
+          plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
+          plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
+          revisedPlannedStartDate: issue.revisedPlannedStartDate || issue.RevisedPlannedStartDate,
+          revisedPlannedEndDate: issue.revisedPlannedEndDate || issue.RevisedPlannedEndDate,
+          revisedPlanDescription: issue.revisedPlanDescription || issue.RevisedPlanDescription,
+          productionType: issue.productionType || issue.ProductionType || '',
+          closedOn: issue.closedOn || issue.ClosedOn,
+        }))
+      };
+
+      console.log('📋 Mapped revised issues response:', mappedResponse);
+      console.log('📊 Total revised issues:', mappedResponse.totalCount);
+
+      return mappedResponse;
+    } catch (error) {
+      console.error('❌ getRevisedIssues error:', error);
+      throw error;
+    }
+  }
+
   /**
    * Update fuel purchase
    * @param {number} id - Fuel purchase ID

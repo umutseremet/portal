@@ -46,16 +46,13 @@ const WeeklyCalendar = () => {
 
   // ✅ Revize İşler Sayfasına Git
   const handleShowRevisedIssues = () => {
-    const weekEnd = new Date(currentWeek);
-    weekEnd.setDate(weekEnd.getDate() + 6);
-
     navigate('/production/revised-issues', {
       state: {
-        weekStart: currentWeek.toISOString(),
-        weekEnd: weekEnd.toISOString()
+        weekStart: calendarData.weekStart,  // ✅ Backend'den doğru Pazartesi
+        weekEnd: calendarData.weekEnd       // ✅ Backend'den doğru Pazar
       }
     });
-  };
+};
 
   // Kart tıklama handler
   const handleCardClick = (group, date) => {

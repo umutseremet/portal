@@ -1,5 +1,5 @@
 // src/frontend/src/pages/RevisedIssuesPage.js
-// ✅ Haftalık Revize Edilmiş İşler Listesi
+// ✅ OPTİMİZE EDİLMİŞ VERSİYON - Backend Filtering
 
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -13,63 +13,67 @@ const RevisedIssuesPage = () => {
 
     const { weekStart, weekEnd } = location.state || {};
 
+    // State
     const [issues, setIssues] = useState([]);
-    const [filteredIssues, setFilteredIssues] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     // Filtreler
-    const [dateFilter, setDateFilter] = useState('all'); // all, planned, revised
+    const [dateFilter, setDateFilter] = useState('planned_this_week');
     const [projectFilter, setProjectFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
 
+    // Dropdown seçenekleri
+    const [availableProjects, setAvailableProjects] = useState([]);
+    const [availableTypes, setAvailableTypes] = useState([]);
+    const [availableStatuses, setAvailableStatuses] = useState([]);
+
+    // İlk yükleme
     useEffect(() => {
         if (weekStart && weekEnd) {
             fetchRevisedIssues();
+            fetchFilterOptions();
         }
     }, [weekStart, weekEnd]);
 
+    // Filtreler değişince backend'den yeniden fetch
     useEffect(() => {
-        applyFilters();
-    }, [dateFilter, projectFilter, typeFilter, statusFilter, searchTerm, issues]);
+        if (!weekStart || !weekEnd) return;
+
+        const timeoutId = setTimeout(() => {
+            fetchRevisedIssues();
+        }, searchTerm ? 500 : 0); // Search için 500ms debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [dateFilter, projectFilter, typeFilter, statusFilter, searchTerm, customStartDate, customEndDate]);
 
     const fetchRevisedIssues = async () => {
         setLoading(true);
         setError(null);
 
         try {
-            const start = new Date(weekStart);
-            const end = new Date(weekEnd);
+            const filters = {
+                startDate: weekStart.split('T')[0],
+                endDate: weekEnd.split('T')[0],
+                dateFilterType: dateFilter,
+                customStartDate: dateFilter === 'custom_range' ? customStartDate : null,
+                customEndDate: dateFilter === 'custom_range' ? customEndDate : null,
+                projectId: projectFilter ? parseInt(projectFilter) : null,
+                productionType: typeFilter !== 'all' ? typeFilter : null,
+                statusName: statusFilter !== 'all' ? statusFilter : null,
+                searchTerm: searchTerm || null
+            };
 
-            // Haftanın her günü için verileri topla
-            const allIssues = [];
-            const seenIssueIds = new Set();
+            console.log('📡 Fetching revised issues with filters:', filters);
 
-            for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-                const formattedDate = date.toISOString().split('T')[0];
-                const response = await apiService.getIssuesByDate(formattedDate);
+            const response = await apiService.getRevisedIssues(filters);
 
-                if (response.issues) {
-                    response.issues.forEach(issue => {
-                        // Sadece revize edilmiş işleri al ve tekrar etmesin
-                        const hasRevised = (issue.revisedPlannedStartDate && 
-                                          !issue.revisedPlannedStartDate.startsWith('0001-01-01')) ||
-                                         (issue.revisedPlannedEndDate && 
-                                          !issue.revisedPlannedEndDate.startsWith('0001-01-01'));
-
-                        if (hasRevised && !seenIssueIds.has(issue.issueId)) {
-                            seenIssueIds.add(issue.issueId);
-                            allIssues.push(issue);
-                        }
-                    });
-                }
-            }
-
-            console.log(`📋 Found ${allIssues.length} revised issues in the week`);
-            setIssues(allIssues);
-            setFilteredIssues(allIssues);
+            console.log(`✅ Received ${response.totalCount} revised issues`);
+            setIssues(response.issues || []);
         } catch (err) {
             console.error('❌ Error fetching revised issues:', err);
             setError(err.message || 'Revize işler yüklenirken bir hata oluştu');
@@ -78,71 +82,42 @@ const RevisedIssuesPage = () => {
         }
     };
 
-    const applyFilters = () => {
-        let filtered = [...issues];
-
-        // Tarih Filtresi
-        if (dateFilter !== 'all') {
-            const start = new Date(weekStart);
-            const end = new Date(weekEnd);
-
-            filtered = filtered.filter(issue => {
-                if (dateFilter === 'planned') {
-                    // Planlanan tarihler hafta içinde
-                    const plannedStart = issue.plannedStartDate ? new Date(issue.plannedStartDate) : null;
-                    const plannedEnd = issue.plannedEndDate ? new Date(issue.plannedEndDate) : null;
-
-                    return (plannedStart && plannedStart >= start && plannedStart <= end) ||
-                           (plannedEnd && plannedEnd >= start && plannedEnd <= end) ||
-                           (plannedStart && plannedEnd && plannedStart <= start && plannedEnd >= end);
-                } else if (dateFilter === 'revised') {
-                    // Revize tarihler hafta içinde
-                    const revisedStart = issue.revisedPlannedStartDate ? new Date(issue.revisedPlannedStartDate) : null;
-                    const revisedEnd = issue.revisedPlannedEndDate ? new Date(issue.revisedPlannedEndDate) : null;
-
-                    return (revisedStart && revisedStart >= start && revisedStart <= end) ||
-                           (revisedEnd && revisedEnd >= start && revisedEnd <= end) ||
-                           (revisedStart && revisedEnd && revisedStart <= start && revisedEnd >= end);
-                }
-                return true;
+    const fetchFilterOptions = async () => {
+        try {
+            const response = await apiService.getRevisedIssues({
+                startDate: weekStart.split('T')[0],
+                endDate: weekEnd.split('T')[0],
+                dateFilterType: 'all'
             });
-        }
 
-        // Proje Filtresi
-        if (projectFilter) {
-            filtered = filtered.filter(i => i.projectId === parseInt(projectFilter));
-        }
+            const allIssues = response.issues || [];
 
-        // Tip Filtresi
-        if (typeFilter !== 'all') {
-            filtered = filtered.filter(i => 
-                i.trackerName?.replace('Üretim - ', '').trim() === typeFilter
-            );
-        }
+            const projects = [...new Map(
+                allIssues.map(i => [i.projectId, { 
+                    id: i.projectId, 
+                    name: i.projectName, 
+                    code: i.projectCode 
+                }])
+            ).values()];
 
-        // Durum Filtresi
-        if (statusFilter !== 'all') {
-            filtered = filtered.filter(i => i.statusName === statusFilter);
-        }
+            const types = [...new Set(
+                allIssues.map(i => i.trackerName?.replace('Üretim - ', '').trim()).filter(Boolean)
+            )];
 
-        // Arama
-        if (searchTerm) {
-            const searchLower = searchTerm.toLowerCase();
-            filtered = filtered.filter(issue =>
-                issue.issueId?.toString().includes(searchLower) ||
-                issue.subject?.toLowerCase().includes(searchLower) ||
-                issue.projectName?.toLowerCase().includes(searchLower) ||
-                issue.projectCode?.toLowerCase().includes(searchLower) ||
-                issue.revisedPlanDescription?.toLowerCase().includes(searchLower)
-            );
-        }
+            const statuses = [...new Set(
+                allIssues.map(i => i.statusName).filter(Boolean)
+            )];
 
-        setFilteredIssues(filtered);
+            setAvailableProjects(projects);
+            setAvailableTypes(types);
+            setAvailableStatuses(statuses);
+        } catch (err) {
+            console.error('❌ Error fetching filter options:', err);
+        }
     };
 
     const formatDate = (dateString) => {
-        if (!dateString) return '-';
-        if (dateString.startsWith('0001-01-01')) return '-';
+        if (!dateString || dateString.startsWith('0001-01-01')) return '-';
         
         try {
             const [year, month, day] = dateString.split('T')[0].split('-');
@@ -169,15 +144,34 @@ const RevisedIssuesPage = () => {
     };
 
     const getRevisionDays = (issue) => {
-        const plannedEnd = issue.plannedEndDate ? new Date(issue.plannedEndDate) : null;
-        const revisedEnd = issue.revisedPlannedEndDate ? new Date(issue.revisedPlannedEndDate) : null;
+        const plannedEndStr = issue.plannedEndDate ? issue.plannedEndDate.split('T')[0] : null;
+        const revisedEndStr = issue.revisedPlannedEndDate ? issue.revisedPlannedEndDate.split('T')[0] : null;
 
-        if (!plannedEnd || !revisedEnd) return null;
+        if (!plannedEndStr || !revisedEndStr) return null;
 
+        const plannedEnd = new Date(plannedEndStr);
+        const revisedEnd = new Date(revisedEndStr);
         const diffTime = revisedEnd - plannedEnd;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         return diffDays;
+    };
+
+    const checkIfIssueOverdue = (issue) => {
+        if (issue.isClosed) return false;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const effectiveEndDateStr = issue.revisedPlannedEndDate && 
+                                    !issue.revisedPlannedEndDate.startsWith('0001-01-01')
+            ? issue.revisedPlannedEndDate.split('T')[0]
+            : issue.plannedEndDate ? issue.plannedEndDate.split('T')[0] : null;
+
+        if (!effectiveEndDateStr) return false;
+
+        const effectiveEndDate = new Date(effectiveEndDateStr);
+        return effectiveEndDate < today;
     };
 
     const getStatusBadgeClass = (statusName, isClosed) => {
@@ -194,15 +188,18 @@ const RevisedIssuesPage = () => {
     };
 
     const resetFilters = () => {
-        setDateFilter('all');
+        setDateFilter('planned_this_week');
         setProjectFilter('');
         setTypeFilter('all');
         setStatusFilter('all');
         setSearchTerm('');
+        setCustomStartDate('');
+        setCustomEndDate('');
     };
 
-    const hasActiveFilters = dateFilter !== 'all' || projectFilter || 
-                            typeFilter !== 'all' || statusFilter !== 'all' || searchTerm;
+    const hasActiveFilters = dateFilter !== 'planned_this_week' || projectFilter || 
+                            typeFilter !== 'all' || statusFilter !== 'all' || searchTerm ||
+                            customStartDate || customEndDate;
 
     if (!weekStart || !weekEnd) {
         return (
@@ -214,10 +211,6 @@ const RevisedIssuesPage = () => {
             </div>
         );
     }
-
-    const uniqueProjects = [...new Map(issues.map(i => [i.projectId, { id: i.projectId, name: i.projectName, code: i.projectCode }])).values()];
-    const productionTypes = [...new Set(issues.map(i => i.trackerName?.replace('Üretim - ', '').trim()).filter(Boolean))];
-    const statuses = [...new Set(issues.map(i => i.statusName).filter(Boolean))];
 
     return (
         <div className="container-fluid py-4">
@@ -232,7 +225,7 @@ const RevisedIssuesPage = () => {
                         <div className="mb-2 mb-md-0">
                             <h4 className="mb-2">
                                 <i className="bi bi-arrow-repeat me-2"></i>
-                                Plan Tarihi Revize Edilmiş İşler
+                                Planı Revize Edilmiş İşler
                             </h4>
                             <p className="mb-0 opacity-75">
                                 <i className="bi bi-calendar-range me-2"></i>
@@ -240,18 +233,11 @@ const RevisedIssuesPage = () => {
                             </p>
                         </div>
                         <div className="d-flex gap-2">
-                            <button
-                                className="btn btn-light"
-                                onClick={fetchRevisedIssues}
-                                disabled={loading}
-                            >
+                            <button className="btn btn-light" onClick={fetchRevisedIssues} disabled={loading}>
                                 <i className="bi bi-arrow-clockwise me-2"></i>
                                 Yenile
                             </button>
-                            <button
-                                className="btn btn-light"
-                                onClick={handleBackToCalendar}
-                            >
+                            <button className="btn btn-light" onClick={handleBackToCalendar}>
                                 <i className="bi bi-arrow-left me-2"></i>
                                 Takvime Dön
                             </button>
@@ -267,7 +253,7 @@ const RevisedIssuesPage = () => {
                         <i className="bi bi-funnel me-2"></i>
                         Filtreler
                         {hasActiveFilters && (
-                            <span className="badge bg-primary ms-2">{filteredIssues.length}/{issues.length}</span>
+                            <span className="badge bg-primary ms-2">{issues.length} sonuç</span>
                         )}
                     </h6>
                 </div>
@@ -282,21 +268,60 @@ const RevisedIssuesPage = () => {
                             <select
                                 className="form-select form-select-sm"
                                 value={dateFilter}
-                                onChange={(e) => setDateFilter(e.target.value)}
+                                onChange={(e) => {
+                                    setDateFilter(e.target.value);
+                                    if (e.target.value !== 'custom_range') {
+                                        setCustomStartDate('');
+                                        setCustomEndDate('');
+                                    }
+                                }}
                             >
-                                <option value="all">Plan Tarihi Revize Edilen İşler</option>
-                                <option value="planned">Planlanan Tarih Bu Hafta</option>
-                                <option value="revised">Revize Tarih Bu Hafta</option>
+                                <option value="all">Tüm Revize İşler</option>
+                                <option value="planned_this_week">İlk Planı Bu Hafta Olanlar</option>
+                                <option value="revised_this_week">Revize Tarihi Bu Hafta Olanlar</option>
+                                <option value="custom_range">Manuel Tarih Aralığı</option>
                             </select>
                             <small className="text-muted">
                                 {dateFilter === 'all' && 'Tüm revize edilmiş işler'}
-                                {dateFilter === 'planned' && 'Orijinal planı bu haftada olanlar'}
-                                {dateFilter === 'revised' && 'Revize tarihi bu haftada olanlar'}
+                                {dateFilter === 'planned_this_week' && 'Orijinal planı bu haftada olan revize işler'}
+                                {dateFilter === 'revised_this_week' && 'Revize sonrası tarihi bu haftada olan işler'}
+                                {dateFilter === 'custom_range' && 'Özel tarih aralığı seçin'}
                             </small>
                         </div>
 
-                        {/* Proje Filtresi */}
-                        <div className="col-md-3">
+                        {/* Manuel Tarih Aralığı */}
+                        {dateFilter === 'custom_range' && (
+                            <>
+                                <div className="col-md-2">
+                                    <label className="form-label small fw-bold">
+                                        <i className="bi bi-calendar-check me-1"></i>
+                                        Başlangıç
+                                    </label>
+                                    <input
+                                        type="date"
+                                        className="form-control form-control-sm"
+                                        value={customStartDate}
+                                        onChange={(e) => setCustomStartDate(e.target.value)}
+                                    />
+                                </div>
+                                <div className="col-md-2">
+                                    <label className="form-label small fw-bold">
+                                        <i className="bi bi-calendar-x me-1"></i>
+                                        Bitiş
+                                    </label>
+                                    <input
+                                        type="date"
+                                        className="form-control form-control-sm"
+                                        value={customEndDate}
+                                        onChange={(e) => setCustomEndDate(e.target.value)}
+                                        min={customStartDate}
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        {/* Proje */}
+                        <div className={dateFilter === 'custom_range' ? 'col-md-2' : 'col-md-3'}>
                             <label className="form-label small fw-bold">
                                 <i className="bi bi-folder me-1"></i>
                                 Proje
@@ -307,16 +332,16 @@ const RevisedIssuesPage = () => {
                                 onChange={(e) => setProjectFilter(e.target.value)}
                             >
                                 <option value="">Tüm Projeler</option>
-                                {uniqueProjects.map(project => (
-                                    <option key={project.id} value={project.id}>
-                                        {project.code} - {project.name}
+                                {availableProjects.map(proj => (
+                                    <option key={proj.id} value={proj.id}>
+                                        {proj.code ? `${proj.code} - ${proj.name}` : proj.name}
                                     </option>
                                 ))}
                             </select>
                         </div>
 
-                        {/* Tip Filtresi */}
-                        <div className="col-md-3">
+                        {/* Üretim Tipi */}
+                        <div className={dateFilter === 'custom_range' ? 'col-md-2' : 'col-md-3'}>
                             <label className="form-label small fw-bold">
                                 <i className="bi bi-gear me-1"></i>
                                 Üretim Tipi
@@ -327,14 +352,14 @@ const RevisedIssuesPage = () => {
                                 onChange={(e) => setTypeFilter(e.target.value)}
                             >
                                 <option value="all">Tüm Tipler</option>
-                                {productionTypes.map((type, idx) => (
-                                    <option key={idx} value={type}>{type}</option>
+                                {availableTypes.map(type => (
+                                    <option key={type} value={type}>{type}</option>
                                 ))}
                             </select>
                         </div>
 
-                        {/* Durum Filtresi */}
-                        <div className="col-md-3">
+                        {/* Durum */}
+                        <div className={dateFilter === 'custom_range' ? 'col-md-1' : 'col-md-3'}>
                             <label className="form-label small fw-bold">
                                 <i className="bi bi-flag me-1"></i>
                                 Durum
@@ -345,8 +370,8 @@ const RevisedIssuesPage = () => {
                                 onChange={(e) => setStatusFilter(e.target.value)}
                             >
                                 <option value="all">Tüm Durumlar</option>
-                                {statuses.map((status, idx) => (
-                                    <option key={idx} value={status}>{status}</option>
+                                {availableStatuses.map(status => (
+                                    <option key={status} value={status}>{status}</option>
                                 ))}
                             </select>
                         </div>
@@ -366,9 +391,10 @@ const RevisedIssuesPage = () => {
                             />
                         </div>
 
+                        {/* Temizle */}
                         {hasActiveFilters && (
                             <div className="col-12">
-                                <button className="btn btn-secondary btn-sm" onClick={resetFilters}>
+                                <button className="btn btn-outline-secondary btn-sm" onClick={resetFilters}>
                                     <i className="bi bi-x-circle me-1"></i>
                                     Filtreleri Temizle
                                 </button>
@@ -378,13 +404,13 @@ const RevisedIssuesPage = () => {
                 </div>
             </div>
 
-            {/* Statistics Cards */}
-            {!loading && !error && filteredIssues.length > 0 && (
-                <div className="row mb-4">
+            {/* Statistics */}
+            {!loading && !error && issues.length > 0 && (
+                <div className="row g-3 mb-4">
                     <div className="col-md-3">
                         <div className="card text-center">
                             <div className="card-body">
-                                <h3 className="text-primary mb-2">{filteredIssues.length}</h3>
+                                <h3 className="text-primary mb-2">{issues.length}</h3>
                                 <p className="text-muted mb-0 small">Toplam Revize İş</p>
                             </div>
                         </div>
@@ -393,7 +419,7 @@ const RevisedIssuesPage = () => {
                         <div className="card text-center">
                             <div className="card-body">
                                 <h3 className="text-success mb-2">
-                                    {filteredIssues.filter(i => i.isClosed).length}
+                                    {issues.filter(i => i.isClosed).length}
                                 </h3>
                                 <p className="text-muted mb-0 small">Tamamlanan</p>
                             </div>
@@ -403,7 +429,7 @@ const RevisedIssuesPage = () => {
                         <div className="card text-center">
                             <div className="card-body">
                                 <h3 className="text-warning mb-2">
-                                    {filteredIssues.filter(i => !i.isClosed).length}
+                                    {issues.filter(i => !i.isClosed).length}
                                 </h3>
                                 <p className="text-muted mb-0 small">Devam Eden</p>
                             </div>
@@ -413,12 +439,12 @@ const RevisedIssuesPage = () => {
                         <div className="card text-center">
                             <div className="card-body">
                                 <h3 className="text-info mb-2">
-                                    {Math.round(
-                                        filteredIssues.reduce((sum, issue) => {
+                                    {issues.length > 0 ? Math.round(
+                                        issues.reduce((sum, issue) => {
                                             const days = getRevisionDays(issue);
                                             return sum + (days || 0);
-                                        }, 0) / filteredIssues.length
-                                    )}
+                                        }, 0) / issues.length
+                                    ) : 0}
                                 </h3>
                                 <p className="text-muted mb-0 small">Ort. Revize (Gün)</p>
                             </div>
@@ -427,7 +453,7 @@ const RevisedIssuesPage = () => {
                 </div>
             )}
 
-            {/* Issues Table */}
+            {/* Table */}
             <div className="card">
                 <div className="card-body">
                     {loading ? (
@@ -442,13 +468,11 @@ const RevisedIssuesPage = () => {
                             <i className="bi bi-exclamation-triangle me-2"></i>
                             {error}
                         </div>
-                    ) : filteredIssues.length === 0 ? (
+                    ) : issues.length === 0 ? (
                         <div className="text-center py-5">
                             <i className="bi bi-inbox fs-1 text-muted"></i>
                             <p className="mt-3 text-muted">
-                                {hasActiveFilters 
-                                    ? 'Filtrelere uygun revize iş bulunamadı' 
-                                    : 'Bu hafta revize edilmiş iş bulunamadı'}
+                                {hasActiveFilters ? 'Filtrelere uygun revize iş bulunamadı' : 'Bu hafta revize edilmiş iş bulunamadı'}
                             </p>
                             {hasActiveFilters && (
                                 <button className="btn btn-outline-secondary btn-sm mt-2" onClick={resetFilters}>
@@ -458,126 +482,141 @@ const RevisedIssuesPage = () => {
                             )}
                         </div>
                     ) : (
-                        <>
-                            <div className="alert alert-info mb-4">
-                                <i className="bi bi-info-circle me-2"></i>
-                                Bu liste, seçili hafta içinde planlanan veya revize edilmiş olan tüm işleri gösterir.
-                                Tarih filtresini kullanarak sadece planlanan veya revize tarihleri bu haftada olan işleri görebilirsiniz.
-                            </div>
-
-                            <div className="table-responsive">
-                                <table className="table table-hover">
-                                    <thead className="table-light">
-                                        <tr>
-                                            <th style={{ width: '80px' }}>İş No</th>
-                                            <th style={{ width: '150px' }}>Proje</th>
-                                            <th>Konu</th>
-                                            <th style={{ width: '100px' }}>Tip</th>
-                                            <th style={{ width: '130px' }}>Planlanan</th>
-                                            <th style={{ width: '130px' }}>Revize</th>
-                                            <th style={{ width: '80px' }}>Fark</th>
-                                            <th style={{ width: '250px' }}>Revize Açıklaması</th>
-                                            <th style={{ width: '100px' }}>Durum</th>
-                                            <th style={{ width: '80px' }}>İşlem</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredIssues.map(issue => {
-                                            const revisionDays = getRevisionDays(issue);
-                                            return (
-                                                <tr key={issue.issueId}>
-                                                    <td>
-                                                        <a
-                                                            href={`${REDMINE_BASE_URL}/issues/${issue.issueId}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-decoration-none fw-bold"
-                                                        >
-                                                            #{issue.issueId}
-                                                        </a>
-                                                    </td>
-                                                    <td>
-                                                        <small className="text-muted d-block">{issue.projectCode}</small>
-                                                        <small>{issue.projectName?.substring(0, 20)}</small>
-                                                    </td>
-                                                    <td>
-                                                        <div className="d-flex align-items-center gap-2">
-                                                            <i className={`bi ${issue.isClosed ? 'bi-check-circle-fill text-success' : 'bi-circle text-warning'}`}></i>
-                                                            <span title={issue.subject}>
-                                                                {issue.subject?.length > 50 
-                                                                    ? issue.subject.substring(0, 50) + '...' 
-                                                                    : issue.subject}
-                                                            </span>
+                        <div className="table-responsive">
+                            <table className="table table-hover table-sm">
+                                <thead className="table-light sticky-top">
+                                    <tr>
+                                        <th style={{ width: '60px' }}>İş No</th>
+                                        <th style={{ width: '150px' }}>Proje</th>
+                                        <th>Konu</th>
+                                        <th style={{ width: '100px' }}>Tip</th>
+                                        <th style={{ width: '120px' }}>
+                                            <i className="bi bi-calendar-check text-primary me-1"></i>
+                                            Planlanan
+                                            <div className="small fw-normal text-muted" style={{ fontSize: '0.7rem' }}>
+                                                (Başlangıç / Bitiş)
+                                            </div>
+                                        </th>
+                                        <th style={{ width: '160px' }} className="table-warning">
+                                            <i className="bi bi-calendar-event text-warning me-1"></i>
+                                            Revize Tarihler
+                                            <div className="small fw-normal text-muted" style={{ fontSize: '0.7rem' }}>
+                                                (Başlangıç / Bitiş)
+                                            </div>
+                                        </th>
+                                        <th style={{ width: '80px' }}>Fark</th>
+                                        <th style={{ width: '200px' }}>Revize Açıklaması</th>
+                                        <th style={{ width: '100px' }}>Durum</th>
+                                        <th style={{ width: '80px' }}>İlerleme</th>
+                                        <th style={{ width: '60px' }}>İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {issues.map((issue) => {
+                                        const isOverdue = checkIfIssueOverdue(issue);
+                                        const revisionDays = getRevisionDays(issue);
+                                        
+                                        return (
+                                            <tr key={issue.issueId} className={isOverdue && !issue.isClosed ? 'table-danger' : ''}>
+                                                <td>
+                                                    <a
+                                                        href={`${REDMINE_BASE_URL}/issues/${issue.issueId}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-decoration-none fw-bold"
+                                                        style={{ color: '#FF6B6B' }}
+                                                    >
+                                                        #{issue.issueId}
+                                                    </a>
+                                                </td>
+                                                <td className="small">
+                                                    <div className="fw-bold">{issue.projectCode || issue.projectName}</div>
+                                                    {issue.projectCode && (
+                                                        <div className="text-muted" style={{ fontSize: '0.7rem' }}>
+                                                            {issue.projectName}
                                                         </div>
-                                                    </td>
-                                                    <td>
-                                                        <span className="badge bg-secondary">
-                                                            {issue.trackerName?.replace('Üretim - ', '')}
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <div className="text-truncate" style={{ maxWidth: '250px' }} title={issue.subject}>
+                                                        {issue.subject}
+                                                    </div>
+                                                </td>
+                                                <td className="small">
+                                                    <span className="badge bg-secondary">
+                                                        {issue.trackerName?.replace('Üretim - ', '')}
+                                                    </span>
+                                                </td>
+                                                <td className="text-center small">
+                                                    <div className="text-primary">
+                                                        <i className="bi bi-calendar-check me-1"></i>
+                                                        {formatDate(issue.plannedStartDate)}
+                                                    </div>
+                                                    <div className="text-danger mt-1">
+                                                        <i className="bi bi-calendar-x me-1"></i>
+                                                        {formatDate(issue.plannedEndDate)}
+                                                    </div>
+                                                </td>
+                                                <td className="text-center small table-warning">
+                                                    <div className="text-success fw-bold">
+                                                        <i className="bi bi-calendar-event me-1"></i>
+                                                        {formatDate(issue.revisedPlannedStartDate)}
+                                                    </div>
+                                                    <div className="text-danger fw-bold mt-1">
+                                                        <i className="bi bi-calendar-event-fill me-1"></i>
+                                                        {formatDate(issue.revisedPlannedEndDate)}
+                                                    </div>
+                                                </td>
+                                                <td className="text-center">
+                                                    {revisionDays !== null && (
+                                                        <span className={`badge ${
+                                                            revisionDays > 0 ? 'bg-danger' : 
+                                                            revisionDays < 0 ? 'bg-success' : 'bg-secondary'
+                                                        }`}>
+                                                            {revisionDays > 0 ? '+' : ''}{revisionDays} gün
                                                         </span>
-                                                    </td>
-                                                    <td>
-                                                        <small className="d-block text-muted">
-                                                            <i className="bi bi-calendar-check me-1"></i>
-                                                            {formatDate(issue.plannedStartDate)}
-                                                        </small>
-                                                        <small className="d-block">
-                                                            <i className="bi bi-calendar-x me-1"></i>
-                                                            {formatDate(issue.plannedEndDate)}
-                                                        </small>
-                                                    </td>
-                                                    <td className="table-warning">
-                                                        <small className="d-block fw-bold">
-                                                            <i className="bi bi-calendar-event me-1"></i>
-                                                            {formatDate(issue.revisedPlannedStartDate)}
-                                                        </small>
-                                                        <small className="d-block fw-bold">
-                                                            <i className="bi bi-calendar-event-fill me-1"></i>
-                                                            {formatDate(issue.revisedPlannedEndDate)}
-                                                        </small>
-                                                    </td>
-                                                    <td className="text-center">
-                                                        {revisionDays !== null && (
-                                                            <span className={`badge ${revisionDays > 0 ? 'bg-danger' : revisionDays < 0 ? 'bg-success' : 'bg-secondary'}`}>
-                                                                {revisionDays > 0 ? '+' : ''}{revisionDays} gün
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        <small className="text-muted" title={issue.revisedPlanDescription}>
-                                                            {issue.revisedPlanDescription?.length > 40
-                                                                ? issue.revisedPlanDescription.substring(0, 40) + '...'
-                                                                : issue.revisedPlanDescription || '-'}
-                                                        </small>
-                                                    </td>
-                                                    <td>
-                                                        <span className={`badge ${getStatusBadgeClass(issue.statusName, issue.isClosed)}`}>
-                                                            {issue.statusName}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <a
-                                                            href={`${REDMINE_BASE_URL}/issues/${issue.issueId}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="btn btn-sm btn-outline-primary"
-                                                            title="Redmine'da Aç"
-                                                        >
-                                                            <i className="bi bi-box-arrow-up-right"></i>
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div className="mt-3 text-muted small">
+                                                    )}
+                                                </td>
+                                                <td className="small">
+                                                    <div className="text-truncate" style={{ maxWidth: '180px' }} title={issue.revisedPlanDescription || '-'}>
+                                                        {issue.revisedPlanDescription || '-'}
+                                                    </div>
+                                                </td>
+                                                <td className="text-center">
+                                                    <span className={`badge ${getStatusBadgeClass(issue.statusName, issue.isClosed)}`}>
+                                                        {issue.statusName}
+                                                    </span>
+                                                </td>
+                                                <td className="text-center">
+                                                    <div className="small text-muted">{issue.completionPercentage}%</div>
+                                                    <div className="progress" style={{ height: '4px' }}>
+                                                        <div
+                                                            className="progress-bar bg-success"
+                                                            style={{ width: `${issue.completionPercentage}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </td>
+                                                <td className="text-center">
+                                                    <a
+                                                        href={`${REDMINE_BASE_URL}/issues/${issue.issueId}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="btn btn-sm btn-outline-primary"
+                                                        title="Redmine'da Aç"
+                                                    >
+                                                        <i className="bi bi-box-arrow-up-right"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                            <div className="text-muted small mt-3">
                                 <i className="bi bi-info-circle me-1"></i>
-                                {filteredIssues.length} iş gösteriliyor
-                                {filteredIssues.length !== issues.length && ` (toplam ${issues.length} revize işten)`}
+                                {issues.length} iş gösteriliyor (Backend'de filtrelenmiş)
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
             </div>

@@ -385,7 +385,9 @@ function App() {
               path="/production/revised-issues"
               element={
                 <ProtectedRoute>
-                  <RevisedIssuesPage />
+                  <Layout>
+                    <RevisedIssuesPage />
+                  </Layout>                  
                 </ProtectedRoute>
               }
             />

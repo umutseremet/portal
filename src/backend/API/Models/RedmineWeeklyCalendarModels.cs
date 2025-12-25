@@ -230,4 +230,55 @@ namespace API.Models
         public DateTime? NewRevisedPlannedEndDate { get; set; }
         public string? RevisedPlanDescription { get; set; }
     }
+
+    // src/backend/API/Models/RedmineWeeklyCalendarModels.cs
+    // ✅ YENİ MODEL: GetRevisedIssuesRequest
+
+    public class GetRevisedIssuesRequest
+    {
+        /// <summary>
+        /// Hafta başlangıç tarihi (YYYY-MM-DD)
+        /// </summary>
+        public string StartDate { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Hafta bitiş tarihi (YYYY-MM-DD)
+        /// </summary>
+        public string EndDate { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Tarih filtre tipi: "all", "planned_this_week", "revised_this_week", "custom_range"
+        /// </summary>
+        public string DateFilterType { get; set; } = "planned_this_week";
+
+        /// <summary>
+        /// Manuel tarih aralığı başlangıç (custom_range için)
+        /// </summary>
+        public string? CustomStartDate { get; set; }
+
+        /// <summary>
+        /// Manuel tarih aralığı bitiş (custom_range için)
+        /// </summary>
+        public string? CustomEndDate { get; set; }
+
+        /// <summary>
+        /// Proje ID filtresi (optional)
+        /// </summary>
+        public int? ProjectId { get; set; }
+
+        /// <summary>
+        /// Üretim tipi filtresi (optional) - örn: "Kesim", "Montaj"
+        /// </summary>
+        public string? ProductionType { get; set; }
+
+        /// <summary>
+        /// Durum adı filtresi (optional)
+        /// </summary>
+        public string? StatusName { get; set; }
+
+        /// <summary>
+        /// Arama terimi (optional) - İş No, Konu, Proje vb.
+        /// </summary>
+        public string? SearchTerm { get; set; }
+    }
 }
