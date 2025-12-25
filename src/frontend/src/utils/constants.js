@@ -4,16 +4,16 @@
 // ==============================================
 // APP INFORMATION
 // ==============================================
-export const APP_NAME = process.env.REACT_APP_NAME || 'Aslan Group Portal';
+export const APP_NAME = process.env.REACT_APP_NAME || 'Vervo Portal';
 export const APP_VERSION = process.env.REACT_APP_VERSION || '1.0.0';
 export const APP_DESCRIPTION = process.env.REACT_APP_DESCRIPTION || 'Modern Üretim Yönetim Portalı';
 
 // ==============================================
 // COMPANY INFORMATION
 // ==============================================
-export const COMPANY_NAME = process.env.REACT_APP_COMPANY_NAME || 'Aslan';
-export const COMPANY_EMAIL = process.env.REACT_APP_COMPANY_EMAIL || 'admin@aslangrouptr.com';
-export const SUPPORT_EMAIL = process.env.REACT_APP_SUPPORT_EMAIL || 'support@aslangrouptr.com';
+export const COMPANY_NAME = process.env.REACT_APP_COMPANY_NAME || 'Vervo';
+export const COMPANY_EMAIL = process.env.REACT_APP_COMPANY_EMAIL || 'admin@vervo.com.tr';
+export const SUPPORT_EMAIL = process.env.REACT_APP_SUPPORT_EMAIL || 'support@vervo.com.tr';
 
 // ==============================================
 // API CONFIGURATION

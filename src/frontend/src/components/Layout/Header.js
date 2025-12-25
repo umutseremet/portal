@@ -132,7 +132,7 @@ const Header = ({ toggleSidebar, sidebarOpen, isMobile }) => {
           {!isMobile && (
             <div style={{ marginLeft: '1rem' }}>
               <h5 style={{ margin: 0, color: '#212529', fontWeight: '600' }}>
-                Aslan Group Portal
+                Vervo Portal
               </h5>
               <small style={{ color: '#6c757d' }}>Yönetim Paneli</small>
             </div>
