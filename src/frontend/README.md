@@ -1,6 +1,6 @@
-# Vervo Portal - Frontend
+# Aslan Portal - Frontend
 
-Bu klasör Vervo Portal'ın React frontend uygulamasını içerir.
+Bu klasör Aslan Portal'ın React frontend uygulamasını içerir.
 
 > 📖 **Ana proje dokümantasyonu için [Ana README](../../README.md) dosyasına bakın.**
 

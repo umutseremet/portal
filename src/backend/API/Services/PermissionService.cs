@@ -203,7 +203,7 @@ public class PermissionService
             _logger.LogInformation("🔍 Kullanıcı yetki field ID'leri: {Ids}", string.Join(", ", userPermissionFieldIds));
 
             // 2. API'den kullanıcıları ve custom field değerlerini çek
-            var url = $"{redmineBaseUrl.TrimEnd('/')}/users.json?status=1&limit=100&include=custom_fields";
+            var url = $"{redmineBaseUrl.TrimEnd('/')}/users.json?status=1&limit=200&include=custom_fields";
             _logger.LogInformation("📡 Getting users from Redmine: {Url}", url);
 
             var response = await _httpClient.GetAsync(url);
@@ -413,12 +413,12 @@ public class PermissionService
                     {
                         // SQL'den gelen field tanımını bul
                         var fieldDefinition = permissionFields.FirstOrDefault(f => f.Id == field.Id);
-
+                        var permissionKey = ExtractPermissionKey(fieldDefinition?.Description);
                         groupInfo.Permissions.Add(new RedmineGroupPermission
                         {
                             CustomFieldId = field.Id,
                             CustomFieldName = field.Name,
-                            PermissionKey = field.Name,
+                            PermissionKey = permissionKey,
                             PermissionValue = field.Value,
                             Description = fieldDefinition?.Description
                         });

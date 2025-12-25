@@ -1,5 +1,5 @@
 // src/frontend/src/pages/VehicleLocationMapPage.js
-// ✅ ARAÇ LİSTESİ VE DETAYLARI GÜNCELLENMİŞ
+// ✅ TARİH FORMATI VE LİSTE DÜZENİ GÜNCELLENMİŞ
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -11,15 +11,14 @@ const VehicleLocationMapPage = () => {
   const toast = useToast();
 
   const [loading, setLoading] = useState(false);
-  const [vehicleMappings, setVehicleMappings] = useState([]); // ✅ Plaka-cihaz eşleşmeleri
-  const [vehicleStatuses, setVehicleStatuses] = useState([]); // ✅ Konum bilgileri
-  const [combinedVehicles, setCombinedVehicles] = useState([]); // ✅ Birleştirilmiş veri
+  const [vehicleMappings, setVehicleMappings] = useState([]);
+  const [vehicleStatuses, setVehicleStatuses] = useState([]);
+  const [combinedVehicles, setCombinedVehicles] = useState([]);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(false);
   const autoRefreshInterval = useRef(null);
 
-  // ✅ Component mount olduğunda verileri yükle
   useEffect(() => {
     loadAllData();
     return () => {
@@ -29,12 +28,11 @@ const VehicleLocationMapPage = () => {
     };
   }, []);
 
-  // ✅ Auto refresh
   useEffect(() => {
     if (autoRefresh) {
       autoRefreshInterval.current = setInterval(() => {
         loadVehicleStatuses(true);
-      }, 30000); // 30 seconds
+      }, 30000);
     } else {
       if (autoRefreshInterval.current) {
         clearInterval(autoRefreshInterval.current);
@@ -49,14 +47,11 @@ const VehicleLocationMapPage = () => {
     };
   }, [autoRefresh]);
 
-  // ✅ Tüm verileri yükle (mappings + statuses)
   const loadAllData = async () => {
     try {
       setLoading(true);
-
       console.log('📡 Loading all vehicle data...');
 
-      // Paralel olarak her iki servisi de çağır
       const [mappings, statuses] = await Promise.all([
         arventoService.getVehicleMappings({ language: '0' }),
         arventoService.getVehicleStatus({ language: '0' })
@@ -67,8 +62,6 @@ const VehicleLocationMapPage = () => {
 
       setVehicleMappings(mappings);
       setVehicleStatuses(statuses);
-
-      // ✅ Verileri birleştir
       combineVehicleData(mappings, statuses);
 
       toast.success(`${mappings.length} araç yüklendi`);
@@ -80,16 +73,12 @@ const VehicleLocationMapPage = () => {
     }
   };
 
-  // ✅ Sadece konum bilgilerini yenile (auto-refresh için)
   const loadVehicleStatuses = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
 
       const statuses = await arventoService.getVehicleStatus({ language: '0' });
-
       setVehicleStatuses(statuses);
-
-      // Mevcut mappings ile birleştir
       combineVehicleData(vehicleMappings, statuses);
 
       if (!silent) {
@@ -105,16 +94,37 @@ const VehicleLocationMapPage = () => {
     }
   };
 
-  // ✅ Plaka-cihaz eşleşmelerini ve konum bilgilerini birleştir
   const combineVehicleData = (mappings, statuses) => {
     if (!mappings || !statuses) {
       setCombinedVehicles([]);
       return;
     }
 
+    console.log('🔍 Combining data - Mappings:', mappings.length, 'Statuses:', statuses.length);
+    
+    // İlk samples
+    if (mappings.length > 0) {
+      console.log('📋 First mapping - deviceNo:', mappings[0].deviceNo, 'nodeNo:', mappings[0].nodeNo);
+    }
+    if (statuses.length > 0) {
+      console.log('📍 First status - deviceNo:', statuses[0].deviceNo, 'nodeNo:', statuses[0].nodeNo);
+    }
+
     const combined = mappings.map(mapping => {
-      // Cihaz numarasına göre konum bilgisini bul
-      const status = statuses.find(s => s.deviceNo === mapping.deviceNo);
+      // ✅ DeviceNo üzerinden eşleştir (Cihaz_x0020_No field'ı)
+      const status = statuses.find(s => 
+        s.deviceNo && mapping.deviceNo && 
+        s.deviceNo.toString() === mapping.deviceNo.toString()
+      );
+
+      // ✅ DEBUG: Eşleşme kontrolü
+      if (!status) {
+        console.log('❌ No status found for deviceNo:', mapping.deviceNo, 'Plate:', mapping.licensePlate);
+      } else {
+        console.log('✅ Match found! deviceNo:', mapping.deviceNo, 'Lat:', status.latitude, 'Lng:', status.longitude);
+      }
+
+      const hasLocation = !!(status?.latitude && status?.longitude);
 
       return {
         // Mapping bilgileri
@@ -125,68 +135,101 @@ const VehicleLocationMapPage = () => {
         notes: mapping.notes,
         load: mapping.load,
         vehicleType: mapping.vehicleType,
-        vehicleBrand: mapping.vehicleBrand,
-        vehicleCategory: mapping.vehicleCategory,
+        nodeNo: mapping.nodeNo,
+        groupNo: mapping.groupNo,
+        vehicleIcon: mapping.vehicleIcon,
+        driverName: mapping.driverName,
+        driverPhone: mapping.driverPhone,
         vehicleModel: mapping.vehicleModel,
-        createdBy: mapping.createdBy,
-        createdDate: mapping.createdDate,
-
-        // Status bilgileri (varsa)
+        deviceType: mapping.deviceType,
+        
+        // ✅ Status bilgileri (varsa) - SADECE GERÇEKTEKİ FIELD'LAR
         latitude: status?.latitude,
         longitude: status?.longitude,
         speed: status?.speed,
         address: status?.address,
-        buildingRegion: status?.buildingRegion,
-        lastUpdate: status?.dateTime,
-        hasLocation: !!(status?.latitude && status?.longitude)
+        altitude: status?.altitude,
+        lastUpdateTime: status?.lastUpdateTime,
+        region: status?.region,
+        locationType: status?.locationType,
+        district: status?.district,
+        gpsQuality: status?.gpsQuality,
+        supportedDeviceCount: status?.supportedDeviceCount,
+        rssiSignalStrength: status?.rssiSignalStrength,
+        
+        hasLocation: hasLocation
       };
     });
 
     console.log('✅ Combined vehicle data:', combined);
+    console.log('📊 Vehicles with location:', combined.filter(v => v.hasLocation).length);
+    console.log('📊 Vehicles without location:', combined.filter(v => !v.hasLocation).length);
 
     setCombinedVehicles(combined);
 
-    // İlk aracı otomatik seç (eğer konum bilgisi varsa)
     if (combined.length > 0 && !selectedVehicle) {
       const firstWithLocation = combined.find(v => v.hasLocation);
       if (firstWithLocation) {
+        console.log('🎯 Auto-selecting first vehicle with location:', firstWithLocation.licensePlate);
         setSelectedVehicle(firstWithLocation);
+      } else {
+        console.warn('⚠️ No vehicles with location found!');
       }
     }
   };
 
-  // Handle vehicle selection
   const handleSelectVehicle = (vehicle) => {
-    if (!vehicle.hasLocation) {
-      toast.warning('Bu araç için konum bilgisi bulunamadı');
+    console.log('🎯 Vehicle selected:', vehicle.licensePlate, 'hasLocation:', vehicle.hasLocation);
+    
+    // Konum bilgisi kontrolü
+    if (!vehicle.hasLocation || !vehicle.latitude || !vehicle.longitude) {
+      console.warn('⚠️ Vehicle has no valid location:', vehicle);
+      toast.warning(`${vehicle.licensePlate || 'Bu araç'} için konum bilgisi bulunamadı`);
       return;
     }
+    
+    console.log('✅ Setting selected vehicle:', vehicle.licensePlate);
     setSelectedVehicle(vehicle);
   };
 
-  // Filter vehicles
   const filteredVehicles = combinedVehicles.filter(vehicle =>
     vehicle.deviceNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehicle.licensePlate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehicle.vehicleBrand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehicle.vehicleModel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehicle.address?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Open in Google Maps
   const handleOpenInGoogleMaps = () => {
     if (!selectedVehicle || !selectedVehicle.hasLocation) return;
-
     const url = `https://www.google.com/maps?q=${selectedVehicle.latitude},${selectedVehicle.longitude}`;
     window.open(url, '_blank');
   };
 
-  // Format date
+  // ✅ DÜZELTME: Tarih formatı - hem ISO hem Türkçe DateTime formatını destekle
   const formatDate = (dateString) => {
     if (!dateString) return '-';
+    
     try {
-      return new Date(dateString).toLocaleString('tr-TR');
-    } catch {
+      // ISO formatı veya Türkçe DateTime formatı
+      const date = new Date(dateString);
+      
+      // Geçerli tarih mi kontrol et
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date:', dateString);
+        return '-';
+      }
+      
+      // Türkçe format: "21.12.2025 18:41:58"
+      return date.toLocaleString('tr-TR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error, 'Date:', dateString);
       return '-';
     }
   };
@@ -215,9 +258,9 @@ const VehicleLocationMapPage = () => {
 
       {/* Main Content */}
       <div className="row">
-        {/* Left Panel - Vehicle List */}
+        {/* ✅ Left Panel - Vehicle List - YÜKSEKLİK ARTIRILDI */}
         <div className="col-md-4">
-          <div className="card shadow-sm" style={{ height: '600px' }}>
+          <div className="card shadow-sm" style={{ height: '750px' }}>
             <div className="card-header bg-light">
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">
@@ -244,9 +287,10 @@ const VehicleLocationMapPage = () => {
               </div>
             </div>
 
-            <div className="card-body p-0" style={{ overflowY: 'auto', height: 'calc(100% - 60px)' }}>
-              {/* Search Box */}
-              <div className="p-3 border-bottom">
+            {/* ✅ DÜZELTME: Search Box SABİT - sticky position */}
+            <div className="card-body p-0" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 60px)' }}>
+              {/* Search Box - Sticky */}
+              <div className="p-3 border-bottom bg-white" style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                 <div className="input-group input-group-sm">
                   <span className="input-group-text">
                     <i className="bi bi-search"></i>
@@ -254,7 +298,7 @@ const VehicleLocationMapPage = () => {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Plaka, cihaz no, marka ara..."
+                    placeholder="Plaka, cihaz no, model ara..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -269,149 +313,203 @@ const VehicleLocationMapPage = () => {
                 </div>
               </div>
 
-              {/* Loading State */}
-              {loading && (
-                <div className="text-center py-4">
-                  <div className="spinner-border text-success" role="status">
-                    <span className="visually-hidden">Yükleniyor...</span>
+              {/* Scrollable List Area */}
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {/* Loading State */}
+                {loading && (
+                  <div className="text-center py-4">
+                    <div className="spinner-border text-success" role="status">
+                      <span className="visually-hidden">Yükleniyor...</span>
+                    </div>
+                    <p className="text-muted mt-2 mb-0">Araçlar yükleniyor...</p>
                   </div>
-                  <p className="text-muted mt-2 mb-0">Araçlar yükleniyor...</p>
-                </div>
-              )}
+                )}
 
-              {/* Vehicle List */}
-              {!loading && filteredVehicles.length > 0 && (
-                <div className="list-group list-group-flush">
-                  {filteredVehicles.map((vehicle, index) => (
-                    <button
-                      key={index}
-                      className={`list-group-item list-group-item-action ${
-                        selectedVehicle?.deviceNo === vehicle.deviceNo ? 'active' : ''
-                      } ${!vehicle.hasLocation ? 'disabled' : ''}`}
-                      onClick={() => handleSelectVehicle(vehicle)}
-                      disabled={!vehicle.hasLocation}
+                {/* Vehicle List */}
+                {!loading && filteredVehicles.length > 0 && (
+                  <div className="list-group list-group-flush">
+                    {filteredVehicles.map((vehicle, index) => {
+                      const isSelected = selectedVehicle?.deviceNo === vehicle.deviceNo;
+                      const hasValidLocation = vehicle.hasLocation && vehicle.latitude && vehicle.longitude;
+                      
+                      return (
+                        <button
+                          key={`${vehicle.deviceNo}-${index}`}
+                          type="button"
+                          className={`list-group-item list-group-item-action ${
+                            isSelected ? 'active' : ''
+                          } ${!hasValidLocation ? 'list-group-item-secondary' : ''}`}
+                          onClick={() => handleSelectVehicle(vehicle)}
+                          style={{ 
+                            cursor: hasValidLocation ? 'pointer' : 'not-allowed',
+                            opacity: hasValidLocation ? 1 : 0.6
+                          }}
+                        >
+                          <div className="d-flex w-100 justify-content-between align-items-start">
+                            <div className="flex-grow-1">
+                              {/* Plaka */}
+                              <h6 className="mb-1">
+                                <i className="bi bi-card-text me-2"></i>
+                                <strong>{vehicle.licensePlate || 'Plaka Yok'}</strong>
+                                {hasValidLocation && (
+                                  <span className="badge bg-success ms-2" style={{ fontSize: '0.7rem' }}>
+                                    <i className="bi bi-geo-alt-fill"></i> Aktif
+                                  </span>
+                                )}
+                              </h6>
+
+                              {/* Model */}
+                              {vehicle.vehicleModel && (
+                                <p className="mb-1 small">
+                                  <i className="bi bi-truck me-1"></i>
+                                  {vehicle.vehicleModel}
+                                </p>
+                              )}
+
+                              {/* Cihaz No */}
+                              <p className="mb-1 small">
+                                <i className="bi bi-cpu me-1"></i>
+                                Cihaz: {vehicle.deviceNo}
+                              </p>
+
+                              {/* Hız (varsa) */}
+                              {hasValidLocation && (
+                                <p className="mb-1 small">
+                                  <i className="bi bi-speedometer2 me-1"></i>
+                                  Hız: <strong>{vehicle.speed || 0} km/h</strong>
+                                </p>
+                              )}
+
+                              {/* Konum durumu */}
+                              {!hasValidLocation && (
+                                <p className="mb-0 small text-muted">
+                                  <i className="bi bi-exclamation-circle me-1"></i>
+                                  Konum bilgisi yok
+                                </p>
+                              )}
+                            </div>
+
+                            {isSelected && (
+                              <i className="bi bi-check-circle-fill"></i>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {!loading && filteredVehicles.length === 0 && (
+                  <div className="text-center py-5">
+                    <i className="bi bi-geo-alt display-1 text-muted"></i>
+                    <p className="mt-3 text-muted">
+                      {searchTerm ? 'Arama sonucu bulunamadı' : 'Araç bulunamadı'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {!loading && combinedVehicles.length === 0 && !searchTerm && (
+                  <div className="text-center py-5">
+                    <i className="bi bi-exclamation-triangle display-1 text-warning"></i>
+                    <p className="mt-3 text-muted">
+                      Arvento'dan araç verisi alınamadı
+                    </p>
+                    <button 
+                      className="btn btn-primary btn-sm"
+                      onClick={() => loadAllData()}
                     >
-                      <div className="d-flex w-100 justify-content-between align-items-start">
-                        <div className="flex-grow-1">
-                          {/* Plaka */}
-                          <h6 className="mb-1">
-                            <i className="bi bi-card-text me-2"></i>
-                            <strong>{vehicle.licensePlate || 'Plaka Yok'}</strong>
-                          </h6>
-
-                          {/* Marka/Model */}
-                          {(vehicle.vehicleBrand || vehicle.vehicleModel) && (
-                            <p className="mb-1 small">
-                              <i className="bi bi-truck me-1"></i>
-                              {vehicle.vehicleBrand} {vehicle.vehicleModel}
-                            </p>
-                          )}
-
-                          {/* Cihaz No */}
-                          <p className="mb-1 small">
-                            <i className="bi bi-cpu me-1"></i>
-                            Cihaz: {vehicle.deviceNo}
-                          </p>
-
-                          {/* Hız (varsa) */}
-                          {vehicle.hasLocation && (
-                            <p className="mb-1 small">
-                              <i className="bi bi-speedometer2 me-1"></i>
-                              Hız: <strong>{vehicle.speed || 0} km/h</strong>
-                            </p>
-                          )}
-
-                          {/* Konum durumu */}
-                          {!vehicle.hasLocation && (
-                            <p className="mb-0 small text-muted">
-                              <i className="bi bi-exclamation-circle me-1"></i>
-                              Konum bilgisi yok
-                            </p>
-                          )}
-                        </div>
-
-                        {selectedVehicle?.deviceNo === vehicle.deviceNo && (
-                          <i className="bi bi-check-circle-fill text-white"></i>
-                        )}
-                      </div>
+                      <i className="bi bi-arrow-clockwise me-2"></i>
+                      Tekrar Dene
                     </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Empty State */}
-              {!loading && filteredVehicles.length === 0 && (
-                <div className="text-center py-5">
-                  <i className="bi bi-geo-alt display-1 text-muted"></i>
-                  <p className="mt-3 text-muted">
-                    {searchTerm ? 'Arama kriterine uygun araç bulunamadı' : 'Araç bulunamadı'}
-                  </p>
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Panel - Map */}
+        {/* ✅ Right Panel - Map - YÜKSEKLİK ARTIRILDI */}
         <div className="col-md-8">
-          <div className="card shadow-sm" style={{ height: '600px' }}>
+          <div className="card shadow-sm" style={{ height: '750px' }}>
             <div className="card-header bg-light">
-              <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">
-                  <i className="bi bi-map me-2"></i>
-                  Harita Görünümü
-                </h5>
-                {selectedVehicle && selectedVehicle.hasLocation && (
-                  <button
-                    className="btn btn-sm btn-success"
-                    onClick={handleOpenInGoogleMaps}
-                  >
-                    <i className="bi bi-box-arrow-up-right me-2"></i>
-                    Google Maps'te Aç
-                  </button>
-                )}
-              </div>
+              <h5 className="mb-0">
+                <i className="bi bi-map me-2"></i>
+                {selectedVehicle ? `${selectedVehicle.licensePlate} - Konum Bilgisi` : 'Araç Konumu'}
+              </h5>
             </div>
 
-            <div className="card-body p-0">
+            <div className="card-body p-0" style={{ height: 'calc(100% - 60px)' }}>
               {selectedVehicle && selectedVehicle.hasLocation ? (
                 <>
-                  {/* Vehicle Info Card */}
+                  {/* Vehicle Details */}
                   <div className="p-3 bg-light border-bottom">
-                    <div className="row g-2">
-                      <div className="col-md-6">
+                    <div className="row g-3">
+                      <div className="col-md-4">
                         <small className="text-muted d-block">Plaka:</small>
                         <strong>{selectedVehicle.licensePlate || '-'}</strong>
                       </div>
-                      <div className="col-md-6">
-                        <small className="text-muted d-block">Marka/Model:</small>
-                        <strong>{selectedVehicle.vehicleBrand} {selectedVehicle.vehicleModel}</strong>
-                      </div>
-                      <div className="col-md-3">
-                        <small className="text-muted d-block">Cihaz No:</small>
-                        <strong>{selectedVehicle.deviceNo || '-'}</strong>
-                      </div>
-                      <div className="col-md-3">
+                      <div className="col-md-4">
                         <small className="text-muted d-block">Hız:</small>
                         <span className="badge bg-primary">{selectedVehicle.speed || 0} km/h</span>
                       </div>
+                      <div className="col-md-4">
+                        <small className="text-muted d-block">Yükseklik:</small>
+                        <span className="badge bg-info">{selectedVehicle.altitude || 0} m</span>
+                      </div>
+                      
+                      {/* Son Güncelleme Tarihi */}
                       <div className="col-md-6">
                         <small className="text-muted d-block">Son Güncelleme:</small>
-                        <small>{formatDate(selectedVehicle.lastUpdate)}</small>
+                        <small><strong>{formatDate(selectedVehicle.lastUpdateTime)}</strong></small>
                       </div>
-                      <div className="col-12">
+                      
+                      <div className="col-md-6">
                         <small className="text-muted d-block">Konum:</small>
                         <small>{selectedVehicle.latitude?.toFixed(6)}, {selectedVehicle.longitude?.toFixed(6)}</small>
                       </div>
-                      {selectedVehicle.buildingRegion && (
-                        <div className="col-12">
-                          <small className="text-muted d-block">Bölge:</small>
-                          <small>{selectedVehicle.buildingRegion}</small>
+                      
+                      {/* İl / İlçe */}
+                      {(selectedVehicle.locationType || selectedVehicle.district) && (
+                        <div className="col-md-6">
+                          <small className="text-muted d-block">İl / İlçe:</small>
+                          <small>{selectedVehicle.locationType} / {selectedVehicle.district}</small>
                         </div>
                       )}
+                      
+                      {/* GPS Kalitesi */}
+                      {selectedVehicle.gpsQuality > 0 && (
+                        <div className="col-md-6">
+                          <small className="text-muted d-block">GPS Uydu Sayısı:</small>
+                          <small>{selectedVehicle.gpsQuality}</small>
+                        </div>
+                      )}
+                      
+                      {/* Bölge */}
+                      {selectedVehicle.region && (
+                        <div className="col-12">
+                          <small className="text-muted d-block">Bölge:</small>
+                          <small>{selectedVehicle.region}</small>
+                        </div>
+                      )}
+                      
+                      {/* Adres */}
+                      {selectedVehicle.address && (
+                        <div className="col-12">
+                          <small className="text-muted d-block">Adres:</small>
+                          <small>{selectedVehicle.address}</small>
+                        </div>
+                      )}
+                      
                       <div className="col-12">
-                        <small className="text-muted d-block">Adres:</small>
-                        <small>{selectedVehicle.address || 'Adres bilgisi yok'}</small>
+                        <button 
+                          className="btn btn-sm btn-outline-primary w-100"
+                          onClick={handleOpenInGoogleMaps}
+                        >
+                          <i className="bi bi-geo-alt me-2"></i>
+                          Google Maps'te Aç
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -420,7 +518,7 @@ const VehicleLocationMapPage = () => {
                   <iframe
                     title="Google Maps"
                     width="100%"
-                    height="450px"
+                    height="100%"
                     style={{ border: 0 }}
                     loading="lazy"
                     allowFullScreen

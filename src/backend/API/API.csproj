@@ -26,7 +26,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Migrations\" />
     <Folder Include="Uploads\BOM\" />
   </ItemGroup>
   <ItemGroup>
