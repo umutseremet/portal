@@ -2,11 +2,13 @@
 
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import permissionService from '../../services/permissionService';
 
 /**
  * Protected Route Component
- * Yetki kontrolü ile sayfa erişimini sınırlandırır
+ * ✅ 1. ÖNCE login kontrolü yapar
+ * ✅ 2. SONRA yetki kontrolü yapar
  * 
  * Kullanım:
  * <ProtectedRoute permission="yetki_kullanici_data_cam_hazirlama">
@@ -27,6 +29,33 @@ const ProtectedRoute = ({
   requireAdmin = false,
   redirectTo = '/dashboard' 
 }) => {
+  
+  const { isAuthenticated, loading } = useAuth();
+
+  // ============================================================================
+  // 1️⃣ AUTHENTICATION CHECK - EN ÖNEMLİ KONTROL
+  // ============================================================================
+  
+  // Loading durumunda bekle
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center min-vh-100">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Yükleniyor...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Login olmamışsa LOGIN sayfasına yönlendir
+  if (!isAuthenticated) {
+    console.warn('🚫 Access denied: User not authenticated - redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
+
+  // ============================================================================
+  // 2️⃣ AUTHORIZATION CHECK - Yetki Kontrolü
+  // ============================================================================
   
   // Admin kontrolü
   if (requireAdmin && !permissionService.isAdmin()) {
@@ -59,7 +88,9 @@ const ProtectedRoute = ({
     }
   }
 
-  // Yetki kontrolü geçti, children'ı render et
+  // ============================================================================
+  // 3️⃣ SUCCESS - Hem login hem yetki kontrolü geçti
+  // ============================================================================
   return children;
 };
 

@@ -1,5 +1,5 @@
 using API.Data;
-using API.Services; // NEW - Import for VehicleLogService
+using API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // JSON property names camelCase olsun (totalCount instead of TotalCount)
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-        options.JsonSerializerOptions.WriteIndented = true; // Development için readable JSON
+        options.JsonSerializerOptions.WriteIndented = true;
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -33,7 +32,6 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 
-    // JWT Authentication için Swagger konfigürasyonu
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
@@ -63,17 +61,10 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddHttpClient();
-
-// Add HttpClient for Redmine - EXISTING
 builder.Services.AddHttpClient<RedmineService>();
-
-// NEW - Add VehicleLogService for Vehicle Management functionality
 builder.Services.AddScoped<IVehicleLogService, VehicleLogService>();
-
 builder.Services.AddScoped<BomExcelParserService>();
-
 builder.Services.AddScoped<PermissionService>();
-
 builder.Services.AddScoped<ArventoService>();
 
 builder.Services.Configure<FormOptions>(options =>
@@ -83,17 +74,15 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartHeadersLengthLimit = int.MaxValue;
 });
 
-// Add Entity Framework Core - EXISTING (enhanced)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseSqlServer(connectionString, sqlOptions =>
     {
-        sqlOptions.CommandTimeout(30); // 30 second timeout
+        sqlOptions.CommandTimeout(30);
         sqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorNumbersToAdd: null);
     });
 
-    // Detailed logging in development environment
     if (builder.Environment.IsDevelopment())
     {
         options.EnableSensitiveDataLogging();
@@ -101,7 +90,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }
 });
 
-// Add JWT Authentication - EXISTING
 var jwtKey = builder.Configuration["JwtSettings:Secret"] ?? "YourSecretKeyThatIsAtLeast32CharactersLong123456789";
 var key = Encoding.ASCII.GetBytes(jwtKey);
 
@@ -119,8 +107,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Add CORS - EXISTING (enhanced)
-// Add CORS - ENHANCED
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -146,7 +132,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add Logging - EXISTING
 builder.Services.AddLogging(configure =>
 {
     configure.AddConsole();
@@ -163,7 +148,7 @@ builder.Services.AddLogging(configure =>
 
 var app = builder.Build();
 
-// Database Migration and Seed - EXISTING (enhanced for Vehicle Management)
+// Database Migration and Seed
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -174,12 +159,10 @@ using (var scope = app.Services.CreateScope())
 
         logger.LogInformation("Checking database connection...");
 
-        // Check if database exists
         if (context.Database.CanConnect())
         {
             logger.LogInformation("Database connection successful");
 
-            // Apply migrations if any
             var pendingMigrations = context.Database.GetPendingMigrations();
             if (pendingMigrations.Any())
             {
@@ -192,7 +175,6 @@ using (var scope = app.Services.CreateScope())
                 logger.LogInformation("No pending migrations found");
             }
 
-            // NEW - Verify Vehicle Management tables exist
             try
             {
                 var vehicleCount = await context.Vehicles.CountAsync();
@@ -214,7 +196,6 @@ using (var scope = app.Services.CreateScope())
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while initializing the database");
 
-        // Throw error in development, continue in production
         if (app.Environment.IsDevelopment())
         {
             throw;
@@ -222,41 +203,47 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure pipeline - EXISTING
-//if (app.Environment.IsDevelopment())
-//{
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Vervo Portal API V1");
-    c.RoutePrefix = "swagger"; // Open Swagger at /swagger
-});
-//}
+// ============================================================================
+// IIS-SPECIFIC SWAGGER CONFIGURATION
+// ============================================================================
 
+// IIS'de PathBase'i otomatik algıla
+app.UsePathBase(new PathString("/PortalAPI"));
+
+// Swagger - IIS için özel yapılandırma
 app.UseSwagger(c =>
 {
-    // IIS sub-application için path düzeltmesi
+    c.RouteTemplate = "swagger/{documentName}/swagger.json";
     c.PreSerializeFilters.Add((swagger, httpReq) =>
     {
+        var scheme = httpReq.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? httpReq.Scheme;
+        var host = httpReq.Headers["X-Forwarded-Host"].FirstOrDefault() ?? httpReq.Host.Value;
+        var pathBase = "/PortalAPI";
+
         swagger.Servers = new List<Microsoft.OpenApi.Models.OpenApiServer>
+        {
+            new Microsoft.OpenApi.Models.OpenApiServer
             {
-                new Microsoft.OpenApi.Models.OpenApiServer {
-                    Url = $"{httpReq.Scheme}://{httpReq.Host.Value}/PortalAPI"
-                }
-            };
+                Url = $"{scheme}://{host}{pathBase}"
+            }
+        };
     });
 });
 
 app.UseSwaggerUI(c =>
 {
-    // IIS'de alt uygulama için tam path belirtin
     c.SwaggerEndpoint("/PortalAPI/swagger/v1/swagger.json", "Vervo Portal API V1");
     c.RoutePrefix = "swagger";
 });
 
-// ✅ CORS'tan SONRA, Authentication'dan ÖNCE ekleyin:
+// ============================================================================
+// MIDDLEWARE PIPELINE
+// ============================================================================
 
-// Static files için Uploads klasörünü servis et
+app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
+
+// Static files
 var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "Uploads");
 Directory.CreateDirectory(uploadsPath);
 
@@ -266,41 +253,27 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/Uploads",
     OnPrepareResponse = ctx =>
     {
-        // Cache control headers
         ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=3600");
     }
 });
 
-// NOT: Yukarıdaki kodu Program.cs içinde şu bölüme ekleyin:
-// app.UseCors("AllowFrontend"); ← BUNDAN SONRA
-// ↑↑↑ BURAYA EKLE ↑↑↑
-// app.UseAuthentication(); ← BUNDAN ÖNCE
-
-app.UseHttpsRedirection();
-
-// CORS middleware should run before other middlewares
-app.UseCors("AllowFrontend");
+var bomUploadsPath = Path.Combine(builder.Environment.ContentRootPath, "Uploads", "BOM");
+Directory.CreateDirectory(bomUploadsPath);
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Static files için BOM uploads klasörünü servis et (EKLE)
-var bomUploadsPath = Path.Combine(builder.Environment.ContentRootPath, "Uploads", "BOM");
-Directory.CreateDirectory(bomUploadsPath);
-
-// Request logging middleware - EXISTING
+// Request logging middleware
 app.Use(async (context, next) =>
 {
     var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
 
-    // Request start
     var startTime = DateTime.Now;
     logger.LogInformation("HTTP {Method} {Path} started at {StartTime}",
         context.Request.Method, context.Request.Path, startTime);
 
     await next();
 
-    // Request end
     var duration = DateTime.Now - startTime;
     logger.LogInformation("HTTP {Method} {Path} completed in {Duration}ms with status {StatusCode}",
         context.Request.Method, context.Request.Path, duration.TotalMilliseconds, context.Response.StatusCode);
@@ -308,7 +281,7 @@ app.Use(async (context, next) =>
 
 app.MapControllers();
 
-// Health check endpoint - EXISTING (enhanced)
+// Health check endpoints
 app.MapGet("/", () => new
 {
     Status = "OK",
@@ -316,8 +289,7 @@ app.MapGet("/", () => new
     Version = "1.0.0",
     Environment = app.Environment.EnvironmentName,
     Timestamp = DateTime.Now,
-    //SwaggerUrl = app.Environment.IsDevelopment() ? "/swagger" : null,
-    SwaggerUrl = "/swagger",
+    SwaggerUrl = "/PortalAPI/swagger",
     Features = new[] { "Visitor Management", "Vehicle Management", "Redmine Integration", "JWT Authentication" }
 });
 
@@ -327,17 +299,16 @@ app.MapGet("/health", () => new
     Timestamp = DateTime.Now
 });
 
-// Configuration test endpoint - EXISTING
 app.MapGet("/config", (IConfiguration config) => new
 {
     RedmineBaseUrl = config["RedmineSettings:BaseUrl"] ?? config["Redmine:BaseUrl"],
     RedmineApiKey = !string.IsNullOrEmpty(config["RedmineSettings:ApiKey"]) ? "Configured" : "Not configured",
     ConnectionString = !string.IsNullOrEmpty(config.GetConnectionString("DefaultConnection")) ? "Configured" : "Not configured",
     Environment = app.Environment.EnvironmentName,
-    JwtSecret = !string.IsNullOrEmpty(config["JwtSettings:Secret"]) ? "Configured" : "Not configured"
+    JwtSecret = !string.IsNullOrEmpty(config["JwtSettings:Secret"]) ? "Configured" : "Not configured",
+    PathBase = "/PortalAPI"
 });
 
-// NEW - Vehicle Management API endpoints quick test
 app.MapGet("/api/test/vehicles", async (ApplicationDbContext context) =>
 {
     try
@@ -356,10 +327,8 @@ app.MapGet("/api/test/vehicles", async (ApplicationDbContext context) =>
     }
 }).RequireAuthorization();
 
-// Startup message - EXISTING (enhanced)
-app.Logger.LogInformation("🚀 Vervo Portal API starting...");
-app.Logger.LogInformation("📝 Swagger UI available at: {SwaggerUrl}",
-    app.Environment.IsDevelopment() ? "https://localhost:5154/swagger" : "Not available in production");
-app.Logger.LogInformation("🚗 Vehicle Management API endpoints: /api/vehicles");
+app.Logger.LogInformation("🚀 Vervo Portal API starting on IIS...");
+app.Logger.LogInformation("📝 Swagger UI available at: /PortalAPI/swagger");
+app.Logger.LogInformation("🚗 Vehicle Management API endpoints: /PortalAPI/api/vehicles");
 
 app.Run();
