@@ -1,5 +1,5 @@
 // src/frontend/src/components/WeeklyCalendar/GroupedIssueCard.js
-// ✅ COMPLETE VERSION - Gecikme ve Revize Badge'leri ile
+// ✅ COMPLETE VERSION - Grup Parça Adeti ile
 
 import React from 'react';
 import { getProjectColor, getLightColor } from '../../utils/colorUtils';
@@ -47,14 +47,14 @@ const GroupedIssueCard = ({ group, onClick, hasOverdue, hasRevised }) => {
         
         {/* İkon Grubu */}
         <div className="card-indicators">
-          {/* ✅ GECIKME İKONU - Sadece gecikme varsa göster */}
+          {/* Gecikme İkonu */}
           {hasOverdue && (
             <div className="overdue-warning-icon blinking" title="Gecikmiş işler var">
               <i className="bi bi-exclamation-triangle-fill"></i>
             </div>
           )}
           
-          {/* ✅ REVİZE İKONU - Sadece revize varsa göster */}
+          {/* Revize İkonu */}
           {hasRevised && (
             <div className="revised-indicator blinking" title="Revize edilmiş işler var">
               <span className="revised-letter">R</span>
@@ -73,6 +73,15 @@ const GroupedIssueCard = ({ group, onClick, hasOverdue, hasRevised }) => {
       >
         {group.projectCode || 'Kod Yok'}
       </div>
+
+      {/* ✅ YENİ: Grup Parça Adeti */}
+      {group.totalGroupPartQuantity !== null && group.totalGroupPartQuantity > 0 && (
+        <div className="group-part-quantity">
+          <i className="bi bi-box-seam me-1"></i>
+          <span className="quantity-label">Grup Adet:</span>
+          <span className="quantity-value">{group.totalGroupPartQuantity}</span>
+        </div>
+      )}
     </div>
   );
 };

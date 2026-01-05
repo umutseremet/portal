@@ -104,7 +104,8 @@ namespace API.Controllers
                 cv_pbitis.value AS planlanan_bitis,
                 cv_revize_baslangic.value AS revize_plan_baslangic,
                 cv_revize_bitis.value AS revize_plan_bitis,
-                cv_revize_aciklama.value AS revize_plan_aciklama
+                cv_revize_aciklama.value AS revize_plan_aciklama,
+ISNULL(cv_parent_grup_adet.value, '0') AS parent_group_part_quantity
             FROM issues i
             JOIN trackers t ON i.tracker_id = t.id
             LEFT JOIN projects p ON i.project_id = p.id
@@ -135,7 +136,13 @@ namespace API.Controllers
                 ON cv_proje_kodu.customized_id = p.id
                 AND cv_proje_kodu.customized_type = 'Project'
                 AND cv_proje_kodu.custom_field_id = 3
-            WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
+            
+LEFT JOIN issues parent_issue ON i.parent_id = parent_issue.id
+LEFT JOIN custom_values cv_parent_grup_adet
+    ON cv_parent_grup_adet.customized_id = parent_issue.id
+    AND cv_parent_grup_adet.customized_type = 'Issue'
+    AND cv_parent_grup_adet.custom_field_id = 18
+WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                 AND i.project_id = @ProjectId
                 AND t.name LIKE @ProductionType
                 AND ISNULL(cv_pbaslangic.value,'') != ''
@@ -640,7 +647,8 @@ namespace API.Controllers
                 cv_pbitis.value AS planlanan_bitis,
                 cv_revize_baslangic.value AS revize_plan_baslangic,
                 cv_revize_bitis.value AS revize_plan_bitis,
-                cv_revize_aciklama.value AS revize_plan_aciklama
+                cv_revize_aciklama.value AS revize_plan_aciklama,
+ ISNULL(cv_parent_grup_adet.value, '0') AS parent_group_part_quantity
             FROM issues i
             JOIN trackers t ON i.tracker_id = t.id
             LEFT JOIN projects p ON i.project_id = p.id
@@ -655,7 +663,6 @@ namespace API.Controllers
                 ON cv_pbitis.customized_id = i.id
                 AND cv_pbitis.customized_type = 'Issue'
                 AND cv_pbitis.custom_field_id = 4
-            -- ✅ YENİ: REVİZE TARİHLER İÇİN LEFT JOIN'LER
             LEFT JOIN custom_values cv_revize_baslangic
                 ON cv_revize_baslangic.customized_id = i.id
                 AND cv_revize_baslangic.customized_type = 'Issue'
@@ -668,56 +675,44 @@ namespace API.Controllers
                 ON cv_revize_aciklama.customized_id = i.id
                 AND cv_revize_aciklama.customized_type = 'Issue'
                 AND cv_revize_aciklama.custom_field_id = 46
-            -- PROJE KODU
             LEFT JOIN custom_values cv_proje_kodu
                 ON cv_proje_kodu.customized_id = p.id
                 AND cv_proje_kodu.customized_type = 'Project'
                 AND cv_proje_kodu.custom_field_id = 3
+LEFT JOIN custom_values cv_parent_grup_adet
+    ON cv_parent_grup_adet.customized_id = parent_issue.id
+    AND cv_parent_grup_adet.customized_type = 'Issue'
+    AND cv_parent_grup_adet.custom_field_id = 18
             WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                 AND ISNULL(cv_pbaslangic.value,'') != ''
                 AND ISNULL(cv_pbitis.value,'') != ''
-                -- ✅ REVİZE TARİHLERE GÖRE FİLTRELEME (GetIssuesByDateAndType ile aynı mantık)
+                -- ✅ DÜZELTME: Sadece seçilen tarihteki işleri getir
                 AND (
-                    -- Revize başlangıç varsa onu kontrol et
-                    (ISNULL(cv_revize_baslangic.value, '') != ''
-                     AND TRY_CAST(cv_revize_baslangic.value AS DATE) <= @Date)
+                    -- 1. Revize başlangıç tarihi = seçilen tarih
+                    TRY_CAST(cv_revize_baslangic.value AS DATE) = @Date
                     OR
-                    -- Revize başlangıç yoksa planlanan başlangıcı kontrol et
-                    (ISNULL(cv_revize_baslangic.value, '') = ''
-                     AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date)
-                )
-                AND (
-                    -- Revize bitiş varsa ve tarih aralığında
-                    (ISNULL(cv_revize_bitis.value, '') != ''
+                    -- 2. Revize bitiş tarihi = seçilen tarih
+                    TRY_CAST(cv_revize_bitis.value AS DATE) = @Date
+                    OR
+                    -- 3. Revize yoksa planlanan başlangıç = seçilen tarih
+                    (ISNULL(cv_revize_baslangic.value, '') = '' 
+                     AND TRY_CAST(cv_pbaslangic.value AS DATE) = @Date)
+                    OR
+                    -- 4. Revize yoksa planlanan bitiş = seçilen tarih
+                    (ISNULL(cv_revize_bitis.value, '') = '' 
+                     AND TRY_CAST(cv_pbitis.value AS DATE) = @Date)
+                    OR
+                    -- 5. İş seçilen tarihte devam ediyor (revize tarihlerle)
+                    (ISNULL(cv_revize_baslangic.value, '') != '' 
+                     AND ISNULL(cv_revize_bitis.value, '') != ''
+                     AND TRY_CAST(cv_revize_baslangic.value AS DATE) <= @Date
                      AND TRY_CAST(cv_revize_bitis.value AS DATE) >= @Date)
                     OR
-                    -- Revize bitiş varsa ve iş açık ve gecikmiş
-                    (ISNULL(cv_revize_bitis.value, '') != ''
-                     AND status.is_closed = 0
-                     AND TRY_CAST(cv_revize_bitis.value AS DATE) < @Date
-                     AND @Date <= GETDATE())
-                    OR
-                    -- Revize bitiş varsa ve iş kapalı ama kapanma tarihi revize bitişten sonra
-                    (ISNULL(cv_revize_bitis.value, '') != ''
-                     AND status.is_closed = 1
-                     AND i.closed_on IS NOT NULL
-                     AND CAST(i.closed_on AS DATE) >= TRY_CAST(cv_revize_bitis.value AS DATE))
-                    OR
-                    -- Revize bitiş yoksa planlanan bitiş ve tarih aralığında
-                    (ISNULL(cv_revize_bitis.value, '') = ''
+                    -- 6. İş seçilen tarihte devam ediyor (planlanan tarihlerle)
+                    (ISNULL(cv_revize_baslangic.value, '') = '' 
+                     AND ISNULL(cv_revize_bitis.value, '') = ''
+                     AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
                      AND TRY_CAST(cv_pbitis.value AS DATE) >= @Date)
-                    OR
-                    -- Revize bitiş yoksa planlanan bitiş ve iş açık ve gecikmiş
-                    (ISNULL(cv_revize_bitis.value, '') = ''
-                     AND status.is_closed = 0
-                     AND TRY_CAST(cv_pbitis.value AS DATE) < @Date
-                     AND @Date <= GETDATE())
-                    OR
-                    -- Revize bitiş yoksa planlanan bitiş ve iş kapalı ama kapanma tarihi planlanan bitişten sonra
-                    (ISNULL(cv_revize_bitis.value, '') = ''
-                     AND status.is_closed = 1
-                     AND i.closed_on IS NOT NULL
-                     AND CAST(i.closed_on AS DATE) >= TRY_CAST(cv_pbitis.value AS DATE))
                 )
             ORDER BY p.name, i.id;";
 
@@ -1191,10 +1186,10 @@ namespace API.Controllers
         #region Private Methods
 
         private async Task<WeeklyProductionCalendarResponse> GetWeeklyProductionDataAsync(
-            DateTime weekStart,
-            int? parentIssueId,
-            int? projectId,
-            string? productionType)
+    DateTime weekStart,
+    int? parentIssueId,
+    int? projectId,
+    string? productionType)
         {
             var response = new WeeklyProductionCalendarResponse
             {
@@ -1220,6 +1215,7 @@ namespace API.Controllers
                     projectId,
                     productionType);
 
+                // ✅ GRUPLAMA SIRASINDA PARENT ISSUE'LARI AL VE GRUP PARÇA ADETİNİ TOPLA
                 var groupedData = rawIssues
                     .GroupBy(issue => new
                     {
@@ -1234,7 +1230,9 @@ namespace API.Controllers
                         ProjectCode = g.Key.ProjectCode,
                         ProjectName = g.Key.ProjectName,
                         ProductionType = g.Key.ProductionType,
-                        IssueCount = g.Count()
+                        IssueCount = g.Count(),
+                        // ✅ YENİ: Grup parça adetlerini topla (rawIssues'dan al)
+                        TotalGroupPartQuantity = g.Sum(issue => issue.ParentGroupPartQuantity ?? 0)
                     })
                     .OrderBy(g => g.ProjectCode)
                     .ThenBy(g => g.ProductionType)
@@ -1293,7 +1291,8 @@ namespace API.Controllers
                 cv_revize_baslangic.value AS revize_baslangic,
                 cv_revize_bitis.value AS revize_bitis,
                 cv_revize_aciklama.value AS revize_aciklama,
-                cv_proje_kodu.value AS proje_kodu
+                cv_proje_kodu.value AS proje_kodu,
+                ISNULL(cv_parent_grup_adet.value, '0') AS parent_group_part_quantity
             FROM issues i
             JOIN trackers t ON i.tracker_id = t.id
             INNER JOIN RecursiveIssues ri ON i.id = ri.id
@@ -1325,6 +1324,11 @@ namespace API.Controllers
                 ON cv_proje_kodu.customized_id = p.id
                 AND cv_proje_kodu.customized_type = 'Project'
                 AND cv_proje_kodu.custom_field_id = 3
+            LEFT JOIN issues parent_issue ON i.parent_id = parent_issue.id
+            LEFT JOIN custom_values cv_parent_grup_adet
+                ON cv_parent_grup_adet.customized_id = parent_issue.id
+                AND cv_parent_grup_adet.customized_type = 'Issue'
+                AND cv_parent_grup_adet.custom_field_id = 18
             WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                 AND ISNULL(cv_pbaslangic.value,'') != ''
                 AND ISNULL(cv_pbitis.value,'') != ''
@@ -1394,7 +1398,8 @@ namespace API.Controllers
                 cv_revize_baslangic.value AS revize_baslangic,
                 cv_revize_bitis.value AS revize_bitis,
                 cv_revize_aciklama.value AS revize_aciklama,
-                cv_proje_kodu.value AS proje_kodu
+                cv_proje_kodu.value AS proje_kodu,
+ISNULL(cv_parent_grup_adet.value, '0') AS parent_group_part_quantity
             FROM issues i
             JOIN trackers t ON i.tracker_id = t.id
             LEFT JOIN projects p ON i.project_id = p.id
@@ -1425,6 +1430,11 @@ namespace API.Controllers
                 ON cv_proje_kodu.customized_id = p.id
                 AND cv_proje_kodu.customized_type = 'Project'
                 AND cv_proje_kodu.custom_field_id = 3
+ LEFT JOIN issues parent_issue ON i.parent_id = parent_issue.id
+            LEFT JOIN custom_values cv_parent_grup_adet
+                ON cv_parent_grup_adet.customized_id = parent_issue.id
+                AND cv_parent_grup_adet.customized_type = 'Issue'
+                AND cv_parent_grup_adet.custom_field_id = 18
             WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                 AND ISNULL(cv_pbaslangic.value,'') != ''
                 AND ISNULL(cv_pbitis.value,'') != ''
@@ -1545,6 +1555,8 @@ namespace API.Controllers
                             closedOn = reader.GetDateTime(reader.GetOrdinal("closed_on"));
                         }
 
+
+
                         issues.Add(new ProductionIssueData
                         {
                             IssueId = reader.GetInt32(reader.GetOrdinal("id")),
@@ -1569,7 +1581,12 @@ namespace API.Controllers
                             RevisedPlannedStartDate = revisedStart,
                             RevisedPlannedEndDate = revisedEnd,
                             RevisedPlanDescription = revisedDescription,
-                            ClosedOn = closedOn
+                            ClosedOn = closedOn,
+                            ParentGroupPartQuantity = reader.IsDBNull(reader.GetOrdinal("parent_group_part_quantity"))
+                                    ? (int?)null
+                                    : int.TryParse(reader.GetString(reader.GetOrdinal("parent_group_part_quantity")), out int qty)
+                                        ? qty
+                                        : (int?)null
                         });
                     }
                 }

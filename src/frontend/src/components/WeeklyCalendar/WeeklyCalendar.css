@@ -444,3 +444,53 @@
   font-size: 0.9rem;
   color: #6c757d;
 }
+
+/* ============================================
+   GRUP PARÇA ADETİ
+   ============================================ */
+
+.group-part-quantity {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 6px 8px;
+  background-color: rgba(52, 152, 219, 0.1);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: #2c3e50;
+}
+
+.group-part-quantity i {
+  color: #3498db;
+  font-size: 0.85rem;
+}
+
+.quantity-label {
+  font-weight: 600;
+  margin-right: 4px;
+  color: #7f8c8d;
+}
+
+.quantity-value {
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 0.85rem;
+  background-color: rgba(52, 152, 219, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
+/* Gecikme durumunda farklı renk */
+.grouped-issue-card.has-overdue .group-part-quantity {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.grouped-issue-card.has-overdue .group-part-quantity i {
+  color: #dc3545;
+}
+
+.grouped-issue-card.has-overdue .quantity-value {
+  background-color: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+}

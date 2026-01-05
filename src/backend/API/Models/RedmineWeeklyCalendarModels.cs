@@ -55,6 +55,7 @@ namespace API.Models
         public string ProjectName { get; set; } = string.Empty;
         public string ProductionType { get; set; } = string.Empty;
         public int IssueCount { get; set; }
+        public int? TotalGroupPartQuantity { get; set; } // ✅ YENİ: Toplam grup parça adeti
     }
 
     public class ProductionIssueData
@@ -89,6 +90,7 @@ namespace API.Models
         public bool IsCompleted => CompletionPercentage >= 100 || IsClosed;
         public string StatusText => IsCompleted ? "Tamamlandı" : "Devam Ediyor";
 
+        public int? ParentGroupPartQuantity { get; set; } // ✅ YENİ
         /// <summary>
         /// Üretim tipi (Lazer, Abkant, Kaynak vb.) - TrackerName'den çıkarılır
         /// </summary>

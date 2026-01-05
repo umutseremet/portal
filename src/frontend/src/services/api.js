@@ -655,7 +655,8 @@ class ApiService {
               projectCode: group.projectCode || group.ProjectCode || '',
               projectName: group.projectName || group.ProjectName || '',
               productionType: group.productionType || group.ProductionType || '',
-              issueCount: group.issueCount ?? group.IssueCount ?? 0
+              issueCount: group.issueCount ?? group.IssueCount ?? 0,
+              totalGroupPartQuantity: group.totalGroupPartQuantity ?? group.TotalGroupPartQuantity ?? null // ✅ YENİ
             }))
           };
         })
