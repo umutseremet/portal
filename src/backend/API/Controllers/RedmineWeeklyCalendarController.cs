@@ -265,7 +265,12 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                                     RevisedPlannedStartDate = revisedStart,
                                     RevisedPlannedEndDate = revisedEnd,
                                     RevisedPlanDescription = revisedDescription,
-                                    ClosedOn = closedOn
+                                    ClosedOn = closedOn,
+                                    ParentGroupPartQuantity = reader.IsDBNull(reader.GetOrdinal("parent_group_part_quantity"))
+                                                            ? (int?)null
+                                                            : int.TryParse(reader.GetString(reader.GetOrdinal("parent_group_part_quantity")), out int qty)
+                                                                ? qty
+                                                                : (int?)null
                                 });
                             }
                         }

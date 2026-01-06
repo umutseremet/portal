@@ -853,6 +853,10 @@ const IssueDetailsPage = () => {
                                             <i className="bi bi-building me-1"></i>
                                             Proje
                                         </th>
+                                        <th style={{ minWidth: '250px' }}>
+                                            <i className="bi bi-card-text me-1"></i>
+                                            İş Açıklaması
+                                        </th>
                                         <th className="text-center" style={{ width: '120px' }}>
                                             <i className="bi bi-gear me-1"></i>
                                             İş Tipi
@@ -903,6 +907,11 @@ const IssueDetailsPage = () => {
                                                     <div className="d-flex flex-column">
                                                         <span className="fw-bold">{issue.projectCode}</span>
                                                         <small className="text-muted">{issue.projectName}</small>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="d-flex flex-column">
+                                                        <small className="text-muted">{issue.subject || '-'}</small>
                                                     </div>
                                                 </td>
                                                 <td className="text-center">

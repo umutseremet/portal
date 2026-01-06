@@ -41,21 +41,23 @@
 .calendar-day-card {
   background: white;
   border-radius: 12px;
-  overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  min-height: 500px;
-  transition: box-shadow 0.2s;
+  min-height: 700px; /* ✅ ESKI: 450px → YENİ: 700px */
+  transition: all 0.3s ease;
+  overflow: hidden;
 }
 
 .calendar-day-card:hover {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
 }
 
+/* Today Highlight */
 .calendar-day-card.today {
-  border: 2px solid #e74c3c;
-  box-shadow: 0 4px 16px rgba(231, 76, 60, 0.2);
+  border: 2px solid #3498db;
+  box-shadow: 0 4px 16px rgba(52, 152, 219, 0.2);
 }
 
 /* Day Header */
@@ -118,11 +120,11 @@
   flex: 1;
   padding: 15px;
   overflow-y: auto;
-  max-height: 450px;
+  max-height: 620px;
 }
 
 .day-issues::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .day-issues::-webkit-scrollbar-track {
@@ -135,6 +137,9 @@
   border-radius: 10px;
 }
 
+.day-issues::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
 /* ============================================
    GROUPED ISSUE CARD
    ============================================ */
@@ -494,3 +499,53 @@
   background-color: rgba(220, 53, 69, 0.2);
   color: #dc3545;
 }
+
+/* ============================================
+   GRUP PARÇA ADETİ - Sadece Freze için
+   ============================================ */
+
+.group-part-quantity {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 6px 8px;
+  background-color: rgba(26, 188, 156, 0.1); /* Freze rengi (teal) */
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: #2c3e50;
+}
+
+.group-part-quantity i {
+  color: #1abc9c; /* Freze ikonu rengi */
+  font-size: 0.85rem;
+}
+
+.quantity-label {
+  font-weight: 600;
+  margin-right: 4px;
+  color: #7f8c8d;
+}
+
+.quantity-value {
+  font-weight: 700;
+  color: #1abc9c; /* Freze vurgu rengi */
+  font-size: 0.85rem;
+  background-color: rgba(26, 188, 156, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
+/* Gecikme durumunda farklı renk */
+.grouped-issue-card.has-overdue .group-part-quantity {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.grouped-issue-card.has-overdue .group-part-quantity i {
+  color: #dc3545;
+}
+
+.grouped-issue-card.has-overdue .quantity-value {
+  background-color: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+} 

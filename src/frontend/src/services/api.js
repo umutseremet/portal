@@ -680,24 +680,21 @@ class ApiService {
  * @param {string} params.productionType - Production type
  * @returns {Promise<Object>} Issues list response
  */
+  // getIssuesByDateAndType metodunda
   async getIssuesByDateAndType(params = {}) {
     try {
       console.log('📋 API getIssuesByDateAndType request:', params);
 
-      // ✅ GET KULLAN - Query string ile
       const queryParams = new URLSearchParams({
         date: params.date,
         projectId: params.projectId,
         productionType: params.productionType
       }).toString();
 
-      console.log('🔗 Request URL:', `/RedmineWeeklyCalendar/GetIssuesByDateAndType?${queryParams}`);
-
       const response = await this.get(`/RedmineWeeklyCalendar/GetIssuesByDateAndType?${queryParams}`);
 
       console.log('📋 API getIssuesByDateAndType raw response:', response);
 
-      // Response formatını düzenle (camelCase'e çevir)
       const mappedResponse = {
         date: response.date || response.Date,
         projectId: response.projectId || response.ProjectId,
@@ -708,7 +705,7 @@ class ApiService {
           projectId: issue.projectId || issue.ProjectId,
           projectName: issue.projectName || issue.ProjectName || '',
           projectCode: issue.projectCode || issue.ProjectCode || '',
-          subject: issue.subject || issue.Subject || '',
+          subject: issue.subject || issue.Subject || '', // ✅ Subject mapping
           trackerName: issue.trackerName || issue.TrackerName || '',
           completionPercentage: issue.completionPercentage ?? issue.CompletionPercentage ?? 0,
           estimatedHours: issue.estimatedHours ?? issue.EstimatedHours ?? null,
@@ -718,18 +715,17 @@ class ApiService {
           assignedTo: issue.assignedTo || issue.AssignedTo || '',
           plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
           plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
-          // ✅ YENİ: Revize plan tarihleri
           revisedPlannedStartDate: issue.revisedPlannedStartDate || issue.RevisedPlannedStartDate,
           revisedPlannedEndDate: issue.revisedPlannedEndDate || issue.RevisedPlannedEndDate,
           revisedPlanDescription: issue.revisedPlanDescription || issue.RevisedPlanDescription,
-          productionType: issue.productionType || issue.ProductionType || '',
           closedOn: issue.closedOn || issue.ClosedOn,
+          parentGroupPartQuantity: issue.parentGroupPartQuantity ?? issue.ParentGroupPartQuantity ?? null, // ✅ Grup adeti mapping
+          productionType: issue.productionType || issue.ProductionType ||
+            (issue.trackerName || issue.TrackerName || '').replace('Üretim - ', '').trim()
         }))
       };
 
       console.log('📋 Mapped issues response:', mappedResponse);
-      console.log('📊 Total issues:', mappedResponse.issues.length);
-
       return mappedResponse;
     } catch (error) {
       console.error('❌ getIssuesByDateAndType error:', error);
@@ -737,21 +733,15 @@ class ApiService {
     }
   }
 
-  /**
-   * Get ALL issues by date (without type filter)
-   * @param {string} date - Target date (yyyy-MM-dd)
-   * @returns {Promise<Object>} Issues list response
-   */
+  // getIssuesByDate metodunda da aynı mapping
   async getIssuesByDate(date) {
     try {
-      console.log('📋 API getIssuesByDate request:', date);
-      console.log('🔗 Request URL:', `/RedmineWeeklyCalendar/GetIssuesByDate?date=${date}`);
+      console.log('📅 API getIssuesByDate request:', date);
 
       const response = await this.get(`/RedmineWeeklyCalendar/GetIssuesByDate?date=${date}`);
 
-      console.log('📋 API getIssuesByDate raw response:', response);
+      console.log('📅 API getIssuesByDate raw response:', response);
 
-      // Response formatını düzenle (camelCase'e çevir)
       const mappedResponse = {
         date: response.date || response.Date,
         totalCount: response.totalCount || response.TotalCount || 0,
@@ -760,7 +750,7 @@ class ApiService {
           projectId: issue.projectId || issue.ProjectId,
           projectName: issue.projectName || issue.ProjectName || '',
           projectCode: issue.projectCode || issue.ProjectCode || '',
-          subject: issue.subject || issue.Subject || '',
+          subject: issue.subject || issue.Subject || '', // ✅ Subject mapping
           trackerName: issue.trackerName || issue.TrackerName || '',
           completionPercentage: issue.completionPercentage ?? issue.CompletionPercentage ?? 0,
           estimatedHours: issue.estimatedHours ?? issue.EstimatedHours ?? null,
@@ -770,19 +760,17 @@ class ApiService {
           assignedTo: issue.assignedTo || issue.AssignedTo || '',
           plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
           plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
-          // ✅ YENİ: Revize plan tarihleri
           revisedPlannedStartDate: issue.revisedPlannedStartDate || issue.RevisedPlannedStartDate,
           revisedPlannedEndDate: issue.revisedPlannedEndDate || issue.RevisedPlannedEndDate,
           revisedPlanDescription: issue.revisedPlanDescription || issue.RevisedPlanDescription,
           closedOn: issue.closedOn || issue.ClosedOn,
+          parentGroupPartQuantity: issue.parentGroupPartQuantity ?? issue.ParentGroupPartQuantity ?? null, // ✅ Grup adeti mapping
           productionType: issue.productionType || issue.ProductionType ||
             (issue.trackerName || issue.TrackerName || '').replace('Üretim - ', '').trim()
         }))
       };
 
       console.log('📋 Mapped all issues response:', mappedResponse);
-      console.log('📊 Total issues:', mappedResponse.issues.length);
-
       return mappedResponse;
     } catch (error) {
       console.error('❌ getIssuesByDate error:', error);

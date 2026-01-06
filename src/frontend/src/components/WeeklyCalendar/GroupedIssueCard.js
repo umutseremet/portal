@@ -1,5 +1,5 @@
 // src/frontend/src/components/WeeklyCalendar/GroupedIssueCard.js
-// ✅ COMPLETE VERSION - Grup Parça Adeti ile
+// ✅ UPDATED - Grup Parça Adeti sadece Freze tipinde gösteriliyor
 
 import React from 'react';
 import { getProjectColor, getLightColor } from '../../utils/colorUtils';
@@ -20,6 +20,11 @@ const GroupedIssueCard = ({ group, onClick, hasOverdue, hasRevised }) => {
       handleClick();
     }
   };
+
+  // ✅ YENİ: Sadece Freze tipinde grup parça adeti göster
+  const shouldShowGroupQuantity = group.productionType === 'Freze' && 
+                                   group.totalGroupPartQuantity !== null && 
+                                   group.totalGroupPartQuantity > 0;
 
   return (
     <div
@@ -74,11 +79,11 @@ const GroupedIssueCard = ({ group, onClick, hasOverdue, hasRevised }) => {
         {group.projectCode || 'Kod Yok'}
       </div>
 
-      {/* ✅ YENİ: Grup Parça Adeti */}
-      {group.totalGroupPartQuantity !== null && group.totalGroupPartQuantity > 0 && (
+      {/* ✅ GÜNCELLENMIŞ: Grup Parça Adeti - Sadece Freze tipinde göster */}
+      {shouldShowGroupQuantity && (
         <div className="group-part-quantity">
           <i className="bi bi-box-seam me-1"></i>
-          <span className="quantity-label">Grup Adet:</span>
+          <span className="quantity-label">Adet:</span>
           <span className="quantity-value">{group.totalGroupPartQuantity}</span>
         </div>
       )}
