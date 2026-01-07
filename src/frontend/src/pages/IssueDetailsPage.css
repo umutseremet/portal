@@ -283,3 +283,266 @@
         background-color: transparent !important;
     }
 }
+
+/* src/frontend/src/pages/IssueDetailsPage.css */
+
+/* ========================================
+   DROPDOWN FİLTRE STİLLERİ
+   ======================================== */
+
+/* Dropdown buton stilleri */
+.btn-outline-secondary.btn-outline-primary {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.btn-outline-secondary.btn-outline-primary:hover {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Dropdown menü stilleri */
+.dropdown-menu {
+    border: 1px solid #dee2e6;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border-radius: 0.375rem;
+    padding: 0;
+    margin-top: 0.25rem;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+/* Dropdown arama alanı */
+.dropdown-menu .form-control-sm {
+    font-size: 0.85rem;
+}
+
+/* Dropdown checkbox stilleri */
+.dropdown-menu .form-check {
+    margin-bottom: 0.25rem;
+}
+
+.dropdown-menu .form-check-input {
+    margin-top: 0.25rem;
+    cursor: pointer;
+}
+
+.dropdown-menu .form-check-label {
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.9rem;
+}
+
+.dropdown-menu .form-check:hover {
+    background-color: #f8f9fa;
+}
+
+/* Dropdown bölüm ayırıcıları */
+.dropdown-menu .border-bottom {
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+.dropdown-menu .border-top {
+    border-top: 1px solid #dee2e6 !important;
+}
+
+/* Scrollbar stilleri */
+.dropdown-menu::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dropdown-menu::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ========================================
+   TARİH HÜCRE STİLLERİ
+   ======================================== */
+
+.date-cell {
+    min-width: 110px;
+}
+
+.date-display {
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+}
+
+.date-display:hover {
+    background-color: #f8f9fa;
+}
+
+/* ========================================
+   TABLO STİLLERİ
+   ======================================== */
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
+    vertical-align: middle;
+}
+
+/* Gecikmiş işler için özel stil */
+.table-danger {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+.table-danger:hover {
+    background-color: rgba(220, 53, 69, 0.15) !important;
+}
+
+/* ========================================
+   BADGE STİLLERİ
+   ======================================== */
+
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* ========================================
+   RESPONSIVE AYARLAR
+   ======================================== */
+
+@media (max-width: 768px) {
+    .dropdown-menu {
+        max-height: 250px !important;
+    }
+
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+}
+
+/* ========================================
+   MODAL STİLLERİ
+   ======================================== */
+
+.modal.show {
+    overflow-y: auto;
+}
+
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   PAGINATION STİLLERİ
+   ======================================== */
+
+.pagination-sm .page-link {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* ========================================
+   CARD STİLLERİ
+   ======================================== */
+
+.card {
+    border: 1px solid #dee2e6;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0.75rem 1rem;
+}
+
+.card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+/* ========================================
+   LOADING ANIMATION
+   ======================================== */
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* ========================================
+   PROGRESS BAR STİLLERİ
+   ======================================== */
+
+.progress {
+    border-radius: 0.25rem;
+}
+
+.progress-bar {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* ========================================
+   BUTTON STİLLERİ
+   ======================================== */
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* ========================================
+   FILTER ACTIVE STATE
+   ======================================== */
+
+.badge.bg-primary {
+    background-color: #0d6efd !important;
+}
+
+/* ========================================
+   ANIMATION
+   ======================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-menu.show {
+    animation: fadeIn 0.2s ease-in-out;
+}

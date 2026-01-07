@@ -139,6 +139,18 @@ namespace API.Models
         }
     }
 
+    // ✅ YENİ MODEL: GetIssuesByDateRequest
+    public class GetIssuesByDateRequest
+    {
+        public string Date { get; set; }
+        public List<int>? ProjectIds { get; set; }           // ✅ Çoklu proje
+        public List<string>? ProductionTypes { get; set; }   // ✅ Çoklu tip
+        public List<string>? Statuses { get; set; }          // ✅ Çoklu durum
+        public List<string>? AssignedTos { get; set; }       // ✅ Çoklu atanan
+    }
+
+    // GetIssuesByDateAndTypeRequest ve GetRevisedIssuesRequest de güncellendi
+
     /// <summary>
     /// Belirli bir tarih ve iş tipine göre detaylı iş listesi isteği
     /// </summary>

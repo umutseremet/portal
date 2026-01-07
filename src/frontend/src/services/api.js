@@ -734,23 +734,48 @@ class ApiService {
   }
 
   // getIssuesByDate metodunda da aynı mapping
-  async getIssuesByDate(date) {
-    try {
-      console.log('📅 API getIssuesByDate request:', date);
+  // src/frontend/src/services/api.js
+  // ✅ ÇOKLU FİLTRELEME DESTEKLİ - getIssuesByDate metodu güncellemesi
 
-      const response = await this.get(`/RedmineWeeklyCalendar/GetIssuesByDate?date=${date}`);
+  /**
+   * Belirli bir tarihteki işleri getirir (çoklu filtreleme destekli)
+   * @param {string} date - Target date (yyyy-MM-dd)
+   * @param {Object} filters - Optional filters
+   * @param {Array<number>} filters.projectIds - Array of project IDs
+   * @param {Array<string>} filters.productionTypes - Array of production types
+   * @param {Array<string>} filters.statuses - Array of status names
+   * @param {Array<string>} filters.assignedTos - Array of assigned user names
+   * @returns {Promise<Object>} Issues list response
+   */
+  async getIssuesByDate(date, filters = {}) {
+    try {
+      console.log('📅 API getIssuesByDate request:', { date, filters });
+
+      // ✅ POST isteği olarak değişti (array parametreleri için)
+      const requestBody = {
+        date: date,
+        projectIds: filters.projectIds || null,
+        productionTypes: filters.productionTypes || null,
+        statuses: filters.statuses || null,
+        assignedTos: filters.assignedTos || null
+      };
+
+      console.log('📦 Request body:', requestBody);
+
+      const response = await this.post('/RedmineWeeklyCalendar/GetIssuesByDate', requestBody);
 
       console.log('📅 API getIssuesByDate raw response:', response);
 
       const mappedResponse = {
         date: response.date || response.Date,
+        filters: response.filters || response.Filters,
         totalCount: response.totalCount || response.TotalCount || 0,
         issues: (response.issues || response.Issues || []).map(issue => ({
           issueId: issue.issueId || issue.IssueId,
           projectId: issue.projectId || issue.ProjectId,
           projectName: issue.projectName || issue.ProjectName || '',
           projectCode: issue.projectCode || issue.ProjectCode || '',
-          subject: issue.subject || issue.Subject || '', // ✅ Subject mapping
+          subject: issue.subject || issue.Subject || '',
           trackerName: issue.trackerName || issue.TrackerName || '',
           completionPercentage: issue.completionPercentage ?? issue.CompletionPercentage ?? 0,
           estimatedHours: issue.estimatedHours ?? issue.EstimatedHours ?? null,
@@ -764,13 +789,15 @@ class ApiService {
           revisedPlannedEndDate: issue.revisedPlannedEndDate || issue.RevisedPlannedEndDate,
           revisedPlanDescription: issue.revisedPlanDescription || issue.RevisedPlanDescription,
           closedOn: issue.closedOn || issue.ClosedOn,
-          parentGroupPartQuantity: issue.parentGroupPartQuantity ?? issue.ParentGroupPartQuantity ?? null, // ✅ Grup adeti mapping
+          parentGroupPartQuantity: issue.parentGroupPartQuantity ?? issue.ParentGroupPartQuantity ?? null,
           productionType: issue.productionType || issue.ProductionType ||
             (issue.trackerName || issue.TrackerName || '').replace('Üretim - ', '').trim()
         }))
       };
 
-      console.log('📋 Mapped all issues response:', mappedResponse);
+      console.log('📋 Mapped issues response:', mappedResponse);
+      console.log('📊 Total issues with filters:', mappedResponse.totalCount);
+
       return mappedResponse;
     } catch (error) {
       console.error('❌ getIssuesByDate error:', error);
