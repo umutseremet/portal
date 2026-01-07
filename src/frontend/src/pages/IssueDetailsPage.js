@@ -116,11 +116,13 @@ const IssueDetailsPage = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // ✅ FETCH ISSUE DETAILS - TAM VERSİYON (Debug Logları ile)
     const fetchIssueDetails = async () => {
         setLoading(true);
         setError(null);
 
         try {
+            // 1️⃣ Tarih formatlama
             let formattedDate = selectedDate;
 
             if (selectedDate instanceof Date) {
@@ -132,33 +134,88 @@ const IssueDetailsPage = () => {
                 formattedDate = selectedDate.split('T')[0];
             }
 
+            console.log('📅 Formatted Date:', formattedDate);
+            console.log('🔍 Current Filters:', filters);
+
+            // 2️⃣ API çağrısı - BACKEND ENTEGRASYONU
             let response;
 
-            // ✅ GEÇİCİ: Backend henüz POST desteklemiyorsa GET kullan
+            // Backend'e filtreleri gönder
+            const backendFilters = {
+                projectIds: filters.projectIds.length > 0 ? filters.projectIds : null,
+                productionTypes: filters.productionTypes.length > 0 ? filters.productionTypes : null,
+                statuses: filters.statuses.length > 0 ? filters.statuses : null,
+                assignedTos: filters.assignedTos.length > 0 ? filters.assignedTos : null
+            };
+
+            console.log('📦 Backend Filters:', backendFilters);
+
             if (selectedGroup) {
+                // Grup seçiliyse, grup filtreleriyle çağır
                 const params = {
                     date: formattedDate,
                     projectId: selectedGroup.projectId,
                     productionType: selectedGroup.productionType
                 };
+                console.log('👥 Calling API with group params:', params);
                 response = await apiService.getIssuesByDateAndType(params);
             } else {
-                // Filtresiz tüm veriyi al
-                response = await apiService.getIssuesByDate(formattedDate);
+                // Normal çağrı (çoklu filtrelerle)
+                console.log('🌍 Calling API with filters:', { formattedDate, backendFilters });
+                response = await apiService.getIssuesByDate(formattedDate, backendFilters);
             }
 
-            const issuesData = response.issues || [];
-            console.log('📊 Fetched issues:', issuesData.length);
-            setIssues(issuesData);
+            console.log('✅ API Response received:', response);
 
-            // Frontend'de filtreleme yap
-            applyFrontendFilters(issuesData);
+            // 3️⃣ Data kontrolü
+            const issuesData = response.issues || [];
+            console.log('📊 Total issues fetched:', issuesData.length);
+            
+            if (issuesData.length > 0) {
+                console.log('📋 First issue sample:', issuesData[0]);
+                console.log('🔑 First issue keys:', Object.keys(issuesData[0]));
+            } else {
+                console.warn('⚠️ No issues returned from API');
+            }
+
+            // 4️⃣ State'e kaydet
+            setIssues(issuesData);
+            setFilteredIssues(issuesData);
+
+            // 5️⃣ Unique değerleri hesapla ve logla
+            console.log('🔄 Calculating unique values...');
+
+            const uniqueProjects = [...new Map(issuesData.map(i => [i.projectId, {
+                id: i.projectId,
+                code: i.projectCode,
+                name: i.projectName
+            }])).values()];
+            console.log('🏢 Unique Projects:', uniqueProjects);
+
+            const productionTypes = [...new Set(issuesData.map(i =>
+                i.trackerName?.replace('Üretim - ', '').trim()
+            ).filter(Boolean))];
+            console.log('⚙️ Production Types:', productionTypes);
+
+            const statuses = [...new Set(issuesData.map(i => i.statusName).filter(Boolean))];
+            console.log('🚩 Statuses:', statuses);
+
+            const assignees = [...new Set(issuesData.map(i => i.assignedTo).filter(Boolean))];
+            console.log('👤 Assignees:', assignees);
+
+            console.log('✅ fetchIssueDetails completed successfully');
 
         } catch (err) {
-            console.error('❌ Error fetching issue details:', err);
+            console.error('❌ Error in fetchIssueDetails:', err);
+            console.error('❌ Error details:', {
+                message: err.message,
+                stack: err.stack,
+                response: err.response
+            });
             setError(err.message || 'İşler yüklenirken bir hata oluştu');
         } finally {
             setLoading(false);
+            console.log('🏁 fetchIssueDetails finished (loading=false)');
         }
     };
 
@@ -705,7 +762,10 @@ const IssueDetailsPage = () => {
     }
 
     // ✅ DROPDOWN RENDER FONKSİYONU
+    // ✅ DROPDOWN RENDER FONKSİYONU - TAM DÜZELTİLMİŞ
     const renderDropdownFilter = (filterKey, label, icon, allItems, displayFunc = null) => {
+        console.log(`🎨 Rendering dropdown: ${filterKey}`, { allItems }); // ✅ DEBUG
+
         const mappedKey = filterKey === 'project' ? 'projectIds'
             : filterKey === 'productionType' ? 'productionTypes'
             : filterKey === 'status' ? 'statuses'
@@ -714,6 +774,8 @@ const IssueDetailsPage = () => {
         const selectedCount = filters[mappedKey].length;
         const isOpen = dropdownOpen[filterKey];
         const filteredItems = getFilteredList(filterKey, allItems);
+
+        console.log(`🔍 Filtered items for ${filterKey}:`, filteredItems); // ✅ DEBUG
 
         return (
             <div className="col-md-3" ref={dropdownRefs[filterKey]}>
@@ -783,11 +845,11 @@ const IssueDetailsPage = () => {
                                     <small>Sonuç bulunamadı</small>
                                 </div>
                             ) : (
-                                filteredItems.map(item => {
+                                filteredItems.map((item, index) => {
                                     const value = filterKey === 'project' ? item.id : item;
                                     const displayText = displayFunc ? displayFunc(item) : 
                                         (filterKey === 'project' ? `${item.code} - ${item.name}` : item);
-                                    const itemId = `${filterKey}-${value}`;
+                                    const itemId = `${filterKey}-${value}-${index}`; // ✅ Unique key
 
                                     return (
                                         <div key={itemId} className="px-3 py-1">
@@ -862,6 +924,7 @@ const IssueDetailsPage = () => {
             </div>
 
             {/* Filters Card */}
+            {/* Filters Card */}
             <div className="card mb-3">
                 <div className="card-header d-flex justify-content-between align-items-center">
                     <h6 className="mb-0">
@@ -883,6 +946,15 @@ const IssueDetailsPage = () => {
                 </div>
                 {showFilters && (
                     <div className="card-body">
+                        {/* ✅ DEBUG: Veriyi görelim */}
+                        {/* <div className="alert alert-info small mb-3">
+                            <strong>Debug:</strong> 
+                            Projeler: {uniqueProjects.length} | 
+                            Tipler: {productionTypeList.length} | 
+                            Durumlar: {statusList.length} | 
+                            Atananlar: {assigneeList.length}
+                        </div> */}
+
                         <div className="row g-3">
                             {/* Proje Dropdown */}
                             {renderDropdownFilter('project', 'Proje', 'folder', uniqueProjects)}
