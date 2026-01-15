@@ -1,0 +1,144 @@
+/* src/frontend/src/pages/Reports/OpenIssuesReportPage.css */
+
+.open-issues-report-page {
+    padding: 1.5rem;
+}
+
+/* Page Header */
+.page-header h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.page-header p {
+    font-size: 0.95rem;
+}
+
+/* Dropdown Styles */
+.dropdown-menu.show {
+    display: block;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border-radius: 0.375rem;
+    padding: 0;
+    margin-top: 0.25rem;
+    z-index: 1050;
+}
+
+.dropdown-item-custom {
+    transition: background-color 0.15s ease-in-out;
+}
+
+.dropdown-item-custom:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-menu .form-check {
+    margin-bottom: 0.25rem;
+}
+
+.dropdown-menu .form-check-input {
+    margin-top: 0.25rem;
+    cursor: pointer;
+}
+
+.dropdown-menu .form-check-label {
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.btn-outline-primary.btn-outline-primary {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.btn-outline-primary.btn-outline-primary:hover {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Table Styles */
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+    cursor: default;
+}
+
+.table thead th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-bottom: 2px solid #dee2e6;
+    padding: 0.75rem;
+}
+
+.table tbody td {
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.table tbody td small {
+    font-size: 0.8rem;
+}
+
+/* Badge Styles */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.65rem;
+}
+
+/* Pagination */
+.pagination {
+    margin-bottom: 0;
+}
+
+.page-link {
+    color: #0d6efd;
+    border: 1px solid #dee2e6;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+}
+
+.page-link:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+/* Loading State */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .open-issues-report-page {
+        padding: 1rem;
+    }
+
+    .page-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .table {
+        font-size: 0.85rem;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 0.5rem;
+    }
+}

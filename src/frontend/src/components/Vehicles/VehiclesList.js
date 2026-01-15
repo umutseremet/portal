@@ -1,5 +1,5 @@
 ﻿// src/frontend/src/components/Vehicles/VehiclesList.js
-// ✅ TAM VERSİYON - Hiçbir değişiklik yapılmadı, sadece düzgün çalışan orijinal
+// ✅ RAPOR SAYFASI STİLİNDE INLINE FİLTRELER İLE GÜNCELLENMİŞ
 
 import React, { useState } from 'react';
 import FuelPurchaseImportModal from './FuelPurchaseImportModal';
@@ -28,55 +28,9 @@ const VehiclesList = ({
   hasFilters = false,
   isEmpty = false,
   selectedCount = 0,
-  isAllSelected = false,
-  filterSummary = {}
+  isAllSelected = false
 }) => {
-  const [showFilters, setShowFilters] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [localFilters, setLocalFilters] = useState({
-    fromDate: filters.fromDate || '',
-    toDate: filters.toDate || '',
-    brand: filters.brand || '',
-    model: filters.model || '',
-    licensePlate: filters.licensePlate || '',
-    companyName: filters.companyName || '',
-    ownershipType: filters.ownershipType || ''
-  });
-
-  // Handle local filter change
-  const handleLocalFilterChange = (field, value) => {
-    setLocalFilters(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Apply filters
-  const handleApplyFilters = () => {
-    if (onFilterChange) {
-      onFilterChange(localFilters);
-    }
-    setShowFilters(false);
-  };
-
-  // Reset filters
-  const handleResetFilters = () => {
-    const defaultFilters = {
-      fromDate: '',
-      toDate: '',
-      brand: '',
-      model: '',
-      licensePlate: '',
-      companyName: '',
-      ownershipType: '',
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
-    };
-    setLocalFilters(defaultFilters);
-    if (onResetFilters) {
-      onResetFilters();
-    }
-  };
 
   // Handle delete click
   const handleDeleteClick = (vehicle) => {
@@ -103,74 +57,50 @@ const VehiclesList = ({
 
   // Get sort button class helper
   const getSortButtonClass = (column) => {
-    const baseClass = "btn btn-link text-decoration-none p-0 fw-medium d-flex align-items-center";
-    const activeClass = filters.sortBy === column ? ' text-danger' : ' text-muted';
-    return baseClass + activeClass;
+    const baseClass = "btn btn-link text-decoration-none p-0 fw-medium d-flex align-items-center text-dark";
+    const activeClass = filters.sortBy === column ? 'text-danger' : '';
+    return `${baseClass} ${activeClass}`;
   };
 
-  if (loading) {
-    return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-danger" role="status">
-          <span className="visually-hidden">Yükleniyor...</span>
-        </div>
-        <p className="mt-3 text-muted">Araçlar yükleniyor...</p>
-      </div>
-    );
-  }
+  // ✅ Handle filter input change - Gerçek zamanlı
+  const handleFilterChange = (field, value) => {
+    if (onFilterChange) {
+      onFilterChange({ [field]: value });
+    }
+  };
 
   return (
-    <div>
-      {/* Toolbar */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div className="d-flex gap-2">
+    <div className="vehicles-list">
+      {/* Action Buttons */}
+      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div className="d-flex gap-2 flex-wrap">
           <button
-            className="btn btn-danger"
+            className="btn btn-danger btn-sm"
             onClick={onNewVehicle}
           >
-            <i className="bi bi-plus-circle me-2"></i>
-            Yeni Araç Ekle
+            <i className="bi bi-plus-lg me-2"></i>
+            Yeni Araç
           </button>
-
+          
           <button
-            className="btn btn-outline-secondary"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <i className="bi bi-funnel me-2"></i>
-            Filtrele
-            {hasFilters && <span className="badge bg-danger ms-2">●</span>}
-          </button>
-
-          <button
-            className="btn btn-outline-secondary"
-            onClick={onRefresh}
-          >
-            <i className="bi bi-arrow-clockwise me-2"></i>
-            Yenile
-          </button>
-
-          {/* Yakıt Alımı İçe Aktar Butonu */}
-          <button
-            className="btn btn-info"
+            className="btn btn-warning btn-sm"
             onClick={() => setShowImportModal(true)}
           >
-            <i className="bi bi-fuel-pump me-2"></i>
-            Yakıt Alımı İçe Aktar
+            <i className="bi bi-file-earmark-excel me-2"></i>
+            Yakıt Alımları İçe Aktar
           </button>
-        </div>
 
-        <div className="d-flex gap-2">
           {selectedCount > 0 && (
             <>
               <button
-                className="btn btn-outline-danger"
+                className="btn btn-danger btn-sm"
                 onClick={onBulkDelete}
               >
                 <i className="bi bi-trash me-2"></i>
-                Seçilileri Sil ({selectedCount})
+                Seçilenleri Sil ({selectedCount})
               </button>
               <button
-                className="btn btn-outline-secondary"
+                className="btn btn-outline-secondary btn-sm"
                 onClick={onClearSelection}
               >
                 <i className="bi bi-x-circle me-2"></i>
@@ -178,9 +108,21 @@ const VehiclesList = ({
               </button>
             </>
           )}
+        </div>
 
+        <div className="d-flex gap-2">
+          {hasFilters && (
+            <button
+              className="btn btn-outline-secondary btn-sm"
+              onClick={onResetFilters}
+            >
+              <i className="bi bi-x-circle me-1"></i>
+              Filtreleri Temizle
+            </button>
+          )}
+          
           <button
-            className="btn btn-success"
+            className="btn btn-success btn-sm"
             onClick={onExport}
           >
             <i className="bi bi-file-earmark-excel me-2"></i>
@@ -189,99 +131,7 @@ const VehiclesList = ({
         </div>
       </div>
 
-      {/* Filters Panel */}
-      {showFilters && (
-        <div className="card mb-3">
-          <div className="card-body">
-            <div className="row g-3">
-              <div className="col-md-3">
-                <label className="form-label">Plaka</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Plaka ara..."
-                  value={localFilters.licensePlate}
-                  onChange={(e) => handleLocalFilterChange('licensePlate', e.target.value)}
-                />
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Marka</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Marka ara..."
-                  value={localFilters.brand}
-                  onChange={(e) => handleLocalFilterChange('brand', e.target.value)}
-                />
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Model</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Model ara..."
-                  value={localFilters.model}
-                  onChange={(e) => handleLocalFilterChange('model', e.target.value)}
-                />
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Şirket</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Şirket ara..."
-                  value={localFilters.companyName}
-                  onChange={(e) => handleLocalFilterChange('companyName', e.target.value)}
-                />
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Sahiplik Tipi</label>
-                <select
-                  className="form-select"
-                  value={localFilters.ownershipType}
-                  onChange={(e) => handleLocalFilterChange('ownershipType', e.target.value)}
-                >
-                  <option value="">Tümü</option>
-                  <option value="company">Şirket</option>
-                  <option value="rental">Kiralık</option>
-                  <option value="personal">Şahıs</option>
-                </select>
-              </div>
-
-              <div className="col-12">
-                <div className="d-flex gap-2 justify-content-end">
-                  <button
-                    className="btn btn-danger"
-                    onClick={handleApplyFilters}
-                  >
-                    <i className="bi bi-check-circle me-1"></i>
-                    Uygula
-                  </button>
-                  <button
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={handleResetFilters}
-                  >
-                    <i className="bi bi-arrow-clockwise me-1"></i>
-                    Temizle
-                  </button>
-                  <button
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={() => setShowFilters(false)}
-                  >
-                    <i className="bi bi-x me-1"></i>
-                    Kapat
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* Info Bar */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="text-muted small">
           Toplam {pagination.totalCount || vehicles.length} araç
@@ -290,16 +140,29 @@ const VehiclesList = ({
               ({selectedVehicles.length} seçili)
             </span>
           )}
+          {hasFilters && (
+            <span className="ms-2 text-info">
+              <i className="bi bi-funnel-fill"></i> Filtre aktif
+            </span>
+          )}
         </div>
+        
+        {loading && (
+          <div className="text-muted small">
+            <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+            Yükleniyor...
+          </div>
+        )}
       </div>
 
-      {/* Vehicles Table */}
+      {/* Vehicles Table with Inline Filters */}
       <div className="table-responsive">
-        <table className="table table-hover">
-          <thead>
+        <table className="table table-hover table-sm align-middle">
+          <thead className="table-light">
             <tr>
-              <th width="50">
-                <div className="form-check">
+              {/* Checkbox Column */}
+              <th width="50" className="text-center">
+                <div className="form-check d-flex justify-content-center">
                   <input
                     className="form-check-input"
                     type="checkbox"
@@ -308,25 +171,69 @@ const VehiclesList = ({
                   />
                 </div>
               </th>
-              <th>
-                <button
-                  className={getSortButtonClass('licensePlate')}
-                  onClick={() => handleSort('licensePlate')}
-                >
-                  Plaka
-                  <i className={`bi ${getSortIcon('licensePlate')} ms-1`}></i>
-                </button>
+
+              {/* Plaka Column with Filter */}
+              <th width="150">
+                <div className="d-flex flex-column">
+                  <button
+                    className={getSortButtonClass('licensePlate')}
+                    onClick={() => handleSort('licensePlate')}
+                  >
+                    Plaka
+                    <i className={`bi ${getSortIcon('licensePlate')} ms-1`}></i>
+                  </button>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm mt-1"
+                    placeholder="Plaka ara..."
+                    value={filters.licensePlate || ''}
+                    onChange={(e) => handleFilterChange('licensePlate', e.target.value)}
+                  />
+                </div>
               </th>
-              <th>
-                <button
-                  className={getSortButtonClass('brand')}
-                  onClick={() => handleSort('brand')}
-                >
-                  Marka/Model
-                  <i className={`bi ${getSortIcon('brand')} ms-1`}></i>
-                </button>
+
+              {/* Marka Column with Filter */}
+              <th width="150">
+                <div className="d-flex flex-column">
+                  <button
+                    className={getSortButtonClass('brand')}
+                    onClick={() => handleSort('brand')}
+                  >
+                    Marka
+                    <i className={`bi ${getSortIcon('brand')} ms-1`}></i>
+                  </button>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm mt-1"
+                    placeholder="Marka ara..."
+                    value={filters.brand || ''}
+                    onChange={(e) => handleFilterChange('brand', e.target.value)}
+                  />
+                </div>
               </th>
-              <th>
+
+              {/* Model Column with Filter */}
+              <th width="150">
+                <div className="d-flex flex-column">
+                  <button
+                    className={getSortButtonClass('model')}
+                    onClick={() => handleSort('model')}
+                  >
+                    Model
+                    <i className={`bi ${getSortIcon('model')} ms-1`}></i>
+                  </button>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm mt-1"
+                    placeholder="Model ara..."
+                    value={filters.model || ''}
+                    onChange={(e) => handleFilterChange('model', e.target.value)}
+                  />
+                </div>
+              </th>
+
+              {/* Yıl Column */}
+              <th width="80">
                 <button
                   className={getSortButtonClass('year')}
                   onClick={() => handleSort('year')}
@@ -335,17 +242,32 @@ const VehiclesList = ({
                   <i className={`bi ${getSortIcon('year')} ms-1`}></i>
                 </button>
               </th>
-              <th>
-                <button
-                  className={getSortButtonClass('companyName')}
-                  onClick={() => handleSort('companyName')}
-                >
-                  Şirket
-                  <i className={`bi ${getSortIcon('companyName')} ms-1`}></i>
-                </button>
+
+              {/* Şirket Column with Filter */}
+              <th width="150">
+                <div className="d-flex flex-column">
+                  <button
+                    className={getSortButtonClass('companyName')}
+                    onClick={() => handleSort('companyName')}
+                  >
+                    Şirket
+                    <i className={`bi ${getSortIcon('companyName')} ms-1`}></i>
+                  </button>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm mt-1"
+                    placeholder="Şirket ara..."
+                    value={filters.companyName || ''}
+                    onChange={(e) => handleFilterChange('companyName', e.target.value)}
+                  />
+                </div>
               </th>
-              <th>Atanan Kullanıcı</th>
-              <th>
+
+              {/* Atanan Kullanıcı */}
+              <th width="150">Atanan Kullanıcı</th>
+
+              {/* Kilometre */}
+              <th width="120">
                 <button
                   className={getSortButtonClass('currentMileage')}
                   onClick={() => handleSort('currentMileage')}
@@ -354,7 +276,9 @@ const VehiclesList = ({
                   <i className={`bi ${getSortIcon('currentMileage')} ms-1`}></i>
                 </button>
               </th>
-              <th>
+
+              {/* Kayıt Tarihi */}
+              <th width="120">
                 <button
                   className={getSortButtonClass('createdAt')}
                   onClick={() => handleSort('createdAt')}
@@ -363,110 +287,144 @@ const VehiclesList = ({
                   <i className={`bi ${getSortIcon('createdAt')} ms-1`}></i>
                 </button>
               </th>
-              <th width="120">İşlemler</th>
+
+              {/* İşlemler */}
+              <th width="140" className="text-center">İşlemler</th>
             </tr>
           </thead>
           <tbody>
-            {vehicles.map((vehicle) => (
-              <tr key={vehicle.id}>
-                <td>
-                  <div className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      checked={selectedVehicles.includes(vehicle.id)}
-                      onChange={() => onSelectVehicle?.(vehicle.id)}
-                    />
-                  </div>
-                </td>
-                <td>
-                  <span className="fw-bold text-primary">{vehicle.licensePlate}</span>
-                </td>
-                <td>
-                  <div>
-                    <div className="fw-medium">{vehicle.brand} {vehicle.model}</div>
-                  </div>
-                </td>
-                <td>{vehicle.year || '-'}</td>
-                <td>
-                  <span className="badge bg-light text-dark">
-                    {vehicle.companyName || 'Belirtilmemiş'}
-                  </span>
-                </td>
-                <td>
-                  {vehicle.assignedUserName ? (
-                    <div>
-                      <div className="small">{vehicle.assignedUserName}</div>
-                      <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                        {vehicle.assignedUserPhone}
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="text-muted">-</span>
-                  )}
-                </td>
-                <td>
-                  {vehicle.currentMileage ? (
-                    <span>{vehicle.currentMileage.toLocaleString()} km</span>
-                  ) : (
-                    <span className="text-muted">-</span>
-                  )}
-                </td>
-                <td>
-                  {vehicle.createdAt ? (
-                    <small>{new Date(vehicle.createdAt).toLocaleDateString('tr-TR')}</small>
-                  ) : (
-                    <span className="text-muted">-</span>
-                  )}
-                </td>
-                <td>
-                  <div className="btn-group btn-group-sm">
+            {!loading && vehicles.length === 0 ? (
+              <tr>
+                <td colSpan="10" className="text-center py-5">
+                  <i className="bi bi-truck display-4 text-muted mb-3 d-block"></i>
+                  <p className="text-muted mb-0">
+                    {hasFilters
+                      ? 'Filtrelere uygun araç bulunamadı.'
+                      : 'Henüz araç kaydı bulunmuyor.'}
+                  </p>
+                  {hasFilters && (
                     <button
-                      className="btn btn-outline-secondary"
-                      onClick={() => onViewVehicle?.(vehicle)}
-                      title="Görüntüle"
+                      className="btn btn-outline-secondary btn-sm mt-3"
+                      onClick={onResetFilters}
                     >
-                      <i className="bi bi-eye"></i>
+                      Filtreleri Temizle
                     </button>
-                    <button
-                      className="btn btn-outline-primary"
-                      onClick={() => onEditVehicle?.(vehicle)}
-                      title="Düzenle"
-                    >
-                      <i className="bi bi-pencil"></i>
-                    </button>
-                    <button
-                      className="btn btn-outline-danger"
-                      onClick={() => handleDeleteClick(vehicle)}
-                      title="Sil"
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
-                  </div>
+                  )}
                 </td>
               </tr>
-            ))}
+            ) : (
+              vehicles.map((vehicle) => (
+                <tr key={vehicle.id}>
+                  {/* Checkbox */}
+                  <td className="text-center">
+                    <div className="form-check d-flex justify-content-center">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        checked={selectedVehicles.includes(vehicle.id)}
+                        onChange={() => onSelectVehicle?.(vehicle.id)}
+                      />
+                    </div>
+                  </td>
+
+                  {/* Plaka */}
+                  <td>
+                    <span className="fw-bold text-primary">{vehicle.licensePlate}</span>
+                  </td>
+
+                  {/* Marka */}
+                  <td>
+                    <div className="fw-medium">{vehicle.brand}</div>
+                  </td>
+
+                  {/* Model */}
+                  <td>
+                    <div>{vehicle.model}</div>
+                  </td>
+
+                  {/* Yıl */}
+                  <td>{vehicle.year || '-'}</td>
+
+                  {/* Şirket */}
+                  <td>
+                    <span className="badge bg-light text-dark">
+                      {vehicle.companyName || 'Belirtilmemiş'}
+                    </span>
+                  </td>
+
+                  {/* Atanan Kullanıcı */}
+                  <td>
+                    {vehicle.assignedUserName ? (
+                      <div>
+                        <div className="small">{vehicle.assignedUserName}</div>
+                        <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                          {vehicle.assignedUserPhone}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-muted">-</span>
+                    )}
+                  </td>
+
+                  {/* Kilometre */}
+                  <td>
+                    {vehicle.currentMileage ? (
+                      <span>{vehicle.currentMileage.toLocaleString()} km</span>
+                    ) : (
+                      <span className="text-muted">-</span>
+                    )}
+                  </td>
+
+                  {/* Kayıt Tarihi */}
+                  <td>
+                    {vehicle.createdAt ? (
+                      <small>{new Date(vehicle.createdAt).toLocaleDateString('tr-TR')}</small>
+                    ) : (
+                      <span className="text-muted">-</span>
+                    )}
+                  </td>
+
+                  {/* İşlemler */}
+                  <td className="text-center">
+                    <div className="btn-group btn-group-sm">
+                      <button
+                        className="btn btn-outline-secondary"
+                        onClick={() => onViewVehicle?.(vehicle)}
+                        title="Görüntüle"
+                      >
+                        <i className="bi bi-eye"></i>
+                      </button>
+                      <button
+                        className="btn btn-outline-primary"
+                        onClick={() => onEditVehicle?.(vehicle)}
+                        title="Düzenle"
+                      >
+                        <i className="bi bi-pencil"></i>
+                      </button>
+                      <button
+                        className="btn btn-outline-danger"
+                        onClick={() => handleDeleteClick(vehicle)}
+                        title="Sil"
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Empty State */}
-      {isEmpty && !loading && (
-        <div className="text-center py-5">
-          <i className="bi bi-truck display-1 text-muted"></i>
-          <p className="mt-3 text-muted">
-            {hasFilters
-              ? 'Filtrelere uygun araç bulunamadı.'
-              : 'Henüz araç kaydı bulunmuyor.'}
-          </p>
-          {hasFilters && (
-            <button
-              className="btn btn-outline-secondary"
-              onClick={handleResetFilters}
-            >
-              Filtreleri Temizle
-            </button>
-          )}
+      {/* Loading Overlay */}
+      {loading && vehicles.length > 0 && (
+        <div className="position-relative" style={{ minHeight: '100px' }}>
+          <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75">
+            <div className="spinner-border text-danger" role="status">
+              <span className="visually-hidden">Yükleniyor...</span>
+            </div>
+          </div>
         </div>
       )}
 

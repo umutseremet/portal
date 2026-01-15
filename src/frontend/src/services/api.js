@@ -461,6 +461,69 @@ class ApiService {
     }
   }
 
+  // src/frontend/src/services/api.js
+  // ✅ EKSİK updateVehicle METODU - api.js'e EKLENMELİ
+
+  // createVehicle metodundan SONRA, deleteVehicle metodundan ÖNCE ekleyin:
+
+  async updateVehicle(id, vehicleData) {
+    try {
+      if (!id) {
+        throw new Error('Vehicle ID is required');
+      }
+
+      console.log('🚀 api.updateVehicle called:', { id, vehicleData });
+
+      // Validate required fields
+      if (!vehicleData.licensePlate?.trim()) {
+        throw new Error('Plaka zorunludur');
+      }
+      if (!vehicleData.brand?.trim()) {
+        throw new Error('Marka zorunludur');
+      }
+      if (!vehicleData.model?.trim()) {
+        throw new Error('Model zorunludur');
+      }
+
+      // Boş değerleri temizle
+      const cleanedData = {};
+      Object.keys(vehicleData).forEach(key => {
+        const value = vehicleData[key];
+        if (value !== null && value !== undefined && value !== '') {
+          cleanedData[key] = value;
+        }
+      });
+
+      // ✅ BACKEND'İN BEKLEDİĞİ FORMAT: Vehicle entity + Id
+      // Backend'deki UpdateVehicle metodu: UpdateVehicle(int id, [FromBody] Vehicle vehicle)
+      const updateData = {
+        id: parseInt(id), // ID'yi ekle
+        ...cleanedData,
+        licensePlate: cleanedData.licensePlate?.toUpperCase().trim(),
+        brand: cleanedData.brand?.trim(),
+        model: cleanedData.model?.trim()
+      };
+
+      // camelCase → PascalCase dönüşümü
+      const pascalData = {};
+      Object.keys(updateData).forEach(key => {
+        const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
+        pascalData[pascalKey] = updateData[key];
+      });
+
+      console.log('📤 Sending update to backend:', pascalData);
+
+      // ✅ PUT request
+      const response = await this.put(`/Vehicles/${id}`, pascalData);
+
+      console.log('✅ Update vehicle response:', response);
+
+      return response;
+    } catch (error) {
+      console.error('❌ api.updateVehicle error:', error);
+      throw error;
+    }
+  }
   async deleteVehicle(id) {
     if (!id) {
       throw new Error('Vehicle ID is required');
@@ -2836,6 +2899,202 @@ class ApiService {
       return response;
     } catch (error) {
       console.error('❌ Arvento connection test failed:', error);
+      throw error;
+    }
+  }
+
+  // ===== REPORTS ENDPOINTS =====
+
+  /**
+   * Redmine açık işler raporunu getirir
+   * Backend: POST /api/Reports/open-issues
+   */
+  async getOpenIssues(filters = {}) {
+    console.log('📦 API getOpenIssues call:', filters);
+
+    try {
+      const requestBody = {
+        assignedToIds: filters.assignedToIds || null,
+        trackerIds: filters.trackerIds || null,
+        projectIds: filters.projectIds || null,
+        createdAfter: filters.createdAfter || null,
+        createdBefore: filters.createdBefore || null,
+        searchTerm: filters.searchTerm || null,
+        emptyDateFilter: filters.emptyDateFilter || null,
+        page: filters.page || 1,
+        pageSize: filters.pageSize || 20
+      };
+
+      console.log('📦 Request body:', requestBody);
+
+      const response = await this.post('/Reports/open-issues', requestBody);
+      console.log('📋 API getOpenIssues raw response:', response);
+
+      // Response formatını düzenle (camelCase'e çevir)
+      const mappedResponse = {
+        issues: (response.issues || response.Issues || []).map(issue => ({
+          issueId: issue.issueId || issue.IssueId,
+          subject: issue.subject || issue.Subject || '',
+          trackerName: issue.trackerName || issue.TrackerName || '',
+          assignedTo: issue.assignedTo || issue.AssignedTo || '',
+          createdBy: issue.createdBy || issue.CreatedBy || '',
+          createdOn: issue.createdOn || issue.CreatedOn,
+          startDate: issue.startDate || issue.StartDate,
+          dueDate: issue.dueDate || issue.DueDate,
+          orderDate: issue.orderDate || issue.OrderDate,
+          deadlineDate: issue.deadlineDate || issue.DeadlineDate,
+          plannedStartDate: issue.plannedStartDate || issue.PlannedStartDate,
+          plannedEndDate: issue.plannedEndDate || issue.PlannedEndDate,
+          projectName: issue.projectName || issue.ProjectName || '',
+          statusName: issue.statusName || issue.StatusName || ''
+        })),
+        totalCount: response.totalCount || response.TotalCount || 0,
+        page: response.page || response.Page || 1,
+        pageSize: response.pageSize || response.PageSize || 20,
+        totalPages: response.totalPages || response.TotalPages || 0
+      };
+
+      console.log('📋 Mapped open issues response:', mappedResponse);
+      console.log('📊 Total open issues:', mappedResponse.totalCount);
+
+      return mappedResponse;
+    } catch (error) {
+      console.error('❌ getOpenIssues error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Kullanıcı listesini getirir (Atanan dropdown için)
+   * Backend: GET /api/Reports/users
+   */
+  async getReportUsers() {
+    console.log('📦 API getReportUsers call');
+
+    try {
+      const response = await this.get('/Reports/users');
+      console.log('👥 API getReportUsers raw response:', response);
+
+      // Response formatını düzenle
+      const users = (response || []).map(user => ({
+        id: user.id || user.Id,
+        fullName: user.fullName || user.FullName || ''
+      }));
+
+      console.log('✅ Mapped users:', users);
+      return users;
+    } catch (error) {
+      console.error('❌ getReportUsers error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * İş tipi listesini getirir (Tracker dropdown için)
+   * Backend: GET /api/Reports/trackers
+   */
+  async getReportTrackers() {
+    console.log('📦 API getReportTrackers call');
+
+    try {
+      const response = await this.get('/Reports/trackers');
+      console.log('🏷️ API getReportTrackers raw response:', response);
+
+      // Response formatını düzenle
+      const trackers = (response || []).map(tracker => ({
+        id: tracker.id || tracker.Id,
+        name: tracker.name || tracker.Name || ''
+      }));
+
+      console.log('✅ Mapped trackers:', trackers);
+      return trackers;
+    } catch (error) {
+      console.error('❌ getReportTrackers error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Proje listesi getir (Proje dropdown için)
+   * Backend: GET /api/Reports/projects
+   */
+  async getReportProjects() {
+    console.log('📋 API getReportProjects call');
+
+    try {
+      const response = await this.get('/Reports/projects');
+      console.log('📋 API getReportProjects raw response:', response);
+
+      // Response formatını düzenle
+      const projects = (Array.isArray(response) ? response : []).map(project => ({
+        id: project.id || project.Id,
+        name: project.name || project.Name || ''
+      }));
+
+      console.log('✅ Mapped projects:', projects);
+      return projects;
+    } catch (error) {
+      console.error('❌ getReportProjects error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Excel'e aktar - Açık işler raporu
+   * Backend: POST /api/Reports/open-issues/export
+   */
+  async exportOpenIssuesToExcel(filters = {}) {
+    console.log('📦 API exportOpenIssuesToExcel call:', filters);
+
+    try {
+      const requestBody = {
+        assignedToIds: filters.assignedToIds || null,
+        trackerIds: filters.trackerIds || null,
+        projectIds: filters.projectIds || null,
+        createdAfter: filters.createdAfter || null,
+        createdBefore: filters.createdBefore || null,
+        searchTerm: filters.searchTerm || null,
+        emptyDateFilter: filters.emptyDateFilter || null,
+        page: 1,
+        pageSize: 999999 // Get all records for export
+      };
+
+      const response = await fetch(`${this.baseURL}/Reports/open-issues/export`, {
+        method: 'POST',
+        headers: this.getHeaders(true),
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.status}`);
+      }
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'Acik_Isler_Raporu.xlsx';
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Download file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log('✅ Excel export successful');
+      return true;
+    } catch (error) {
+      console.error('❌ exportOpenIssuesToExcel error:', error);
       throw error;
     }
   }

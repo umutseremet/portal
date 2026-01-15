@@ -85,6 +85,20 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       permission: null
     },
     {
+      id: 'reports',
+      label: 'Raporlar',
+      icon: 'bi-file-earmark-bar-graph',
+      permission: null,
+      children: [
+        {
+          id: 'open-issues-report',
+          label: 'Açık İşler Raporu',
+          path: '/reports/open-issues',
+          permission: null // Herkese açık
+        }
+      ]
+    },
+    {
       id: 'definitions',
       label: 'Tanımlamalar',
       icon: 'bi-gear-fill',

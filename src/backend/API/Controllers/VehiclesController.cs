@@ -215,16 +215,122 @@ namespace API.Controllers
             }
         }
 
+        // src/backend/API/Controllers/VehiclesController.cs
+        // ✅ GetVehicles METODU GÜNCELLENMİŞ - FİLTRELEME, SIRALAMA ve PAGINATION
+
         /// <summary>
-        /// Lists all vehicles
+        /// Lists all vehicles with filtering, sorting and pagination
         /// GET: api/vehicles
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<VehicleListResponseDto>>> GetVehicles()
+        public async Task<ActionResult<object>> GetVehicles(
+            [FromQuery] string? search,
+            [FromQuery] string? licensePlate,
+            [FromQuery] string? brand,
+            [FromQuery] string? model,
+            [FromQuery] string? companyName,
+            [FromQuery] string? ownershipType,
+            [FromQuery] string? sortBy = "createdAt",
+            [FromQuery] string? sortOrder = "desc",
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
             try
             {
-                var vehicles = await _context.Vehicles
+                _logger.LogInformation("GetVehicles called with filters - Search: {Search}, LicensePlate: {LicensePlate}, Brand: {Brand}, Model: {Model}, Page: {Page}, PageSize: {PageSize}",
+                    search, licensePlate, brand, model, page, pageSize);
+
+                var query = _context.Vehicles.AsQueryable();
+
+                // ✅ GENEL ARAMA FİLTRESİ
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchTerm = search.Trim().ToUpper();
+                    query = query.Where(v =>
+                        v.LicensePlate.ToUpper().Contains(searchTerm) ||
+                        v.Brand.ToUpper().Contains(searchTerm) ||
+                        v.Model.ToUpper().Contains(searchTerm) ||
+                        (v.VIN != null && v.VIN.ToUpper().Contains(searchTerm))
+                    );
+                    _logger.LogInformation("Applied search filter: {SearchTerm}", searchTerm);
+                }
+
+                // ✅ PLAKA FİLTRESİ
+                if (!string.IsNullOrWhiteSpace(licensePlate))
+                {
+                    var plateTerm = licensePlate.Trim().ToUpper();
+                    query = query.Where(v => v.LicensePlate.ToUpper().Contains(plateTerm));
+                    _logger.LogInformation("Applied license plate filter: {LicensePlate}", plateTerm);
+                }
+
+                // ✅ MARKA FİLTRESİ
+                if (!string.IsNullOrWhiteSpace(brand))
+                {
+                    var brandTerm = brand.Trim().ToUpper();
+                    query = query.Where(v => v.Brand.ToUpper().Contains(brandTerm));
+                    _logger.LogInformation("Applied brand filter: {Brand}", brandTerm);
+                }
+
+                // ✅ MODEL FİLTRESİ
+                if (!string.IsNullOrWhiteSpace(model))
+                {
+                    var modelTerm = model.Trim().ToUpper();
+                    query = query.Where(v => v.Model.ToUpper().Contains(modelTerm));
+                    _logger.LogInformation("Applied model filter: {Model}", modelTerm);
+                }
+
+                // ✅ ŞİRKET FİLTRESİ
+                if (!string.IsNullOrWhiteSpace(companyName))
+                {
+                    var companyTerm = companyName.Trim().ToUpper();
+                    query = query.Where(v => v.CompanyName != null && v.CompanyName.ToUpper().Contains(companyName.ToUpper()));
+                    _logger.LogInformation("Applied company filter: {CompanyName}", companyTerm);
+                }
+
+                // ✅ SAHİPLİK TÜRÜ FİLTRESİ
+                if (!string.IsNullOrWhiteSpace(ownershipType))
+                {
+                    query = query.Where(v => v.OwnershipType != null && v.OwnershipType.ToLower() == ownershipType.ToLower());
+                    _logger.LogInformation("Applied ownership type filter: {OwnershipType}", ownershipType);
+                }
+
+                // ✅ TOPLAM KAYIT SAYISI (Filtreleme sonrası)
+                var totalCount = await query.CountAsync();
+                _logger.LogInformation("Total vehicles after filtering: {TotalCount}", totalCount);
+
+                // ✅ SIRALAMA
+                query = sortBy?.ToLower() switch
+                {
+                    "licenseplate" => sortOrder?.ToLower() == "asc"
+                        ? query.OrderBy(v => v.LicensePlate)
+                        : query.OrderByDescending(v => v.LicensePlate),
+                    "brand" => sortOrder?.ToLower() == "asc"
+                        ? query.OrderBy(v => v.Brand)
+                        : query.OrderByDescending(v => v.Brand),
+                    "model" => sortOrder?.ToLower() == "asc"
+                        ? query.OrderBy(v => v.Model)
+                        : query.OrderByDescending(v => v.Model),
+                    "year" => sortOrder?.ToLower() == "asc"
+                        ? query.OrderBy(v => v.Year)
+                        : query.OrderByDescending(v => v.Year),
+                    "companyname" => sortOrder?.ToLower() == "asc"
+                        ? query.OrderBy(v => v.CompanyName)
+                        : query.OrderByDescending(v => v.CompanyName),
+                    "currentmileage" => sortOrder?.ToLower() == "asc"
+                        ? query.OrderBy(v => v.CurrentMileage)
+                        : query.OrderByDescending(v => v.CurrentMileage),
+                    "updatedat" => sortOrder?.ToLower() == "asc"
+                        ? query.OrderBy(v => v.UpdatedAt)
+                        : query.OrderByDescending(v => v.UpdatedAt),
+                    _ => sortOrder?.ToLower() == "asc"
+                        ? query.OrderBy(v => v.CreatedAt)
+                        : query.OrderByDescending(v => v.CreatedAt)
+                };
+
+                // ✅ PAGINATION
+                var vehicles = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
                     .Select(v => new VehicleListResponseDto
                     {
                         Id = v.Id,
@@ -251,8 +357,25 @@ namespace API.Controllers
                     })
                     .ToListAsync();
 
-                _logger.LogInformation("{Count} vehicles listed", vehicles.Count);
-                return Ok(vehicles);
+                // ✅ PAGINATION METADATA
+                var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+                var hasNextPage = page < totalPages;
+                var hasPreviousPage = page > 1;
+
+                _logger.LogInformation("{Count} vehicles returned for page {Page}/{TotalPages}",
+                    vehicles.Count, page, totalPages);
+
+                // ✅ RESPONSE
+                return Ok(new
+                {
+                    Data = vehicles,
+                    TotalCount = totalCount,
+                    TotalPages = totalPages,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    HasNextPage = hasNextPage,
+                    HasPreviousPage = hasPreviousPage
+                });
             }
             catch (Exception ex)
             {
@@ -305,7 +428,7 @@ namespace API.Controllers
                 }
 
                 var logs = await _logService.GetVehicleLogsAsync(id);
-                
+
                 _logger.LogInformation("Retrieved {Count} log entries for vehicle {Id}", logs.Count, id);
                 return Ok(logs);
             }

@@ -1,5 +1,5 @@
 // src/frontend/src/pages/VehiclesPage.js
-// ✅ ARVENTO BUTONLARI EKLENMİŞ VERSİYON
+// ✅ INLINE FİLTRELER İLE GÜNCELLENMİŞ + filterSummary HATASI DÜZELTİLDİ
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -55,6 +55,7 @@ const VehiclesPage = () => {
         return;
       }
       exportVehiclesToExcel(vehicles, 'Araclar');
+      toast.success('Araç listesi Excel\'e aktarıldı');
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Excel dışa aktarma sırasında hata oluştu');
@@ -66,7 +67,6 @@ const VehiclesPage = () => {
     try {
       console.log('Sorting by:', column, order);
       updateFilters({
-        ...filters,
         sortBy: column,
         sortOrder: order
       });
@@ -85,7 +85,7 @@ const VehiclesPage = () => {
     }
   };
 
-  // Handle filter change
+  // ✅ Handle filter change - Her değişiklikte API'ye gider (debounced)
   const handleFilterChange = (newFilters) => {
     try {
       console.log('Updating filters:', newFilters);
@@ -122,7 +122,7 @@ const VehiclesPage = () => {
     }
   };
 
-  // ✅ Handle new vehicle
+  // Handle new vehicle
   const handleNewVehicle = () => {
     try {
       console.log('🆕 New vehicle button clicked');
@@ -132,7 +132,7 @@ const VehiclesPage = () => {
     }
   };
 
-  // ✅ Handle view vehicle
+  // Handle view vehicle
   const handleViewVehicle = (vehicle) => {
     try {
       console.log('👁️ VIEW BUTTON CLICKED - Vehicle:', vehicle);
@@ -147,7 +147,7 @@ const VehiclesPage = () => {
     }
   };
 
-  // ✅ Handle edit vehicle
+  // Handle edit vehicle
   const handleEditVehicle = (vehicle) => {
     try {
       console.log('✏️ EDIT BUTTON CLICKED - Vehicle:', vehicle);
@@ -167,9 +167,11 @@ const VehiclesPage = () => {
     try {
       if (window.confirm(`${vehicle.licensePlate} plakalı aracı silmek istediğinize emin misiniz?`)) {
         await deleteVehicle(vehicle.id);
+        toast.success('Araç başarıyla silindi');
       }
     } catch (error) {
       console.error('Error deleting vehicle:', error);
+      toast.error('Araç silinirken hata oluştu');
     }
   };
 
@@ -178,19 +180,19 @@ const VehiclesPage = () => {
     try {
       if (window.confirm(`${selectedCount} aracı silmek istediğinize emin misiniz?`)) {
         await deleteSelectedVehicles();
+        toast.success(`${selectedCount} araç başarıyla silindi`);
       }
     } catch (error) {
       console.error('Error bulk deleting:', error);
+      toast.error('Araçlar silinirken hata oluştu');
     }
   };
 
   return (
-    <div className="container-fluid py-4">
+    <div className="container-fluid py-4 vehicles-page">
       <div className="row">
         <div className="col-12">
-          {/* ========================================
-              PAGE HEADER - ARVENTO BUTONLARI İLE
-              ======================================== */}
+          {/* PAGE HEADER */}
           <div className="page-header mb-4">
             <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
               <div>
@@ -203,21 +205,21 @@ const VehiclesPage = () => {
                 </p>
               </div>
 
-              {/* ✅ ARVENTO BUTONLARI */}
+              {/* ARVENTO BUTONLARI */}
               <div className="d-flex gap-2 flex-wrap">
                 <button
-                  className="btn btn-success"
+                  className="btn btn-success btn-sm"
                   onClick={() => navigate('/vehicles/arvento/working-report')}
                 >
                   <i className="bi bi-file-earmark-bar-graph me-2"></i>
-                  Araç Çalışma Raporu (Arvento)
+                  Araç Çalışma Raporu
                 </button>
                 <button
-                  className="btn btn-info"
+                  className="btn btn-info btn-sm"
                   onClick={() => navigate('/vehicles/arvento/location-map')}
                 >
                   <i className="bi bi-geo-alt-fill me-2"></i>
-                  Anlık Araç Konumları (Arvento)
+                  Anlık Araç Konumları
                 </button>
               </div>
             </div>
@@ -236,12 +238,44 @@ const VehiclesPage = () => {
             </div>
           )}
 
-          {/* Filter Summary */}
+          {/* ✅ DÜZELTİLMİŞ Filter Summary - Obje render etme */}
           {hasFilters && (
-            <div className="alert alert-info d-flex justify-content-between align-items-center">
-              <div>
-                <i className="bi bi-funnel me-2"></i>
-                <strong>Aktif Filtreler:</strong> {filterSummary}
+            <div className="alert alert-info d-flex justify-content-between align-items-center flex-wrap">
+              <div className="d-flex align-items-center flex-wrap gap-2">
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-funnel me-2"></i>
+                  <strong>Aktif Filtreler:</strong>
+                </div>
+                {filterSummary.search && (
+                  <span className="badge bg-secondary">
+                    Arama: {filterSummary.search}
+                  </span>
+                )}
+                {filterSummary.licensePlate && (
+                  <span className="badge bg-secondary">
+                    Plaka: {filterSummary.licensePlate}
+                  </span>
+                )}
+                {filterSummary.brand && (
+                  <span className="badge bg-secondary">
+                    Marka: {filterSummary.brand}
+                  </span>
+                )}
+                {filterSummary.model && (
+                  <span className="badge bg-secondary">
+                    Model: {filterSummary.model}
+                  </span>
+                )}
+                {filterSummary.companyName && (
+                  <span className="badge bg-secondary">
+                    Şirket: {filterSummary.companyName}
+                  </span>
+                )}
+                {filterSummary.ownershipType && (
+                  <span className="badge bg-secondary">
+                    Sahiplik: {filterSummary.ownershipType}
+                  </span>
+                )}
               </div>
               <button 
                 className="btn btn-sm btn-outline-secondary"
@@ -283,7 +317,6 @@ const VehiclesPage = () => {
                     isEmpty={isEmpty}
                     selectedCount={selectedCount}
                     isAllSelected={isAllSelected}
-                    filterSummary={filterSummary}
                   />
                 </div>
               </div>

@@ -42,6 +42,8 @@ import VehicleLocationMapPage from './pages/VehicleLocationMapPage';
 
 import RevisedIssuesPage from './pages/RevisedIssuesPage';
 
+import OpenIssuesReportPage from './pages/Reports/OpenIssuesReportPage';
+
 import './App.css';
 
 function App() {
@@ -273,7 +275,12 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
+              {/* ========================================
+                ÜRaporlar
+                ======================================== */}
+            <Route path="/reports/open-issues" element={<ProtectedRoute>
+                  <Layout><OpenIssuesReportPage /></Layout>  
+                </ProtectedRoute>} />
             {/* ========================================
                 ÜRÜN YÖNETİMİ
                 ======================================== */}
@@ -387,7 +394,7 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <RevisedIssuesPage />
-                  </Layout>                  
+                  </Layout>
                 </ProtectedRoute>
               }
             />
