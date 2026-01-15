@@ -215,7 +215,7 @@ namespace API.Controllers
                             p.name AS ProjectName,
                             s.name AS StatusName
                         FROM issues i
-                        LEFT JOIN trackers t ON i.tracker_id = t.id
+                        LEFT JOIN trackers t ON i.tracker_id = t.id and t.id not in (27, 35)
                         LEFT JOIN users u_assigned ON i.assigned_to_id = u_assigned.id
                         LEFT JOIN users u_author ON i.author_id = u_author.id
                         LEFT JOIN projects p ON i.project_id = p.id
