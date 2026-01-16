@@ -38,7 +38,7 @@ namespace API.Data
         public DbSet<PurchaseOrderDetail> PurchaseOrderDetails { get; set; }
         public DbSet<PurchaseRequestApprovalHistory> PurchaseRequestApprovalHistory { get; set; }
         public DbSet<PurchaseOrderHistory> PurchaseOrderHistory { get; set; }
-
+        public DbSet<LogoInvoiceApproval> LogoInvoiceApprovals { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

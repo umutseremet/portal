@@ -1,0 +1,190 @@
+/* src/frontend/src/styles/logoInvoiceApproval.css */
+
+.logo-invoice-approval-page {
+    padding: 1.5rem;
+}
+
+/* Page Header */
+.page-header h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.page-header p {
+    font-size: 0.95rem;
+}
+
+/* Card Styling */
+.logo-invoice-approval-page .card {
+    border: none;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 0.5rem;
+}
+
+.logo-invoice-approval-page .card-body {
+    padding: 1.5rem;
+}
+
+/* Form Styling */
+.logo-invoice-approval-page .form-label {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.logo-invoice-approval-page .form-control,
+.logo-invoice-approval-page .form-select {
+    border-radius: 0.375rem;
+    border: 1px solid #ced4da;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.logo-invoice-approval-page .form-control:focus,
+.logo-invoice-approval-page .form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Table Styles */
+.logo-invoice-approval-page .table {
+    font-size: 0.9rem;
+}
+
+.logo-invoice-approval-page .table thead th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-bottom: 2px solid #dee2e6;
+    padding: 0.75rem;
+}
+
+.logo-invoice-approval-page .table tbody td {
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.logo-invoice-approval-page .table tbody td small {
+    font-size: 0.8rem;
+}
+
+.logo-invoice-approval-page .table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+    cursor: default;
+}
+
+/* Badge Styles */
+.logo-invoice-approval-page .badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.65rem;
+}
+
+/* Button Styling */
+.logo-invoice-approval-page .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.logo-invoice-approval-page .btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+}
+
+.logo-invoice-approval-page .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.logo-invoice-approval-page .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+.logo-invoice-approval-page .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.logo-invoice-approval-page .btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.logo-invoice-approval-page .btn-outline-primary {
+    color: #007bff;
+    border-color: #007bff;
+}
+
+.logo-invoice-approval-page .btn-outline-primary:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.logo-invoice-approval-page .btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.logo-invoice-approval-page .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Alert Styling */
+.logo-invoice-approval-page .alert {
+    border-radius: 0.5rem;
+    border-left: 4px solid;
+    font-size: 0.9rem;
+}
+
+.logo-invoice-approval-page .alert-danger {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+}
+
+.logo-invoice-approval-page .alert-success {
+    background-color: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}
+
+/* Loading Spinner */
+.logo-invoice-approval-page .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Empty State */
+.logo-invoice-approval-page .text-muted {
+    color: #6c757d !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .logo-invoice-approval-page {
+        padding: 1rem;
+    }
+
+    .page-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .logo-invoice-approval-page .table {
+        font-size: 0.85rem;
+    }
+
+    .logo-invoice-approval-page .table thead th,
+    .logo-invoice-approval-page .table tbody td {
+        padding: 0.5rem;
+    }
+
+    .logo-invoice-approval-page .btn {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+}

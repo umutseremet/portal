@@ -23,15 +23,15 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       icon: 'bi-tools',
       permission: null, // Ana grup herkese açık, alt öğeler kendi yetkilerini kontrol eder
       children: [
-        { 
-          id: 'bom-transfer', 
-          label: 'BOM Listesi Aktarımı', 
+        {
+          id: 'bom-transfer',
+          label: 'BOM Listesi Aktarımı',
           path: '/production/bom-transfer',
           permission: 'yetki_kullanici_bom_listesi_aktarim'
         },
-        { 
-          id: 'data-cam', 
-          label: 'Data / CAM Hazırlama', 
+        {
+          id: 'data-cam',
+          label: 'Data / CAM Hazırlama',
           path: '/production/technical-drawing-preparation',
           permission: 'yetki_kullanici_data_cam_hazirlama'
         },
@@ -67,6 +67,13 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           label: 'Onay Bekleyenler',
           path: '/pending-approvals',  // ✅ DÜZELTİLDİ
           icon: 'bi-hourglass-split'
+        },
+        {
+          id: 'logo-invoice-approval',
+          label: 'Logo Fatura Onay',
+          path: '/logo-invoice-approval',
+          icon: 'bi-receipt-cutoff',
+          permission: 'yetki_kullanici_satinalma_logo_onay'  // YETKİ KONTROLÜ
         }
       ]
     },
@@ -136,23 +143,23 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           if (item.requireAdmin && !permissionService.isAdmin()) {
             return null;
           }
-  
+
           // Grup öğesi ise
           if (item.children) {
             // Alt öğeleri filtrele
             const filteredChildren = filterMenuItems(item.children);
-  
+
             // Eğer hiç alt öğe kalmadıysa, bu grubu gösterme
             if (filteredChildren.length === 0) {
               return null;
             }
-  
+
             return {
               ...item,
               children: filteredChildren
             };
           }
-  
+
           // Tekil menü öğesi - yetki kontrolü
           if (item.permission) {
             // Yetki kontrolü yap
@@ -160,14 +167,14 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
               return null;
             }
           }
-  
+
           return item;
         })
         .filter(item => item !== null);
     };
-  
+
     const filtered = filterMenuItems(allMenuItems);
-    
+
     // Debug log
     console.log('🔍 Sidebar: Menu items filtered', {
       totalItems: allMenuItems.length,
@@ -175,7 +182,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       isAdmin: permissionService.isAdmin(),
       permissionsCount: permissionService.getUserPermissions().length
     });
-  
+
     return filtered;
   }, [
     // ✅ DÜZELTME: Permissions değiştiğinde yeniden hesapla

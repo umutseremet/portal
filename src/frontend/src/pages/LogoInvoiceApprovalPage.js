@@ -1,0 +1,420 @@
+// src/frontend/src/pages/LogoInvoiceApprovalPage.js
+import React, { useState, useEffect } from 'react';
+import logoInvoiceService from '../services/logoInvoiceService';
+import '../styles/logoInvoiceApproval.css';
+
+const LogoInvoiceApprovalPage = () => {
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  // Filtreler
+  const [filters, setFilters] = useState({
+    startDate: '',
+    endDate: '',
+    invoiceNumber: '',
+    status: ''
+  });
+
+  // Sayfa yüklendiğinde verileri çek
+  useEffect(() => {
+    loadInvoices();
+  }, []);
+
+  const loadInvoices = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await logoInvoiceService.getInvoices(filters);
+
+      // Debug: Response yapısını kontrol et
+      console.log('📦 API Response:', response);
+      console.log('📦 Response keys:', Object.keys(response));
+
+      // Backend'den gelen response: { invoices: [...], totalCount: ... } veya { Invoices: [...], TotalCount: ... }
+      const invoiceList = response.invoices || response.Invoices || [];
+      console.log('📋 Invoice count:', invoiceList.length);
+
+      setInvoices(invoiceList);
+    } catch (err) {
+      console.error('❌ Fatura listesi yüklenirken hata:', err);
+      console.error('❌ Error details:', err.response?.data);
+      setError(err.response?.data?.message || 'Fatura listesi yüklenirken bir hata oluştu.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    loadInvoices();
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      startDate: '',
+      endDate: '',
+      invoiceNumber: '',
+      status: ''
+    });
+    // Filtreleri temizledikten sonra tekrar yükle
+    setTimeout(() => loadInvoices(), 100);
+  };
+
+  const handleSendForApproval = async (logicalRef, invoiceNumber) => {
+    if (!window.confirm(`${invoiceNumber} nolu fatura onaya gönderilecek. Onaylıyor musunuz?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
+
+      await logoInvoiceService.sendForApproval(logicalRef);
+      setSuccess(`${invoiceNumber} nolu fatura başarıyla onaya gönderildi.`);
+      await loadInvoices();
+    } catch (err) {
+      console.error('Onaya gönderme hatası:', err);
+      setError(err.response?.data?.message || 'Fatura onaya gönderilirken bir hata oluştu.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (logicalRef, invoiceNumber) => {
+    if (!window.confirm(`${invoiceNumber} nolu fatura onaylanacak. Onaylıyor musunuz?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
+
+      await logoInvoiceService.approveInvoice(logicalRef);
+      setSuccess(`${invoiceNumber} nolu fatura başarıyla onaylandı.`);
+      await loadInvoices();
+    } catch (err) {
+      console.error('Onaylama hatası:', err);
+      setError(err.response?.data?.message || 'Fatura onaylanırken bir hata oluştu.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRevokeApproval = async (logicalRef, invoiceNumber, currentStatus) => {
+    let confirmMessage = '';
+
+    if (currentStatus === 'Approved') {
+      confirmMessage = `${invoiceNumber} nolu faturanın ONAYI GERİ ALINACAK ve "Onay Bekliyor" durumuna dönecek. Onaylıyor musunuz?`;
+    } else if (currentStatus === 'Pending') {
+      confirmMessage = `${invoiceNumber} nolu faturanın ONAYA GÖNDERİLMESİ İPTAL EDİLECEK ve "Onaya Gönderilmedi" durumuna dönecek. Onaylıyor musunuz?`;
+    }
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
+
+      await logoInvoiceService.revokeApproval(logicalRef);
+
+      if (currentStatus === 'Approved') {
+        setSuccess(`${invoiceNumber} nolu faturanın onayı başarıyla geri alındı.`);
+      } else {
+        setSuccess(`${invoiceNumber} nolu faturanın onaya gönderilmesi başarıyla iptal edildi.`);
+      }
+
+      await loadInvoices();
+    } catch (err) {
+      console.error('Onay geri alma hatası:', err);
+      setError(err.response?.data?.message || 'İşlem sırasında bir hata oluştu.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'NotSent':
+        return <span className="badge bg-secondary">Onaya Gönderilmedi</span>;
+      case 'Pending':
+        return <span className="badge bg-warning text-dark">Onay Bekliyor</span>;
+      case 'Approved':
+        return <span className="badge bg-success">Onaylandı</span>;
+      default:
+        return <span className="badge bg-secondary">{status}</span>;
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('tr-TR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleString('tr-TR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="logo-invoice-approval-page">
+      <div className="page-header mb-4">
+        <h2>
+          <i className="bi bi-receipt-cutoff me-2"></i>
+          Logo Fatura Onay Yönetimi
+        </h2>
+        <p className="text-muted">
+          Logo Connect sistemindeki faturaları görüntüleyebilir ve onay süreçlerini yönetebilirsiniz.
+        </p>
+      </div>
+
+      {/* Filtreler */}
+      <div className="card mb-4">
+        <div className="card-body">
+          <form onSubmit={handleSearch}>
+            <div className="row g-3">
+              <div className="col-md-3">
+                <div className="mb-3">
+                  <label className="form-label">Başlangıç Tarihi</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={filters.startDate}
+                    onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="mb-3">
+                  <label className="form-label">Bitiş Tarihi</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={filters.endDate}
+                    onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="mb-3">
+                  <label className="form-label">Fatura Numarası</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Fatura no ara..."
+                    value={filters.invoiceNumber}
+                    onChange={(e) => handleFilterChange('invoiceNumber', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="mb-3">
+                  <label className="form-label">Durum</label>
+                  <select
+                    className="form-select"
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                  >
+                    <option value="">Tümü</option>
+                    <option value="NotSent">Onaya Gönderilmedi</option>
+                    <option value="Pending">Onay Bekliyor</option>
+                    <option value="Approved">Onaylandı</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="row mt-2">
+              <div className="col-12">
+                <button type="submit" className="btn btn-primary me-2">
+                  <i className="bi bi-search me-1"></i>
+                  Ara
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={handleClearFilters}
+                >
+                  <i className="bi bi-x-circle me-1"></i>
+                  Temizle
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Mesajlar */}
+      {error && (
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          {error}
+          <button type="button" className="btn-close" onClick={() => setError(null)}></button>
+        </div>
+      )}
+      {success && (
+        <div className="alert alert-success alert-dismissible fade show" role="alert">
+          <i className="bi bi-check-circle-fill me-2"></i>
+          {success}
+          <button type="button" className="btn-close" onClick={() => setSuccess(null)}></button>
+        </div>
+      )}
+
+      {/* Fatura Listesi */}
+      <div className="card">
+        <div className="card-body">
+          {loading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Yükleniyor...</span>
+              </div>
+              <p className="mt-3 text-muted">Yükleniyor...</p>
+            </div>
+          ) : (
+            <>
+              {invoices.length === 0 ? (
+                <div className="text-center py-5 text-muted">
+                  <i className="bi bi-inbox display-4 d-block mb-3"></i>
+                  <p>Gösterilecek fatura bulunamadı.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-3">
+                    <strong>{invoices.length}</strong> fatura listelendi
+                  </div>
+                  <div className="table-responsive">
+                    <table className="table table-hover align-middle">
+                      <thead>
+                        <tr>
+                          <th>Fatura No</th>
+                          <th>Gönderen</th>
+                          <th>Fatura Tarihi</th>
+                          <th>Durum</th>
+                          <th>Onaya Gönderilme</th>
+                          <th>Onaylanma</th>
+                          <th className="text-end">İşlemler</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {invoices.map((invoice) => (
+                          <tr key={invoice.logicalRef}>
+                            <td>
+                              <strong>{invoice.invoiceNumber}</strong>
+                            </td>
+                            <td>
+                              <small className="text-muted">
+                                {invoice.senderTitle || '-'}
+                              </small>
+                            </td>
+                            <td>{formatDate(invoice.invoiceDate)}</td>
+                            <td>{getStatusBadge(invoice.status)}</td>
+                            <td>
+                              {invoice.sentForApprovalDate ? (
+                                <small className="text-muted">
+                                  {formatDateTime(invoice.sentForApprovalDate)}
+                                </small>
+                              ) : (
+                                '-'
+                              )}
+                            </td>
+                            <td>
+                              {invoice.approvedDate ? (
+                                <small className="text-muted">
+                                  {formatDateTime(invoice.approvedDate)}
+                                </small>
+                              ) : (
+                                '-'
+                              )}
+                            </td>
+                            <td className="text-end">
+                              {invoice.status === 'NotSent' && (
+                                <button
+                                  className="btn btn-sm btn-outline-primary"
+                                  onClick={() => handleSendForApproval(invoice.logicalRef, invoice.invoiceNumber)}
+                                  disabled={loading}
+                                >
+                                  <i className="bi bi-send me-1"></i>
+                                  Onaya Gönder
+                                </button>
+                              )}
+
+                              {invoice.status === 'Pending' && (
+                                <div className="btn-group" role="group">
+                                  <button
+                                    className="btn btn-sm btn-success"
+                                    onClick={() => handleApprove(invoice.logicalRef, invoice.invoiceNumber)}
+                                    disabled={loading}
+                                  >
+                                    <i className="bi bi-check-circle me-1"></i>
+                                    Onayla
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-outline-warning"
+                                    onClick={() => handleRevokeApproval(invoice.logicalRef, invoice.invoiceNumber, invoice.status)}
+                                    disabled={loading}
+                                    title="Onaya gönderilmeyi iptal et"
+                                  >
+                                    <i className="bi bi-x-circle me-1"></i>
+                                    İptal
+                                  </button>
+                                </div>
+                              )}
+
+                              {invoice.status === 'Approved' && (
+                                <div className="btn-group" role="group">
+                                  <span className="badge bg-success d-flex align-items-center px-3">
+                                    <i className="bi bi-check-circle-fill me-1"></i>
+                                    Onaylandı
+                                  </span>
+                                  <button
+                                    className="btn btn-sm btn-outline-danger"
+                                    onClick={() => handleRevokeApproval(invoice.logicalRef, invoice.invoiceNumber, invoice.status)}
+                                    disabled={loading}
+                                    title="Onayı geri al"
+                                  >
+                                    <i className="bi bi-arrow-counterclockwise me-1"></i>
+                                    Geri Al
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LogoInvoiceApprovalPage;

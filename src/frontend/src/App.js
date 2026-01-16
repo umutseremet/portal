@@ -43,7 +43,7 @@ import VehicleLocationMapPage from './pages/VehicleLocationMapPage';
 import RevisedIssuesPage from './pages/RevisedIssuesPage';
 
 import OpenIssuesReportPage from './pages/Reports/OpenIssuesReportPage';
-
+import LogoInvoiceApprovalPage from './pages/LogoInvoiceApprovalPage';
 import './App.css';
 
 function App() {
@@ -166,6 +166,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/logo-invoice-approval"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LogoInvoiceApprovalPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
             {/* ========================================
                 ARAÇ YÖNETİMİ - ✅ SIRALAMA DÜZELTİLDİ
@@ -275,12 +285,12 @@ function App() {
                 </ProtectedRoute>
               }
             />
-              {/* ========================================
+            {/* ========================================
                 ÜRaporlar
                 ======================================== */}
             <Route path="/reports/open-issues" element={<ProtectedRoute>
-                  <Layout><OpenIssuesReportPage /></Layout>  
-                </ProtectedRoute>} />
+              <Layout><OpenIssuesReportPage /></Layout>
+            </ProtectedRoute>} />
             {/* ========================================
                 ÜRÜN YÖNETİMİ
                 ======================================== */}
