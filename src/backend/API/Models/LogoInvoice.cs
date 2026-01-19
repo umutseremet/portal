@@ -3,16 +3,7 @@ using System.Collections.Generic;
 
 namespace API.Models.LogoInvoice
 {
-    /// <summary>
-    /// Logo fatura listesi filtre request modeli
-    /// </summary>
-    public class LogoInvoiceFilterRequest
-    {
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
-        public string? InvoiceNumber { get; set; }
-        public string? Status { get; set; } // NotSent, Pending, Approved
-    }
+   
 
     /// <summary>
     /// Logo fatura DTO
@@ -40,6 +31,11 @@ namespace API.Models.LogoInvoice
     {
         public List<LogoInvoiceDto> Invoices { get; set; } = new();
         public int TotalCount { get; set; }
+
+        // ✅ YENİ: Pagination bilgileri
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
     }
 
     /// <summary>
@@ -67,5 +63,20 @@ namespace API.Models.LogoInvoice
     {
         public int LogicalRef { get; set; }
         public string? Notes { get; set; }
+    }
+
+    /// <summary>
+    /// Logo fatura listesi filtre request modeli
+    /// </summary>
+    public class LogoInvoiceFilterRequest
+    {
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public string? InvoiceNumber { get; set; }
+        public string? Status { get; set; } // NotSent, Pending, Approved
+
+        // ✅ YENİ: Pagination parametreleri
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 20;
     }
 }

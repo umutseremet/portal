@@ -8,7 +8,13 @@ const LogoInvoiceApprovalPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 20;
+  
   // Filtreler
   const [filters, setFilters] = useState({
     startDate: '',
@@ -20,23 +26,31 @@ const LogoInvoiceApprovalPage = () => {
   // Sayfa yüklendiğinde verileri çek
   useEffect(() => {
     loadInvoices();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
   const loadInvoices = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await logoInvoiceService.getInvoices(filters);
-
+      const response = await logoInvoiceService.getInvoices({
+        ...filters,
+        page: currentPage,
+        pageSize: pageSize
+      });
+      
       // Debug: Response yapısını kontrol et
       console.log('📦 API Response:', response);
-      console.log('📦 Response keys:', Object.keys(response));
-
-      // Backend'den gelen response: { invoices: [...], totalCount: ... } veya { Invoices: [...], TotalCount: ... }
+      
+      // Backend'den gelen response
       const invoiceList = response.invoices || response.Invoices || [];
-      console.log('📋 Invoice count:', invoiceList.length);
-
+      const total = response.totalCount || response.TotalCount || 0;
+      
       setInvoices(invoiceList);
+      setTotalCount(total);
+      setTotalPages(Math.ceil(total / pageSize));
+      
+      console.log('📋 Invoice count:', invoiceList.length, 'Total:', total);
     } catch (err) {
       console.error('❌ Fatura listesi yüklenirken hata:', err);
       console.error('❌ Error details:', err.response?.data);
@@ -55,6 +69,7 @@ const LogoInvoiceApprovalPage = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setCurrentPage(1); // Filtreleme yapılınca ilk sayfaya dön
     loadInvoices();
   };
 
@@ -65,8 +80,16 @@ const LogoInvoiceApprovalPage = () => {
       invoiceNumber: '',
       status: ''
     });
+    setCurrentPage(1);
     // Filtreleri temizledikten sonra tekrar yükle
     setTimeout(() => loadInvoices(), 100);
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleSendForApproval = async (logicalRef, invoiceNumber) => {
@@ -78,7 +101,7 @@ const LogoInvoiceApprovalPage = () => {
       setLoading(true);
       setError(null);
       setSuccess(null);
-
+      
       await logoInvoiceService.sendForApproval(logicalRef);
       setSuccess(`${invoiceNumber} nolu fatura başarıyla onaya gönderildi.`);
       await loadInvoices();
@@ -99,7 +122,7 @@ const LogoInvoiceApprovalPage = () => {
       setLoading(true);
       setError(null);
       setSuccess(null);
-
+      
       await logoInvoiceService.approveInvoice(logicalRef);
       setSuccess(`${invoiceNumber} nolu fatura başarıyla onaylandı.`);
       await loadInvoices();
@@ -113,7 +136,7 @@ const LogoInvoiceApprovalPage = () => {
 
   const handleRevokeApproval = async (logicalRef, invoiceNumber, currentStatus) => {
     let confirmMessage = '';
-
+    
     if (currentStatus === 'Approved') {
       confirmMessage = `${invoiceNumber} nolu faturanın ONAYI GERİ ALINACAK ve "Onay Bekliyor" durumuna dönecek. Onaylıyor musunuz?`;
     } else if (currentStatus === 'Pending') {
@@ -128,15 +151,15 @@ const LogoInvoiceApprovalPage = () => {
       setLoading(true);
       setError(null);
       setSuccess(null);
-
+      
       await logoInvoiceService.revokeApproval(logicalRef);
-
+      
       if (currentStatus === 'Approved') {
         setSuccess(`${invoiceNumber} nolu faturanın onayı başarıyla geri alındı.`);
       } else {
         setSuccess(`${invoiceNumber} nolu faturanın onaya gönderilmesi başarıyla iptal edildi.`);
       }
-
+      
       await loadInvoices();
     } catch (err) {
       console.error('Onay geri alma hatası:', err);
@@ -254,9 +277,9 @@ const LogoInvoiceApprovalPage = () => {
                   <i className="bi bi-search me-1"></i>
                   Ara
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
+                <button 
+                  type="button" 
+                  className="btn btn-outline-secondary" 
                   onClick={handleClearFilters}
                 >
                   <i className="bi bi-x-circle me-1"></i>
@@ -303,8 +326,15 @@ const LogoInvoiceApprovalPage = () => {
                 </div>
               ) : (
                 <>
-                  <div className="mb-3">
-                    <strong>{invoices.length}</strong> fatura listelendi
+                  <div className="mb-3 d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>{totalCount}</strong> fatura bulundu
+                      {totalPages > 1 && (
+                        <span className="text-muted ms-2">
+                          (Sayfa {currentPage} / {totalPages})
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="table-responsive">
                     <table className="table table-hover align-middle">
@@ -361,7 +391,7 @@ const LogoInvoiceApprovalPage = () => {
                                   Onaya Gönder
                                 </button>
                               )}
-
+                              
                               {invoice.status === 'Pending' && (
                                 <div className="btn-group" role="group">
                                   <button
@@ -383,7 +413,7 @@ const LogoInvoiceApprovalPage = () => {
                                   </button>
                                 </div>
                               )}
-
+                              
                               {invoice.status === 'Approved' && (
                                 <div className="btn-group" role="group">
                                   <span className="badge bg-success d-flex align-items-center px-3">
@@ -412,6 +442,64 @@ const LogoInvoiceApprovalPage = () => {
             </>
           )}
         </div>
+
+        {/* Pagination */}
+        {!loading && invoices.length > 0 && totalPages > 1 && (
+          <div className="card-footer bg-white">
+            <div className="d-flex justify-content-center">
+              <nav>
+                <ul className="pagination mb-0">
+                  <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      <i className="bi bi-chevron-left"></i>
+                    </button>
+                  </li>
+
+                  {[...Array(Math.min(5, totalPages))].map((_, idx) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = idx + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = idx + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + idx;
+                    } else {
+                      pageNum = currentPage - 2 + idx;
+                    }
+
+                    return (
+                      <li
+                        key={pageNum}
+                        className={`page-item ${currentPage === pageNum ? 'active' : ''}`}
+                      >
+                        <button
+                          className="page-link"
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </button>
+                      </li>
+                    );
+                  })}
+
+                  <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      <i className="bi bi-chevron-right"></i>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -161,10 +161,34 @@ namespace API.Controllers
                     invoices = invoices.Where(i => i.Status == filter.Status).ToList();
                 }
 
+                // ✅ PAGINATION LOGIC
+                var totalCount = invoices.Count;
+                var totalPages = (int)Math.Ceiling(totalCount / (double)filter.PageSize);
+
+                // Sayfa numarası kontrolü
+                if (filter.Page < 1) filter.Page = 1;
+                if (filter.Page > totalPages && totalPages > 0) filter.Page = totalPages;
+
+                // Pagination uygula
+                var paginatedInvoices = invoices
+                    .Skip((filter.Page - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
+                    .ToList();
+
+                _logger.LogInformation(
+                    "Logo invoices listed: Total={Total}, Page={Page}/{TotalPages}, PageSize={PageSize}",
+                    totalCount,
+                    filter.Page,
+                    totalPages,
+                    filter.PageSize);
+
                 return Ok(new LogoInvoiceListResponse
                 {
-                    Invoices = invoices,
-                    TotalCount = invoices.Count
+                    Invoices = paginatedInvoices,
+                    TotalCount = totalCount,
+                    Page = filter.Page,
+                    PageSize = filter.PageSize,
+                    TotalPages = totalPages
                 });
             }
             catch (Exception ex)
