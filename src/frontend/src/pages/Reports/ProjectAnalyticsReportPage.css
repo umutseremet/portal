@@ -145,7 +145,7 @@
 
 /* Working bars - AÇIK SARI */
 .project-analytics-report-page .ct-working-bar {
-    stroke: #FFF59D !important; /* Açık sarı - çalışılıyor işler */
+    stroke: #FFEB3B !important; /* Açık sarı (orijinal) - çalışılıyor işler */
     stroke-width: 20px !important;
     opacity: 0.9 !important;
 }
