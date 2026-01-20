@@ -53,19 +53,19 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
         {
           id: 'purchase-requests',
           label: 'Satınalma Talepleri',
-          path: '/purchase-requests',  // ✅ DÜZELTİLDİ
+          path: '/purchase-requests',
           icon: 'bi-file-earmark-text'
         },
         {
           id: 'purchase-orders',
           label: 'Satınalma Siparişleri',
-          path: '/purchase-orders',    // ✅ DÜZELTİLDİ
+          path: '/purchase-orders',
           icon: 'bi-receipt'
         },
         {
           id: 'pending-approvals',
           label: 'Onay Bekleyenler',
-          path: '/pending-approvals',  // ✅ DÜZELTİLDİ
+          path: '/pending-approvals',  
           icon: 'bi-hourglass-split'
         },
         {
@@ -73,7 +73,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           label: 'Logo Fatura Onay',
           path: '/logo-invoice-approval',
           icon: 'bi-receipt-cutoff',
-          permission: 'yetki_kullanici_satinalma_logo_onay'  // YETKİ KONTROLÜ
+          permission: 'yetki_kullanici_satinalma_logo_onay'
         }
       ]
     },

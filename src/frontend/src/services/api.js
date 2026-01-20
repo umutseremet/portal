@@ -1137,56 +1137,49 @@ class ApiService {
  * @returns {Promise<Object>} Update response
  */
   async updateIssueDates(data) {
-    try {
-      console.log('📅 API updateIssueDates request:', data);
+  try {
+    console.log('📅 API updateIssueDates request:', data);
 
-      // ✅ Tüm alanları gönder - revize tarihler dahil
-      const requestBody = {
-        issueId: data.issueId,
-        plannedStartDate: data.plannedStartDate || null,
-        plannedEndDate: data.plannedEndDate || null,
-        revisedPlannedStartDate: data.revisedPlannedStartDate || null,
-        revisedPlannedEndDate: data.revisedPlannedEndDate || null,
-        revisedPlanDescription: data.revisedPlanDescription || null,
-        updatedBy: data.updatedBy || 'System'
-      };
+    const requestBody = {
+      issueId: data.issueId,
+      plannedStartDate: data.plannedStartDate || null,
+      plannedEndDate: data.plannedEndDate || null,
+      revisedPlannedStartDate: data.revisedPlannedStartDate || null,
+      revisedPlannedEndDate: data.revisedPlannedEndDate || null,
+      revisedPlanDescription: data.revisedPlanDescription || null,
+      updatedBy: data.updatedBy || 'System'
+    };
 
-      console.log('📤 Sending to backend:', requestBody);
+    console.log('📤 Sending to backend:', requestBody);
 
-      const response = await this.post('/RedmineWeeklyCalendar/UpdateIssueDates', requestBody);
+    const response = await this.post('/RedmineWeeklyCalendar/UpdateIssueDates', requestBody);
 
-      console.log('✅ API updateIssueDates response:', response);
+    console.log('✅ API updateIssueDates response:', response);
 
-      // Response formatını düzenle (camelCase'e çevir)
-      const mappedResponse = {
-        success: response.success ?? response.Success ?? false,
-        message: response.message || response.Message || '',
-        issueId: response.issueId || response.IssueId,
+    const mappedResponse = {
+      success: response.success ?? response.Success ?? false,
+      message: response.message || response.Message || '',
+      issueId: response.issueId || response.IssueId,
+      oldPlannedStartDate: response.oldPlannedStartDate || response.OldPlannedStartDate,
+      oldPlannedEndDate: response.oldPlannedEndDate || response.OldPlannedEndDate,
+      newPlannedStartDate: response.newPlannedStartDate || response.NewPlannedStartDate,
+      newPlannedEndDate: response.newPlannedEndDate || response.NewPlannedEndDate,
+      oldRevisedPlannedStartDate: response.oldRevisedPlannedStartDate || response.OldRevisedPlannedStartDate,
+      oldRevisedPlannedEndDate: response.oldRevisedPlannedEndDate || response.OldRevisedPlannedEndDate,
+      newRevisedPlannedStartDate: response.newRevisedPlannedStartDate || response.NewRevisedPlannedStartDate,
+      newRevisedPlannedEndDate: response.newRevisedPlannedEndDate || response.NewRevisedPlannedEndDate,
+      revisedPlanDescription: response.revisedPlanDescription || response.RevisedPlanDescription,
+      updatedAt: response.updatedAt || response.UpdatedAt
+    };
 
-        // Planlanan tarihler
-        oldPlannedStartDate: response.oldPlannedStartDate || response.OldPlannedStartDate,
-        oldPlannedEndDate: response.oldPlannedEndDate || response.OldPlannedEndDate,
-        newPlannedStartDate: response.newPlannedStartDate || response.NewPlannedStartDate,
-        newPlannedEndDate: response.newPlannedEndDate || response.NewPlannedEndDate,
+    console.log('📋 Mapped updateIssueDates response:', mappedResponse);
 
-        // ✅ Revize tarihler
-        oldRevisedPlannedStartDate: response.oldRevisedPlannedStartDate || response.OldRevisedPlannedStartDate,
-        oldRevisedPlannedEndDate: response.oldRevisedPlannedEndDate || response.OldRevisedPlannedEndDate,
-        newRevisedPlannedStartDate: response.newRevisedPlannedStartDate || response.NewRevisedPlannedStartDate,
-        newRevisedPlannedEndDate: response.newRevisedPlannedEndDate || response.NewRevisedPlannedEndDate,
-        revisedPlanDescription: response.revisedPlanDescription || response.RevisedPlanDescription,
-
-        updatedAt: response.updatedAt || response.UpdatedAt
-      };
-
-      console.log('📋 Mapped updateIssueDates response:', mappedResponse);
-
-      return mappedResponse;
-    } catch (error) {
-      console.error('❌ updateIssueDates error:', error);
-      throw error;
-    }
+    return mappedResponse;
+  } catch (error) {
+    console.error('❌ updateIssueDates error:', error);
+    throw error;
   }
+}
 
   // src/frontend/src/services/api.js
   // ✅ YENİ METOD: getRevisedIssues - Backend'de filtreleme yapan optimized endpoint
@@ -3095,6 +3088,46 @@ class ApiService {
       return true;
     } catch (error) {
       console.error('❌ exportOpenIssuesToExcel error:', error);
+      throw error;
+    }
+
+
+  }
+
+  async updateIssueRevisedDate(data) {
+    try {
+      console.log('📅 API updateIssueRevisedDate request:', data);
+
+      if (!data.issueId) {
+        throw new Error('IssueId is required');
+      }
+
+      const requestBody = {
+        issueId: data.issueId,
+        revisedPlannedStartDate: data.revisedPlannedStartDate || null,
+        revisedPlannedEndDate: data.revisedPlannedEndDate || null,
+        revisedPlanDescription: data.revisedPlanDescription || null
+      };
+
+      console.log('📦 Request body:', requestBody);
+
+      const response = await this.post('/RedmineWeeklyCalendar/UpdateIssueRevisedDate', requestBody);
+
+      console.log('✅ API updateIssueRevisedDate response:', response);
+
+      return {
+        success: response.success ?? response.Success ?? false,
+        message: response.message || response.Message || '',
+        issueId: response.issueId || response.IssueId,
+        oldRevisedPlannedStartDate: response.oldRevisedPlannedStartDate || response.OldRevisedPlannedStartDate,
+        oldRevisedPlannedEndDate: response.oldRevisedPlannedEndDate || response.OldRevisedPlannedEndDate,
+        newRevisedPlannedStartDate: response.newRevisedPlannedStartDate || response.NewRevisedPlannedStartDate,
+        newRevisedPlannedEndDate: response.newRevisedPlannedEndDate || response.NewRevisedPlannedEndDate,
+        revisedPlanDescription: response.revisedPlanDescription || response.RevisedPlanDescription,
+        updatedAt: response.updatedAt || response.UpdatedAt
+      };
+    } catch (error) {
+      console.error('❌ updateIssueRevisedDate error:', error);
       throw error;
     }
   }

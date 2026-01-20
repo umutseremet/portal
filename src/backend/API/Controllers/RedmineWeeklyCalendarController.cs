@@ -617,7 +617,7 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
 
         /// <summary>
         /// Belirli bir tarihteki işleri getirir (çoklu filtreleme destekli)
-        /// ✅ DÜZELTME: Tarih filtrelemesi eklendi - sadece seçilen tarihe uygun kayıtlar gelir
+        /// ✅ DÜZELTME: Tarih filtrelemesi düzeltildi - sadece seçilen tarihe uygun kayıtlar gelir
         /// </summary>
         [HttpPost("GetIssuesByDate")]
 #if DEBUG
@@ -699,101 +699,101 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                 AND ISNULL(cv_pbaslangic.value,'') != ''
                 AND ISNULL(cv_pbitis.value,'') != ''
                 
-                -- ✅✅✅ DÜZELTME: TARİH FİLTRELEMESİ EKLENDİ ✅✅✅
-                -- Revize veya planlanan tarihlere göre sadece seçilen tarihe uygun işleri getir
+                -- ✅✅✅ DÜZELTME: TARİH FİLTRELEMESİ DOĞRU MANTIKLA ✅✅✅
+                -- Seçilen tarih, işin başlangıç ve bitiş tarihleri ARASINDAkileri göster
+                -- Öncelik: Revize tarihler varsa onları kullan, yoksa planlanan tarihleri kullan
                 
-                -- BAŞLANGIÇ TARİHİ FİLTRESİ
                 AND (
-                    -- Revize başlangıç varsa onu kontrol et
-                    (ISNULL(cv_revize_baslangic.value, '') != ''
-                     AND TRY_CAST(cv_revize_baslangic.value AS DATE) <= @Date)
-                    OR
-                    -- Revize başlangıç yoksa planlanan başlangıcı kontrol et
-                    (ISNULL(cv_revize_baslangic.value, '') = ''
-                     AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date)
-                )
-                
-                -- BİTİŞ TARİHİ FİLTRESİ
-                AND (
-                    -- Revize bitiş varsa ve henüz geçmemişse
-                    (ISNULL(cv_revize_bitis.value, '') != ''
+                    -- SENARYO 1: Revize başlangıç VE revize bitiş VAR
+                    (ISNULL(cv_revize_baslangic.value, '') != '' 
+                     AND cv_revize_baslangic.value NOT LIKE '0001-01-01%'
+                     AND ISNULL(cv_revize_bitis.value, '') != ''
+                     AND cv_revize_bitis.value NOT LIKE '0001-01-01%'
+                     AND TRY_CAST(cv_revize_baslangic.value AS DATE) <= @Date
                      AND TRY_CAST(cv_revize_bitis.value AS DATE) >= @Date)
+                    
                     OR
-                    -- Revize bitiş geçmiş, kapanmamış ama bugüne kadar göster
-                    (ISNULL(cv_revize_bitis.value, '') != ''
-                     AND status.is_closed = 0
-                     AND TRY_CAST(cv_revize_bitis.value AS DATE) < @Date
-                     AND @Date <= GETDATE())
-                    OR
-                    -- Revize bitiş geçmiş, kapalı ama kapanış tarihine kadar göster
-                    (ISNULL(cv_revize_bitis.value, '') != ''
-                     AND status.is_closed = 1
-                     AND i.closed_on IS NOT NULL
-                     AND TRY_CAST(cv_revize_bitis.value AS DATE) < CAST(i.closed_on AS DATE)
-                     AND @Date <= CAST(i.closed_on AS DATE))
-                    OR
-                    -- Revize bitiş yoksa planlanan bitişi kontrol et
-                    (ISNULL(cv_revize_bitis.value, '') = ''
+                    
+                    -- SENARYO 2: Revize başlangıç VAR ama revize bitiş YOK - planlanan bitişi kullan
+                    (ISNULL(cv_revize_baslangic.value, '') != '' 
+                     AND cv_revize_baslangic.value NOT LIKE '0001-01-01%'
+                     AND (ISNULL(cv_revize_bitis.value, '') = '' OR cv_revize_bitis.value LIKE '0001-01-01%')
+                     AND TRY_CAST(cv_revize_baslangic.value AS DATE) <= @Date
                      AND TRY_CAST(cv_pbitis.value AS DATE) >= @Date)
+                    
                     OR
-                    -- Revize bitiş yoksa, kapanmamış ve planlanan geçmişse ama bugüne kadar göster
-                    (ISNULL(cv_revize_bitis.value, '') = ''
-                     AND status.is_closed = 0
-                     AND TRY_CAST(cv_pbitis.value AS DATE) < @Date
-                     AND @Date <= GETDATE())
+                    
+                    -- SENARYO 3: Revize bitiş VAR ama revize başlangıç YOK - planlanan başlangıcı kullan
+                    ((ISNULL(cv_revize_baslangic.value, '') = '' OR cv_revize_baslangic.value LIKE '0001-01-01%')
+                     AND ISNULL(cv_revize_bitis.value, '') != ''
+                     AND cv_revize_bitis.value NOT LIKE '0001-01-01%'
+                     AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
+                     AND TRY_CAST(cv_revize_bitis.value AS DATE) >= @Date)
+                    
                     OR
-                    -- Revize bitiş yoksa, kapalı ama kapanış tarihine kadar göster
-                    (ISNULL(cv_revize_bitis.value, '') = ''
-                     AND status.is_closed = 1
-                     AND i.closed_on IS NOT NULL
-                     AND TRY_CAST(cv_pbitis.value AS DATE) < CAST(i.closed_on AS DATE)
-                     AND @Date <= CAST(i.closed_on AS DATE))
+                    
+                    -- SENARYO 4: Revize tarihler YOK - planlanan tarihleri kullan
+                    ((ISNULL(cv_revize_baslangic.value, '') = '' OR cv_revize_baslangic.value LIKE '0001-01-01%')
+                     AND (ISNULL(cv_revize_bitis.value, '') = '' OR cv_revize_bitis.value LIKE '0001-01-01%')
+                     AND TRY_CAST(cv_pbaslangic.value AS DATE) <= @Date
+                     AND TRY_CAST(cv_pbitis.value AS DATE) >= @Date)
                 )";
 
-                // ✅ ÇOKLU FİLTRE KOŞULLARI EKLEME
-                var conditions = new List<string>();
+                // ✅ Çoklu filtreler (ProjectIds, ProductionTypes, Statuses, AssignedTos)
+                var parameters = new List<SqlParameter>
+        {
+            new SqlParameter("@Date", targetDate.Date)
+        };
 
-                // Proje filtresi
+                // ProjectIds filtresi
                 if (request.ProjectIds != null && request.ProjectIds.Any())
                 {
-                    var projectIdsList = string.Join(",", request.ProjectIds);
-                    conditions.Add($"i.project_id IN ({projectIdsList})");
+                    var projectParams = string.Join(", ", request.ProjectIds.Select((id, idx) => $"@project{idx}"));
+                    sql += $" AND i.project_id IN ({projectParams})";
+
+                    for (int idx = 0; idx < request.ProjectIds.Count; idx++)
+                    {
+                        parameters.Add(new SqlParameter($"@project{idx}", request.ProjectIds[idx]));
+                    }
                 }
 
-                // Üretim tipi filtresi
+                // ProductionTypes filtresi
                 if (request.ProductionTypes != null && request.ProductionTypes.Any())
                 {
-                    var typeConditions = request.ProductionTypes
-                        .Select((_, idx) => $"t.name = @ProductionType{idx}")
-                        .ToList();
-                    conditions.Add($"({string.Join(" OR ", typeConditions)})");
+                    var typeConditions = new List<string>();
+                    for (int idx = 0; idx < request.ProductionTypes.Count; idx++)
+                    {
+                        typeConditions.Add($"t.name = @type{idx}");
+                        parameters.Add(new SqlParameter($"@type{idx}", $"Üretim - {request.ProductionTypes[idx]}"));
+                    }
+                    sql += $" AND ({string.Join(" OR ", typeConditions)})";
                 }
 
-                // Durum filtresi
+                // Statuses filtresi
                 if (request.Statuses != null && request.Statuses.Any())
                 {
-                    var statusConditions = request.Statuses
-                        .Select((_, idx) => $"status.name = @Status{idx}")
-                        .ToList();
-                    conditions.Add($"({string.Join(" OR ", statusConditions)})");
+                    var statusParams = string.Join(", ", request.Statuses.Select((s, idx) => $"@status{idx}"));
+                    sql += $" AND status.name IN ({statusParams})";
+
+                    for (int idx = 0; idx < request.Statuses.Count; idx++)
+                    {
+                        parameters.Add(new SqlParameter($"@status{idx}", request.Statuses[idx]));
+                    }
                 }
 
-                // Atanan kişi filtresi
+                // AssignedTos filtresi
                 if (request.AssignedTos != null && request.AssignedTos.Any())
                 {
-                    var assignedConditions = request.AssignedTos
-                        .Select((_, idx) => $"ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') = @AssignedTo{idx}")
-                        .ToList();
-                    conditions.Add($"({string.Join(" OR ", assignedConditions)})");
+                    var assignedParams = string.Join(", ", request.AssignedTos.Select((a, idx) => $"@assigned{idx}"));
+                    sql += $" AND ISNULL(assigned_user.firstname + ' ' + assigned_user.lastname, 'Atanmamış') IN ({assignedParams})";
+
+                    for (int idx = 0; idx < request.AssignedTos.Count; idx++)
+                    {
+                        parameters.Add(new SqlParameter($"@assigned{idx}", request.AssignedTos[idx]));
+                    }
                 }
 
-                // Koşulları SQL'e ekle
-                if (conditions.Any())
-                {
-                    sql += " AND " + string.Join(" AND ", conditions);
-                }
-
-                sql += " ORDER BY p.name, i.id";
+                sql += " ORDER BY p.name, t.name, i.id";
 
                 using (var connection = new SqlConnection(connectionString))
                 {
@@ -801,35 +801,7 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
 
                     using (var command = new SqlCommand(sql, connection))
                     {
-                        // ✅ TARİH PARAMETRESİNİ EKLE
-                        command.Parameters.AddWithValue("@Date", targetDate);
-
-                        // Üretim tipi parametrelerini ekle
-                        if (request.ProductionTypes != null)
-                        {
-                            for (int i = 0; i < request.ProductionTypes.Count; i++)
-                            {
-                                command.Parameters.AddWithValue($"@ProductionType{i}", $"Üretim - {request.ProductionTypes[i]}");
-                            }
-                        }
-
-                        // Durum parametrelerini ekle
-                        if (request.Statuses != null)
-                        {
-                            for (int i = 0; i < request.Statuses.Count; i++)
-                            {
-                                command.Parameters.AddWithValue($"@Status{i}", request.Statuses[i]);
-                            }
-                        }
-
-                        // Atanan kişi parametrelerini ekle
-                        if (request.AssignedTos != null)
-                        {
-                            for (int i = 0; i < request.AssignedTos.Count; i++)
-                            {
-                                command.Parameters.AddWithValue($"@AssignedTo{i}", request.AssignedTos[i]);
-                            }
-                        }
+                        command.Parameters.AddRange(parameters.ToArray());
 
                         using (var reader = await command.ExecuteReaderAsync())
                         {
@@ -893,7 +865,8 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                                     TrackerName = reader.GetString(reader.GetOrdinal("tracker_name")),
                                     CompletionPercentage = reader.GetInt32(reader.GetOrdinal("completion_percentage")),
                                     EstimatedHours = reader.IsDBNull(reader.GetOrdinal("estimated_hours"))
-                                        ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("estimated_hours")),
+                                    ? (decimal?)null
+                                    : reader.GetDecimal(reader.GetOrdinal("estimated_hours")),
                                     StatusName = reader.IsDBNull(reader.GetOrdinal("status_name"))
                                         ? string.Empty : reader.GetString(reader.GetOrdinal("status_name")),
                                     IsClosed = reader.GetBoolean(reader.GetOrdinal("is_closed")),
@@ -908,7 +881,7 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                                     RevisedPlanDescription = revisedDescription,
                                     ClosedOn = closedOn,
                                     ParentGroupPartQuantity = reader.IsDBNull(reader.GetOrdinal("parent_group_part_quantity"))
-                                        ? (int?)null
+                                        ? null
                                         : int.TryParse(reader.GetString(reader.GetOrdinal("parent_group_part_quantity")), out int qty)
                                             ? qty
                                             : (int?)null

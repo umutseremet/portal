@@ -8,13 +8,13 @@ const LogoInvoiceApprovalPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 20;
-  
+
   // Filtreler
   const [filters, setFilters] = useState({
     startDate: '',
@@ -38,18 +38,18 @@ const LogoInvoiceApprovalPage = () => {
         page: currentPage,
         pageSize: pageSize
       });
-      
+
       // Debug: Response yapısını kontrol et
       console.log('📦 API Response:', response);
-      
+
       // Backend'den gelen response
       const invoiceList = response.invoices || response.Invoices || [];
       const total = response.totalCount || response.TotalCount || 0;
-      
+
       setInvoices(invoiceList);
       setTotalCount(total);
       setTotalPages(Math.ceil(total / pageSize));
-      
+
       console.log('📋 Invoice count:', invoiceList.length, 'Total:', total);
     } catch (err) {
       console.error('❌ Fatura listesi yüklenirken hata:', err);
@@ -101,7 +101,7 @@ const LogoInvoiceApprovalPage = () => {
       setLoading(true);
       setError(null);
       setSuccess(null);
-      
+
       await logoInvoiceService.sendForApproval(logicalRef);
       setSuccess(`${invoiceNumber} nolu fatura başarıyla onaya gönderildi.`);
       await loadInvoices();
@@ -122,7 +122,7 @@ const LogoInvoiceApprovalPage = () => {
       setLoading(true);
       setError(null);
       setSuccess(null);
-      
+
       await logoInvoiceService.approveInvoice(logicalRef);
       setSuccess(`${invoiceNumber} nolu fatura başarıyla onaylandı.`);
       await loadInvoices();
@@ -134,9 +134,25 @@ const LogoInvoiceApprovalPage = () => {
     }
   };
 
+  const handleExportToExcel = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
+
+      await logoInvoiceService.exportToExcel(filters);
+      setSuccess('Excel dosyası başarıyla indirildi.');
+    } catch (err) {
+      console.error('Excel export hatası:', err);
+      setError('Excel dışa aktarma sırasında bir hata oluştu.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRevokeApproval = async (logicalRef, invoiceNumber, currentStatus) => {
     let confirmMessage = '';
-    
+
     if (currentStatus === 'Approved') {
       confirmMessage = `${invoiceNumber} nolu faturanın ONAYI GERİ ALINACAK ve "Onay Bekliyor" durumuna dönecek. Onaylıyor musunuz?`;
     } else if (currentStatus === 'Pending') {
@@ -151,15 +167,15 @@ const LogoInvoiceApprovalPage = () => {
       setLoading(true);
       setError(null);
       setSuccess(null);
-      
+
       await logoInvoiceService.revokeApproval(logicalRef);
-      
+
       if (currentStatus === 'Approved') {
         setSuccess(`${invoiceNumber} nolu faturanın onayı başarıyla geri alındı.`);
       } else {
         setSuccess(`${invoiceNumber} nolu faturanın onaya gönderilmesi başarıyla iptal edildi.`);
       }
-      
+
       await loadInvoices();
     } catch (err) {
       console.error('Onay geri alma hatası:', err);
@@ -277,13 +293,22 @@ const LogoInvoiceApprovalPage = () => {
                   <i className="bi bi-search me-1"></i>
                   Ara
                 </button>
-                <button 
-                  type="button" 
-                  className="btn btn-outline-secondary" 
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary me-2"
                   onClick={handleClearFilters}
                 >
                   <i className="bi bi-x-circle me-1"></i>
                   Temizle
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={handleExportToExcel}
+                  disabled={loading}
+                >
+                  <i className="bi bi-file-earmark-excel me-1"></i>
+                  Excel'e Aktar
                 </button>
               </div>
             </div>
@@ -391,7 +416,7 @@ const LogoInvoiceApprovalPage = () => {
                                   Onaya Gönder
                                 </button>
                               )}
-                              
+
                               {invoice.status === 'Pending' && (
                                 <div className="btn-group" role="group">
                                   <button
@@ -413,7 +438,7 @@ const LogoInvoiceApprovalPage = () => {
                                   </button>
                                 </div>
                               )}
-                              
+
                               {invoice.status === 'Approved' && (
                                 <div className="btn-group" role="group">
                                   <span className="badge bg-success d-flex align-items-center px-3">

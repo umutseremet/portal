@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
 using System.Security.Claims;
 
 namespace API.Controllers
@@ -43,6 +45,218 @@ namespace API.Controllers
         private string GetCurrentUserName()
         {
             return User.Identity?.Name ?? "System";
+        }
+
+        /// <summary>
+        /// Logo fatura onay listesini Excel'e aktar
+        /// POST: api/LogoInvoiceApprovals/export
+        /// </summary>
+        [HttpPost("export")]
+        public async Task<IActionResult> ExportToExcel([FromBody] LogoInvoiceFilterRequest filter)
+        {
+            try
+            {
+                _logger.LogInformation("Exporting Logo invoices to Excel");
+
+                // EPPlus lisans ayarı
+                ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+                // TÜM veriyi çek (pagination olmadan)
+                var allFilters = new LogoInvoiceFilterRequest
+                {
+                    StartDate = filter.StartDate,
+                    EndDate = filter.EndDate,
+                    InvoiceNumber = filter.InvoiceNumber,
+                    Status = filter.Status,
+                    Page = 1,
+                    PageSize = 999999 // Tüm kayıtlar
+                };
+
+                // GetInvoices logic'ini kullan ama response'u parse et
+                var invoices = new List<LogoInvoiceDto>();
+
+                // Logo Connect'ten faturaları çek
+                var logoConnectionString = _configuration.GetConnectionString("LogoConnection");
+                if (string.IsNullOrEmpty(logoConnectionString))
+                {
+                    return StatusCode(500, new { message = "Logo veritabanı bağlantısı yapılandırılmamış." });
+                }
+
+                using (var connection = new SqlConnection(logoConnectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = @"
+                SELECT LOGICALREF, DOCNR, DATE_, SENDERTITLE
+                FROM [CONNECT].[dbo].[LG_006_APPROVAL]
+                WHERE EDOCTYPE = 3 
+                  AND DOCNR NOT LIKE 'VR%'";
+
+                    var parameters = new List<SqlParameter>();
+
+                    if (filter.StartDate.HasValue)
+                    {
+                        query += " AND DATE_ >= @StartDate";
+                        parameters.Add(new SqlParameter("@StartDate", filter.StartDate.Value));
+                    }
+
+                    if (filter.EndDate.HasValue)
+                    {
+                        query += " AND DATE_ <= @EndDate";
+                        parameters.Add(new SqlParameter("@EndDate", filter.EndDate.Value));
+                    }
+
+                    if (!string.IsNullOrEmpty(filter.InvoiceNumber))
+                    {
+                        query += " AND DOCNR LIKE @InvoiceNumber";
+                        parameters.Add(new SqlParameter("@InvoiceNumber", $"%{filter.InvoiceNumber}%"));
+                    }
+
+                    query += " ORDER BY DATE_ DESC, LOGICALREF DESC";
+
+                    using (var cmd = new SqlCommand(query, connection))
+                    {
+                        cmd.Parameters.AddRange(parameters.ToArray());
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                invoices.Add(new LogoInvoiceDto
+                                {
+                                    LogicalRef = reader.GetInt32(0),
+                                    InvoiceNumber = reader.GetString(1),
+                                    InvoiceDate = reader.GetDateTime(2),
+                                    SenderTitle = reader.IsDBNull(3) ? null : reader.GetString(3)
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // VervoPortal'dan onay durumlarını al
+                var logicalRefs = invoices.Select(i => i.LogicalRef).ToList();
+
+                Dictionary<int, LogoInvoiceApproval> approvals;
+
+                if (logicalRefs.Count > 0)
+                {
+                    var logicalRefsStr = string.Join(",", logicalRefs);
+                    var approvalsList = await _context.LogoInvoiceApprovals
+                        .FromSqlRaw($"SELECT * FROM LogoInvoiceApprovals WHERE LogoLogicalRef IN ({logicalRefsStr})")
+                        .ToListAsync();
+
+                    approvals = approvalsList.ToDictionary(a => a.LogoLogicalRef, a => a);
+                }
+                else
+                {
+                    approvals = new Dictionary<int, LogoInvoiceApproval>();
+                }
+
+                // Onay durumlarını birleştir
+                foreach (var invoice in invoices)
+                {
+                    if (approvals.TryGetValue(invoice.LogicalRef, out var approval))
+                    {
+                        invoice.Status = approval.Status;
+                        invoice.SentForApprovalDate = approval.SentForApprovalDate;
+                        invoice.ApprovedDate = approval.ApprovedDate;
+                    }
+                    else
+                    {
+                        invoice.Status = "NotSent";
+                    }
+                }
+
+                // Durum filtrelemesi
+                if (!string.IsNullOrEmpty(filter.Status))
+                {
+                    invoices = invoices.Where(i => i.Status == filter.Status).ToList();
+                }
+
+                // Excel oluştur
+                using (var package = new ExcelPackage())
+                {
+                    var worksheet = package.Workbook.Worksheets.Add("Logo Faturalar");
+
+                    // Header row
+                    var headers = new[] {
+                "Fatura No",
+                "Gönderen",
+                "Fatura Tarihi",
+                "Durum",
+                "Onaya Gönderilme Tarihi",
+                "Onaylanma Tarihi"
+            };
+
+                    for (int col = 0; col < headers.Length; col++)
+                    {
+                        worksheet.Cells[1, col + 1].Value = headers[col];
+                        worksheet.Cells[1, col + 1].Style.Font.Bold = true;
+                        worksheet.Cells[1, col + 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                        worksheet.Cells[1, col + 1].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+                        worksheet.Cells[1, col + 1].Style.Border.BorderAround(ExcelBorderStyle.Thin);
+                    }
+
+                    // Data rows
+                    int row = 2;
+                    foreach (var invoice in invoices)
+                    {
+                        worksheet.Cells[row, 1].Value = invoice.InvoiceNumber;
+                        worksheet.Cells[row, 2].Value = invoice.SenderTitle ?? "-";
+                        worksheet.Cells[row, 3].Value = invoice.InvoiceDate.ToString("dd.MM.yyyy");
+                        worksheet.Cells[row, 4].Value = GetStatusText(invoice.Status);
+                        worksheet.Cells[row, 5].Value = invoice.SentForApprovalDate?.ToString("dd.MM.yyyy HH:mm") ?? "-";
+                        worksheet.Cells[row, 6].Value = invoice.ApprovedDate?.ToString("dd.MM.yyyy HH:mm") ?? "-";
+
+                        // Durum renklendir
+                        if (invoice.Status == "Approved")
+                        {
+                            worksheet.Cells[row, 4].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                            worksheet.Cells[row, 4].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
+                        }
+                        else if (invoice.Status == "Pending")
+                        {
+                            worksheet.Cells[row, 4].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                            worksheet.Cells[row, 4].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightYellow);
+                        }
+
+                        row++;
+                    }
+
+                    // Auto-fit columns
+                    worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+                    for (int col = 1; col <= headers.Length; col++)
+                    {
+                        if (worksheet.Column(col).Width < 15)
+                            worksheet.Column(col).Width = 15;
+                    }
+
+                    var fileName = $"Logo_Faturalar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                    var fileBytes = package.GetAsByteArray();
+
+                    _logger.LogInformation("Excel export completed: {Count} invoices", invoices.Count);
+
+                    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting Logo invoices to Excel");
+                return StatusCode(500, new { message = $"Hata: {ex.Message}" });
+            }
+        }
+
+        // Helper metod - Durum text'i
+        private string GetStatusText(string status)
+        {
+            return status switch
+            {
+                "NotSent" => "Onaya Gönderilmedi",
+                "Pending" => "Onay Bekliyor",
+                "Approved" => "Onaylandı",
+                _ => status
+            };
         }
 
         /// <summary>

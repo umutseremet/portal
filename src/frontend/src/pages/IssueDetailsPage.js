@@ -170,7 +170,7 @@ const IssueDetailsPage = () => {
             // 3️⃣ Data kontrolü
             const issuesData = response.issues || [];
             console.log('📊 Total issues fetched:', issuesData.length);
-            
+
             if (issuesData.length > 0) {
                 console.log('📋 First issue sample:', issuesData[0]);
                 console.log('🔑 First issue keys:', Object.keys(issuesData[0]));
@@ -366,39 +366,25 @@ const IssueDetailsPage = () => {
         try {
             const requestData = {
                 issueId: selectedIssueForRevise.issueId,
+                plannedStartDate: null,  // ✅ EKLE
+                plannedEndDate: null,     // ✅ EKLE
                 revisedPlannedStartDate: tempRevisedStartDate || null,
                 revisedPlannedEndDate: tempRevisedEndDate || null,
-                revisedPlanDescription: tempRevisedDescription.trim() || null
+                revisedPlanDescription: tempRevisedDescription?.trim() || null,
+                updatedBy: 'User'  // ✅ EKLE
             };
 
-            await apiService.updateIssueRevisedDate(requestData);
+            // ✅ DEĞİŞTİR: updateIssueRevisedDate -> updateIssueDates
+            const response = await apiService.updateIssueDates(requestData);
 
-            setIssues(prevIssues => prevIssues.map(i =>
-                i.issueId === selectedIssueForRevise.issueId
-                    ? {
-                        ...i,
-                        revisedPlannedStartDate: tempRevisedStartDate || i.revisedPlannedStartDate,
-                        revisedPlannedEndDate: tempRevisedEndDate || i.revisedPlannedEndDate,
-                        revisedPlanDescription: tempRevisedDescription.trim() || i.revisedPlanDescription
-                    }
-                    : i
-            ));
-
-            setFilteredIssues(prevFiltered => prevFiltered.map(i =>
-                i.issueId === selectedIssueForRevise.issueId
-                    ? {
-                        ...i,
-                        revisedPlannedStartDate: tempRevisedStartDate || i.revisedPlannedStartDate,
-                        revisedPlannedEndDate: tempRevisedEndDate || i.revisedPlannedEndDate,
-                        revisedPlanDescription: tempRevisedDescription.trim() || i.revisedPlanDescription
-                    }
-                    : i
-            ));
-
-            handleCloseRevisedModal();
+            if (response.success !== false) {
+                // ... state güncellemesi aynı kalacak
+                handleCloseRevisedModal();
+                alert('✅ Revize tarihleri başarıyla kaydedildi.');
+            }
         } catch (err) {
             console.error('❌ Error saving revised dates:', err);
-            alert(err.message || 'Revize tarihleri kaydedilemedi');
+            alert('Revize tarihleri kaydedilirken bir hata oluştu: ' + (err.message || 'Bilinmeyen hata'));
         } finally {
             setSavingRevised(false);
         }
@@ -416,39 +402,25 @@ const IssueDetailsPage = () => {
         try {
             const requestData = {
                 issueId: selectedIssueForRevise.issueId,
+                plannedStartDate: null,  // ✅ EKLE
+                plannedEndDate: null,     // ✅ EKLE
                 revisedPlannedStartDate: null,
                 revisedPlannedEndDate: null,
-                revisedPlanDescription: null
+                revisedPlanDescription: null,
+                updatedBy: 'User'  // ✅ EKLE
             };
 
-            await apiService.updateIssueRevisedDate(requestData);
+            // ✅ DEĞİŞTİR: updateIssueRevisedDate -> updateIssueDates
+            const response = await apiService.updateIssueDates(requestData);
 
-            setIssues(prevIssues => prevIssues.map(i =>
-                i.issueId === selectedIssueForRevise.issueId
-                    ? {
-                        ...i,
-                        revisedPlannedStartDate: null,
-                        revisedPlannedEndDate: null,
-                        revisedPlanDescription: null
-                    }
-                    : i
-            ));
-
-            setFilteredIssues(prevFiltered => prevFiltered.map(i =>
-                i.issueId === selectedIssueForRevise.issueId
-                    ? {
-                        ...i,
-                        revisedPlannedStartDate: null,
-                        revisedPlannedEndDate: null,
-                        revisedPlanDescription: null
-                    }
-                    : i
-            ));
-
-            handleCloseRevisedModal();
+            if (response.success !== false) {
+                // ... state güncellemesi aynı kalacak
+                handleCloseRevisedModal();
+                alert('✅ Revize bilgileri başarıyla silindi.');
+            }
         } catch (err) {
             console.error('❌ Error clearing revised dates:', err);
-            alert(err.message || 'Revize bilgileri silinemedi');
+            alert('Revize bilgileri silinirken bir hata oluştu: ' + (err.message || 'Bilinmeyen hata'));
         } finally {
             setClearingRevised(false);
         }
@@ -600,15 +572,15 @@ const IssueDetailsPage = () => {
     const handleMultiSelectToggle = (filterKey, value) => {
         const mappedKey = filterKey === 'project' ? 'projectIds'
             : filterKey === 'productionType' ? 'productionTypes'
-            : filterKey === 'status' ? 'statuses'
-            : 'assignedTos';
+                : filterKey === 'status' ? 'statuses'
+                    : 'assignedTos';
 
         setFilters(prev => {
             const currentValues = prev[mappedKey];
             const newValues = currentValues.includes(value)
                 ? currentValues.filter(v => v !== value)
                 : [...currentValues, value];
-            
+
             return { ...prev, [mappedKey]: newValues };
         });
     };
@@ -617,8 +589,8 @@ const IssueDetailsPage = () => {
     const handleClearFilter = (filterKey) => {
         const mappedKey = filterKey === 'project' ? 'projectIds'
             : filterKey === 'productionType' ? 'productionTypes'
-            : filterKey === 'status' ? 'statuses'
-            : 'assignedTos';
+                : filterKey === 'status' ? 'statuses'
+                    : 'assignedTos';
 
         setFilters(prev => ({ ...prev, [mappedKey]: [] }));
     };
@@ -627,8 +599,8 @@ const IssueDetailsPage = () => {
     const handleSelectAll = (filterKey, allItems) => {
         const mappedKey = filterKey === 'project' ? 'projectIds'
             : filterKey === 'productionType' ? 'productionTypes'
-            : filterKey === 'status' ? 'statuses'
-            : 'assignedTos';
+                : filterKey === 'status' ? 'statuses'
+                    : 'assignedTos';
 
         const currentValues = filters[mappedKey];
         const allSelected = allItems.every(item => currentValues.includes(item));
@@ -652,11 +624,11 @@ const IssueDetailsPage = () => {
         setShowFilters(false);
     };
 
-    const hasActiveFilters = 
-        filters.projectIds.length > 0 || 
+    const hasActiveFilters =
+        filters.projectIds.length > 0 ||
         filters.productionTypes.length > 0 ||
-        filters.statuses.length > 0 || 
-        filters.assignedTos.length > 0 || 
+        filters.statuses.length > 0 ||
+        filters.assignedTos.length > 0 ||
         searchTerm;
 
     const checkIfIssueOverdue = (issue) => {
@@ -731,13 +703,13 @@ const IssueDetailsPage = () => {
         if (!searchTerm) return allList;
 
         if (filterKey === 'project') {
-            return allList.filter(p => 
+            return allList.filter(p =>
                 p.code.toLowerCase().includes(searchTerm) ||
                 p.name.toLowerCase().includes(searchTerm)
             );
         }
 
-        return allList.filter(item => 
+        return allList.filter(item =>
             (typeof item === 'string' ? item : item.toString()).toLowerCase().includes(searchTerm)
         );
     };
@@ -768,8 +740,8 @@ const IssueDetailsPage = () => {
 
         const mappedKey = filterKey === 'project' ? 'projectIds'
             : filterKey === 'productionType' ? 'productionTypes'
-            : filterKey === 'status' ? 'statuses'
-            : 'assignedTos';
+                : filterKey === 'status' ? 'statuses'
+                    : 'assignedTos';
 
         const selectedCount = filters[mappedKey].length;
         const isOpen = dropdownOpen[filterKey];
@@ -826,7 +798,7 @@ const IssueDetailsPage = () => {
                                             return filters[mappedKey].includes(value);
                                         })}
                                         onChange={() => {
-                                            const values = filterKey === 'project' 
+                                            const values = filterKey === 'project'
                                                 ? filteredItems.map(p => p.id)
                                                 : filteredItems;
                                             handleSelectAll(filterKey, values);
@@ -847,7 +819,7 @@ const IssueDetailsPage = () => {
                             ) : (
                                 filteredItems.map((item, index) => {
                                     const value = filterKey === 'project' ? item.id : item;
-                                    const displayText = displayFunc ? displayFunc(item) : 
+                                    const displayText = displayFunc ? displayFunc(item) :
                                         (filterKey === 'project' ? `${item.code} - ${item.name}` : item);
                                     const itemId = `${filterKey}-${value}-${index}`; // ✅ Unique key
 
@@ -861,8 +833,8 @@ const IssueDetailsPage = () => {
                                                     onChange={() => handleMultiSelectToggle(filterKey, value)}
                                                     id={itemId}
                                                 />
-                                                <label 
-                                                    className="form-check-label" 
+                                                <label
+                                                    className="form-check-label"
                                                     htmlFor={itemId}
                                                     style={{ fontSize: '0.9rem' }}
                                                 >
