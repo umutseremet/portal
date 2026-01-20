@@ -65,7 +65,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
         {
           id: 'pending-approvals',
           label: 'Onay Bekleyenler',
-          path: '/pending-approvals',  
+          path: '/pending-approvals',
           icon: 'bi-hourglass-split'
         },
         {
@@ -102,6 +102,12 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           label: 'Açık İşler Raporu',
           path: '/reports/open-issues',
           permission: null // Herkese açık
+        },
+        {
+          id: 'project-analytics-report',  // ✅ YENİ
+          label: 'Proje Analizi',
+          path: '/reports/project-analytics',
+          permission: null
         }
       ]
     },

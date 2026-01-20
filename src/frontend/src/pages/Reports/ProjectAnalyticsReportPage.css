@@ -1,0 +1,222 @@
+/* src/frontend/src/pages/Reports/ProjectAnalyticsReportPage.css */
+
+.project-analytics-report-page {
+    padding: 20px;
+}
+
+.project-analytics-report-page .page-header h2 {
+    color: #333;
+    font-weight: 600;
+}
+
+.project-analytics-report-page .card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    background: white;
+}
+
+.project-analytics-report-page .card-header {
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 15px 20px 10px;
+}
+
+.project-analytics-report-page .card-body {
+    padding: 15px 20px 20px;
+}
+
+.project-analytics-report-page .card-title {
+    font-weight: 600;
+    color: #333;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.project-analytics-report-page .fs-13 {
+    font-size: 13px;
+    color: #666;
+}
+
+.project-analytics-report-page .fs-13 strong {
+    color: #333;
+}
+
+.project-analytics-report-page .fs-13 a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.project-analytics-report-page .fs-13 a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Search Container */
+.project-analytics-report-page .search-container {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.project-analytics-report-page .search-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0;
+}
+
+.project-analytics-report-page .input-group {
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.project-analytics-report-page .form-control {
+    border: 1px solid #ddd;
+    border-radius: 6px 0 0 6px;
+    padding: 10px 15px;
+    font-size: 14px;
+    height: 42px;
+}
+
+.project-analytics-report-page .form-control:focus {
+    border-color: #007bff;
+    box-shadow: none;
+}
+
+.project-analytics-report-page .btn-clear {
+    background: #6c757d;
+    border: 1px solid #6c757d;
+    border-radius: 0 6px 6px 0;
+    padding: 10px 15px;
+    color: white;
+    font-size: 14px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.project-analytics-report-page .btn-clear:hover {
+    background: #5a6268;
+    border-color: #5a6268;
+    color: white;
+}
+
+/* Chartist.js Customizations */
+.project-analytics-report-page .ct-series-a .ct-bar {
+    stroke-width: 20px;
+}
+
+/* Bar colors for each phase - TERS SIRADA (SAT, Sevkiyat, FAT, Elektrik, Montaj, Üretim, Satınalma, Tasarım) */
+.project-analytics-report-page .ct-series-a .ct-bar:nth-child(1) {
+    stroke: #9C27B0 !important; /* SAT - Mor */
+}
+
+.project-analytics-report-page .ct-series-a .ct-bar:nth-child(2) {
+    stroke: #FF5722 !important; /* Sevkiyat - Koyu Turuncu */
+}
+
+.project-analytics-report-page .ct-series-a .ct-bar:nth-child(3) {
+    stroke: #22B14C !important; /* FAT - Yeşil */
+}
+
+.project-analytics-report-page .ct-series-a .ct-bar:nth-child(4) {
+    stroke: #BFBFBF !important; /* Elektrik - Açık Gri */
+}
+
+.project-analytics-report-page .ct-series-a .ct-bar:nth-child(5) {
+    stroke: #707070 !important; /* Montaj - Koyu Gri */
+}
+
+.project-analytics-report-page .ct-series-a .ct-bar:nth-child(6) {
+    stroke: #FE634E !important; /* Üretim - Kırmızı */
+}
+
+.project-analytics-report-page .ct-series-a .ct-bar:nth-child(7) {
+    stroke: #00A2E8 !important; /* Satınalma - Mavi */
+}
+
+.project-analytics-report-page .ct-series-a .ct-bar:nth-child(8) {
+    stroke: #FF9500 !important; /* Tasarım - Turuncu */
+}
+
+/* Working bars - AÇIK SARI */
+.project-analytics-report-page .ct-working-bar {
+    stroke: #FFF59D !important; /* Açık sarı - çalışılıyor işler */
+    stroke-width: 20px !important;
+    opacity: 0.9 !important;
+}
+
+/* Background bars */
+.project-analytics-report-page .ct-background-bar {
+    stroke: #f8f9fa !important;
+    stroke-width: 20px !important;
+    opacity: 1 !important;
+}
+
+.project-analytics-report-page .ct-label.ct-horizontal {
+    font-size: 12px;
+    color: #666;
+}
+
+.project-analytics-report-page .ct-label.ct-vertical {
+    font-size: 12px;
+    color: #666;
+}
+
+.project-analytics-report-page .ct-grid {
+    stroke: #e0e0e0;
+    stroke-width: 1px;
+}
+
+.project-analytics-report-page .ct-chart {
+    height: 300px;
+    width: 100%;
+}
+
+.project-analytics-report-page .ct-chart .ct-series .ct-bar {
+    stroke-width: 20px !important;
+}
+
+.project-analytics-report-page .ct-chart .ct-grids .ct-grid {
+    stroke: #e0e0e0;
+    stroke-width: 1px;
+}
+
+/* Tooltip Styles */
+.project-analytics-report-page .chartist-tooltip {
+    position: absolute;
+    display: inline-block;
+    opacity: 0;
+    min-width: 5em;
+    padding: .5em;
+    background: #333;
+    color: white;
+    font-family: Oxygen, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 3px;
+    transition: opacity .2s linear;
+}
+
+.project-analytics-report-page .chartist-tooltip:before {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    margin-left: -15px;
+    border: 15px solid transparent;
+    border-top-color: #333;
+}
+
+.project-analytics-report-page .chartist-tooltip.tooltip-show {
+    opacity: 1;
+}

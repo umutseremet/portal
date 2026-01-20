@@ -43,6 +43,7 @@ import VehicleLocationMapPage from './pages/VehicleLocationMapPage';
 import RevisedIssuesPage from './pages/RevisedIssuesPage';
 
 import OpenIssuesReportPage from './pages/Reports/OpenIssuesReportPage';
+import ProjectAnalyticsReportPage from './pages/Reports/ProjectAnalyticsReportPage';
 import LogoInvoiceApprovalPage from './pages/LogoInvoiceApprovalPage';
 import './App.css';
 
@@ -285,12 +286,24 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+
             {/* ========================================
-                ÜRaporlar
-                ======================================== */}
-            <Route path="/reports/open-issues" element={<ProtectedRoute>
-              <Layout><OpenIssuesReportPage /></Layout>
-            </ProtectedRoute>} />
+              RAPORLAR
+              ======================================== */}
+            <Route path="/reports/open-issues" element={
+              <ProtectedRoute>
+                <Layout><OpenIssuesReportPage /></Layout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/reports/project-analytics" element={
+              <ProtectedRoute>
+                <Layout><ProjectAnalyticsReportPage /></Layout>
+              </ProtectedRoute>
+            } />
+
+
             {/* ========================================
                 ÜRÜN YÖNETİMİ
                 ======================================== */}

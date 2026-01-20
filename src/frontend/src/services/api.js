@@ -3131,6 +3131,49 @@ class ApiService {
       throw error;
     }
   }
+
+  /**
+   * Proje analiz raporunu getirir
+   * Backend: GET /api/Reports/project-analytics
+   */
+  async getProjectAnalytics() {
+    console.log('📊 API getProjectAnalytics call');
+
+    try {
+      const response = await this.get('/Reports/project-analytics');
+      console.log('📊 API getProjectAnalytics raw response:', response);
+
+      // Response formatını düzenle (camelCase'e çevir)
+      const projects = (response || []).map(project => ({
+        projectCode: project.projectCode || project.project_code || '',
+        projectName: project.projectName || project.project_name || '',
+        issueId: project.issueId || project.issue_id || 0,
+        tamamlananTasarim: project.tamamlananTasarim || project.TamamlananTasarim || '0.00',
+        tamamlananSatinalma: project.tamamlananSatinalma || project.TamamlananSatinalma || '0.00',
+        tamamlananUretim: project.tamamlananUretim || project.TamamlananUretim || '0.00',
+        tamamlananMontaj: project.tamamlananMontaj || project.TamamlananMontaj || '0.00',
+        tamamlananElektrik: project.tamamlananElektrik || project.TamamlananElektrik || '0.00',
+        tamamlananFat: project.tamamlananFat || project.TamamlananFat || '0.00',
+        tamamlananSat: project.tamamlananSat || project.TamamlananSat || '0.00',
+        tamamlananSevkiyat: project.tamamlananSevkiyat || project.TamamlananSevkiyat || '0.00',
+        calisiliyorSatinalma: project.calisiliyorSatinalma || project.CalisiliyorSatinalma || '0.00',
+        calisiliyorUretim: project.calisiliyorUretim || project.CalisiliyorUretim || '0.00',
+        calisiliyorMontaj: project.calisiliyorMontaj || project.CalisiliyorMontaj || '0.00',
+        calisiliyorElektrik: project.calisiliyorElektrik || project.CalisiliyorElektrik || '0.00',
+        calisiliyorFat: project.calisiliyorFat || project.CalisiliyorFat || '0.00',
+        calisiliyorSat: project.calisiliyorSat || project.CalisiliyorSat || '0.00',
+        calisiliyorSevkiyat: project.calisiliyorSevkiyat || project.CalisiliyorSevkiyat || '0.00',
+        fatTarih: project.fatTarih || project.FatTarih || null,
+        sevkiyatTarih: project.sevkiyatTarih || project.SevkiyatTarih || null
+      }));
+
+      console.log('✅ Mapped projects:', projects);
+      return projects;
+    } catch (error) {
+      console.error('❌ getProjectAnalytics error:', error);
+      throw error;
+    }
+  }
 }
 
 

@@ -316,6 +316,216 @@ namespace API.Controllers
             }
         }
 
+
+        /// <summary>
+        /// Proje analiz raporunu getirir (Gantt benzeri görünüm)
+        /// </summary>
+        [HttpGet("project-analytics")]
+        public async Task<IActionResult> GetProjectAnalytics()
+        {
+            try
+            {
+                _logger.LogInformation("Getting project analytics report");
+
+                var connectionString = _configuration.GetConnectionString("DefaultConnection")
+                    ?? throw new InvalidOperationException("Database connection string not configured");
+
+                var projects = new List<ProjectAnalyticsDto>();
+
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = @"
+WITH ProjeIsler AS (
+    -- Ana projeler ve ara işleri
+    SELECT
+        parent.id AS parent_id,
+        cv.value AS project_code,
+        parent.subject AS project_name,
+        child.id AS ara_is_id,
+        t.name AS issue_type,
+        child.subject,
+        child.tracker_id
+    FROM issues child
+    JOIN issues parent ON child.parent_id = parent.id
+    JOIN trackers t ON child.tracker_id = t.id
+    JOIN custom_values cv ON cv.customized_id = parent.project_id and cv.custom_field_id = 3
+    WHERE child.parent_id IN (
+        SELECT i.id FROM issues i
+        INNER JOIN custom_values cv1 ON cv1.customized_id = i.id
+        WHERE cv1.custom_field_id = 23 AND cv1.value = 1
+    )
+),
+
+-- Ara işlerin alt işleri (sadece 1 seviye)
+AltIsler AS (
+    SELECT
+        pi.parent_id,
+        pi.project_code,
+        pi.project_name,
+        pi.issue_type,
+        pi.ara_is_id,
+        alt.id AS alt_is_id,
+        alt.status_id
+    FROM ProjeIsler pi
+    LEFT JOIN issues alt ON alt.parent_id = pi.ara_is_id
+),
+
+-- Alt işi olmayan ara işlerin kendi durumu
+AraIsDurumlari AS (
+    SELECT
+        pi.parent_id,
+        pi.project_code,
+        pi.project_name,
+        pi.issue_type,
+        pi.ara_is_id,
+        pi.ara_is_id AS issue_id,
+        (SELECT status_id FROM issues WHERE id = pi.ara_is_id) AS status_id
+    FROM ProjeIsler pi
+    WHERE pi.tracker_id IN (16,31,32) -- FAT, SAT, Sevkiyat (genelde alt işi olmayan)
+      AND NOT EXISTS (SELECT 1 FROM issues WHERE parent_id = pi.ara_is_id)
+),
+
+-- Birleşik durum tablosu
+BirlesikDurum AS (
+    -- Alt işi olan ara işler için alt işlerin durumu
+    SELECT
+        parent_id, project_code, project_name, issue_type, ara_is_id,
+        alt_is_id AS issue_id, status_id
+    FROM AltIsler
+    WHERE alt_is_id IS NOT NULL
+
+    UNION ALL
+
+    -- Alt işi olmayan ara işler için kendi durumu
+    SELECT
+        parent_id, project_code, project_name, issue_type, ara_is_id,
+        issue_id, status_id
+    FROM AraIsDurumlari
+),
+
+-- Durum hesaplamaları
+DurumHesaplamalari AS (
+    SELECT
+        bd.parent_id,
+        bd.project_code,
+        bd.project_name,
+        bd.issue_type,
+        -- Tamamlanan yüzde
+        CASE
+            WHEN COUNT(bd.issue_id) = 0 THEN '0.00'
+            ELSE FORMAT(100.0 * SUM(CASE WHEN ist.is_closed = 1 THEN 1 ELSE 0 END) / COUNT(bd.issue_id), 'N2')
+        END AS completed_percent,
+        -- Çalışılıyor yüzde
+        CASE
+            WHEN COUNT(bd.issue_id) = 0 THEN '0.00'
+            ELSE FORMAT(100.0 * SUM(CASE WHEN ist.is_closed = 0 AND ist.id = 3 THEN 1 ELSE 0 END) / COUNT(bd.issue_id), 'N2')
+        END AS in_progress_percent
+    FROM BirlesikDurum bd
+    LEFT JOIN issue_statuses ist ON bd.status_id = ist.id
+    GROUP BY bd.parent_id, bd.project_code, bd.project_name, bd.issue_type
+),
+
+-- Tarih bilgileri
+FATTarihleri AS (
+    SELECT
+        pi.parent_id,
+        FORMAT(CONVERT(date, cv.value), 'dd.MM.yyyy') + ' 00:00:00' AS fat_tarih
+    FROM ProjeIsler pi
+    JOIN custom_values cv ON cv.customized_id = pi.ara_is_id
+    WHERE cv.custom_field_id = 4 AND pi.issue_type = 'SSH - FAT'
+),
+
+SevkiyatTarihleri AS (
+    SELECT
+        pi.parent_id,
+        FORMAT(CONVERT(date, cv.value), 'dd.MM.yyyy') + ' 00:00:00' AS sevkiyat_tarih
+    FROM ProjeIsler pi
+    JOIN custom_values cv ON cv.customized_id = pi.ara_is_id
+    WHERE cv.custom_field_id = 4 AND pi.issue_type = 'SSH - Sevkiyat'
+)
+
+-- Final sonuç
+SELECT
+    dh.project_code,
+    dh.project_name,
+    dh.parent_id AS issue_id,
+
+    -- Tamamlanan kolonları
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'Tasarım' THEN dh.completed_percent END), '0.00') AS tamamlanan_tasarim,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'Satınalma' THEN dh.completed_percent END), '0.00') AS tamamlanan_satinalma,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'Üretim' THEN dh.completed_percent END), '0.00') AS tamamlanan_uretim,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'Montaj' THEN dh.completed_percent END), '0.00') AS tamamlanan_montaj,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'Elektrik' THEN dh.completed_percent END), '0.00') AS tamamlanan_elektrik,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'SSH - FAT' THEN dh.completed_percent END), '0.00') AS tamamlanan_fat,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'SSH - SAT' THEN dh.completed_percent END), '0.00') AS tamamlanan_sat,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'SSH - Sevkiyat' THEN dh.completed_percent END), '0.00') AS tamamlanan_sevkiyat,
+
+    -- Çalışılıyor kolonları
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'Satınalma' THEN dh.in_progress_percent END), '0.00') AS calisiliyor_satinalma,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'Üretim' THEN dh.in_progress_percent END), '0.00') AS calisiliyor_uretim,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'Montaj' THEN dh.in_progress_percent END), '0.00') AS calisiliyor_montaj,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'Elektrik' THEN dh.in_progress_percent END), '0.00') AS calisiliyor_elektrik,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'SSH - FAT' THEN dh.in_progress_percent END), '0.00') AS calisiliyor_fat,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'SSH - SAT' THEN dh.in_progress_percent END), '0.00') AS calisiliyor_sat,
+    ISNULL(MAX(CASE WHEN dh.issue_type = N'SSH - Sevkiyat' THEN dh.in_progress_percent END), '0.00') AS calisiliyor_sevkiyat,
+
+    -- Tarih bilgileri
+    ft.fat_tarih as FAT_Planlanan_Tarih, 
+    st.sevkiyat_tarih as Sevkiyat_Planlanan_Tarih
+
+FROM DurumHesaplamalari dh
+LEFT JOIN FATTarihleri ft ON ft.parent_id = dh.parent_id
+LEFT JOIN SevkiyatTarihleri st ON st.parent_id = dh.parent_id
+GROUP BY dh.project_code, dh.project_name, dh.parent_id, ft.fat_tarih, st.sevkiyat_tarih
+ORDER BY dh.project_code";
+
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                projects.Add(new ProjectAnalyticsDto
+                                {
+                                    ProjectCode = reader.GetString(reader.GetOrdinal("project_code")),
+                                    ProjectName = reader.IsDBNull(reader.GetOrdinal("project_name")) ? "" : reader.GetString(reader.GetOrdinal("project_name")),
+                                    IssueId = reader.GetInt32(reader.GetOrdinal("issue_id")),
+                                    TamamlananTasarim = reader.GetString(reader.GetOrdinal("tamamlanan_tasarim")),
+                                    TamamlananSatinalma = reader.GetString(reader.GetOrdinal("tamamlanan_satinalma")),
+                                    TamamlananUretim = reader.GetString(reader.GetOrdinal("tamamlanan_uretim")),
+                                    TamamlananMontaj = reader.GetString(reader.GetOrdinal("tamamlanan_montaj")),
+                                    TamamlananElektrik = reader.GetString(reader.GetOrdinal("tamamlanan_elektrik")),
+                                    TamamlananFat = reader.GetString(reader.GetOrdinal("tamamlanan_fat")),
+                                    TamamlananSat = reader.GetString(reader.GetOrdinal("tamamlanan_sat")),
+                                    TamamlananSevkiyat = reader.GetString(reader.GetOrdinal("tamamlanan_sevkiyat")),
+                                    CalisiliyorSatinalma = reader.GetString(reader.GetOrdinal("calisiliyor_satinalma")),
+                                    CalisiliyorUretim = reader.GetString(reader.GetOrdinal("calisiliyor_uretim")),
+                                    CalisiliyorMontaj = reader.GetString(reader.GetOrdinal("calisiliyor_montaj")),
+                                    CalisiliyorElektrik = reader.GetString(reader.GetOrdinal("calisiliyor_elektrik")),
+                                    CalisiliyorFat = reader.GetString(reader.GetOrdinal("calisiliyor_fat")),
+                                    CalisiliyorSat = reader.GetString(reader.GetOrdinal("calisiliyor_sat")),
+                                    CalisiliyorSevkiyat = reader.GetString(reader.GetOrdinal("calisiliyor_sevkiyat")),
+                                    FatTarih = reader.IsDBNull(reader.GetOrdinal("FAT_Planlanan_Tarih")) ? null : reader.GetString(reader.GetOrdinal("FAT_Planlanan_Tarih")),
+                                    SevkiyatTarih = reader.IsDBNull(reader.GetOrdinal("Sevkiyat_Planlanan_Tarih")) ? null : reader.GetString(reader.GetOrdinal("Sevkiyat_Planlanan_Tarih"))
+                                });
+                            }
+                        }
+                    }
+                }
+
+                _logger.LogInformation("Found {Count} projects for analytics", projects.Count);
+
+                return Ok(projects);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting project analytics");
+                return StatusCode(500, new ErrorResponse { Message = $"Hata: {ex.Message}" });
+            }
+        }
+
         /// <summary>
         /// Kullanıcı listesini getirir (Atanan dropdown için)
         /// </summary>
@@ -737,5 +947,38 @@ namespace API.Controllers
     public class ErrorResponse
     {
         public string Message { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Proje analiz raporu için DTO
+    /// </summary>
+    public class ProjectAnalyticsDto
+    {
+        public string ProjectCode { get; set; } = string.Empty;
+        public string ProjectName { get; set; } = string.Empty;
+        public int IssueId { get; set; }
+
+        // Tamamlanan yüzdeler
+        public string TamamlananTasarim { get; set; } = "0.00";
+        public string TamamlananSatinalma { get; set; } = "0.00";
+        public string TamamlananUretim { get; set; } = "0.00";
+        public string TamamlananMontaj { get; set; } = "0.00";
+        public string TamamlananElektrik { get; set; } = "0.00";
+        public string TamamlananFat { get; set; } = "0.00";
+        public string TamamlananSat { get; set; } = "0.00";
+        public string TamamlananSevkiyat { get; set; } = "0.00";
+
+        // Çalışılıyor yüzdeler
+        public string CalisiliyorSatinalma { get; set; } = "0.00";
+        public string CalisiliyorUretim { get; set; } = "0.00";
+        public string CalisiliyorMontaj { get; set; } = "0.00";
+        public string CalisiliyorElektrik { get; set; } = "0.00";
+        public string CalisiliyorFat { get; set; } = "0.00";
+        public string CalisiliyorSat { get; set; } = "0.00";
+        public string CalisiliyorSevkiyat { get; set; } = "0.00";
+
+        // Tarih bilgileri
+        public string? FatTarih { get; set; }
+        public string? SevkiyatTarih { get; set; }
     }
 }
