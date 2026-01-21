@@ -105,7 +105,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
         },
         {
           id: 'project-analytics-report',  // ✅ YENİ
-          label: 'Proje Analizi',
+          label: 'Projeler Son Durum Raporu', // ✅ YENİ
           path: '/reports/project-analytics',
           permission: null
         }
