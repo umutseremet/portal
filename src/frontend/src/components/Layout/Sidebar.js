@@ -73,7 +73,8 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           label: 'Logo Fatura Onay',
           path: '/logo-invoice-approval',
           icon: 'bi-receipt-cutoff',
-          permission: 'yetki_kullanici_satinalma_logo_onay'
+          permission: 'yetki_kullanici_satinalma_logo_onay',
+          customCheck: () => permissionService.canAccessLogoInvoiceMenu()
         }
       ]
     },
