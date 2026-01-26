@@ -8,7 +8,7 @@ const logoInvoiceService = {
    */
   async getInvoices(filters = {}) {
     const params = new URLSearchParams();
-    
+
     if (filters.startDate) {
       params.append('startDate', filters.startDate);
     }
@@ -86,24 +86,35 @@ const logoInvoiceService = {
         status: filters.status || null
       };
 
-      const token = localStorage.getItem('token');
-      
-      // api.js'deki baseURL'i kullan
-      const baseURL = window.location.hostname === 'localhost' 
-        ? 'http://localhost:5154/api'
-        : '/api';
+      // ✅ Token'ı farklı key'lerden dene
+      const token = localStorage.getItem('token')
+        || localStorage.getItem('authToken')
+        || localStorage.getItem('jwt');
 
-      const response = await fetch(`${baseURL}/LogoInvoiceApprovals/export`, {
+      console.log('🔑 Token found:', !!token, 'Length:', token?.length);
+
+      if (!token) {
+        throw new Error('Authentication token not found. Please login again.');
+      }
+
+      const response = await fetch(`${api.baseURL}/LogoInvoiceApprovals/export`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(requestBody)
       });
 
+      console.log('📡 Export response status:', response.status);
+
+      if (response.status === 401) {
+        throw new Error('Session expired. Please login again.');
+      }
+
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('❌ Export error:', errorText);
         throw new Error(`Export failed: ${response.status} - ${errorText}`);
       }
 
@@ -112,7 +123,6 @@ const logoInvoiceService = {
       let filename = 'Logo_Faturalar.xlsx';
 
       if (contentDisposition) {
-        // filename="Logo_Faturalar_20260119_143052.xlsx" formatından dosya adını çıkar
         const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
         if (filenameMatch && filenameMatch[1]) {
           filename = filenameMatch[1].replace(/['"]/g, '');
