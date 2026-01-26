@@ -1,0 +1,159 @@
+/* src/frontend/src/pages/Reports/ProjectStatusReportPage.css */
+
+/* ========================================
+   DROPDOWN FİLTRE STİLLERİ - CHECKBOX FIX
+   ======================================== */
+
+/* Dropdown menü temel stil */
+.dropdown-menu {
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    background: white !important;
+    border: 1px solid #dee2e6 !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    border-radius: 0.375rem;
+    padding: 0;
+    margin-top: 0.25rem;
+    display: block !important;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dropdown-menu.show {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* ✅ CHECKBOX CONTAINER - DÜZELTİLMİŞ */
+.dropdown-menu .form-check {
+    display: flex !important;
+    align-items: center !important;
+    margin-bottom: 0 !important;
+    padding: 0.5rem 1rem !important;
+    min-height: auto !important;
+}
+
+/* ✅ CHECKBOX INPUT - DÜZELTİLMİŞ */
+.dropdown-menu .form-check-input {
+    width: 1rem !important;
+    height: 1rem !important;
+    margin-top: 0 !important;
+    margin-right: 0.5rem !important;
+    flex-shrink: 0 !important;
+    cursor: pointer;
+    position: relative !important;
+}
+
+/* ✅ CHECKBOX LABEL - DÜZELTİLMİŞ */
+.dropdown-menu .form-check-label {
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.9rem;
+    margin-bottom: 0 !important;
+    padding-left: 0 !important;
+    line-height: 1.2 !important;
+    flex: 1 !important;
+}
+
+/* Hover efekti */
+.dropdown-menu .form-check:hover {
+    background-color: #f8f9fa;
+}
+
+/* Arama kutusu bölümü */
+.dropdown-menu .bg-light {
+    background-color: #f8f9fa !important;
+    padding: 0.5rem 1rem !important;
+}
+
+.dropdown-menu .form-control-sm {
+    font-size: 0.85rem;
+}
+
+/* Tümünü Seç bölümü */
+.dropdown-menu .border-bottom {
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+/* ✅ "Tümünü Seç" checkbox'ı için özel stil */
+.dropdown-menu .form-check .fw-bold {
+    font-weight: 600 !important;
+}
+
+/* Scrollbar stilleri */
+.dropdown-menu::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dropdown-menu::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Card overflow fix */
+.card {
+    overflow: visible !important;
+}
+
+.card-body {
+    overflow: visible !important;
+}
+
+/* ========================================
+   BUTON STİLLERİ
+   ======================================== */
+
+.btn-outline-secondary.btn-outline-primary {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.btn-outline-secondary.btn-outline-primary:hover {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* ========================================
+   RESPONSIVE AYARLAR
+   ======================================== */
+
+@media (max-width: 768px) {
+    .dropdown-menu {
+        position: fixed !important;
+        top: auto !important;
+        left: 1rem !important;
+        right: 1rem !important;
+        max-height: 50vh !important;
+    }
+}
+
+/* ========================================
+   PRINT STİLLERİ
+   ======================================== */
+
+@media print {
+    .page-header,
+    .card-body .btn,
+    .alert-info,
+    .dropdown-menu {
+        display: none !important;
+    }
+    
+    .card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}

@@ -1137,49 +1137,49 @@ class ApiService {
  * @returns {Promise<Object>} Update response
  */
   async updateIssueDates(data) {
-  try {
-    console.log('📅 API updateIssueDates request:', data);
+    try {
+      console.log('📅 API updateIssueDates request:', data);
 
-    const requestBody = {
-      issueId: data.issueId,
-      plannedStartDate: data.plannedStartDate || null,
-      plannedEndDate: data.plannedEndDate || null,
-      revisedPlannedStartDate: data.revisedPlannedStartDate || null,
-      revisedPlannedEndDate: data.revisedPlannedEndDate || null,
-      revisedPlanDescription: data.revisedPlanDescription || null,
-      updatedBy: data.updatedBy || 'System'
-    };
+      const requestBody = {
+        issueId: data.issueId,
+        plannedStartDate: data.plannedStartDate || null,
+        plannedEndDate: data.plannedEndDate || null,
+        revisedPlannedStartDate: data.revisedPlannedStartDate || null,
+        revisedPlannedEndDate: data.revisedPlannedEndDate || null,
+        revisedPlanDescription: data.revisedPlanDescription || null,
+        updatedBy: data.updatedBy || 'System'
+      };
 
-    console.log('📤 Sending to backend:', requestBody);
+      console.log('📤 Sending to backend:', requestBody);
 
-    const response = await this.post('/RedmineWeeklyCalendar/UpdateIssueDates', requestBody);
+      const response = await this.post('/RedmineWeeklyCalendar/UpdateIssueDates', requestBody);
 
-    console.log('✅ API updateIssueDates response:', response);
+      console.log('✅ API updateIssueDates response:', response);
 
-    const mappedResponse = {
-      success: response.success ?? response.Success ?? false,
-      message: response.message || response.Message || '',
-      issueId: response.issueId || response.IssueId,
-      oldPlannedStartDate: response.oldPlannedStartDate || response.OldPlannedStartDate,
-      oldPlannedEndDate: response.oldPlannedEndDate || response.OldPlannedEndDate,
-      newPlannedStartDate: response.newPlannedStartDate || response.NewPlannedStartDate,
-      newPlannedEndDate: response.newPlannedEndDate || response.NewPlannedEndDate,
-      oldRevisedPlannedStartDate: response.oldRevisedPlannedStartDate || response.OldRevisedPlannedStartDate,
-      oldRevisedPlannedEndDate: response.oldRevisedPlannedEndDate || response.OldRevisedPlannedEndDate,
-      newRevisedPlannedStartDate: response.newRevisedPlannedStartDate || response.NewRevisedPlannedStartDate,
-      newRevisedPlannedEndDate: response.newRevisedPlannedEndDate || response.NewRevisedPlannedEndDate,
-      revisedPlanDescription: response.revisedPlanDescription || response.RevisedPlanDescription,
-      updatedAt: response.updatedAt || response.UpdatedAt
-    };
+      const mappedResponse = {
+        success: response.success ?? response.Success ?? false,
+        message: response.message || response.Message || '',
+        issueId: response.issueId || response.IssueId,
+        oldPlannedStartDate: response.oldPlannedStartDate || response.OldPlannedStartDate,
+        oldPlannedEndDate: response.oldPlannedEndDate || response.OldPlannedEndDate,
+        newPlannedStartDate: response.newPlannedStartDate || response.NewPlannedStartDate,
+        newPlannedEndDate: response.newPlannedEndDate || response.NewPlannedEndDate,
+        oldRevisedPlannedStartDate: response.oldRevisedPlannedStartDate || response.OldRevisedPlannedStartDate,
+        oldRevisedPlannedEndDate: response.oldRevisedPlannedEndDate || response.OldRevisedPlannedEndDate,
+        newRevisedPlannedStartDate: response.newRevisedPlannedStartDate || response.NewRevisedPlannedStartDate,
+        newRevisedPlannedEndDate: response.newRevisedPlannedEndDate || response.NewRevisedPlannedEndDate,
+        revisedPlanDescription: response.revisedPlanDescription || response.RevisedPlanDescription,
+        updatedAt: response.updatedAt || response.UpdatedAt
+      };
 
-    console.log('📋 Mapped updateIssueDates response:', mappedResponse);
+      console.log('📋 Mapped updateIssueDates response:', mappedResponse);
 
-    return mappedResponse;
-  } catch (error) {
-    console.error('❌ updateIssueDates error:', error);
-    throw error;
+      return mappedResponse;
+    } catch (error) {
+      console.error('❌ updateIssueDates error:', error);
+      throw error;
+    }
   }
-}
 
   // src/frontend/src/services/api.js
   // ✅ YENİ METOD: getRevisedIssues - Backend'de filtreleme yapan optimized endpoint
@@ -3136,6 +3136,10 @@ class ApiService {
    * Proje analiz raporunu getirir
    * Backend: GET /api/Reports/project-analytics
    */
+  /**
+ * Proje analiz raporunu getirir
+ * Backend: GET /api/Reports/project-analytics
+ */
   async getProjectAnalytics() {
     console.log('📊 API getProjectAnalytics call');
 
@@ -3148,6 +3152,10 @@ class ApiService {
         projectCode: project.projectCode || project.project_code || '',
         projectName: project.projectName || project.project_name || '',
         issueId: project.issueId || project.issue_id || 0,
+
+        // YENİ: Tasarım Sorumlusu
+        tasarimSorumlusu: project.tasarimSorumlusu || project.TasarimSorumlusu || 'Atanmamış',
+
         tamamlananTasarim: project.tamamlananTasarim || project.TamamlananTasarim || '0.00',
         tamamlananSatinalma: project.tamamlananSatinalma || project.TamamlananSatinalma || '0.00',
         tamamlananUretim: project.tamamlananUretim || project.TamamlananUretim || '0.00',
@@ -3171,6 +3179,61 @@ class ApiService {
       return projects;
     } catch (error) {
       console.error('❌ getProjectAnalytics error:', error);
+      throw error;
+    }
+  }
+
+  // src/frontend/src/services/api.js dosyasına eklenecek metodlar
+
+  /**
+   * Proje durum raporunu getirir
+   * Backend: POST /api/Reports/project-status
+   */
+  async getProjectStatusReport(filters = {}) {
+    console.log('📊 API getProjectStatusReport call:', filters);
+
+    try {
+      const requestBody = {
+        reportDate: filters.reportDate || null
+      };
+
+      console.log('📦 Request body:', requestBody);
+
+      const response = await this.post('/Reports/project-status', requestBody);
+      console.log('📊 API getProjectStatusReport raw response:', response);
+
+      // Response formatını düzenle (camelCase'e çevir)
+      const mappedResponse = {
+        reportDate: response.reportDate || response.ReportDate,
+        weekStart: response.weekStart || response.WeekStart,
+        weekEnd: response.weekEnd || response.WeekEnd,
+        projects: (response.projects || response.Projects || []).map(project => ({
+          projectId: project.projectId || project.ProjectId,
+          projectCode: project.projectCode || project.ProjectCode || '',
+          projectName: project.projectName || project.ProjectName || '',
+          parentIssueId: project.parentIssueId || project.ParentIssueId,
+          totalIssues: project.totalIssues ?? project.TotalIssues ?? 0,
+          completedIssues: project.completedIssues ?? project.CompletedIssues ?? 0,
+          completionPercentage: project.completionPercentage ?? project.CompletionPercentage ?? 0,
+          plannedIssuesToday: project.plannedIssuesToday ?? project.PlannedIssuesToday ?? 0,
+          plannedIssuesThisWeek: project.plannedIssuesThisWeek ?? project.PlannedIssuesThisWeek ?? 0,
+          purchase: {
+            totalPurchaseIssues: project.purchase?.totalPurchaseIssues ?? project.Purchase?.TotalPurchaseIssues ?? 0,
+            withOrderDate: project.purchase?.withOrderDate ?? project.Purchase?.WithOrderDate ?? 0,
+            withDeadlineDate: project.purchase?.withDeadlineDate ?? project.Purchase?.WithDeadlineDate ?? 0
+          },
+          production: {
+            totalProductionIssues: project.production?.totalProductionIssues ?? project.Production?.TotalProductionIssues ?? 0,
+            withPlannedDates: project.production?.withPlannedDates ?? project.Production?.WithPlannedDates ?? 0,
+            withRevisedDates: project.production?.withRevisedDates ?? project.Production?.WithRevisedDates ?? 0
+          }
+        }))
+      };
+
+      console.log('✅ Mapped response:', mappedResponse);
+      return mappedResponse;
+    } catch (error) {
+      console.error('❌ getProjectStatusReport error:', error);
       throw error;
     }
   }

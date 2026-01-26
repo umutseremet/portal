@@ -46,6 +46,7 @@ import OpenIssuesReportPage from './pages/Reports/OpenIssuesReportPage';
 import ProjectAnalyticsReportPage from './pages/Reports/ProjectAnalyticsReportPage';
 import LogoInvoiceApprovalPage from './pages/LogoInvoiceApprovalPage';
 import './App.css';
+import ProjectStatusReportPage from './pages/Reports/ProjectStatusReportPage';
 
 function App() {
   return (
@@ -177,6 +178,13 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/reports/project-status" element={
+              <ProtectedRoute>
+                  <Layout>
+                    <ProjectStatusReportPage />
+                  </Layout>
+                </ProtectedRoute>
+              } />
 
             {/* ========================================
                 ARAÇ YÖNETİMİ - ✅ SIRALAMA DÜZELTİLDİ

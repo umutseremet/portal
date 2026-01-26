@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using OfficeOpenXml;
@@ -346,11 +347,16 @@ WITH ProjeIsler AS (
         child.id AS ara_is_id,
         t.name AS issue_type,
         child.subject,
-        child.tracker_id
+        child.tracker_id,
+        -- Tasarım Sorumlusu (custom_field_id = 27)
+        cv_tasarim_sorumlusu.value AS tasarim_sorumlusu_id
     FROM issues child
     JOIN issues parent ON child.parent_id = parent.id
     JOIN trackers t ON child.tracker_id = t.id
     JOIN custom_values cv ON cv.customized_id = parent.project_id and cv.custom_field_id = 3
+    LEFT JOIN custom_values cv_tasarim_sorumlusu 
+        ON cv_tasarim_sorumlusu.customized_id = parent.id 
+        AND cv_tasarim_sorumlusu.custom_field_id = 27
     WHERE child.parent_id IN (
         SELECT i.id FROM issues i
         INNER JOIN custom_values cv1 ON cv1.customized_id = i.id
@@ -366,6 +372,7 @@ AltIsler AS (
         pi.project_name,
         pi.issue_type,
         pi.ara_is_id,
+        pi.tasarim_sorumlusu_id,
         alt.id AS alt_is_id,
         alt.status_id
     FROM ProjeIsler pi
@@ -380,6 +387,7 @@ AraIsDurumlari AS (
         pi.project_name,
         pi.issue_type,
         pi.ara_is_id,
+        pi.tasarim_sorumlusu_id,
         pi.ara_is_id AS issue_id,
         (SELECT status_id FROM issues WHERE id = pi.ara_is_id) AS status_id
     FROM ProjeIsler pi
@@ -391,7 +399,7 @@ AraIsDurumlari AS (
 BirlesikDurum AS (
     -- Alt işi olan ara işler için alt işlerin durumu
     SELECT
-        parent_id, project_code, project_name, issue_type, ara_is_id,
+        parent_id, project_code, project_name, issue_type, ara_is_id, tasarim_sorumlusu_id,
         alt_is_id AS issue_id, status_id
     FROM AltIsler
     WHERE alt_is_id IS NOT NULL
@@ -400,7 +408,7 @@ BirlesikDurum AS (
 
     -- Alt işi olmayan ara işler için kendi durumu
     SELECT
-        parent_id, project_code, project_name, issue_type, ara_is_id,
+        parent_id, project_code, project_name, issue_type, ara_is_id, tasarim_sorumlusu_id,
         issue_id, status_id
     FROM AraIsDurumlari
 ),
@@ -412,6 +420,7 @@ DurumHesaplamalari AS (
         bd.project_code,
         bd.project_name,
         bd.issue_type,
+        bd.tasarim_sorumlusu_id,
         -- Tamamlanan yüzde
         CASE
             WHEN COUNT(bd.issue_id) = 0 THEN '0.00'
@@ -424,7 +433,7 @@ DurumHesaplamalari AS (
         END AS in_progress_percent
     FROM BirlesikDurum bd
     LEFT JOIN issue_statuses ist ON bd.status_id = ist.id
-    GROUP BY bd.parent_id, bd.project_code, bd.project_name, bd.issue_type
+    GROUP BY bd.parent_id, bd.project_code, bd.project_name, bd.issue_type, bd.tasarim_sorumlusu_id
 ),
 
 -- Tarih bilgileri
@@ -451,6 +460,13 @@ SELECT
     dh.project_code,
     dh.project_name,
     dh.parent_id AS issue_id,
+    
+    -- Tasarım Sorumlusu bilgisi
+    CASE 
+        WHEN dh.tasarim_sorumlusu_id IS NOT NULL AND dh.tasarim_sorumlusu_id != '' 
+        THEN ISNULL(u.firstname + ' ' + u.lastname, 'Atanmamış')
+        ELSE 'Atanmamış'
+    END AS tasarim_sorumlusu,
 
     -- Tamamlanan kolonları
     ISNULL(MAX(CASE WHEN dh.issue_type = N'Tasarım' THEN dh.completed_percent END), '0.00') AS tamamlanan_tasarim,
@@ -478,7 +494,8 @@ SELECT
 FROM DurumHesaplamalari dh
 LEFT JOIN FATTarihleri ft ON ft.parent_id = dh.parent_id
 LEFT JOIN SevkiyatTarihleri st ON st.parent_id = dh.parent_id
-GROUP BY dh.project_code, dh.project_name, dh.parent_id, ft.fat_tarih, st.sevkiyat_tarih
+LEFT JOIN users u ON TRY_CAST(dh.tasarim_sorumlusu_id AS INT) = u.id
+GROUP BY dh.project_code, dh.project_name, dh.parent_id, dh.tasarim_sorumlusu_id, u.firstname, u.lastname, ft.fat_tarih, st.sevkiyat_tarih
 ORDER BY dh.project_code";
 
                     using (var command = new SqlCommand(query, connection))
@@ -492,6 +509,12 @@ ORDER BY dh.project_code";
                                     ProjectCode = reader.GetString(reader.GetOrdinal("project_code")),
                                     ProjectName = reader.IsDBNull(reader.GetOrdinal("project_name")) ? "" : reader.GetString(reader.GetOrdinal("project_name")),
                                     IssueId = reader.GetInt32(reader.GetOrdinal("issue_id")),
+
+                                    // Tasarım Sorumlusu
+                                    TasarimSorumlusu = reader.IsDBNull(reader.GetOrdinal("tasarim_sorumlusu"))
+                                        ? "Atanmamış"
+                                        : reader.GetString(reader.GetOrdinal("tasarim_sorumlusu")),
+
                                     TamamlananTasarim = reader.GetString(reader.GetOrdinal("tamamlanan_tasarim")),
                                     TamamlananSatinalma = reader.GetString(reader.GetOrdinal("tamamlanan_satinalma")),
                                     TamamlananUretim = reader.GetString(reader.GetOrdinal("tamamlanan_uretim")),
@@ -883,6 +906,320 @@ ORDER BY dh.project_code";
                 return StatusCode(500, new ErrorResponse { Message = $"Hata: {ex.Message}" });
             }
         }
+
+        // src/backend/API/Controllers/ReportsController.cs içine eklenecek yeni endpoint
+
+        /// <summary>
+        /// Proje bazlı anlık durum raporunu getirir
+        /// </summary>
+        [HttpPost("project-status")]
+        public async Task<IActionResult> GetProjectStatusReport([FromBody] ProjectStatusReportRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Getting project status report");
+
+                var connectionString = _configuration.GetConnectionString("DefaultConnection")
+                    ?? throw new InvalidOperationException("Database connection string not configured");
+
+                // Rapor tarihi belirleme
+                var reportDate = string.IsNullOrEmpty(request.ReportDate)
+                    ? DateTime.Today
+                    : DateTime.Parse(request.ReportDate);
+
+                // Hafta başlangıç ve bitiş tarihleri (Pazartesi-Pazar)
+                var weekStart = reportDate.AddDays(-(int)reportDate.DayOfWeek + (reportDate.DayOfWeek == DayOfWeek.Sunday ? -6 : 1));
+                var weekEnd = weekStart.AddDays(6);
+
+                var projects = new List<ProjectStatusData>();
+
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    // Ana proje listesi sorgusu - Sadece Dashboard Gösterim işaretli projeler
+                    // custom_field_id = 23 (Dashboard Gösterim) ve value = 1 (İşaretli)
+                    var projectQuery = @"
+                SELECT DISTINCT
+                    i.id AS ParentIssueId,
+                    p.id AS ProjectId,
+                    p.name AS ProjectName,
+                    cv_project_code.value AS ProjectCode
+                FROM issues i
+                INNER JOIN custom_values cv_dashboard ON cv_dashboard.customized_id = i.id 
+                    AND cv_dashboard.custom_field_id = 23 
+                    AND cv_dashboard.value = '1'
+                INNER JOIN projects p ON i.project_id = p.id
+                LEFT JOIN custom_values cv_project_code ON cv_project_code.customized_id = p.id 
+                    AND cv_project_code.customized_type = 'Project'
+                    AND cv_project_code.custom_field_id = 3
+                WHERE i.id IS NOT NULL";
+
+                    var projectParams = new List<SqlParameter>();
+
+                    projectQuery += " ORDER BY p.id";
+
+                    using (var projectCmd = new SqlCommand(projectQuery, connection))
+                    {
+                        projectCmd.Parameters.AddRange(projectParams.ToArray());
+
+                        using (var reader = await projectCmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var parentIssueId = reader.GetInt32(reader.GetOrdinal("ParentIssueId"));
+                                var projectId = reader.GetInt32(reader.GetOrdinal("ProjectId"));
+
+                                var projectData = new ProjectStatusData
+                                {
+                                    ProjectId = projectId,
+                                    ProjectCode = reader.IsDBNull(reader.GetOrdinal("ProjectCode")) ? "" : reader.GetString(reader.GetOrdinal("ProjectCode")),
+                                    ProjectName = reader.IsDBNull(reader.GetOrdinal("ProjectName")) ? "" : reader.GetString(reader.GetOrdinal("ProjectName")),
+                                    ParentIssueId = parentIssueId
+                                };
+
+                                projects.Add(projectData);
+                            }
+                        }
+                    }
+
+                    // Her proje için detay bilgileri çek
+                    foreach (var project in projects)
+                    {
+                        // 1. Toplam iş sayısı ve tamamlanmış iş sayısı
+                        var totalIssuesQuery = @"
+                    WITH AllSubIssues AS (
+                        SELECT id, status_id 
+                        FROM issues 
+                        WHERE parent_id = @parentIssueId
+                        
+                        UNION ALL
+                        
+                        SELECT child.id, child.status_id
+                        FROM issues child
+                        INNER JOIN issues parent ON child.parent_id = parent.id
+                        WHERE parent.parent_id = @parentIssueId
+                    )
+                    SELECT 
+                        COUNT(*) AS TotalIssues,
+                        SUM(CASE WHEN s.is_closed = 1 THEN 1 ELSE 0 END) AS CompletedIssues
+                    FROM AllSubIssues asi
+                    LEFT JOIN issue_statuses s ON asi.status_id = s.id";
+
+                        using (var cmd = new SqlCommand(totalIssuesQuery, connection))
+                        {
+                            cmd.Parameters.AddWithValue("@parentIssueId", project.ParentIssueId);
+
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync())
+                                {
+                                    project.TotalIssues = reader.GetInt32(reader.GetOrdinal("TotalIssues"));
+                                    project.CompletedIssues = reader.IsDBNull(reader.GetOrdinal("CompletedIssues")) ? 0 : reader.GetInt32(reader.GetOrdinal("CompletedIssues"));
+                                    project.CompletionPercentage = project.TotalIssues > 0
+                                        ? Math.Round((decimal)project.CompletedIssues / project.TotalIssues * 100, 2)
+                                        : 0;
+                                }
+                            }
+                        }
+
+                        // 2. Bugün için planlanmış işler (planned_start_date veya planned_end_date bugüne eşit)
+                        var todayPlannedQuery = @"
+                    WITH AllSubIssues AS (
+                        SELECT id 
+                        FROM issues 
+                        WHERE parent_id = @parentIssueId
+                        
+                        UNION ALL
+                        
+                        SELECT child.id
+                        FROM issues child
+                        INNER JOIN issues parent ON child.parent_id = parent.id
+                        WHERE parent.parent_id = @parentIssueId
+                    )
+                    SELECT COUNT(DISTINCT asi.id) AS PlannedToday
+                    FROM AllSubIssues asi
+                    LEFT JOIN custom_values cv_start ON cv_start.customized_id = asi.id 
+                        AND cv_start.customized_type = 'Issue' 
+                        AND cv_start.custom_field_id = 12
+                    LEFT JOIN custom_values cv_end ON cv_end.customized_id = asi.id 
+                        AND cv_end.customized_type = 'Issue' 
+                        AND cv_end.custom_field_id = 4
+                    WHERE (
+                        CONVERT(date, cv_start.value) = @reportDate
+                        OR CONVERT(date, cv_end.value) = @reportDate
+                    )";
+
+                        using (var cmd = new SqlCommand(todayPlannedQuery, connection))
+                        {
+                            cmd.Parameters.AddWithValue("@parentIssueId", project.ParentIssueId);
+                            cmd.Parameters.AddWithValue("@reportDate", reportDate.Date);
+
+                            var result = await cmd.ExecuteScalarAsync();
+                            project.PlannedIssuesToday = result != DBNull.Value ? Convert.ToInt32(result) : 0;
+                        }
+
+                        // 3. Bu hafta için planlanmış işler
+                        var weekPlannedQuery = @"
+                    WITH AllSubIssues AS (
+                        SELECT id 
+                        FROM issues 
+                        WHERE parent_id = @parentIssueId
+                        
+                        UNION ALL
+                        
+                        SELECT child.id
+                        FROM issues child
+                        INNER JOIN issues parent ON child.parent_id = parent.id
+                        WHERE parent.parent_id = @parentIssueId
+                    )
+                    SELECT COUNT(DISTINCT asi.id) AS PlannedThisWeek
+                    FROM AllSubIssues asi
+                    LEFT JOIN custom_values cv_start ON cv_start.customized_id = asi.id 
+                        AND cv_start.customized_type = 'Issue' 
+                        AND cv_start.custom_field_id = 12
+                    LEFT JOIN custom_values cv_end ON cv_end.customized_id = asi.id 
+                        AND cv_end.customized_type = 'Issue' 
+                        AND cv_end.custom_field_id = 4
+                    WHERE (
+                        CONVERT(date, cv_start.value) BETWEEN @weekStart AND @weekEnd
+                        OR CONVERT(date, cv_end.value) BETWEEN @weekStart AND @weekEnd
+                    )";
+
+                        using (var cmd = new SqlCommand(weekPlannedQuery, connection))
+                        {
+                            cmd.Parameters.AddWithValue("@parentIssueId", project.ParentIssueId);
+                            cmd.Parameters.AddWithValue("@weekStart", weekStart.Date);
+                            cmd.Parameters.AddWithValue("@weekEnd", weekEnd.Date);
+
+                            var result = await cmd.ExecuteScalarAsync();
+                            project.PlannedIssuesThisWeek = result != DBNull.Value ? Convert.ToInt32(result) : 0;
+                        }
+
+                        // 4. Satınalma bilgileri (Tracker: Satınalma)
+                        var purchaseQuery = @"
+                    WITH AllSubIssues AS (
+                        SELECT id, tracker_id 
+                        FROM issues 
+                        WHERE parent_id = @parentIssueId
+                        
+                        UNION ALL
+                        
+                        SELECT child.id, child.tracker_id
+                        FROM issues child
+                        INNER JOIN issues parent ON child.parent_id = parent.id
+                        WHERE parent.parent_id = @parentIssueId
+                    )
+                    SELECT 
+                        COUNT(DISTINCT asi.id) AS TotalPurchase,
+                        COUNT(DISTINCT CASE 
+                            WHEN cv_order.value IS NOT NULL AND cv_order.value != '' 
+                            THEN asi.id 
+                        END) AS WithOrderDate,
+                        COUNT(DISTINCT CASE 
+                            WHEN cv_deadline.value IS NOT NULL AND cv_deadline.value != '' 
+                            THEN asi.id 
+                        END) AS WithDeadlineDate
+                    FROM AllSubIssues asi
+                    INNER JOIN trackers t ON asi.tracker_id = t.id
+                    LEFT JOIN custom_values cv_order ON cv_order.customized_id = asi.id 
+                        AND cv_order.customized_type = 'Issue' 
+                        AND cv_order.custom_field_id = 14
+                    LEFT JOIN custom_values cv_deadline ON cv_deadline.customized_id = asi.id 
+                        AND cv_deadline.customized_type = 'Issue' 
+                        AND cv_deadline.custom_field_id = 49
+                    WHERE t.name LIKE N'%Satınalma%'";
+
+                        using (var cmd = new SqlCommand(purchaseQuery, connection))
+                        {
+                            cmd.Parameters.AddWithValue("@parentIssueId", project.ParentIssueId);
+
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync())
+                                {
+                                    project.Purchase.TotalPurchaseIssues = reader.GetInt32(reader.GetOrdinal("TotalPurchase"));
+                                    project.Purchase.WithOrderDate = reader.GetInt32(reader.GetOrdinal("WithOrderDate"));
+                                    project.Purchase.WithDeadlineDate = reader.GetInt32(reader.GetOrdinal("WithDeadlineDate"));
+                                }
+                            }
+                        }
+
+                        // 5. Üretim bilgileri (Tracker: Üretim, Montaj, Elektrik)
+                        var productionQuery = @"
+                    WITH AllSubIssues AS (
+                        SELECT id, tracker_id 
+                        FROM issues 
+                        WHERE parent_id = @parentIssueId
+                        
+                        UNION ALL
+                        
+                        SELECT child.id, child.tracker_id
+                        FROM issues child
+                        INNER JOIN issues parent ON child.parent_id = parent.id
+                        WHERE parent.parent_id = @parentIssueId
+                    )
+                    SELECT 
+                        COUNT(DISTINCT asi.id) AS TotalProduction,
+                        COUNT(DISTINCT CASE 
+                            WHEN (cv_start.value IS NOT NULL AND cv_start.value != '') 
+                                OR (cv_end.value IS NOT NULL AND cv_end.value != '') 
+                            THEN asi.id 
+                        END) AS WithPlannedDates,
+                        COUNT(DISTINCT CASE 
+                            WHEN (cv_rev_start.value IS NOT NULL AND cv_rev_start.value != '') 
+                                OR (cv_rev_end.value IS NOT NULL AND cv_rev_end.value != '') 
+                            THEN asi.id 
+                        END) AS WithRevisedDates
+                    FROM AllSubIssues asi
+                    INNER JOIN trackers t ON asi.tracker_id = t.id
+                    LEFT JOIN custom_values cv_start ON cv_start.customized_id = asi.id 
+                        AND cv_start.customized_type = 'Issue' 
+                        AND cv_start.custom_field_id = 12
+                    LEFT JOIN custom_values cv_end ON cv_end.customized_id = asi.id 
+                        AND cv_end.customized_type = 'Issue' 
+                        AND cv_end.custom_field_id = 4
+                    LEFT JOIN custom_values cv_rev_start ON cv_rev_start.customized_id = asi.id 
+                        AND cv_rev_start.customized_type = 'Issue' 
+                        AND cv_rev_start.custom_field_id = 50
+                    LEFT JOIN custom_values cv_rev_end ON cv_rev_end.customized_id = asi.id 
+                        AND cv_rev_end.customized_type = 'Issue' 
+                        AND cv_rev_end.custom_field_id = 51
+                    WHERE t.name IN (N'Üretim', N'Montaj', N'Elektrik')";
+
+                        using (var cmd = new SqlCommand(productionQuery, connection))
+                        {
+                            cmd.Parameters.AddWithValue("@parentIssueId", project.ParentIssueId);
+
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync())
+                                {
+                                    project.Production.TotalProductionIssues = reader.GetInt32(reader.GetOrdinal("TotalProduction"));
+                                    project.Production.WithPlannedDates = reader.GetInt32(reader.GetOrdinal("WithPlannedDates"));
+                                    project.Production.WithRevisedDates = reader.GetInt32(reader.GetOrdinal("WithRevisedDates"));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                var response = new ProjectStatusReportResponse
+                {
+                    ReportDate = reportDate,
+                    WeekStart = weekStart,
+                    WeekEnd = weekEnd,
+                    Projects = projects
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting project status report");
+                return StatusCode(500, new { message = "Rapor oluşturulurken bir hata oluştu", error = ex.Message });
+            }
+        }
     }
 
     // Request/Response Models
@@ -957,6 +1294,7 @@ ORDER BY dh.project_code";
         public string ProjectCode { get; set; } = string.Empty;
         public string ProjectName { get; set; } = string.Empty;
         public int IssueId { get; set; }
+        public string TasarimSorumlusu { get; set; } = "Atanmamış";
 
         // Tamamlanan yüzdeler
         public string TamamlananTasarim { get; set; } = "0.00";

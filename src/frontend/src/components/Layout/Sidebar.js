@@ -106,8 +106,15 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
         },
         {
           id: 'project-analytics-report',  // ✅ YENİ
-          label: 'Projeler Son Durum Raporu', // ✅ YENİ
+          label: 'Projeler Dashboard', // ✅ YENİ
           path: '/reports/project-analytics',
+          permission: null
+        },
+        // ✅ YENİ EKLEME
+        {
+          id: 'project-status-report',
+          label: 'Projeler Anlık Durum Raporu',
+          path: '/reports/project-status',
           permission: null
         }
       ]
@@ -375,7 +382,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
                 marginRight: '12px'
               }}
             >
-              <i className="bi bi-truck"></i>
+              {/* <i className="bi bi-truck"></i> */}
             </div>
             <h4
               className="logo-text"

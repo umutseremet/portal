@@ -51,6 +51,13 @@ const ProjectAnalyticsReportPage = () => {
                 return;
             }
 
+            // ✅ Sidebar durumunu kontrol et
+            const mainContent = document.querySelector('.main-content');
+            const isSidebarCollapsed = mainContent && mainContent.classList.contains('sidebar-collapsed');
+
+            // ✅ Sidebar açıkken 3 kart, kapalıyken 4 kart
+            const colClass = isSidebarCollapsed ? 'col-xl-3 col-lg-4 col-md-6' : 'col-xl-4 col-lg-6 col-md-12';
+
             projects.forEach((project, index) => {
                 const safeProjectCode = String(project.projectCode || `proje${index}`).replace(/[^a-zA-Z0-9_]/g, '_');
                 const safeIssueId = String(project.issueId || `is${index}`).replace(/[^a-zA-Z0-9_]/g, '_');
@@ -60,33 +67,44 @@ const ProjectAnalyticsReportPage = () => {
                 const issueLink = `http://192.168.1.17:9292/issues/${project.issueId}`;
 
                 const projectCardHTML = `
-                    <div class="col-xl-3 col-lg-6 col-md-12 mb-3">
-                        <div class="card"> 
-                            <div class="card-header pb-2 border-0">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-                                    <div style="flex: 1; min-width: 0;"> 
-                                        <h4 class="card-title mb-2 text-black font-weight-bold">${project.projectCode || 'Bilgi Yok'}</h4>
-                                        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 5px;">
-                                            <p class="fs-13 mb-0" style="white-space: nowrap;">
-                                                <strong>FAT:</strong> ${fatMonth || '--'}
-                                            </p>
-                                            <p class="fs-13 mb-0" style="white-space: nowrap;">
-                                                <strong>Sevkiyat:</strong> ${sevkiyatMonth || '--'}
-                                            </p>
-                                        </div>
-                                        ${project.issueId ? `
-                                        <a href="${issueLink}" target="_blank" class="fs-13" style="display: inline-block; margin-top: 5px;">
-                                            <strong>İş No:</strong> ${project.issueId}
-                                        </a>` : `<p class="fs-13 mb-0" style="margin-top: 5px;"><strong>İş No:</strong> Belirtilmemiş</p>`}
-                                    </div>
+            <div class="${colClass} mb-3">
+                <div class="card"> 
+                    <div class="card-header pb-2 border-bottom">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                            <div style="flex: 1; min-width: 0;"> 
+                                <h4 class="card-title mb-2 text-black font-weight-bold">${project.projectCode || 'Bilgi Yok'}</h4>
+                                <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 5px;">
+                                    <p class="fs-13 mb-0" style="white-space: nowrap;">
+                                        <strong>FAT:</strong> ${fatMonth || '--'}
+                                    </p>
+                                    <p class="fs-13 mb-0" style="white-space: nowrap;">
+                                        <strong>Sevkiyat:</strong> ${sevkiyatMonth || '--'}
+                                    </p>
                                 </div>
-                            </div>
-                            <div class="card-body pt-1 pb-2"> 
-                                <div id="${chartId}" class="ct-chart ct-golden-section chartlist-chart"></div>
+                                ${project.issueId ? `
+                                <div class="fs-13 mb-2" style="margin-top: 5px;">
+                                    <a href="${issueLink}" target="_blank" style="color: #007bff; text-decoration: none;">
+                                        <strong>İş No:</strong> #${project.issueId}
+                                    </a>
+                                    <span class="text-muted mx-2">|</span>
+                                    <strong>Tasarım Sorumlusu:</strong> 
+                                    <span class="text-primary">${project.tasarimSorumlusu || 'Atanmamış'}</span>
+                                </div>` : `
+                                <p class="fs-13 mb-0" style="margin-top: 5px;">
+                                    <strong>İş No:</strong> Belirtilmemiş
+                                    <span class="text-muted mx-2">|</span>
+                                    <strong>Tasarım Sorumlusu:</strong> 
+                                    <span class="text-primary">${project.tasarimSorumlusu || 'Atanmamış'}</span>
+                                </p>`}
                             </div>
                         </div>
                     </div>
-                `;
+                    <div class="card-body pt-1 pb-2"> 
+                        <div id="${chartId}" class="ct-chart ct-golden-section chartlist-chart"></div>
+                    </div>
+                </div>
+            </div>
+        `;
 
                 container.insertAdjacentHTML('beforeend', projectCardHTML);
                 setTimeout(() => renderProjectChart(chartId, project), 200 + (index * 50));
@@ -171,16 +189,7 @@ const ProjectAnalyticsReportPage = () => {
                     const correctLabel = tooltipLabels[barIndex];
                     const correctValue = tooltipValues[barIndex];
 
-                    console.log('🎨 Bar çiziliyor:', {
-                        index: barIndex,
-                        label: correctLabel,
-                        completed: correctValue.completed,
-                        working: correctValue.working,
-                        color: barColor
-                    });
-
                     if (correctValue.completed === 0) {
-                        console.log('⚠️ Bar gizleniyor (değer 0):', correctLabel);
                         data.element.attr({ 'style': 'stroke: transparent; stroke-width: 0;' });
                         return;
                     }
@@ -190,51 +199,53 @@ const ProjectAnalyticsReportPage = () => {
                         tooltipText += ', ' + Math.round(correctValue.working) + '% çalışılıyor';
                     }
 
-                    console.log('📝 Tooltip metni:', tooltipText);
-
                     data.element.attr({
                         'style': `stroke: ${barColor}; stroke-width: 20px;`,
                         'data-tooltip': tooltipText
                     });
 
-                    console.log('🖱️ Event listener ekleniyor...');
-
+                    // MOUSEENTER
                     data.element._node.addEventListener('mouseenter', function (e) {
-                        console.log('✨ MOUSEENTER tetiklendi!');
+                        // Eski tooltip'leri temizle
+                        document.querySelectorAll('.chartist-tooltip').forEach(t => t.remove());
 
                         const tooltip = document.createElement('div');
-                        tooltip.className = 'chartist-tooltip tooltip-show';
+                        tooltip.className = 'chartist-tooltip';
                         tooltip.innerHTML = e.target.getAttribute('data-tooltip');
-                        tooltip.style.opacity = '1'; // 👈 BUNU EKLE
 
-                        // ÖNCE BODY'YE EKLE
+                        // Inline style'ları ekle
+                        tooltip.style.position = 'fixed';
+                        tooltip.style.display = 'block';
+                        tooltip.style.opacity = '1';
+                        tooltip.style.zIndex = '99999';
+                        tooltip.style.background = '#333';
+                        tooltip.style.color = 'white';
+                        tooltip.style.padding = '8px 12px';
+                        tooltip.style.borderRadius = '4px';
+                        tooltip.style.fontSize = '13px';
+                        tooltip.style.fontWeight = '600';
+                        tooltip.style.whiteSpace = 'nowrap';
+                        tooltip.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+                        tooltip.style.pointerEvents = 'none';
+
                         document.body.appendChild(tooltip);
 
-                        // SONRA GENİŞLİK/YÜKSEKLİK HESAPLANIR
                         const rect = e.target.getBoundingClientRect();
-                        const left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2;
-                        const top = rect.top - tooltip.offsetHeight - 10;
+                        const tooltipRect = tooltip.getBoundingClientRect();
+
+                        const left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+                        const top = rect.top - tooltipRect.height - 10;
 
                         tooltip.style.left = left + 'px';
                         tooltip.style.top = top + 'px';
-
-                        console.log('📌 Tooltip pozisyonu:', {
-                            left: left,
-                            top: top,
-                            tooltipWidth: tooltip.offsetWidth,
-                            tooltipHeight: tooltip.offsetHeight
-                        });
                     });
 
+                    // MOUSELEAVE
                     data.element._node.addEventListener('mouseleave', function () {
-                        console.log('👋 MOUSELEAVE tetiklendi');
                         document.querySelectorAll('.chartist-tooltip').forEach(tooltip => {
-                            console.log('🗑️ Tooltip siliniyor');
                             tooltip.remove();
                         });
                     });
-
-                    console.log('✅ Event listenerlar eklendi: ', data.element._node);
                 }
             });
 
@@ -322,6 +333,16 @@ const ProjectAnalyticsReportPage = () => {
                         });
                     }
                 }, 100);
+
+                // ✅ YENİ: Window resize listener ekle - chart'ları yeniden çiz
+                let resizeTimeout;
+                window.addEventListener('resize', function () {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        console.log('🔄 Window resized, re-rendering charts...');
+                        renderProjects(allProjects);
+                    }, 250); // 250ms debounce
+                });
             } catch (error) {
                 console.error("Hata:", error);
                 const container = document.getElementById('project-charts-container');
@@ -337,7 +358,7 @@ const ProjectAnalyticsReportPage = () => {
     return (
         <div className="project-analytics-report-page">
             <div className="page-header mb-4">
-                <h2 className="mb-1"><i className="bi bi-bar-chart-line me-2"></i>Projeler Son Durum Raporu</h2>
+                <h2 className="mb-1"><i className="bi bi-bar-chart-line me-2"></i>Projeler Dashboard</h2>
                 <p className="text-muted mb-0">Projelerin ilerleme durumlarını görüntüleyin</p>
             </div>
 
