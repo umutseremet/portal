@@ -48,6 +48,12 @@ import LogoInvoiceApprovalPage from './pages/LogoInvoiceApprovalPage';
 import './App.css';
 import ProjectStatusReportPage from './pages/Reports/ProjectStatusReportPage';
 
+import DocumentManagement from './pages/DocumentManagement/DocumentManagement';
+import CreateDocument from './pages/DocumentManagement/CreateDocument';
+import EditDocument from './pages/DocumentManagement/EditDocument';
+import CreateVersion from './pages/DocumentManagement/CreateVersion';
+import CategoryManagement from './pages/DocumentManagement/CategoryManagement';
+
 function App() {
   return (
     <div className="App">
@@ -180,11 +186,11 @@ function App() {
             />
             <Route path="/reports/project-status" element={
               <ProtectedRoute>
-                  <Layout>
-                    <ProjectStatusReportPage />
-                  </Layout>
-                </ProtectedRoute>
-              } />
+                <Layout>
+                  <ProjectStatusReportPage />
+                </Layout>
+              </ProtectedRoute>
+            } />
 
             {/* ========================================
                 ARAÇ YÖNETİMİ - ✅ SIRALAMA DÜZELTİLDİ
@@ -511,6 +517,56 @@ function App() {
                 ======================================== */}
             <Route path="/" element={<Navigate to="/production/weekly-calendar" replace />} />
             <Route path="*" element={<Navigate to="/production/weekly-calendar" replace />} />
+
+
+            <Route
+              path="/documents"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <DocumentManagement />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/documents/new"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CreateDocument />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/documents/edit/:id"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <EditDocument />
+                  </Layout>
+                </ProtectedRoute>} />
+            <Route
+              path="/documents/:id/new-version"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CreateVersion />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/documents/categories"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CategoryManagement />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </AuthProvider>
       </ToastProvider>

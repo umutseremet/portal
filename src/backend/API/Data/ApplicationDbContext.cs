@@ -1,6 +1,7 @@
 ﻿using API.Controllers;
 using API.Data.Entities;
 using Microsoft.EntityFrameworkCore;
+using VervoPortal.Models.DocumentManagement;
 
 namespace API.Data
 {
@@ -39,6 +40,13 @@ namespace API.Data
         public DbSet<PurchaseRequestApprovalHistory> PurchaseRequestApprovalHistory { get; set; }
         public DbSet<PurchaseOrderHistory> PurchaseOrderHistory { get; set; }
         public DbSet<LogoInvoiceApproval> LogoInvoiceApprovals { get; set; }
+
+        // Doküman Yönetimi
+        public DbSet<DocumentCategory> DocumentCategories { get; set; }
+        public DbSet<Document> Documents { get; set; }
+        public DbSet<DocumentVersion> DocumentVersions { get; set; }
+        public DbSet<DocumentFile> DocumentFiles { get; set; }
+        public DbSet<DocumentPermission> DocumentPermissions { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -374,6 +382,47 @@ namespace API.Data
                 entity.HasIndex(e => new { e.VehicleId, e.PurchaseDate })
                       .HasDatabaseName("IX_VehicleFuelPurchases_VehicleId_PurchaseDate");
             });
+
+            // DocumentCategory Self-Reference
+            modelBuilder.Entity<DocumentCategory>()
+                .HasOne(c => c.ParentCategory)
+                .WithMany(c => c.ChildCategories)
+                .HasForeignKey(c => c.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Document - Category İlişkisi
+            modelBuilder.Entity<Document>()
+                .HasOne(d => d.Category)
+                .WithMany(c => c.Documents)
+                .HasForeignKey(d => d.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Document - Version İlişkisi
+            modelBuilder.Entity<DocumentVersion>()
+                .HasOne(v => v.Document)
+                .WithMany(d => d.Versions)
+                .HasForeignKey(v => v.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // DocumentFile İlişkileri
+            modelBuilder.Entity<DocumentFile>()
+                .HasOne(f => f.Document)
+                .WithMany(d => d.Files)
+                .HasForeignKey(f => f.DocumentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DocumentFile>()
+                .HasOne(f => f.Version)
+                .WithMany(v => v.Files)
+                .HasForeignKey(f => f.VersionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // DocumentPermission İlişkisi
+            modelBuilder.Entity<DocumentPermission>()
+                .HasOne(p => p.Document)
+                .WithMany(d => d.Permissions)
+                .HasForeignKey(p => p.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         public override int SaveChanges()

@@ -3237,6 +3237,260 @@ class ApiService {
       throw error;
     }
   }
+
+  // src/services/api.js - Eklenecek metodlar (dosyanın sonuna, export'tan önce)
+
+  // ===== DOCUMENT MANAGEMENT ENDPOINTS =====
+
+  /**
+   * Get all document categories with hierarchy
+   * @returns {Promise<Array>} List of categories
+   */
+  async getDocumentCategories() {
+    try {
+      console.log('📁 API getDocumentCategories call');
+      const response = await this.get('/DocumentManagement/categories');
+      console.log('✅ getDocumentCategories response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ getDocumentCategories error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new document category
+   * @param {Object} categoryData - Category data
+   * @returns {Promise<Object>} Created category
+   */
+  async createDocumentCategory(categoryData) {
+    try {
+      console.log('📁 API createDocumentCategory call:', categoryData);
+      const response = await this.post('/DocumentManagement/categories', categoryData);
+      console.log('✅ createDocumentCategory response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ createDocumentCategory error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a document category
+   * @param {number} id - Category ID
+   * @returns {Promise<void>}
+   */
+  async deleteDocumentCategory(id) {
+    try {
+      console.log('📁 API deleteDocumentCategory call:', id);
+      const response = await this.delete(`/DocumentManagement/categories/${id}`);
+      console.log('✅ deleteDocumentCategory response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ deleteDocumentCategory error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get documents with filtering
+   * @param {Object} params - Filter parameters (categoryId, type, search)
+   * @returns {Promise<Array>} List of documents
+   */
+  async getDocuments(params = {}) {
+    try {
+      console.log('📄 API getDocuments call:', params);
+
+      const queryParams = new URLSearchParams();
+      if (params.categoryId) queryParams.append('categoryId', params.categoryId);
+      if (params.type && params.type !== 'all') queryParams.append('type', params.type);
+      if (params.search) queryParams.append('search', params.search);
+
+      const endpoint = queryParams.toString()
+        ? `/DocumentManagement/documents?${queryParams.toString()}`
+        : '/DocumentManagement/documents';
+
+      const response = await this.get(endpoint);
+      console.log('✅ getDocuments response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ getDocuments error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get single document with details
+   * @param {number} id - Document ID
+   * @returns {Promise<Object>} Document details
+   */
+  async getDocument(id) {
+    try {
+      console.log('📄 API getDocument call:', id);
+      const response = await this.get(`/DocumentManagement/documents/${id}`);
+      console.log('✅ getDocument response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ getDocument error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new document with files
+   * @param {FormData} formData - Document data with files
+   * @returns {Promise<Object>} Created document
+   */
+  async createDocument(formData) {
+    try {
+      console.log('📄 API createDocument call');
+
+      const token = this.getAuthToken();
+      const url = `${this.baseURL}/DocumentManagement/documents`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+          // Content-Type header'ı FormData için otomatik eklenir
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ createDocument response:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ createDocument error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing document
+   * @param {number} id - Document ID
+   * @param {Object} documentData - Updated document data
+   * @returns {Promise<void>}
+   */
+  async updateDocument(id, documentData) {
+    try {
+      console.log('📄 API updateDocument call:', { id, documentData });
+      const response = await this.put(`/DocumentManagement/documents/${id}`, documentData);
+      console.log('✅ updateDocument response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ updateDocument error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a document
+   * @param {number} id - Document ID
+   * @returns {Promise<void>}
+   */
+  async deleteDocument(id) {
+    try {
+      console.log('📄 API deleteDocument call:', id);
+      const response = await this.delete(`/DocumentManagement/documents/${id}`);
+      console.log('✅ deleteDocument response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ deleteDocument error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new version for a document
+   * @param {number} documentId - Document ID
+   * @param {FormData} formData - Version data with files
+   * @returns {Promise<Object>} Created version
+   */
+  async createDocumentVersion(documentId, formData) {
+    try {
+      console.log('📄 API createDocumentVersion call:', documentId);
+
+      const token = this.getAuthToken();
+      const url = `${this.baseURL}/DocumentManagement/documents/${documentId}/versions`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+          // Content-Type header'ı FormData için otomatik eklenir
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ createDocumentVersion response:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ createDocumentVersion error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Download a document file
+   * @param {number} fileId - File ID
+   * @returns {Promise<Blob>} File blob
+   */
+  async downloadDocumentFile(fileId) {
+    try {
+      console.log('📄 API downloadDocumentFile call:', fileId);
+
+      const token = this.getAuthToken();
+      const url = `${this.baseURL}/DocumentManagement/files/${fileId}/download`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const blob = await response.blob();
+      console.log('✅ downloadDocumentFile response:', blob);
+      return blob;
+    } catch (error) {
+      console.error('❌ downloadDocumentFile error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a document file
+   * @param {number} fileId - File ID
+   * @returns {Promise<void>}
+   */
+  async deleteDocumentFile(fileId) {
+    try {
+      console.log('📄 API deleteDocumentFile call:', fileId);
+      const response = await this.delete(`/DocumentManagement/files/${fileId}`);
+      console.log('✅ deleteDocumentFile response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ deleteDocumentFile error:', error);
+      throw error;
+    }
+  }
 }
 
 

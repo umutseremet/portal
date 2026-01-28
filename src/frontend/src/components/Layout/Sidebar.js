@@ -93,6 +93,26 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       permission: null
     },
     {
+      id: 'document-management',
+      label: 'Doküman Yönetimi',
+      icon: 'bi-folder-fill',
+      permission: null,
+      children: [
+        {
+          id: 'documents',
+          label: 'Dokümanlar',
+          path: '/documents',
+          permission: null // Herkes erişebilir
+        },
+        {
+          id: 'document-categories',
+          label: 'Kategori Yönetimi',
+          path: '/documents/categories',
+          permission: null // Herkes erişebilir
+        }
+      ]
+    },
+    {
       id: 'reports',
       label: 'Raporlar',
       icon: 'bi-file-earmark-bar-graph',

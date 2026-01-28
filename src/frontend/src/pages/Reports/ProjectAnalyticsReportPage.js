@@ -135,8 +135,14 @@ const ProjectAnalyticsReportPage = () => {
             };
 
             const barColors = [
-                '#FF9500', '#00A2E8', '#FE634E', '#707070',
-                '#BFBFBF', '#22B14C', '#FF5722', '#9C27B0'
+                '#9C27B0', // SAT - Mor (chart'ta en altta)
+                '#FF5722', // Sevkiyat - Koyu Turuncu
+                '#22B14C', // FAT - Yeşil
+                '#BFBFBF', // Elektrik - Açık Gri
+                '#707070', // Montaj - Koyu Gri
+                '#FE634E', // Üretim - Kırmızı
+                '#00A2E8', // Satınalma - Mavi
+                '#FF9500'  // Tasarım - Turuncu (chart'ta en üstte)
             ];
 
             const chartOptions = {
@@ -170,14 +176,14 @@ const ProjectAnalyticsReportPage = () => {
 
             const tooltipLabels = ['SAT', 'Sevkiyat', 'FAT', 'Elektrik', 'Montaj', 'Üretim', 'Satınalma', 'Tasarım'];
             const tooltipValues = [
-                { completed: tamamlanan.sat, working: calisiliyor.sat },
-                { completed: tamamlanan.sevkiyat, working: calisiliyor.sevkiyat },
-                { completed: tamamlanan.fat, working: calisiliyor.fat },
-                { completed: tamamlanan.elektrik, working: calisiliyor.elektrik },
-                { completed: tamamlanan.montaj, working: calisiliyor.montaj },
-                { completed: tamamlanan.uretim, working: calisiliyor.uretim },
-                { completed: tamamlanan.satinalma, working: calisiliyor.satinalma },
-                { completed: tamamlanan.tasarim, working: calisiliyor.tasarim }
+                { completed: tamamlanan.sat, working: calisiliyor.sat },           // 0
+                { completed: tamamlanan.sevkiyat, working: calisiliyor.sevkiyat }, // 1
+                { completed: tamamlanan.fat, working: calisiliyor.fat },           // 2
+                { completed: tamamlanan.elektrik, working: calisiliyor.elektrik }, // 3
+                { completed: tamamlanan.montaj, working: calisiliyor.montaj },     // 4
+                { completed: tamamlanan.uretim, working: calisiliyor.uretim },     // 5
+                { completed: tamamlanan.satinalma, working: calisiliyor.satinalma }, // 6
+                { completed: tamamlanan.tasarim, working: calisiliyor.tasarim }    // 7
             ];
 
             // renderProjectChart fonksiyonunda, chart.on('draw') event'inde:
@@ -255,11 +261,20 @@ const ProjectAnalyticsReportPage = () => {
                     const svg = chartElement.querySelector('svg');
                     if (svg) {
                         const bars = svg.querySelectorAll('.ct-bar');
+
                         const workingValues = [
-                            calisiliyor.sat, calisiliyor.sevkiyat, calisiliyor.fat,
-                            calisiliyor.elektrik, calisiliyor.montaj, calisiliyor.uretim,
-                            calisiliyor.satinalma, calisiliyor.tasarim
+                            calisiliyor.sat,
+                            calisiliyor.sevkiyat,
+                            calisiliyor.fat,
+                            calisiliyor.elektrik,
+                            calisiliyor.montaj,
+                            calisiliyor.uretim,
+                            calisiliyor.satinalma,
+                            calisiliyor.tasarim
                         ];
+
+                        // Tooltip label'ları (ters sıra)
+                        const phaseLabels = ['SAT', 'Sevkiyat', 'FAT', 'Elektrik', 'Montaj', 'Üretim', 'Satınalma', 'Tasarım'];
 
                         bars.forEach((bar, index) => {
                             const x1 = parseFloat(bar.getAttribute('x1'));
@@ -272,7 +287,9 @@ const ProjectAnalyticsReportPage = () => {
                                 if (gridLines.length > 0) {
                                     const lastGrid = gridLines[gridLines.length - 1];
                                     const maxX = parseFloat(lastGrid.getAttribute('x1'));
+                                    const chartWidth = maxX - x1;
 
+                                    // 1. Arkaplan bar (gri)
                                     const backgroundLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                                     backgroundLine.setAttribute('class', 'ct-background-bar');
                                     backgroundLine.setAttribute('x1', x1);
@@ -282,10 +299,12 @@ const ProjectAnalyticsReportPage = () => {
                                     backgroundLine.setAttribute('style', 'stroke: #f8f9fa; stroke-width: 20px; opacity: 1;');
                                     bar.parentNode.insertBefore(backgroundLine, bar);
 
+                                    // 2. Çalışılıyor bar (sarı)
                                     const workingValue = workingValues[index];
+                                    const phaseLabel = phaseLabels[index];
+
                                     if (workingValue > 0) {
-                                        const barWidth = x2 - x1;
-                                        const workingWidth = (barWidth * workingValue) / 100;
+                                        const workingWidth = (chartWidth * workingValue) / 100;
                                         const workingStartX = x2;
                                         const workingEndX = workingStartX + workingWidth;
 
@@ -295,8 +314,54 @@ const ProjectAnalyticsReportPage = () => {
                                         workingLine.setAttribute('y1', y1);
                                         workingLine.setAttribute('x2', Math.min(workingEndX, maxX));
                                         workingLine.setAttribute('y2', y1);
-                                        workingLine.setAttribute('style', 'stroke: #FFEB3B; stroke-width: 20px; opacity: 0.9;');
+                                        workingLine.setAttribute('style', 'stroke: #FFEB3B; stroke-width: 20px; opacity: 0.9; cursor: pointer;');
+
+                                        // ✅ Sarı bar için tooltip metni
+                                        const workingTooltipText = `${phaseLabel}: ${Math.round(workingValue)}% çalışılıyor`;
+                                        workingLine.setAttribute('data-tooltip', workingTooltipText);
+
                                         svg.appendChild(workingLine);
+
+                                        // ✅ MOUSEENTER - Sarı bar için tooltip göster
+                                        workingLine.addEventListener('mouseenter', function (e) {
+                                            document.querySelectorAll('.chartist-tooltip').forEach(t => t.remove());
+
+                                            const tooltip = document.createElement('div');
+                                            tooltip.className = 'chartist-tooltip';
+                                            tooltip.innerHTML = workingTooltipText;
+
+                                            tooltip.style.position = 'fixed';
+                                            tooltip.style.display = 'block';
+                                            tooltip.style.opacity = '1';
+                                            tooltip.style.zIndex = '99999';
+                                            tooltip.style.background = '#333';
+                                            tooltip.style.color = 'white';
+                                            tooltip.style.padding = '8px 12px';
+                                            tooltip.style.borderRadius = '4px';
+                                            tooltip.style.fontSize = '13px';
+                                            tooltip.style.fontWeight = '600';
+                                            tooltip.style.whiteSpace = 'nowrap';
+                                            tooltip.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+                                            tooltip.style.pointerEvents = 'none';
+
+                                            document.body.appendChild(tooltip);
+
+                                            const rect = e.target.getBoundingClientRect();
+                                            const tooltipRect = tooltip.getBoundingClientRect();
+
+                                            const left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+                                            const top = rect.top - tooltipRect.height - 10;
+
+                                            tooltip.style.left = left + 'px';
+                                            tooltip.style.top = top + 'px';
+                                        });
+
+                                        // ✅ MOUSELEAVE - Sarı bar için tooltip gizle
+                                        workingLine.addEventListener('mouseleave', function () {
+                                            document.querySelectorAll('.chartist-tooltip').forEach(tooltip => {
+                                                tooltip.remove();
+                                            });
+                                        });
                                     }
                                 }
                             }
