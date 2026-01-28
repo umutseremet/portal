@@ -26,8 +26,8 @@ const DocumentManagement = () => {
 
     const loadCategories = async () => {
         try {
-            const response = await api.get('/api/DocumentManagement/categories');
-            setCategories(response.data);
+            const response = await api.getDocumentCategories();
+            setCategories(response);
         } catch (error) {
             console.error('Kategoriler yüklenirken hata:', error);
             setError('Kategoriler yüklenemedi');
@@ -37,13 +37,13 @@ const DocumentManagement = () => {
     const loadDocuments = async () => {
         try {
             setLoading(true);
-            const params = new URLSearchParams();
-            if (selectedCategory) params.append('categoryId', selectedCategory);
-            if (selectedType !== 'all') params.append('type', selectedType);
-            if (searchTerm) params.append('search', searchTerm);
-
-            const response = await api.get(`/api/DocumentManagement/documents?${params}`);
-            setDocuments(response.data);
+            const params = {
+                categoryId: selectedCategory,
+                type: selectedType !== 'all' ? selectedType : null,
+                search: searchTerm || null
+            };
+            const response = await api.getDocuments(params);
+            setDocuments(response);
         } catch (error) {
             console.error('Dokümanlar yüklenirken hata:', error);
             setError('Dokümanlar yüklenemedi');
@@ -54,8 +54,8 @@ const DocumentManagement = () => {
 
     const loadDocumentDetail = async (id) => {
         try {
-            const response = await api.get(`/api/DocumentManagement/documents/${id}`);
-            setSelectedDocument(response.data);
+            const response = await api.getDocument(id);
+            setSelectedDocument(response);
         } catch (error) {
             console.error('Doküman detayı yüklenirken hata:', error);
         }
@@ -71,16 +71,15 @@ const DocumentManagement = () => {
 
     const downloadFile = async (fileId, fileName) => {
         try {
-            const response = await api.get(`/api/DocumentManagement/files/${fileId}/download`, {
-                responseType: 'blob'
-            });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const blob = await api.downloadDocumentFile(fileId);
+            const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', fileName);
             document.body.appendChild(link);
             link.click();
             link.remove();
+            window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Dosya indirilirken hata:', error);
             alert('Dosya indirilemedi');
@@ -141,7 +140,6 @@ const DocumentManagement = () => {
 
             <div className="document-content">
                 <div className="row">
-                    {/* Sol Panel - Kategori Ağacı */}
                     <div className="col-lg-3">
                         <div className="card category-panel">
                             <div className="card-header">
@@ -157,7 +155,6 @@ const DocumentManagement = () => {
                         </div>
                     </div>
 
-                    {/* Orta Panel - Doküman Listesi */}
                     <div className="col-lg-6">
                         <div className="card document-list-panel">
                             <div className="card-header">
@@ -251,7 +248,6 @@ const DocumentManagement = () => {
                         </div>
                     </div>
 
-                    {/* Sağ Panel - Detay */}
                     <div className="col-lg-3">
                         <div className="card detail-panel">
                             <div className="card-body">
@@ -349,7 +345,6 @@ const DocumentManagement = () => {
     );
 };
 
-// Kategori Ağacı Bileşeni
 const CategoryTree = ({ categories, selectedCategory, onCategoryClick, level = 0 }) => {
     const [expandedCategories, setExpandedCategories] = useState({});
 

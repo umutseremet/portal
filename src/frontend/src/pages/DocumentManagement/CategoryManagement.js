@@ -23,8 +23,8 @@ const CategoryManagement = () => {
 
     const loadCategories = async () => {
         try {
-            const response = await api.get('/api/DocumentManagement/categories');
-            setCategories(response.data);
+            const response = await api.getDocumentCategories();
+            setCategories(response);
         } catch (error) {
             console.error('Kategoriler yüklenirken hata:', error);
             setError('Kategoriler yüklenemedi');
@@ -46,12 +46,10 @@ const CategoryManagement = () => {
 
         try {
             if (editingCategory) {
-                // Güncelleme
-                await api.put(`/api/DocumentManagement/categories/${editingCategory.id}`, formData);
+                await api.updateDocumentCategory(editingCategory.id, formData);
                 alert('Kategori başarıyla güncellendi');
             } else {
-                // Yeni oluşturma
-                await api.post('/api/DocumentManagement/categories', formData);
+                await api.createDocumentCategory(formData);
                 alert('Kategori başarıyla oluşturuldu');
             }
             
@@ -81,7 +79,7 @@ const CategoryManagement = () => {
         }
 
         try {
-            await api.delete(`/api/DocumentManagement/categories/${id}`);
+            await api.deleteDocumentCategory(id);
             alert('Kategori başarıyla silindi');
             loadCategories();
         } catch (error) {

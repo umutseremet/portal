@@ -3491,6 +3491,24 @@ class ApiService {
       throw error;
     }
   }
+
+  /**
+ * Update a document category
+ * @param {number} id - Category ID
+ * @param {Object} categoryData - Updated category data
+ * @returns {Promise<void>}
+ */
+  async updateDocumentCategory(id, categoryData) {
+    try {
+      console.log('📁 API updateDocumentCategory call:', { id, categoryData });
+      const response = await this.put(`/DocumentManagement/categories/${id}`, categoryData);
+      console.log('✅ updateDocumentCategory response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ updateDocumentCategory error:', error);
+      throw error;
+    }
+  }
 }
 
 
