@@ -24,11 +24,11 @@ const CreateVersion = () => {
     const loadDocument = async () => {
         try {
             setLoading(true);
-            const response = await api.get(`/api/DocumentManagement/documents/${id}`);
-            setDocument(response.data);
+            const doc = await api.getDocument(id);
+            setDocument(doc);
             
             // Otomatik versiyon numarası önerisi
-            const currentVersion = response.data.currentVersion;
+            const currentVersion = doc.currentVersion;
             const versionParts = currentVersion.replace('v', '').split('.');
             const major = parseInt(versionParts[0]);
             const minor = parseInt(versionParts[1]);
@@ -77,9 +77,7 @@ const CreateVersion = () => {
                 data.append('files', file);
             });
 
-            await api.post(`/api/DocumentManagement/documents/${id}/versions`, data, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            await api.createDocumentVersion(id, data);
 
             alert('Yeni versiyon başarıyla oluşturuldu');
             navigate('/documents');

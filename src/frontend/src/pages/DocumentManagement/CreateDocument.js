@@ -25,8 +25,8 @@ const CreateDocument = () => {
 
     const loadCategories = async () => {
         try {
-            const response = await api.get('/api/DocumentManagement/categories');
-            setCategories(response.data);
+            const response = await api.getDocumentCategories();
+            setCategories(response);
         } catch (error) {
             console.error('Kategoriler yüklenirken hata:', error);
             setError('Kategoriler yüklenemedi');
@@ -63,9 +63,7 @@ const CreateDocument = () => {
                 data.append('files', file);
             });
 
-            await api.post('/api/DocumentManagement/documents', data, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            await api.createDocument(data);
 
             alert('Doküman başarıyla oluşturuldu');
             navigate('/documents');
@@ -218,7 +216,7 @@ const CreateDocument = () => {
                                 onChange={handleFileChange}
                             />
                             <small className="text-muted">
-                                Çoklu dosya seçebilirsiniz (En fazla 542 MB)
+                                Çoklu dosya seçebilirsiniz
                             </small>
                             {files.length > 0 && (
                                 <div className="mt-2">

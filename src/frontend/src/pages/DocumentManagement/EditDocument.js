@@ -27,8 +27,8 @@ const EditDocument = () => {
 
     const loadCategories = async () => {
         try {
-            const response = await api.get('/api/DocumentManagement/categories');
-            setCategories(response.data);
+            const response = await api.getDocumentCategories();
+            setCategories(response);
         } catch (error) {
             console.error('Kategoriler yüklenirken hata:', error);
         }
@@ -37,8 +37,7 @@ const EditDocument = () => {
     const loadDocument = async () => {
         try {
             setLoading(true);
-            const response = await api.get(`/api/DocumentManagement/documents/${id}`);
-            const doc = response.data;
+            const doc = await api.getDocument(id);
             setFormData({
                 categoryId: doc.categoryId,
                 type: doc.type,
@@ -69,7 +68,7 @@ const EditDocument = () => {
         setError(null);
 
         try {
-            await api.put(`/api/DocumentManagement/documents/${id}`, formData);
+            await api.updateDocument(id, formData);
             alert('Doküman başarıyla güncellendi');
             navigate('/documents');
         } catch (error) {
@@ -86,7 +85,7 @@ const EditDocument = () => {
         }
 
         try {
-            await api.delete(`/api/DocumentManagement/documents/${id}`);
+            await api.deleteDocument(id);
             alert('Doküman başarıyla silindi');
             navigate('/documents');
         } catch (error) {
