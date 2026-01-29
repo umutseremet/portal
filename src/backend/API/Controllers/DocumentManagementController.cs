@@ -49,6 +49,27 @@ namespace VervoPortal.Controllers
             return Ok(categories);
         }
 
+        // PUT: api/DocumentManagement/categories/{id}
+        [HttpPut("categories/{id}")]
+        public async Task<IActionResult> UpdateCategory(int id, UpdateDocumentCategoryDto dto)
+        {
+            var category = await _context.DocumentCategories.FindAsync(id);
+            if (category == null)
+                return NotFound();
+
+            var username = User.Identity.Name;
+
+            category.Name = dto.Name;
+            category.Icon = dto.Icon;
+            category.ParentId = dto.ParentId;
+            category.UpdatedBy = username;
+            category.UpdatedDate = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
         private async Task<List<DocumentCategoryDto>> GetChildCategories(int parentId)
         {
             var children = await _context.DocumentCategories

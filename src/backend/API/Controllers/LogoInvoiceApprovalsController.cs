@@ -89,7 +89,7 @@ namespace API.Controllers
                     var query = @"
                 SELECT LOGICALREF, DOCNR, DATE_, SENDERTITLE
                 FROM [CONNECT].[dbo].[LG_006_APPROVAL]
-                WHERE EDOCTYPE = 3 
+                WHERE EDOCTYPE IN (2,3,4)
                   AND DOCNR NOT LIKE 'VR%'";
 
                     var parameters = new List<SqlParameter>();
@@ -284,7 +284,7 @@ namespace API.Controllers
                     var query = @"
                         SELECT LOGICALREF, DOCNR, DATE_, SENDERTITLE
                         FROM [CONNECT].[dbo].[LG_006_APPROVAL]
-                        WHERE EDOCTYPE IN (3,4)
+                        WHERE EDOCTYPE IN (2,3,4)
                           AND DOCNR NOT LIKE 'VR%'";
 
                     // Filtreler

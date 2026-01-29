@@ -37,5 +37,7 @@ namespace VervoPortal.Models.DocumentManagement
 
         [MaxLength(100)]
         public string CreatedBy { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime UpdatedDate { get; set; }= DateTime.Now;
     }
 }

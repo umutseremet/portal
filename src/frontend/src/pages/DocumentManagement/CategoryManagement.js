@@ -122,13 +122,13 @@ const CategoryManagement = () => {
                             className="btn btn-sm btn-primary"
                             onClick={() => handleEdit(cat)}
                         >
-                            <i className="fas fa-edit"></i>
+                            <i className="fas fa-edit">Düzenle</i>
                         </button>
                         <button 
                             className="btn btn-sm btn-danger"
                             onClick={() => handleDelete(cat.id)}
                         >
-                            <i className="fas fa-trash"></i>
+                            <i className="fas fa-trash">Sil</i>
                         </button>
                     </div>
                 </div>

@@ -19,4 +19,11 @@ namespace VervoPortal.DTOs.DocumentManagement
         public string Icon { get; set; }
         public int? ParentId { get; set; }
     }
+
+    public class UpdateDocumentCategoryDto
+    {
+        public string Name { get; set; }
+        public string Icon { get; set; }
+        public int? ParentId { get; set; }
+    }
 }
