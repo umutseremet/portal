@@ -27,6 +27,130 @@ namespace API.Controllers
             _configuration = configuration;
         }
 
+        /// <summary>
+        /// Revize edilmiş işlerdeki atanan kullanıcıları getirir
+        /// </summary>
+        [HttpGet("GetRevisedIssuesAssignedUsers")]
+#if DEBUG
+        [AllowAnonymous]
+#endif
+        public async Task<IActionResult> GetRevisedIssuesAssignedUsers([FromQuery] string? startDate, [FromQuery] string? endDate)
+        {
+            try
+            {
+                _logger.LogInformation("Getting assigned users from revised issues - StartDate: {StartDate}, EndDate: {EndDate}", startDate, endDate);
+
+                var connectionString = _configuration.GetConnectionString("DefaultConnection")
+                    ?? throw new InvalidOperationException("Connection string not found");
+
+                // ✅ GetIssuesByDate mantığıyla aynı - Revize tarihi olanlar
+                var sql = @"
+            SELECT DISTINCT
+                u.id,
+                u.firstname + ' ' + u.lastname AS full_name
+            FROM issues i
+            INNER JOIN trackers t ON i.tracker_id = t.id
+            INNER JOIN users u ON i.assigned_to_id = u.id
+            LEFT JOIN custom_values cv_pbaslangic
+                ON cv_pbaslangic.customized_id = i.id
+                AND cv_pbaslangic.customized_type = 'Issue'
+                AND cv_pbaslangic.custom_field_id = 12
+            LEFT JOIN custom_values cv_pbitis
+                ON cv_pbitis.customized_id = i.id
+                AND cv_pbitis.customized_type = 'Issue'
+                AND cv_pbitis.custom_field_id = 4
+            LEFT JOIN custom_values cv_revize_baslangic
+                ON cv_revize_baslangic.customized_id = i.id
+                AND cv_revize_baslangic.customized_type = 'Issue'
+                AND cv_revize_baslangic.custom_field_id = 20
+            LEFT JOIN custom_values cv_revize_bitis
+                ON cv_revize_bitis.customized_id = i.id
+                AND cv_revize_bitis.customized_type = 'Issue'
+                AND cv_revize_bitis.custom_field_id = 21
+            WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
+                AND u.status = 1
+                AND ISNULL(cv_pbaslangic.value,'') != ''
+                AND ISNULL(cv_pbitis.value,'') != ''
+                -- ✅ Sadece revize tarihi olanları al (GetIssuesByDate'teki mantık)
+                AND (
+                    (ISNULL(cv_revize_baslangic.value, '') != '' 
+                     AND cv_revize_baslangic.value NOT LIKE '0001-01-01%'
+                     AND TRY_CAST(cv_revize_baslangic.value AS DATE) IS NOT NULL)
+                    OR
+                    (ISNULL(cv_revize_bitis.value, '') != '' 
+                     AND cv_revize_bitis.value NOT LIKE '0001-01-01%'
+                     AND TRY_CAST(cv_revize_bitis.value AS DATE) IS NOT NULL)
+                )";
+
+                var parameters = new List<SqlParameter>();
+
+                // ✅ Tarih aralığı filtresi - GetIssuesByDate mantığı ile aynı
+                if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate) &&
+                    DateTime.TryParse(startDate, out DateTime start) &&
+                    DateTime.TryParse(endDate, out DateTime end))
+                {
+                    sql += @"
+                AND (
+                    -- Revize başlangıç tarihi aralıkta mı?
+                    (ISNULL(cv_revize_baslangic.value, '') != ''
+                     AND TRY_CAST(cv_revize_baslangic.value AS DATE) >= @StartDate
+                     AND TRY_CAST(cv_revize_baslangic.value AS DATE) <= @EndDate)
+                    OR
+                    -- Revize bitiş tarihi aralıkta mı?
+                    (ISNULL(cv_revize_bitis.value, '') != ''
+                     AND TRY_CAST(cv_revize_bitis.value AS DATE) >= @StartDate
+                     AND TRY_CAST(cv_revize_bitis.value AS DATE) <= @EndDate)
+                    OR
+                    -- İş revize aralığı, belirtilen aralığı kapsıyor mu?
+                    (ISNULL(cv_revize_baslangic.value, '') != ''
+                     AND ISNULL(cv_revize_bitis.value, '') != ''
+                     AND TRY_CAST(cv_revize_baslangic.value AS DATE) <= @StartDate
+                     AND TRY_CAST(cv_revize_bitis.value AS DATE) >= @EndDate)
+                )";
+
+                    parameters.Add(new SqlParameter("@StartDate", start));
+                    parameters.Add(new SqlParameter("@EndDate", end));
+
+                    _logger.LogInformation("Applying date range filter: {StartDate} to {EndDate}", start, end);
+                }
+
+                var users = new List<object>();
+
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = new SqlCommand(sql, connection))
+                    {
+                        command.Parameters.AddRange(parameters.ToArray());
+
+                        _logger.LogInformation("Executing SQL query for assigned users");
+
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                users.Add(new
+                                {
+                                    Id = reader.GetInt32(0),
+                                    FullName = reader.GetString(1)
+                                });
+                            }
+                        }
+                    }
+                }
+
+                _logger.LogInformation("Found {Count} assigned users in revised issues", users.Count);
+
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting assigned users from revised issues");
+                return StatusCode(500, new { message = "Atanan kullanıcılar getirilirken hata oluştu", error = ex.Message });
+            }
+        }
+
         [HttpPost("GetWeeklyProductionCalendar")]
 #if DEBUG
         [AllowAnonymous]

@@ -1,70 +1,223 @@
 /* src/frontend/src/pages/RevisedIssuesPage.css */
 
-.revised-issues-page {
-    background-color: #f8f9fa;
+/* ✅ Container */
+.revised-issues-container {
     min-height: 100vh;
+    background-color: #f5f7fa;
 }
 
-.revised-issues-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* ✅ HEADER GRADIENT - Haftalık Üretim Takvimi ile AYNI */
+.calendar-header {
+    /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
     color: white;
-    padding: 2rem;
-    border-radius: 0.5rem;
-    margin-bottom: 2rem;
+    padding: 1.5rem;
+    /* box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); */
 }
 
-.filter-card {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.calendar-header h2 {
+    font-weight: 600;
+    margin: 0;
+    font-size: 1.75rem;
+    display: flex;
+    align-items: center;
+    /* color: white; */
+}
+
+.calendar-header p {
+    margin: 0;
+    font-size: 0.95rem;
+    opacity: 0.9;
+}
+
+/* ✅ Card Styling */
+.card {
     border: none;
-    margin-bottom: 1.5rem;
+    border-radius: 12px;
 }
 
-.stats-card {
-    transition: transform 0.2s;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-    border: none;
+.card-header {
+    border-bottom: 2px solid #e9ecef;
+    padding: 1.5rem;
 }
 
-.stats-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+/* ✅ Form Controls */
+.form-label {
+    color: #495057;
+    margin-bottom: 0.5rem;
 }
 
-.table-warning {
-    background-color: #fff3cd !important;
+.form-select,
+.form-control {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
 }
 
-.badge-revision-positive {
-    background-color: #dc3545;
+.form-select:focus,
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
 }
 
-.badge-revision-negative {
-    background-color: #28a745;
+/* ✅ Table Styling */
+.table {
+    margin-bottom: 0;
 }
 
-.badge-revision-neutral {
-    background-color: #6c757d;
+.table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    padding: 12px;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
+.table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table tbody td {
+    padding: 12px;
+    vertical-align: middle;
+    font-size: 0.875rem;
+}
+
+/* ✅ Revision Description */
 .revision-description {
-    max-width: 250px;
+    max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 0.85rem;
 }
 
-.table-responsive {
-    border-radius: 0.5rem;
-    overflow: hidden;
+/* ✅ Badge Styling */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+    border-radius: 6px;
 }
 
-.empty-state {
-    padding: 4rem 2rem;
-    text-align: center;
+/* ✅ Button Styling */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
-.empty-state i {
-    font-size: 4rem;
-    color: #dee2e6;
-    margin-bottom: 1rem;
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-light {
+    background-color: white;
+    border-color: white;
+}
+
+.btn-light:hover {
+    background-color: #f8f9fa;
+    border-color: #f8f9fa;
+}
+
+/* ✅ Modal Styling */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+}
+
+.modal-header {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #e9ecef;
+    padding: 1rem 1.5rem;
+}
+
+/* ✅ Progress Bar */
+.progress {
+    border-radius: 6px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    background-color: #667eea;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+/* ✅ Alert Styling */
+.alert {
+    border-radius: 10px;
+    border: none;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* ✅ Spinner */
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* ✅ Link Styling */
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ✅ Responsive */
+@media (max-width: 768px) {
+    .calendar-header {
+        padding: 1.5rem;
+    }
+
+    .calendar-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .card-header .row {
+        row-gap: 1rem;
+    }
+
+    .table {
+        font-size: 0.8rem;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 8px;
+    }
 }

@@ -134,7 +134,7 @@ const Header = ({ toggleSidebar, sidebarOpen, isMobile }) => {
               <h5 style={{ margin: 0, color: '#212529', fontWeight: '600' }}>
                 Vervo Portal
               </h5>
-              <small style={{ color: '#6c757d' }}>Yönetim Paneli</small>
+              {/* <small style={{ color: '#6c757d' }}>Yönetim Paneli</small> */}
             </div>
           )}
         </div>

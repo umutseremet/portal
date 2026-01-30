@@ -116,8 +116,8 @@ const CalendarGrid = ({ days, formatDate, onCardClick, onDateClick }) => {
           }
         }
 
-        console.log('📊 Final overdueMap:', Array.from(newOverdueMap.keys()));
-        console.log('📊 Final revisedMap:', Array.from(newRevisedMap.keys()));
+        // console.log('📊 Final overdueMap:', Array.from(newOverdueMap.keys()));
+        // console.log('📊 Final revisedMap:', Array.from(newRevisedMap.keys()));
 
         setOverdueMap(newOverdueMap);
         setRevisedMap(newRevisedMap);

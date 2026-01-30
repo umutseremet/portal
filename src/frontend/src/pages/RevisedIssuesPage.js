@@ -1,7 +1,7 @@
 // src/frontend/src/pages/RevisedIssuesPage.js
 // ✅ Haftalık Revize Edilmiş İşler Listesi - Revize Düzenleme ve Atanan Kullanıcı Seçimi
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
 import './RevisedIssuesPage.css';
@@ -23,6 +23,7 @@ const RevisedIssuesPage = () => {
     const [projectFilter, setProjectFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [assignedFilter, setAssignedFilter] = useState(''); // ✅ YENİ: Atanan filtresi
     const [searchTerm, setSearchTerm] = useState('');
 
     // ✅ REVİZE MODAL STATE'LERİ
@@ -39,15 +40,32 @@ const RevisedIssuesPage = () => {
     const [selectedAssignedUser, setSelectedAssignedUser] = useState('');
     const [loadingMembers, setLoadingMembers] = useState(false);
 
+    // ✅ YENİ: Tüm atanan kullanıcılar listesi (filtre için)
+    const [allAssignedUsers, setAllAssignedUsers] = useState([]);
+
     useEffect(() => {
         if (weekStart && weekEnd) {
             fetchRevisedIssues();
+            fetchAssignedUsers(); // ✅ YENİ: Atanan kullanıcıları getir
         }
     }, [weekStart, weekEnd]);
 
     useEffect(() => {
         applyFilters();
-    }, [dateFilter, projectFilter, typeFilter, statusFilter, searchTerm, issues]);
+    }, [dateFilter, projectFilter, typeFilter, statusFilter, assignedFilter, searchTerm, issues]);
+
+    // ✅ YENİ: Atanan kullanıcıları getir
+    const fetchAssignedUsers = async () => {
+        try {
+            console.log('🔍 Atanan kullanıcılar getiriliyor...', { weekStart, weekEnd });
+            const users = await apiService.getRevisedIssuesAssignedUsers(weekStart, weekEnd);
+            console.log('✅ Atanan kullanıcılar:', users);
+            setAllAssignedUsers(users);
+        } catch (err) {
+            console.error('❌ Error fetching assigned users:', err);
+            setAllAssignedUsers([]);
+        }
+    };
 
     const fetchRevisedIssues = async () => {
         setLoading(true);
@@ -81,6 +99,7 @@ const RevisedIssuesPage = () => {
                 }
             }
 
+            console.log('📋 Toplam revize edilmiş iş:', allIssues.length);
             setIssues(allIssues);
             setFilteredIssues(allIssues);
         } catch (err) {
@@ -138,6 +157,11 @@ const RevisedIssuesPage = () => {
             filtered = filtered.filter(i => i.statusName === statusFilter);
         }
 
+        // ✅ YENİ: Atanan Filtresi
+        if (assignedFilter) {
+            filtered = filtered.filter(i => i.assignedTo === assignedFilter);
+        }
+
         // Arama
         if (searchTerm) {
             const searchLower = searchTerm.toLowerCase();
@@ -150,138 +174,85 @@ const RevisedIssuesPage = () => {
             );
         }
 
+        console.log('🔍 Filtrelenmiş iş sayısı:', filtered.length);
         setFilteredIssues(filtered);
     };
 
-    // RevisedIssuesPage.js içindeki handleOpenRevisedModal metodunu BU ile değiştir:
-
     const handleOpenRevisedModal = async (issue) => {
-        console.log('=== MODAL AÇILIYOR - DEBUG START ===');
-        console.log('1. Issue objesi:', issue);
-        console.log('2. Issue.projectId:', issue.projectId);
-        console.log('3. Issue.trackerId:', issue.trackerId);
-        console.log('4. apiService objesi:', apiService);
-        console.log('5. apiService.getProjectMembers mevcut mu?', typeof apiService.getProjectMembers);
+        console.log('=== MODAL AÇILIYOR ===');
+        console.log('Issue:', issue);
 
         setSelectedIssueForRevise(issue);
-
-        const startDate = issue.revisedPlannedStartDate;
-        const endDate = issue.revisedPlannedEndDate;
-
-        if (startDate && !startDate.startsWith('0001-01-01')) {
-            setTempRevisedStartDate(formatDateForInput(startDate));
-        } else {
-            setTempRevisedStartDate(formatDateForInput(issue.plannedStartDate) || '');
-        }
-
-        if (endDate && !endDate.startsWith('0001-01-01')) {
-            setTempRevisedEndDate(formatDateForInput(endDate));
-        } else {
-            setTempRevisedEndDate(formatDateForInput(issue.plannedEndDate) || '');
-        }
-
+        setTempRevisedStartDate(issue.revisedPlannedStartDate || '');
+        setTempRevisedEndDate(issue.revisedPlannedEndDate || '');
         setTempRevisedDescription(issue.revisedPlanDescription || '');
         setSelectedAssignedUser('');
         setShowRevisedModal(true);
 
-        // ✅ PROJE ÜYELERİNİ YÜKLE
-        console.log('6. ProjectId kontrolü:', issue.projectId ? 'VAR' : 'YOK');
-
+        // ✅ PROJE ÜYELERİNİ GETİR
         if (issue.projectId) {
-            console.log('7. IF bloğuna GİRDİ - Proje üyeleri yüklenecek');
-            console.log('8. ProjectId değeri:', issue.projectId);
-
+            console.log('Proje üyeleri getiriliyor...', issue.projectId);
             setLoadingMembers(true);
-
             try {
-                console.log('9. TRY bloğuna girdi - API çağrısı yapılacak');
-                console.log('10. Çağrılacak metod: apiService.getProjectMembers(' + issue.projectId + ')');
-
                 const members = await apiService.getProjectMembers(issue.projectId);
-
-                console.log('11. ✅ API çağrısı BAŞARILI - Gelen üyeler:', members);
-                console.log('12. Üye sayısı:', members ? members.length : 0);
-
-                setProjectMembers(members || []);
-                console.log('13. State güncellendi - projectMembers set edildi');
-
+                console.log('✅ Proje üyeleri:', members);
+                setProjectMembers(members);
             } catch (error) {
-                console.error('14. ❌ HATA OLUŞTU - Catch bloğuna düştü');
-                console.error('15. Hata detayı:', error);
-                console.error('16. Hata mesajı:', error.message);
-                console.error('17. Hata stack:', error.stack);
-
+                console.error('❌ Proje üyeleri yüklenirken hata:', error);
+                alert('Proje üyeleri yüklenemedi.');
                 setProjectMembers([]);
             } finally {
-                console.log('18. Finally bloğu - Loading state kapatılıyor');
                 setLoadingMembers(false);
             }
         } else {
-            console.warn('19. ⚠️ IF bloğuna GİREMEDİ - ProjectId bulunamadı!');
-            console.warn('20. Issue objesi:', issue);
+            console.warn('⚠️ Issue.projectId bulunamadı!');
             setProjectMembers([]);
         }
-
-        console.log('=== MODAL AÇILIYOR - DEBUG END ===');
     };
 
-    // ===================================
-    // KULLANIM:
-    // ===================================
-    // 1. Bu kodu kopyala
-    // 2. RevisedIssuesPage.js dosyasındaki handleOpenRevisedModal metodunu bununla değiştir
-    // 3. Modal'ı aç
-    // 4. Console'da tüm log'ları kontrol et
-    // 5. Hangi adımda durduğunu bul
+    const handleCloseRevisedModal = () => {
+        setShowRevisedModal(false);
+        setSelectedIssueForRevise(null);
+        setTempRevisedStartDate('');
+        setTempRevisedEndDate('');
+        setTempRevisedDescription('');
+        setSelectedAssignedUser('');
+        setProjectMembers([]);
+    };
 
-    // ✅ REVİZE TARİHLER KAYDETME - Atanan kullanıcı ile
-    const handleSaveRevisedDates = async () => {
-        if (!tempRevisedStartDate || tempRevisedStartDate.trim() === '') {
-            alert('Revize başlangıç tarihi boş olamaz!');
+    const handleSaveRevised = async () => {
+        if (!selectedIssueForRevise) return;
+
+        if (!tempRevisedStartDate && !tempRevisedEndDate) {
+            alert('En az bir revize tarihi giriniz.');
             return;
         }
 
-        if (!tempRevisedEndDate || tempRevisedEndDate.trim() === '') {
-            alert('Revize bitiş tarihi boş olamaz!');
-            return;
-        }
-
-        if (!tempRevisedDescription || tempRevisedDescription.trim() === '') {
-            alert('Revize açıklaması zorunludur!');
-            return;
-        }
-
-        if (tempRevisedStartDate > tempRevisedEndDate) {
+        if (tempRevisedStartDate && tempRevisedEndDate && tempRevisedStartDate > tempRevisedEndDate) {
             alert('Revize başlangıç tarihi, bitiş tarihinden sonra olamaz!');
-            return;
-        }
-
-        const issue = selectedIssueForRevise;
-        const hasStartChanged = formatDateForInput(issue.revisedPlannedStartDate) !== tempRevisedStartDate;
-        const hasEndChanged = formatDateForInput(issue.revisedPlannedEndDate) !== tempRevisedEndDate;
-        const hasDescChanged = (issue.revisedPlanDescription || '') !== tempRevisedDescription;
-        const hasAssignedChanged = selectedAssignedUser !== '';
-
-        if (!hasStartChanged && !hasEndChanged && !hasDescChanged && !hasAssignedChanged) {
-            setShowRevisedModal(false);
             return;
         }
 
         setSavingRevised(true);
 
         try {
+            const issue = selectedIssueForRevise;
+
             const requestData = {
                 issueId: issue.issueId,
                 revisedPlannedStartDate: tempRevisedStartDate,
                 revisedPlannedEndDate: tempRevisedEndDate,
                 revisedPlanDescription: tempRevisedDescription,
-                assignedUserId: selectedAssignedUser ? parseInt(selectedAssignedUser) : null, // ✅ YENİ
+                assignedUserId: selectedAssignedUser ? parseInt(selectedAssignedUser) : null,
                 updatedBy: 'User'
             };
 
+            console.log('💾 Revize kaydediliyor:', requestData);
+
             const response = await apiService.updateIssueDates(requestData);
 
-            if (response.success) {
+            if (response.success !== false) {
+                // State güncelle
                 setIssues(prevIssues =>
                     prevIssues.map(i =>
                         i.issueId === issue.issueId
@@ -298,6 +269,9 @@ const RevisedIssuesPage = () => {
                     )
                 );
 
+                // Atanan kullanıcılar listesini güncelle
+                fetchAssignedUsers();
+
                 setShowRevisedModal(false);
                 alert('✅ Revize plan tarihleri güncellendi!');
             }
@@ -309,7 +283,6 @@ const RevisedIssuesPage = () => {
         }
     };
 
-    // ✅ REVİZE TARİHLER TEMİZLEME
     const handleClearRevisedDates = async () => {
         const confirmMessage =
             'Revize tarihler silinecek ve sistem planlanan tarihlere dönecek.\n\n' +
@@ -338,9 +311,11 @@ const RevisedIssuesPage = () => {
                 updatedBy: 'User'
             };
 
+            console.log('🗑️ Revize tarihler temizleniyor:', requestData);
+
             const response = await apiService.updateIssueDates(requestData);
 
-            if (response.success) {
+            if (response.success !== false) {
                 setIssues(prevIssues =>
                     prevIssues.map(i =>
                         i.issueId === issue.issueId
@@ -355,573 +330,464 @@ const RevisedIssuesPage = () => {
                 );
 
                 setShowRevisedModal(false);
-                alert('✅ Revize tarihler iptal edildi, sistem planlanan tarihlere döndü.');
+                alert('✅ Revize tarihler temizlendi!');
             }
         } catch (error) {
             console.error('❌ Error clearing revised dates:', error);
-            alert('Revize tarihler silinirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
+            alert('Revize tarihler temizlenirken hata oluştu.');
         } finally {
             setClearingRevised(false);
         }
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return '-';
-        if (dateString.startsWith('0001-01-01')) return '-';
-
-        try {
-            const [year, month, day] = dateString.split('T')[0].split('-');
-            if (parseInt(year) < 1900) return '-';
-            return `${day}.${month}.${year}`;
-        } catch (e) {
-            return '-';
-        }
+    const formatDate = (dateStr) => {
+        if (!dateStr || dateStr.startsWith('0001-01-01')) return '-';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     };
 
-    const formatDateForInput = (dateString) => {
-        if (!dateString) return '';
-        if (dateString.startsWith('0001-01-01')) return '';
+    const uniqueProjects = useMemo(() => {
+        return [...new Map(issues.map(i => [i.projectId, {
+            id: i.projectId,
+            code: i.projectCode,
+            name: i.projectName
+        }])).values()];
+    }, [issues]);
 
-        try {
-            const date = new Date(dateString);
-            const year = date.getFullYear();
-            if (year < 1900) return '';
+    const productionTypes = useMemo(() => {
+        return [...new Set(issues.map(i =>
+            i.trackerName?.replace('Üretim - ', '').trim()
+        ).filter(Boolean))];
+    }, [issues]);
 
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        } catch (e) {
-            return '';
-        }
-    };
-
-    const formatDateForDisplay = (dateString) => {
-        if (!dateString) return '-';
-
-        try {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('tr-TR', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            });
-        } catch (e) {
-            return '-';
-        }
-    };
-
-    const getRevisionDays = (issue) => {
-        const plannedEnd = issue.plannedEndDate ? new Date(issue.plannedEndDate) : null;
-        const revisedEnd = issue.revisedPlannedEndDate ?
-            new Date(issue.revisedPlannedEndDate) : null;
-
-        if (!plannedEnd || !revisedEnd) return null;
-
-        const diffTime = revisedEnd - plannedEnd;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
-    };
+    const statuses = useMemo(() => {
+        return [...new Set(issues.map(i => i.statusName).filter(Boolean))];
+    }, [issues]);
 
     if (!weekStart || !weekEnd) {
         return (
-            <div className="container-fluid py-4">
+            <div className="container-fluid mt-4">
                 <div className="alert alert-warning">
                     <i className="bi bi-exclamation-triangle me-2"></i>
                     Hafta bilgisi bulunamadı. Lütfen haftalık takvimden tekrar giriş yapın.
                 </div>
-                <button className="btn btn-primary" onClick={() => navigate('/production')}>
-                    <i className="bi bi-arrow-left me-2"></i>
-                    Haftalık Takvime Dön
-                </button>
             </div>
         );
     }
-
-    if (loading) {
-        return (
-            <div className="container-fluid py-4">
-                <div className="text-center py-5">
-                    <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Yükleniyor...</span>
-                    </div>
-                    <p className="mt-3 text-muted">Revize edilmiş işler yükleniyor...</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="container-fluid py-4">
-                <div className="alert alert-danger">
-                    <i className="bi bi-exclamation-circle me-2"></i>
-                    {error}
-                </div>
-                <button className="btn btn-primary" onClick={() => navigate('/production')}>
-                    <i className="bi bi-arrow-left me-2"></i>
-                    Haftalık Takvime Dön
-                </button>
-            </div>
-        );
-    }
-
-    const uniqueProjects = [...new Map(issues.map(i => [i.projectId, { id: i.projectId, name: i.projectName, code: i.projectCode }])).values()];
-    const productionTypes = [...new Set(issues.map(i => i.trackerName?.replace('Üretim - ', '').trim()).filter(Boolean))];
-    const statuses = [...new Set(issues.map(i => i.statusName).filter(Boolean))];
 
     return (
-        <div className="container-fluid py-4">
-            {/* ✅ REVİZE MODAL */}
-            {showRevisedModal && selectedIssueForRevise && (
-                <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                    <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content">
-                            <div className="modal-header bg-warning">
-                                <h5 className="modal-title">
-                                    <i className="bi bi-calendar-event me-2"></i>
-                                    Revize Plan Tarihleri Güncelle
-                                </h5>
-                                <button
-                                    type="button"
-                                    className="btn-close"
-                                    onClick={() => setShowRevisedModal(false)}
-                                    disabled={savingRevised || clearingRevised}
-                                ></button>
-                            </div>
-
-                            <div className="modal-body">
-                                {/* İş Bilgisi */}
-                                <div className="alert alert-info small mb-3">
-                                    <strong>#{selectedIssueForRevise.issueId}</strong> - {selectedIssueForRevise.subject}
-                                </div>
-
-                                {/* Orijinal Tarihler (Readonly) */}
-                                <div className="row mb-3">
-                                    <div className="col-md-6">
-                                        <label className="form-label small text-muted">
-                                            <i className="bi bi-calendar me-1"></i>
-                                            Orijinal Plan Başlangıç
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm"
-                                            value={formatDate(selectedIssueForRevise.plannedStartDate)}
-                                            disabled
-                                        />
-                                    </div>
-                                    <div className="col-md-6">
-                                        <label className="form-label small text-muted">
-                                            <i className="bi bi-calendar me-1"></i>
-                                            Orijinal Plan Bitiş
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm"
-                                            value={formatDate(selectedIssueForRevise.plannedEndDate)}
-                                            disabled
-                                        />
-                                    </div>
-                                </div>
-
-                                <hr />
-
-                                {/* Revize Tarihler */}
-                                <div className="mb-3">
-                                    <label className="form-label small fw-bold">
-                                        <i className="bi bi-calendar-event text-primary me-1"></i>
-                                        Revize Başlangıç Tarihi *
-                                    </label>
-                                    <input
-                                        type="date"
-                                        className="form-control"
-                                        value={tempRevisedStartDate}
-                                        onChange={(e) => setTempRevisedStartDate(e.target.value)}
-                                        disabled={savingRevised || clearingRevised}
-                                    />
-                                </div>
-
-                                <div className="mb-3">
-                                    <label className="form-label small fw-bold">
-                                        <i className="bi bi-calendar-x me-1"></i>
-                                        Revize Bitiş Tarihi *
-                                    </label>
-                                    <input
-                                        type="date"
-                                        className="form-control"
-                                        value={tempRevisedEndDate}
-                                        onChange={(e) => setTempRevisedEndDate(e.target.value)}
-                                        disabled={savingRevised || clearingRevised}
-                                    />
-                                </div>
-
-                                {/* ✅ YENİ: Atanan Kullanıcı Seçimi */}
-                                <div className="mb-3">
-                                    <label className="form-label small fw-bold">
-                                        <i className="bi bi-person-fill text-info me-1"></i>
-                                        Atanan Kullanıcı
-                                        {loadingMembers && <span className="spinner-border spinner-border-sm ms-2"></span>}
-                                    </label>
-                                    <select
-                                        className="form-select"
-                                        value={selectedAssignedUser}
-                                        onChange={(e) => setSelectedAssignedUser(e.target.value)}
-                                        disabled={loadingMembers || projectMembers.length === 0 || savingRevised || clearingRevised}
-                                    >
-                                        <option value="">Değişiklik yok ({selectedIssueForRevise.assignedTo})</option>
-                                        {projectMembers.map(member => (
-                                            <option key={member.userId} value={member.userId}>
-                                                {member.fullName}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {projectMembers.length === 0 && !loadingMembers && (
-                                        <div className="form-text text-warning">
-                                            <i className="bi bi-exclamation-triangle me-1"></i>
-                                            Bu projeye yetkili kullanıcı bulunamadı
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Revize Açıklaması */}
-                                <div className="mb-3">
-                                    <label className="form-label small fw-bold">
-                                        <i className="bi bi-chat-left-text me-1"></i>
-                                        Revize Açıklaması *
-                                    </label>
-                                    <textarea
-                                        className="form-control"
-                                        rows="3"
-                                        placeholder="Örn: 'Malzeme gecikmesi nedeniyle', 'Müşteri talebi üzerine' (Zorunlu)"
-                                        value={tempRevisedDescription}
-                                        onChange={(e) => setTempRevisedDescription(e.target.value)}
-                                        disabled={savingRevised || clearingRevised}
-                                    />
-                                    <small className="text-muted">
-                                        Örn: "Malzeme gecikmesi nedeniyle", "Müşteri talebi üzerine"
-                                    </small>
-                                </div>
-                            </div>
-
-                            {/* Footer - 3 Buton */}
-                            <div className="modal-footer">
-                                <div className="d-flex justify-content-between w-100">
-                                    {/* Sol: Revize İptal */}
-                                    <div>
-                                        {(selectedIssueForRevise.revisedPlannedStartDate ||
-                                            selectedIssueForRevise.revisedPlannedEndDate) &&
-                                            !selectedIssueForRevise.revisedPlannedStartDate?.startsWith('0001-01-01') && (
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-outline-danger"
-                                                    onClick={handleClearRevisedDates}
-                                                    disabled={savingRevised || clearingRevised}
-                                                    title="Revize tarihlerini iptal et ve planlanan tarihlere dön"
-                                                >
-                                                    {clearingRevised ? (
-                                                        <>
-                                                            <span className="spinner-border spinner-border-sm me-2"></span>
-                                                            İptal Ediliyor...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <i className="bi bi-x-circle me-2"></i>
-                                                            Revize İptal Et
-                                                        </>
-                                                    )}
-                                                </button>
-                                            )}
-                                    </div>
-
-                                    {/* Sağ: Vazgeç ve Kaydet */}
-                                    <div className="d-flex gap-2">
-                                        <button
-                                            type="button"
-                                            className="btn btn-secondary"
-                                            onClick={() => setShowRevisedModal(false)}
-                                            disabled={savingRevised || clearingRevised}
-                                        >
-                                            Vazgeç
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-warning"
-                                            onClick={handleSaveRevisedDates}
-                                            disabled={savingRevised || clearingRevised}
-                                        >
-                                            {savingRevised ? (
-                                                <>
-                                                    <span className="spinner-border spinner-border-sm me-2"></span>
-                                                    Kaydediliyor...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <i className="bi bi-check-lg me-2"></i>
-                                                    Kaydet
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Header */}
-            <div className="revised-issues-header mb-4">
+        <div className="revised-issues-container">
+            {/* ✅ BAŞLIK GRADIENT - Haftalık Üretim Takvimi ile aynı */}
+            <div className="calendar-header">
                 <div className="d-flex justify-content-between align-items-center">
                     <div>
                         <h2 className="mb-1">
-                            <i className="bi bi-calendar-event me-2"></i>
+                            <i className="bi bi-calendar-check me-2"></i>
                             Revize Edilmiş İşler
                         </h2>
-                        <p className="mb-0 opacity-75">
-                            {formatDateForDisplay(weekStart)} - {formatDateForDisplay(weekEnd)}
+                        <p className="mb-0 text-white-50">
+                            {new Date(weekStart).toLocaleDateString('tr-TR')} - {new Date(weekEnd).toLocaleDateString('tr-TR')}
                         </p>
                     </div>
-                    <button
-                        className="btn btn-light"
-                        onClick={() => navigate('/production')}
-                    >
+                    <button className="btn btn-light" onClick={() => navigate('/production/weekly-calendar')}>
                         <i className="bi bi-arrow-left me-2"></i>
                         Haftalık Takvime Dön
                     </button>
                 </div>
             </div>
 
-            {/* İstatistikler */}
-            <div className="row mb-4">
-                <div className="col-md-3">
-                    <div className="stats-card card text-center p-3">
-                        <h3 className="mb-0 text-primary">{issues.length}</h3>
-                        <small className="text-muted">Toplam Revize İş</small>
+            <div className="container-fluid mt-4">
+                {loading && (
+                    <div className="text-center my-5">
+                        <div className="spinner-border text-primary" role="status">
+                            <span className="visually-hidden">Yükleniyor...</span>
+                        </div>
+                        <p className="mt-2">Revize edilmiş işler getiriliyor...</p>
                     </div>
-                </div>
-                <div className="col-md-3">
-                    <div className="stats-card card text-center p-3">
-                        <h3 className="mb-0 text-success">
-                            {issues.filter(i => i.isClosed).length}
-                        </h3>
-                        <small className="text-muted">Tamamlanan</small>
-                    </div>
-                </div>
-                <div className="col-md-3">
-                    <div className="stats-card card text-center p-3">
-                        <h3 className="mb-0 text-warning">
-                            {issues.filter(i => !i.isClosed).length}
-                        </h3>
-                        <small className="text-muted">Devam Eden</small>
-                    </div>
-                </div>
-                <div className="col-md-3">
-                    <div className="stats-card card text-center p-3">
-                        <h3 className="mb-0 text-info">
-                            {uniqueProjects.length}
-                        </h3>
-                        <small className="text-muted">Proje Sayısı</small>
-                    </div>
-                </div>
-            </div>
+                )}
 
-            {/* Filtreler */}
-            <div className="filter-card card mb-4">
-                <div className="card-body">
-                    <div className="row g-3">
-                        <div className="col-md-3">
-                            <label className="form-label small fw-bold">Tarih Filtresi</label>
-                            <select
-                                className="form-select"
-                                value={dateFilter}
-                                onChange={(e) => setDateFilter(e.target.value)}
-                            >
-                                <option value="all">Tümü</option>
-                                <option value="planned">Planlanan Tarihler</option>
-                                <option value="revised">Revize Tarihler</option>
-                            </select>
+                {error && (
+                    <div className="alert alert-danger">
+                        <i className="bi bi-exclamation-triangle me-2"></i>
+                        {error}
+                    </div>
+                )}
+
+                {!loading && !error && (
+                    <div className="card shadow-sm">
+                        <div className="card-header bg-white">
+                            <div className="row g-3">
+                                <div className="col-md-2">
+                                    <label className="form-label small fw-bold">Tarih Filtresi</label>
+                                    <select
+                                        className="form-select"
+                                        value={dateFilter}
+                                        onChange={(e) => setDateFilter(e.target.value)}
+                                    >
+                                        <option value="all">Tümü</option>
+                                        <option value="planned">Planlanan Tarihler</option>
+                                        <option value="revised">Revize Tarihler</option>
+                                    </select>
+                                </div>
+
+                                <div className="col-md-2">
+                                    <label className="form-label small fw-bold">Proje</label>
+                                    <select
+                                        className="form-select"
+                                        value={projectFilter}
+                                        onChange={(e) => setProjectFilter(e.target.value)}
+                                    >
+                                        <option value="">Tüm Projeler</option>
+                                        {uniqueProjects.map(p => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.code} - {p.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="col-md-2">
+                                    <label className="form-label small fw-bold">Üretim Tipi</label>
+                                    <select
+                                        className="form-select"
+                                        value={typeFilter}
+                                        onChange={(e) => setTypeFilter(e.target.value)}
+                                    >
+                                        <option value="all">Tümü</option>
+                                        {productionTypes.map(type => (
+                                            <option key={type} value={type}>{type}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="col-md-2">
+                                    <label className="form-label small fw-bold">Durum</label>
+                                    <select
+                                        className="form-select"
+                                        value={statusFilter}
+                                        onChange={(e) => setStatusFilter(e.target.value)}
+                                    >
+                                        <option value="all">Tümü</option>
+                                        {statuses.map(status => (
+                                            <option key={status} value={status}>{status}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* ✅ YENİ: ATANAN FİLTRESİ */}
+                                <div className="col-md-2">
+                                    <label className="form-label small fw-bold">Atanan</label>
+                                    <select
+                                        className="form-select"
+                                        value={assignedFilter}
+                                        onChange={(e) => setAssignedFilter(e.target.value)}
+                                    >
+                                        <option value="">Tümü</option>
+                                        {allAssignedUsers.map(user => (
+                                            <option key={user.id} value={user.fullName}>
+                                                {user.fullName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="col-md-2">
+                                    <label className="form-label small fw-bold">Toplam</label>
+                                    <div className="form-control-plaintext fw-bold text-primary">
+                                        {filteredIssues.length} iş
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="row mt-3">
+                                <div className="col-md-12">
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="🔍 İş No, Konu, Proje veya Revize Açıklaması ile ara..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="col-md-3">
-                            <label className="form-label small fw-bold">Proje</label>
-                            <select
-                                className="form-select"
-                                value={projectFilter}
-                                onChange={(e) => setProjectFilter(e.target.value)}
-                            >
-                                <option value="">Tüm Projeler</option>
-                                {uniqueProjects.map(p => (
-                                    <option key={p.id} value={p.id}>
-                                        {p.code} - {p.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="col-md-2">
-                            <label className="form-label small fw-bold">Üretim Tipi</label>
-                            <select
-                                className="form-select"
-                                value={typeFilter}
-                                onChange={(e) => setTypeFilter(e.target.value)}
-                            >
-                                <option value="all">Tümü</option>
-                                {productionTypes.map(type => (
-                                    <option key={type} value={type}>{type}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="col-md-2">
-                            <label className="form-label small fw-bold">Durum</label>
-                            <select
-                                className="form-select"
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                            >
-                                <option value="all">Tümü</option>
-                                {statuses.map(status => (
-                                    <option key={status} value={status}>{status}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="col-md-2">
-                            <label className="form-label small fw-bold">Arama</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                placeholder="İş No, Konu..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Tablo */}
-            {filteredIssues.length === 0 ? (
-                <div className="empty-state">
-                    <i className="bi bi-inbox"></i>
-                    <p className="text-muted mt-3">
-                        {issues.length === 0
-                            ? 'Bu hafta revize edilmiş iş bulunmuyor'
-                            : 'Filtrelere uygun iş bulunamadı'}
-                    </p>
-                </div>
-            ) : (
-                <div className="card">
-                    <div className="card-body p-0">
-                        <div className="table-responsive">
-                            <table className="table table-hover mb-0">
-                                <thead className="table-light sticky-top">
-                                    <tr>
-                                        <th style={{ width: '80px' }}>İş No</th>
-                                        <th>Proje</th>
-                                        <th>Konu</th>
-                                        <th style={{ width: '100px' }}>Tip</th>
-                                        <th style={{ width: '120px' }}>Planlanan</th>
-                                        <th style={{ width: '120px' }} className="table-warning">Revize</th>
-                                        <th style={{ width: '80px' }}>Fark</th>
-                                        <th style={{ width: '80px' }}>%</th>
-                                        <th style={{ width: '120px' }}>Atanan</th>
-                                        <th style={{ width: '250px' }}>Revize Açıklama</th>
-                                        <th style={{ width: '100px' }}>Durum</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredIssues.map(issue => {
-                                        const revisionDays = getRevisionDays(issue);
-
-                                        return (
-                                            <tr key={issue.issueId}>
-                                                <td>
-                                                    <a
-                                                        href={`${REDMINE_BASE_URL}/issues/${issue.issueId}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-decoration-none"
-                                                    >
-                                                        #{issue.issueId}
-                                                    </a>
-                                                </td>
-                                                <td>
-                                                    <small className="text-muted">{issue.projectCode}</small>
-                                                </td>
-                                                <td>
-                                                    <div className="d-flex align-items-center gap-2">
-                                                        <i className={`bi ${issue.isClosed ? 'bi-check-circle-fill text-success' : 'bi-hourglass-split text-warning'}`}></i>
-                                                        <span>{issue.subject}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <small className="badge bg-secondary">
-                                                        {issue.trackerName?.replace('Üretim - ', '')}
-                                                    </small>
-                                                </td>
-                                                <td>
-                                                    <small className="text-muted">
-                                                        {formatDate(issue.plannedStartDate)}<br />
-                                                        {formatDate(issue.plannedEndDate)}
-                                                    </small>
-                                                </td>
-                                                <td
-                                                    className="cursor-pointer table-warning"
-                                                    onClick={() => handleOpenRevisedModal(issue)}
-                                                    title="Revize tarihleri düzenlemek için tıklayın"
-                                                    style={{ cursor: 'pointer' }}
-                                                >
-                                                    <div className="d-flex align-items-center gap-1">
-                                                        <i className="bi bi-pencil-fill text-warning" style={{ fontSize: '0.75rem' }}></i>
-                                                        <small className="fw-bold">
-                                                            {formatDate(issue.revisedPlannedStartDate)}<br />
-                                                            {formatDate(issue.revisedPlannedEndDate)}
-                                                        </small>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    {revisionDays !== null && (
-                                                        <span className={`badge ${revisionDays > 0 ? 'bg-danger' : revisionDays < 0 ? 'bg-success' : 'bg-secondary'}`}>
-                                                            {revisionDays > 0 ? `+${revisionDays}` : revisionDays} gün
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    <div className="progress" style={{ height: '20px' }}>
-                                                        <div
-                                                            className="progress-bar"
-                                                            role="progressbar"
-                                                            style={{ width: `${issue.completionPercentage}%` }}
-                                                        >
-                                                            {issue.completionPercentage}%
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <small>{issue.assignedTo}</small>
-                                                </td>
-                                                <td>
-                                                    <div
-                                                        className="revision-description"
-                                                        title={issue.revisedPlanDescription}
-                                                    >
-                                                        {issue.revisedPlanDescription || '-'}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span className={`badge ${issue.isClosed ? 'bg-success' : 'bg-warning'}`}>
-                                                        {issue.statusName}
-                                                    </span>
+                        <div className="card-body p-0">
+                            <div className="table-responsive">
+                                <table className="table table-hover mb-0">
+                                    <thead className="table-light">
+                                        <tr>
+                                            <th style={{ width: '80px' }}>İş No</th>
+                                            <th style={{ width: '150px' }}>Proje</th>
+                                            <th>Konu</th>
+                                            <th style={{ width: '100px' }}>Tip</th>
+                                            <th style={{ width: '140px' }}>Planlanan</th>
+                                            <th style={{ width: '140px' }}>Revize</th>
+                                            <th style={{ width: '80px' }}>Fark</th>
+                                            <th style={{ width: '80px' }}>%</th>
+                                            <th style={{ width: '120px' }}>Atanan</th>
+                                            <th style={{ width: '200px' }}>Revize Açıklama</th>
+                                            <th style={{ width: '120px' }}>Durum</th>
+                                            <th style={{ width: '100px' }}>İşlemler</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredIssues.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="12" className="text-center text-muted py-4">
+                                                    <i className="bi bi-inbox me-2"></i>
+                                                    Revize edilmiş iş bulunamadı
                                                 </td>
                                             </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                                        ) : (
+                                            filteredIssues.map(issue => {
+                                                const plannedEnd = issue.plannedEndDate ? new Date(issue.plannedEndDate) : null;
+                                                const revisedEnd = issue.revisedPlannedEndDate ? new Date(issue.revisedPlannedEndDate) : null;
+
+                                                let revisionDays = null;
+                                                if (plannedEnd && revisedEnd) {
+                                                    const diffTime = revisedEnd - plannedEnd;
+                                                    revisionDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                                }
+
+                                                return (
+                                                    <tr key={issue.issueId}>
+                                                        <td>
+                                                            <a
+                                                                href={`${REDMINE_BASE_URL}/issues/${issue.issueId}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-decoration-none text-danger fw-bold"
+                                                            >
+                                                                #{issue.issueId}
+                                                            </a>
+                                                        </td>
+                                                        <td>
+                                                            <small className="text-muted">{issue.projectCode}</small>
+                                                            <br />
+                                                            <small>{issue.projectName}</small>
+                                                        </td>
+                                                        <td>
+                                                            <small>{issue.subject}</small>
+                                                        </td>
+                                                        <td>
+                                                            <span className="badge bg-secondary">
+                                                                {issue.trackerName?.replace('Üretim - ', '')}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <small className="text-muted">
+                                                                {formatDate(issue.plannedStartDate)}
+                                                            </small>
+                                                            <br />
+                                                            <small className="fw-bold">
+                                                                {formatDate(issue.plannedEndDate)}
+                                                            </small>
+                                                        </td>
+                                                        <td>
+                                                            <small className="text-warning fw-bold">
+                                                                {formatDate(issue.revisedPlannedStartDate)}
+                                                            </small>
+                                                            <br />
+                                                            <small className="text-warning fw-bold">
+                                                                {formatDate(issue.revisedPlannedEndDate)}
+                                                            </small>
+                                                        </td>
+                                                        <td className="text-center">
+                                                            {revisionDays !== null && (
+                                                                <span className={`badge ${revisionDays > 0 ? 'bg-danger' : revisionDays < 0 ? 'bg-success' : 'bg-secondary'}`}>
+                                                                    {revisionDays > 0 ? `+${revisionDays}` : revisionDays} gün
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td>
+                                                            <div className="progress" style={{ height: '20px' }}>
+                                                                <div
+                                                                    className="progress-bar"
+                                                                    role="progressbar"
+                                                                    style={{ width: `${issue.completionPercentage}%` }}
+                                                                >
+                                                                    {issue.completionPercentage}%
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <small>{issue.assignedTo}</small>
+                                                        </td>
+                                                        <td>
+                                                            <div
+                                                                className="revision-description"
+                                                                title={issue.revisedPlanDescription}
+                                                            >
+                                                                {issue.revisedPlanDescription || '-'}
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <span className={`badge ${issue.isClosed ? 'bg-success' : 'bg-warning'}`}>
+                                                                {issue.statusName}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <button
+                                                                className="btn btn-sm btn-outline-primary"
+                                                                onClick={() => handleOpenRevisedModal(issue)}
+                                                            >
+                                                                <i className="bi bi-pencil me-1"></i>
+                                                                Revize
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+
+                {/* ✅ REVİZE MODAL */}
+                {showRevisedModal && selectedIssueForRevise && (
+                    <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                        <div className="modal-dialog modal-lg">
+                            <div className="modal-content">
+                                <div className="modal-header bg-primary text-white">
+                                    <h5 className="modal-title">
+                                        <i className="bi bi-calendar-check me-2"></i>
+                                        Revize Plan Tarihlerini Düzenle
+                                    </h5>
+                                    <button
+                                        type="button"
+                                        className="btn-close btn-close-white"
+                                        onClick={handleCloseRevisedModal}
+                                    ></button>
+                                </div>
+                                <div className="modal-body">
+                                    <div className="alert alert-info">
+                                        <strong>İş #{selectedIssueForRevise.issueId}:</strong> {selectedIssueForRevise.subject}
+                                    </div>
+
+                                    <div className="row mb-3">
+                                        <div className="col-md-6">
+                                            <label className="form-label fw-bold text-primary">
+                                                <i className="bi bi-calendar-event me-1"></i>
+                                                Revize Başlangıç Tarihi
+                                            </label>
+                                            <input
+                                                type="date"
+                                                className="form-control"
+                                                value={tempRevisedStartDate}
+                                                onChange={(e) => setTempRevisedStartDate(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-md-6">
+                                            <label className="form-label fw-bold text-primary">
+                                                <i className="bi bi-calendar-check me-1"></i>
+                                                Revize Bitiş Tarihi
+                                            </label>
+                                            <input
+                                                type="date"
+                                                className="form-control"
+                                                value={tempRevisedEndDate}
+                                                onChange={(e) => setTempRevisedEndDate(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* ✅ YENİ: ATANAN KULLANICI SEÇİMİ */}
+                                    <div className="mb-3">
+                                        <label className="form-label small fw-bold">
+                                            <i className="bi bi-person-fill text-info me-1"></i>
+                                            Atanan Kullanıcı
+                                            {loadingMembers && <span className="spinner-border spinner-border-sm ms-2"></span>}
+                                        </label>
+                                        <select
+                                            className="form-select"
+                                            value={selectedAssignedUser}
+                                            onChange={(e) => setSelectedAssignedUser(e.target.value)}
+                                            disabled={loadingMembers || projectMembers.length === 0 || savingRevised || clearingRevised}
+                                        >
+                                            <option value="">Değişiklik yok ({selectedIssueForRevise.assignedTo})</option>
+                                            {projectMembers.map(member => (
+                                                <option key={member.userId} value={member.userId}>
+                                                    {member.fullName}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {projectMembers.length === 0 && !loadingMembers && (
+                                            <div className="form-text text-warning">
+                                                <i className="bi bi-exclamation-triangle me-1"></i>
+                                                Bu projeye yetkili kullanıcı bulunamadı
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="mb-3">
+                                        <label className="form-label fw-bold text-primary">
+                                            <i className="bi bi-chat-text me-1"></i>
+                                            Revize Açıklaması
+                                        </label>
+                                        <textarea
+                                            className="form-control"
+                                            rows="3"
+                                            placeholder="Revize açıklaması girin..."
+                                            value={tempRevisedDescription}
+                                            onChange={(e) => setTempRevisedDescription(e.target.value)}
+                                        ></textarea>
+                                    </div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button
+                                        type="button"
+                                        className="btn btn-danger"
+                                        onClick={handleClearRevisedDates}
+                                        disabled={savingRevised || clearingRevised}
+                                    >
+                                        {clearingRevised ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2"></span>
+                                                Temizleniyor...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <i className="bi bi-trash me-2"></i>
+                                                Revize Tarihlerini Temizle
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={handleCloseRevisedModal}
+                                        disabled={savingRevised || clearingRevised}
+                                    >
+                                        İptal
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        onClick={handleSaveRevised}
+                                        disabled={savingRevised || clearingRevised}
+                                    >
+                                        {savingRevised ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2"></span>
+                                                Kaydediliyor...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <i className="bi bi-save me-2"></i>
+                                                Kaydet
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

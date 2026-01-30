@@ -1250,6 +1250,39 @@ class ApiService {
     }
   }
 
+  // api.js dosyasına getRevisedIssues metodundan SONRA eklenecek
+
+  /**
+   * Get assigned users from revised issues
+   * @param {string} startDate - Start date (YYYY-MM-DD)
+   * @param {string} endDate - End date (YYYY-MM-DD)
+   * @returns {Promise<Array>} List of assigned users
+   */
+  async getRevisedIssuesAssignedUsers(startDate, endDate) {
+    try {
+      console.log('📋 API getRevisedIssuesAssignedUsers request:', { startDate, endDate });
+
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      const response = await this.get(`/RedmineWeeklyCalendar/GetRevisedIssuesAssignedUsers?${params.toString()}`);
+
+      console.log('📋 API getRevisedIssuesAssignedUsers response:', response);
+
+      // Response'u normalize et
+      const users = (response || []).map(user => ({
+        id: user.id || user.Id,
+        fullName: user.fullName || user.FullName || user.full_name
+      }));
+
+      return users;
+    } catch (error) {
+      console.error('❌ getRevisedIssuesAssignedUsers error:', error);
+      throw error;
+    }
+  }
+
   /**
    * Update fuel purchase
    * @param {number} id - Fuel purchase ID
