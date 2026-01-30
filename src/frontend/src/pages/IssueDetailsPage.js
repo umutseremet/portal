@@ -34,6 +34,10 @@ const IssueDetailsPage = () => {
     const [savingRevised, setSavingRevised] = useState(false);
     const [clearingRevised, setClearingRevised] = useState(false);
 
+    const [projectMembers, setProjectMembers] = useState([]);
+    const [selectedAssignedUser, setSelectedAssignedUser] = useState('');
+    const [loadingMembers, setLoadingMembers] = useState(false);
+
     // ✅ ÇOKLU SEÇİM İÇİN FİLTRE STATE
     const [filters, setFilters] = useState({
         projectIds: [],
@@ -332,12 +336,35 @@ const IssueDetailsPage = () => {
     };
 
     // REVİZE TARİH MODAL İŞLEMLERİ
-    const handleOpenRevisedModal = (issue) => {
+    const handleOpenRevisedModal = async (issue) => {
+        console.log('🔍 IssueDetailsPage - Modal açılıyor:', issue);
+
         setSelectedIssueForRevise(issue);
         setTempRevisedStartDate(formatDateForInput(issue.revisedPlannedStartDate) || '');
         setTempRevisedEndDate(formatDateForInput(issue.revisedPlannedEndDate) || '');
         setTempRevisedDescription(issue.revisedPlanDescription || '');
+        setSelectedAssignedUser(''); // Reset
         setShowRevisedModal(true);
+
+        // ✅ YENİ: Proje üyelerini yükle
+        if (issue.projectId) {
+            console.log('👥 Proje üyeleri yükleniyor... ProjectId:', issue.projectId);
+            setLoadingMembers(true);
+            try {
+                const members = await apiService.getProjectMembers(issue.projectId);
+                console.log('✅ Proje üyeleri geldi:', members);
+                setProjectMembers(members || []);
+            } catch (error) {
+                console.error('❌ Error loading project members:', error);
+                console.warn('Proje üyeleri yüklenemedi:', error.message);
+                setProjectMembers([]);
+            } finally {
+                setLoadingMembers(false);
+            }
+        } else {
+            console.warn('⚠️ ProjectId bulunamadı!');
+            setProjectMembers([]);
+        }
     };
 
     const handleCloseRevisedModal = () => {
@@ -366,19 +393,51 @@ const IssueDetailsPage = () => {
         try {
             const requestData = {
                 issueId: selectedIssueForRevise.issueId,
-                plannedStartDate: null,  // ✅ EKLE
-                plannedEndDate: null,     // ✅ EKLE
+                plannedStartDate: null,
+                plannedEndDate: null,
                 revisedPlannedStartDate: tempRevisedStartDate || null,
                 revisedPlannedEndDate: tempRevisedEndDate || null,
                 revisedPlanDescription: tempRevisedDescription?.trim() || null,
-                updatedBy: 'User'  // ✅ EKLE
+                assignedUserId: selectedAssignedUser ? parseInt(selectedAssignedUser) : null, // ✅ YENİ EKLE
+                updatedBy: 'User'
             };
 
-            // ✅ DEĞİŞTİR: updateIssueRevisedDate -> updateIssueDates
             const response = await apiService.updateIssueDates(requestData);
 
             if (response.success !== false) {
-                // ... state güncellemesi aynı kalacak
+                // State güncelle
+                setIssues(prevIssues =>
+                    prevIssues.map(i =>
+                        i.issueId === selectedIssueForRevise.issueId
+                            ? {
+                                ...i,
+                                revisedPlannedStartDate: tempRevisedStartDate || null,
+                                revisedPlannedEndDate: tempRevisedEndDate || null,
+                                revisedPlanDescription: tempRevisedDescription?.trim() || null,
+                                assignedTo: selectedAssignedUser ?
+                                    projectMembers.find(m => m.userId === parseInt(selectedAssignedUser))?.fullName || i.assignedTo
+                                    : i.assignedTo
+                            }
+                            : i
+                    )
+                );
+
+                setFilteredIssues(prevFiltered =>
+                    prevFiltered.map(i =>
+                        i.issueId === selectedIssueForRevise.issueId
+                            ? {
+                                ...i,
+                                revisedPlannedStartDate: tempRevisedStartDate || null,
+                                revisedPlannedEndDate: tempRevisedEndDate || null,
+                                revisedPlanDescription: tempRevisedDescription?.trim() || null,
+                                assignedTo: selectedAssignedUser ?
+                                    projectMembers.find(m => m.userId === parseInt(selectedAssignedUser))?.fullName || i.assignedTo
+                                    : i.assignedTo
+                            }
+                            : i
+                    )
+                );
+
                 handleCloseRevisedModal();
                 alert('✅ Revize tarihleri başarıyla kaydedildi.');
             }
@@ -1271,6 +1330,36 @@ const IssueDetailsPage = () => {
                                             onChange={(e) => setTempRevisedEndDate(e.target.value)}
                                         />
                                     </div>
+                                </div>
+
+                                {/* ✅ YENİ: Atanan Kullanıcı Seçimi */}
+                                <div className="mb-3">
+                                    <label className="form-label fw-bold">
+                                        <i className="bi bi-person-fill text-info me-1"></i>
+                                        Atanan Kullanıcı
+                                        {loadingMembers && <span className="spinner-border spinner-border-sm ms-2"></span>}
+                                    </label>
+                                    <select
+                                        className="form-select"
+                                        value={selectedAssignedUser}
+                                        onChange={(e) => setSelectedAssignedUser(e.target.value)}
+                                        disabled={loadingMembers || projectMembers.length === 0 || savingRevised || clearingRevised}
+                                    >
+                                        <option value="">
+                                            Değişiklik yok ({selectedIssueForRevise?.assignedTo || 'Atanmamış'})
+                                        </option>
+                                        {projectMembers.map(member => (
+                                            <option key={member.userId} value={member.userId}>
+                                                {member.fullName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {projectMembers.length === 0 && !loadingMembers && (
+                                        <div className="form-text text-warning">
+                                            <i className="bi bi-exclamation-triangle me-1"></i>
+                                            Bu projeye yetkili kullanıcı bulunamadı
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="mb-3">

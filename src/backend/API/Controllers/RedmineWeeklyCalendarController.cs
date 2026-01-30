@@ -62,6 +62,66 @@ namespace API.Controllers
             }
         }
 
+
+        /// <summary>
+        /// Projeye yetkili kullanıcıları getirir
+        /// </summary>
+        [HttpGet("project-members/{projectId}")]
+        public async Task<IActionResult> GetProjectMembers(int projectId)
+        {
+            try
+            {
+                var connectionString = _configuration.GetConnectionString("DefaultConnection")
+                    ?? throw new InvalidOperationException("Database connection string not configured");
+
+                var members = new List<ProjectMemberDto>();
+
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    // Proje üyelerini getir
+                    var query = @"
+                SELECT DISTINCT
+                    u.id AS UserId,
+                    u.firstname + ' ' + u.lastname AS FullName,
+                    u.login AS Login
+                FROM members m
+                INNER JOIN users u ON u.id = m.user_id
+                WHERE m.project_id = @ProjectId
+                AND u.status = 1
+                AND u.type = 'User'";
+
+                    using (var cmd = new SqlCommand(query, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@ProjectId", projectId);
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                members.Add(new ProjectMemberDto
+                                {
+                                    UserId = reader.GetInt32(reader.GetOrdinal("UserId")),
+                                    FullName = reader.GetString(reader.GetOrdinal("FullName")),
+                                    Login = reader.GetString(reader.GetOrdinal("Login"))
+                                });
+                            }
+                        }
+                    }
+                }
+
+                _logger.LogInformation("Found {Count} members for project {ProjectId}", members.Count, projectId);
+
+                return Ok(members);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting project members for project {ProjectId}", projectId);
+                return StatusCode(500, new ErrorResponse { Message = $"Hata: {ex.Message}" });
+            }
+        }
+
         // RedmineWeeklyCalendarController.cs - GetIssuesByDateAndType metodu
         // ✅ FIX: [HttpGet] attribute eklendi - 405 Method Not Allowed hatası düzeltildi
 
@@ -91,6 +151,7 @@ namespace API.Controllers
                 i.id, i.project_id,
                 p.name AS project_name,
                 cv_proje_kodu.value AS proje_kodu,
+                i.tracker_id,  -- ✅ EKLE
                 i.subject,
                 t.name AS tracker_name,
                 i.done_ratio AS completion_percentage,
@@ -194,6 +255,12 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                                 DateTime? closedOn = null;
                                 string? revisedDescription = null;
 
+                                // ✅ YENİ EKLE: TrackerId oku
+                                int? trackerId = null;
+                                if (!reader.IsDBNull(reader.GetOrdinal("tracker_id")))
+                                {
+                                    trackerId = reader.GetInt32(reader.GetOrdinal("tracker_id"));
+                                }
                                 // Planlanan başlangıç
                                 if (!reader.IsDBNull(reader.GetOrdinal("planlanan_baslangic")))
                                 {
@@ -242,6 +309,7 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                                 {
                                     IssueId = reader.GetInt32(reader.GetOrdinal("id")),
                                     ProjectId = reader.GetInt32(reader.GetOrdinal("project_id")),
+                                    TrackerId = trackerId,  // ✅ YENİ EKLE
                                     ProjectName = reader.IsDBNull(reader.GetOrdinal("project_name"))
                                         ? string.Empty : reader.GetString(reader.GetOrdinal("project_name")),
                                     ProjectCode = reader.IsDBNull(reader.GetOrdinal("proje_kodu"))
@@ -333,6 +401,7 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                 i.id, i.project_id,
                 p.name AS project_name,
                 cv_proje_kodu.value AS proje_kodu,
+i.tracker_id,  -- ✅ EKLE
                 i.subject,
                 t.name AS tracker_name,
                 i.done_ratio AS completion_percentage,
@@ -643,6 +712,7 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                 var sql = @"
             SELECT
                 i.id, i.project_id,
+                i.tracker_id,  -- ✅ EKLE
                 p.name AS project_name,
                 cv_proje_kodu.value AS proje_kodu,
                 i.subject,
@@ -1092,6 +1162,25 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                         }
                     }
 
+                    // ✅ YENİ: ATANAN KULLANICI GÜNCELLE (Revize tarihi varsa)
+                    if (request.AssignedUserId.HasValue && request.AssignedUserId.Value > 0)
+                    {
+                        var updateAssignedUserQuery = @"
+                                                UPDATE issues 
+                                                SET assigned_to_id = @AssignedUserId 
+                                                WHERE id = @IssueId";
+
+                        using (var updateCommand = new SqlCommand(updateAssignedUserQuery, connection))
+                        {
+                            updateCommand.Parameters.AddWithValue("@IssueId", request.IssueId);
+                            updateCommand.Parameters.AddWithValue("@AssignedUserId", request.AssignedUserId.Value);
+                            await updateCommand.ExecuteNonQueryAsync();
+
+                            _logger.LogInformation("Assigned user updated for issue {IssueId} to user {UserId}",
+                                request.IssueId, request.AssignedUserId.Value);
+                        }
+                    }
+
                     // ============================================
                     // REVİZE BAŞLANGIÇ TARİHİ GÜNCELLEME
                     // ============================================
@@ -1363,6 +1452,7 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
             )
             SELECT
                 i.id, i.project_id, i.subject,
+                i.tracker_id,  -- ✅ EKLE
                 i.done_ratio as completion_percentage,
                 i.estimated_hours,
                 i.closed_on,
@@ -1472,6 +1562,7 @@ WHERE (t.name LIKE N'Üretim -%' OR t.name = 'Montaj')
                 i.id, i.project_id, i.subject,
                 i.done_ratio as completion_percentage,
                 i.estimated_hours,
+                i.tracker_id,  -- ✅ EKLE
                 i.closed_on,
                 t.name as tracker_name,
                 p.name as project_name,

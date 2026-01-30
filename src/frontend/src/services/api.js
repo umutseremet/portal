@@ -3527,6 +3527,27 @@ class ApiService {
       throw error;
     }
   }
+
+  /**
+ * Projeye yetkili kullanıcıları getir
+ * @param {number} projectId - Proje ID
+ * @returns {Promise<Array>} Proje üyeleri listesi
+ */
+  async getProjectMembers(projectId) {
+    try {
+      console.log(`👥 API getProjectMembers request: projectId=${projectId}`);
+
+      // trackerId parametresi kaldırıldı
+      const response = await this.get(`/RedmineWeeklyCalendar/project-members/${projectId}`);
+
+      console.log('✅ API getProjectMembers response:', response);
+
+      return response;
+    } catch (error) {
+      console.error('❌ getProjectMembers error:', error);
+      throw error;
+    }
+  }
 }
 
 

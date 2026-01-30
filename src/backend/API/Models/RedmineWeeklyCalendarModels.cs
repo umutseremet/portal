@@ -60,6 +60,7 @@ namespace API.Models
 
     public class ProductionIssueData
     {
+        public int? TrackerId { get; set; } // Yeni eklendi
         public int IssueId { get; set; }
         public int ProjectId { get; set; }
         public string ProjectName { get; set; } = string.Empty;
@@ -223,6 +224,18 @@ namespace API.Models
         public string? RevisedPlannedStartDate { get; set; }
         public string? RevisedPlannedEndDate { get; set; }
         public string? RevisedPlanDescription { get; set; }
+
+        public int? AssignedUserId { get; set; }
+    }
+
+    /// <summary>
+    /// Proje üyesi DTO
+    /// </summary>
+    public class ProjectMemberDto
+    {
+        public int UserId { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Login { get; set; } = string.Empty;
     }
 
     /// <summary>

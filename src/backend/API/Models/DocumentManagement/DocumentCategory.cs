@@ -1,9 +1,6 @@
 ﻿// Models/DocumentManagement/DocumentCategory.cs
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Reflection.Metadata;
 
 namespace VervoPortal.Models.DocumentManagement
 {
@@ -37,7 +34,11 @@ namespace VervoPortal.Models.DocumentManagement
 
         [MaxLength(100)]
         public string CreatedBy { get; set; }
-        public string UpdatedBy { get; set; }
-        public DateTime UpdatedDate { get; set; }= DateTime.Now;
+
+        // ✅ DOĞRU HALİ
+        public DateTime? UpdatedDate { get; set; }  // nullable yap
+
+        [MaxLength(100)]
+        public string? UpdatedBy { get; set; }  // MaxLength ekle ve nullable yap
     }
 }
