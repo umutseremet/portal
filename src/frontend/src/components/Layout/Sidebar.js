@@ -86,13 +86,6 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       permission: 'yetki_kullanici_aracbilgileri'
     },
     {
-      id: 'visitors',
-      label: 'Ziyaretçi Yönetimi',
-      icon: 'bi-people-fill',
-      path: '/visitors',
-      permission: null
-    },
-    {
       id: 'document-management',
       label: 'Doküman Yönetimi',
       icon: 'bi-folder-fill',
@@ -111,6 +104,13 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           permission: null // Herkes erişebilir
         }
       ]
+    },
+    {
+      id: 'visitors',
+      label: 'Ziyaretçi Yönetimi',
+      icon: 'bi-people-fill',
+      path: '/visitors',
+      permission: null
     },
     {
       id: 'reports',

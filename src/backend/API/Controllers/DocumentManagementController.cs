@@ -8,7 +8,9 @@ using VervoPortal.Models.DocumentManagement;
 
 namespace VervoPortal.Controllers
 {
+#if !DEBUG
     [Authorize]
+#endif
     [Route("api/[controller]")]
     [ApiController]
     public class DocumentManagementController : ControllerBase

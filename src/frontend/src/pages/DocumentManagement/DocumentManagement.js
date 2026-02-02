@@ -292,7 +292,7 @@ const DocumentManagement = () => {
                                                         className="btn btn-sm btn-outline-primary"
                                                         onClick={() => downloadFile(file.id, file.fileName)}
                                                     >
-                                                        <i className="fas fa-download"></i>
+                                                        <i className="fas fa-download">İndir</i>
                                                     </button>
                                                 </div>
                                             ))}

@@ -15,7 +15,7 @@ namespace VervoPortal.Models.DocumentManagement
         public int DocumentId { get; set; }
 
         [ForeignKey("DocumentId")]
-        public Document Document { get; set; }
+        public Document? Document { get; set; }
 
         public int? UserId { get; set; } // Redmine users tablosuna referans
 
@@ -27,9 +27,9 @@ namespace VervoPortal.Models.DocumentManagement
 
         public bool CanDelete { get; set; } = false;
 
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public DateTime? CreatedDate { get; set; } = DateTime.Now;
 
         [MaxLength(100)]
-        public string CreatedBy { get; set; }
+        public string? CreatedBy { get; set; }
     }
 }

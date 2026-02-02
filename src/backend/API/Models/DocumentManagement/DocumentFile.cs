@@ -15,36 +15,36 @@ namespace VervoPortal.Models.DocumentManagement
         public int DocumentId { get; set; }
 
         [ForeignKey("DocumentId")]
-        public Document Document { get; set; }
+        public Document? Document { get; set; }
 
         [Required]
         public int VersionId { get; set; }
 
         [ForeignKey("VersionId")]
-        public DocumentVersion Version { get; set; }
+        public DocumentVersion? Version { get; set; }
 
         [Required]
         [MaxLength(500)]
-        public string FileName { get; set; }
+        public string? FileName { get; set; }
 
         [Required]
         [MaxLength(500)]
-        public string FilePath { get; set; }
+        public string? FilePath { get; set; }
 
         [MaxLength(100)]
-        public string FileExtension { get; set; }
+        public string? FileExtension { get; set; }
 
         public long FileSize { get; set; } // Bytes
 
         [MaxLength(100)]
-        public string ContentType { get; set; }
+        public string? ContentType { get; set; }
 
         public int DownloadCount { get; set; } = 0;
 
-        public DateTime UploadDate { get; set; } = DateTime.Now;
+        public DateTime? UploadDate { get; set; } = DateTime.Now;
 
         [MaxLength(100)]
-        public string UploadedBy { get; set; }
+        public string? UploadedBy { get; set; }
 
         public bool IsActive { get; set; } = true;
     }

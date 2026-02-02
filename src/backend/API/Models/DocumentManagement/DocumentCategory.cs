@@ -12,28 +12,28 @@ namespace VervoPortal.Models.DocumentManagement
 
         [Required]
         [MaxLength(200)]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [MaxLength(10)]
-        public string Icon { get; set; } = "📁";
+        public string? Icon { get; set; } = "📁";
 
         public int? ParentId { get; set; }
 
         [ForeignKey("ParentId")]
-        public DocumentCategory ParentCategory { get; set; }
+        public DocumentCategory? ParentCategory { get; set; }
 
-        public ICollection<DocumentCategory> ChildCategories { get; set; }
+        public ICollection<DocumentCategory>? ChildCategories { get; set; }
 
-        public ICollection<Document> Documents { get; set; }
+        public ICollection<Document>? Documents { get; set; }
 
         public int DisplayOrder { get; set; } = 0;
 
         public bool IsActive { get; set; } = true;
 
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public DateTime? CreatedDate { get; set; } = DateTime.Now;
 
         [MaxLength(100)]
-        public string CreatedBy { get; set; }
+        public string? CreatedBy { get; set; }
 
         // ✅ DOĞRU HALİ
         public DateTime? UpdatedDate { get; set; }  // nullable yap

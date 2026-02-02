@@ -16,21 +16,21 @@ namespace VervoPortal.Models.DocumentManagement
         public int DocumentId { get; set; }
 
         [ForeignKey("DocumentId")]
-        public Document Document { get; set; }
+        public Document? Document { get; set; }
 
         [Required]
         [MaxLength(20)]
-        public string VersionNumber { get; set; } // v1.0, v1.1, v2.0
+        public string? VersionNumber { get; set; } // v1.0, v1.1, v2.0
 
         [Column(TypeName = "nvarchar(max)")]
-        public string ChangeNote { get; set; }
+        public string? ChangeNote { get; set; }
 
-        public ICollection<DocumentFile> Files { get; set; }
+        public ICollection<DocumentFile>? Files { get; set; }
 
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public DateTime? CreatedDate { get; set; } = DateTime.Now;
 
         [MaxLength(100)]
-        public string CreatedBy { get; set; }
+        public string? CreatedBy { get; set; }
 
         public bool IsCurrent { get; set; } = true;
     }
