@@ -47,6 +47,10 @@ namespace API.Data
         public DbSet<DocumentVersion> DocumentVersions { get; set; }
         public DbSet<DocumentFile> DocumentFiles { get; set; }
         public DbSet<DocumentPermission> DocumentPermissions { get; set; }
+
+        public DbSet<BackgroundJob> BackgroundJobs { get; set; } 
+        public DbSet<BackgroundJobExecutionLog> BackgroundJobExecutionLogs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -92,6 +96,62 @@ namespace API.Data
                 entity.HasIndex(e => e.ItemId)
                     .HasDatabaseName("IX_ItemFiles_ItemId");
             });
+
+            modelBuilder.Entity<BackgroundJob>(entity =>
+            {
+                entity.ToTable("BackgroundJobs");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.JobName).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.JobKey).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.JobType).HasMaxLength(50).IsRequired().HasDefaultValue("Recurring");
+                entity.Property(e => e.CronExpression).HasMaxLength(100);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.LastRunStatus).HasMaxLength(50);
+                entity.Property(e => e.LastRunMessage).HasMaxLength(1000);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETDATE()");
+
+                // Unique constraint for JobKey
+                entity.HasIndex(e => e.JobKey).IsUnique().HasDatabaseName("IX_BackgroundJobs_JobKey");
+
+                // Indexes for performance
+                entity.HasIndex(e => e.IsActive).HasDatabaseName("IX_BackgroundJobs_IsActive");
+                entity.HasIndex(e => e.JobType).HasDatabaseName("IX_BackgroundJobs_JobType");
+                entity.HasIndex(e => e.LastRunTime).HasDatabaseName("IX_BackgroundJobs_LastRunTime");
+            });
+
+            // BackgroundJobExecutionLog entity configuration
+            modelBuilder.Entity<BackgroundJobExecutionLog>(entity =>
+            {
+                entity.ToTable("BackgroundJobExecutionLogs");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.BackgroundJobId).IsRequired();
+                entity.Property(e => e.JobKey).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.JobName).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.StartTime).IsRequired();
+                entity.Property(e => e.Status).HasMaxLength(50).IsRequired().HasDefaultValue("Running");
+                entity.Property(e => e.Message).HasMaxLength(1000);
+                entity.Property(e => e.HangfireJobId).HasMaxLength(100);
+                entity.Property(e => e.IsManualExecution).HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                // Foreign key
+                entity.HasOne(e => e.BackgroundJob)
+                      .WithMany()
+                      .HasForeignKey(e => e.BackgroundJobId)
+                      .OnDelete(DeleteBehavior.Cascade)
+                      .HasConstraintName("FK_BackgroundJobExecutionLogs_BackgroundJobs");
+
+                // Indexes
+                entity.HasIndex(e => e.BackgroundJobId).HasDatabaseName("IX_BackgroundJobExecutionLogs_BackgroundJobId");
+                entity.HasIndex(e => e.JobKey).HasDatabaseName("IX_BackgroundJobExecutionLogs_JobKey");
+                entity.HasIndex(e => e.StartTime).HasDatabaseName("IX_BackgroundJobExecutionLogs_StartTime");
+                entity.HasIndex(e => e.Status).HasDatabaseName("IX_BackgroundJobExecutionLogs_Status");
+            });
+
 
             // ✅ YENİ İLİŞKİLER
             // PurchaseRequest - PurchaseOrder ilişkisi

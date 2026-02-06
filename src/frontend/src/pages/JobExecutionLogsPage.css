@@ -1,0 +1,124 @@
+/* src/frontend/src/pages/JobExecutionLogsPage.css */
+
+.job-execution-logs-page {
+  padding: 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.job-execution-logs-page .page-header h2 {
+  color: #2c3e50;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.job-execution-logs-page .card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.job-execution-logs-page .card-header {
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+}
+
+.job-execution-logs-page .table {
+  margin-bottom: 0;
+  font-size: 0.9rem;
+}
+
+.job-execution-logs-page .table thead th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  color: #495057;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.job-execution-logs-page .table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.job-execution-logs-page .table tbody td {
+  vertical-align: middle;
+}
+
+.job-execution-logs-page .badge {
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+  font-size: 0.85em;
+}
+
+.job-execution-logs-page .log-content {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 15px;
+  max-height: 500px;
+  overflow-y: auto;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.5;
+}
+
+.job-execution-logs-page .modal-xl {
+  max-width: 90%;
+}
+
+.job-execution-logs-page .pagination {
+  margin-bottom: 0;
+}
+
+.job-execution-logs-page .pagination .page-link {
+  color: #0d6efd;
+  border-color: #dee2e6;
+}
+
+.job-execution-logs-page .pagination .page-item.active .page-link {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.job-execution-logs-page .pagination .page-item.disabled .page-link {
+  color: #6c757d;
+  pointer-events: none;
+  background-color: #fff;
+  border-color: #dee2e6;
+}
+
+.job-execution-logs-page .alert pre {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .job-execution-logs-page {
+    padding: 10px;
+  }
+
+  .job-execution-logs-page .table {
+    font-size: 0.8rem;
+  }
+
+  .job-execution-logs-page .modal-xl {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .job-execution-logs-page .page-header .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .job-execution-logs-page .page-header .d-flex > div:last-child {
+    margin-top: 15px;
+  }
+}

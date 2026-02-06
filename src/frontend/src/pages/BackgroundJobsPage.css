@@ -1,0 +1,159 @@
+/* src/frontend/src/pages/BackgroundJobsPage.css */
+
+.background-jobs-page {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.background-jobs-page .page-header h2 {
+  color: #2c3e50;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.background-jobs-page .card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+/* ✅ RENK DEĞİŞİKLİĞİ: Mavi (#0d6efd) → Gri (#f8f9fa) */
+.background-jobs-page .card-header {
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+}
+
+.background-jobs-page .card-header.bg-primary {
+  background-color: #f8f9fa !important; /* Diğer ekranlarla aynı renk */
+  color: #212529 !important; /* Koyu metin rengi */
+  border-bottom: 2px solid #dee2e6;
+}
+
+.background-jobs-page .table {
+  margin-bottom: 0;
+}
+
+.background-jobs-page .table thead th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  color: #495057;
+  white-space: nowrap;
+}
+
+.background-jobs-page .table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.background-jobs-page .table tbody td {
+  vertical-align: middle;
+}
+
+.background-jobs-page .table code {
+  background-color: #f1f3f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.background-jobs-page .btn-group-sm .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.background-jobs-page .badge {
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+}
+
+.background-jobs-page .modal-content {
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ✅ Modal başlığı da gri yapıldı */
+.background-jobs-page .modal-header.bg-primary {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.background-jobs-page .modal-header .btn-close-white {
+  filter: invert(1); /* Beyaz kapatma butonu → Siyah */
+}
+
+.background-jobs-page .modal-footer {
+  border-top: 1px solid #dee2e6;
+  padding: 1rem;
+}
+
+.background-jobs-page .form-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.background-jobs-page .form-control,
+.background-jobs-page .form-select {
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+}
+
+.background-jobs-page .form-control:focus,
+.background-jobs-page .form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.background-jobs-page .alert {
+  border-radius: 8px;
+  border: none;
+}
+
+.background-jobs-page .spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Status badge colors */
+.background-jobs-page .badge.bg-success {
+  background-color: #198754 !important;
+}
+
+.background-jobs-page .badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+.background-jobs-page .badge.bg-warning {
+  background-color: #ffc107 !important;
+}
+
+.background-jobs-page .badge.bg-info {
+  background-color: #0dcaf0 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .background-jobs-page {
+    padding: 10px;
+  }
+
+  .background-jobs-page .table {
+    font-size: 0.85rem;
+  }
+
+  .background-jobs-page .btn-group {
+    flex-direction: column;
+  }
+
+  .background-jobs-page .page-header .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .background-jobs-page .page-header .d-flex > div:last-child {
+    margin-top: 15px;
+  }
+}

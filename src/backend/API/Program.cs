@@ -1,5 +1,9 @@
 using API.Data;
 using API.Services;
+using API.Services.BackgroundJobs;
+using Hangfire;
+using Hangfire.Dashboard;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
@@ -67,6 +71,9 @@ builder.Services.AddScoped<BomExcelParserService>();
 builder.Services.AddScoped<PermissionService>();
 builder.Services.AddScoped<ArventoService>();
 
+// Hangfire Background Job Services
+builder.Services.AddScoped<LogoInvoiceAutoApprovalJob>();
+
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10MB
@@ -88,6 +95,29 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.EnableSensitiveDataLogging();
         options.EnableDetailedErrors();
     }
+});
+
+
+// ✅ YENİ: Hangfire Configuration
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection"), new SqlServerStorageOptions
+    {
+        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+        QueuePollInterval = TimeSpan.Zero,
+        UseRecommendedIsolationLevel = true,
+        DisableGlobalLocks = true,
+        SchemaName = "hangfire"
+    }));
+
+// ✅ YENİ: Hangfire Server
+builder.Services.AddHangfireServer(options =>
+{
+    options.WorkerCount = 5;
+    options.Queues = new[] { "default", "critical", "low" };
 });
 
 var jwtKey = builder.Configuration["JwtSettings:Secret"] ?? "YourSecretKeyThatIsAtLeast32CharactersLong123456789";
@@ -243,6 +273,14 @@ app.UseSwaggerUI(c =>
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
+
+// ✅ YENİ: Hangfire Dashboard
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new HangfireAuthorizationFilter() },
+    DashboardTitle = "Vervo Portal - Arka Plan Görevleri"
+});
+
 // Static files
 var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "Uploads");
 Directory.CreateDirectory(uploadsPath);
@@ -331,4 +369,65 @@ app.Logger.LogInformation("🚀 Vervo Portal API starting on IIS...");
 app.Logger.LogInformation("📝 Swagger UI available at: /PortalAPI/swagger");
 app.Logger.LogInformation("🚗 Vehicle Management API endpoints: /PortalAPI/api/vehicles");
 
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    var recurringJobManager = services.GetRequiredService<IRecurringJobManager>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        logger.LogInformation("🔧 Hangfire Recurring Jobs kaydediliyor...");
+
+        var activeJobs = context.BackgroundJobs
+            .Where(j => j.IsActive && j.JobType == "Recurring" && j.CronExpression != null)
+            .ToList();
+
+        foreach (var job in activeJobs)
+        {
+            switch (job.JobKey)
+            {
+                case "logo-invoice-auto-approval":
+                    recurringJobManager.AddOrUpdate<LogoInvoiceAutoApprovalJob>(
+                        job.JobKey,
+                        x => x.ExecuteAsync(),
+                        job.CronExpression,
+                        TimeZoneInfo.Local);
+                    logger.LogInformation("✅ Job kaydedildi: {JobName} ({CronExpression})", job.JobName, job.CronExpression);
+                    break;
+
+                default:
+                    logger.LogWarning("⚠️ Bilinmeyen job key: {JobKey}", job.JobKey);
+                    break;
+            }
+        }
+
+        logger.LogInformation("✅ Toplam {Count} adet Hangfire job kaydedildi", activeJobs.Count);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "❌ Hangfire jobs kaydedilirken hata oluştu");
+    }
+}
+
 app.Run();
+
+public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
+{
+    public bool Authorize(DashboardContext context)
+    {
+        var httpContext = context.GetHttpContext();
+
+        // Development ortamında herkes erişebilir
+        if (httpContext.Request.Host.Host == "localhost")
+        {
+            return true;
+        }
+
+        // Production'da authentication kontrolü
+        return httpContext.User.Identity?.IsAuthenticated == true
+            && httpContext.User.IsInRole("Admin");
+    }
+}

@@ -1,8 +1,7 @@
 // src/frontend/src/components/Visitors/VisitorsList.js
-// Bu dosyanın handleSort ve tablo başlıkları bölümündeki değişiklikler
+// ✅ ALTERNATİF ÇÖZÜM - Bootstrap Dropdown Conflict Olmadan
 
-import { useState, useEffect } from 'react';
-import { formatDate, getStatusBadge } from '../../utils/helpers';
+import { useState, useEffect, useRef } from 'react';
 
 const VisitorsList = ({ 
   visitors, 
@@ -41,6 +40,39 @@ const VisitorsList = ({
     sortBy: filters.sortBy || 'date',
     sortOrder: filters.sortOrder || 'desc'
   });
+
+  // ✅ ÇÖZÜM: Her satır için ayrı dropdown state
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  
+  // ✅ Dropdown ref - dışarı tıklamada kapatmak için
+  const dropdownRefs = useRef({});
+
+  // ✅ CRITICAL FIX: Bootstrap'in dropdown initialization'ını devre dışı bırak
+  useEffect(() => {
+    // Bootstrap dropdown'larını temizle
+    const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+    dropdowns.forEach(dropdown => {
+      dropdown.removeAttribute('data-bs-toggle');
+    });
+  }, [visitors]);
+
+  // ✅ Dışarı tıklamada dropdown'ı kapat
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const isClickInside = Object.values(dropdownRefs.current).some(ref => 
+        ref && ref.contains(event.target)
+      );
+      
+      if (!isClickInside) {
+        setOpenDropdownId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Update local filters when props change
   useEffect(() => {
@@ -115,6 +147,7 @@ const VisitorsList = ({
 
   // Handle delete click
   const handleDeleteClick = (visitor) => {
+    setOpenDropdownId(null);
     if (window.confirm(`${visitor.visitorName || visitor.visitor} ziyaretçisini silmek istediğinizden emin misiniz?`)) {
       if (onDeleteVisitor) {
         onDeleteVisitor(visitor);
@@ -122,27 +155,41 @@ const VisitorsList = ({
     }
   };
 
-  // ✅ DÜZELTME: Handle sort - Aktif olarak çalışacak şekilde
+  // ✅ Toggle dropdown
+  const toggleDropdown = (visitorId, event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log('Toggle dropdown for:', visitorId, 'Current:', openDropdownId);
+    setOpenDropdownId(prev => prev === visitorId ? null : visitorId);
+  };
+
+  // Handle sort - Backend'e istek gönderir
   const handleSort = (column) => {
-    console.log('Sorting by:', column, 'Current sort:', filters.sortBy, filters.sortOrder);
+    console.log('🔄 VisitorsList: Sorting requested for column:', column);
+    console.log('   Current filters:', { sortBy: filters.sortBy, sortOrder: filters.sortOrder });
     
     // Aynı kolona tıklandığında sıralama yönünü değiştir
     const newOrder = filters.sortBy === column && filters.sortOrder === 'desc' ? 'asc' : 'desc';
     
+    console.log('   New sort order will be:', newOrder);
+    console.log('   Calling onSort callback...');
+    
     if (onSort) {
       onSort(column, newOrder);
+    } else {
+      console.error('❌ onSort callback is not defined!');
     }
   };
 
-  // ✅ DÜZELTME: Get sort icon helper function
+  // Get sort icon
   const getSortIcon = (column) => {
     if (filters.sortBy !== column) {
-      return 'bi-arrow-down-up'; // Default icon when column is not sorted
+      return 'bi-arrow-down-up';
     }
     return filters.sortOrder === 'desc' ? 'bi-arrow-down' : 'bi-arrow-up';
   };
 
-  // ✅ DÜZELTME: Get sort button class helper
+  // Get sort button class
   const getSortButtonClass = (column) => {
     const baseClass = "btn btn-link text-decoration-none p-0 fw-medium d-flex align-items-center";
     const activeClass = filters.sortBy === column ? "text-primary" : "text-dark";
@@ -163,36 +210,147 @@ const VisitorsList = ({
     );
   }
 
-// ✅ YENİ KOD (DOĞRU):
-// Empty state
-if (!loading && (!visitors || visitors.length === 0)) {
+  // Empty state
+  if (!loading && (!visitors || visitors.length === 0)) {
+    return (
+      <>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <div></div>
+          <div className="d-flex gap-2">
+            <button 
+              className="btn btn-outline-secondary btn-sm"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <i className="bi bi-funnel me-1"></i>
+              Filtrele
+              {hasFilters && <span className="badge bg-danger ms-1 rounded-pill">!</span>}
+            </button>
+            <button 
+              className="btn btn-outline-secondary btn-sm"
+              onClick={onExport}
+            >
+              <i className="bi bi-download me-1"></i>
+              Excel
+            </button>
+            <button 
+              className="btn btn-danger btn-sm"
+              onClick={onNewVisitor}
+            >
+              <i className="bi bi-plus-lg me-1"></i>
+              Yeni Ziyaretçi
+            </button>
+          </div>
+        </div>
+
+        {showFilters && (
+          <div className="card mb-4">
+            <div className="card-body">
+              <div className="row">
+                <div className="col-md-3">
+                  <label className="form-label small">Başlangıç Tarihi</label>
+                  <input
+                    type="date"
+                    className="form-control form-control-sm"
+                    value={localFilters.fromDate}
+                    onChange={(e) => handleLocalFilterChange('fromDate', e.target.value)}
+                  />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label small">Bitiş Tarihi</label>
+                  <input
+                    type="date"
+                    className="form-control form-control-sm"
+                    value={localFilters.toDate}
+                    onChange={(e) => handleLocalFilterChange('toDate', e.target.value)}
+                  />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label small">Şirket</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={localFilters.company}
+                    onChange={(e) => handleLocalFilterChange('company', e.target.value)}
+                    placeholder="Şirket adı..."
+                  />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label small">Ziyaretçi</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={localFilters.visitor}
+                    onChange={(e) => handleLocalFilterChange('visitor', e.target.value)}
+                    placeholder="Ziyaretçi adı..."
+                  />
+                </div>
+              </div>
+
+              <div className="d-flex justify-content-end gap-2 mt-3">
+                <button 
+                  className="btn btn-primary btn-sm"
+                  onClick={handleApplyFilters}
+                >
+                  <i className="bi bi-search me-1"></i>
+                  Filtrele
+                </button>
+                <button 
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={handleResetFilters}
+                >
+                  <i className="bi bi-arrow-clockwise me-1"></i>
+                  Temizle
+                </button>
+                <button 
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => setShowFilters(false)}
+                >
+                  <i className="bi bi-x me-1"></i>
+                  Kapat
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="text-center py-5">
+          <div className="mb-4">
+            <i className="bi bi-people display-1 text-muted"></i>
+          </div>
+          <h5 className="text-muted mb-3">
+            {hasFilters ? 'Filtrelere uygun ziyaretçi bulunamadı' : 'Henüz ziyaretçi kaydı bulunmuyor'}
+          </h5>
+          <p className="text-muted">
+            {hasFilters 
+              ? 'Filtre kriterlerinizi değiştirmeyi deneyin.' 
+              : 'İlk ziyaretçi kaydınızı oluşturmak için yukarıdaki "Yeni Ziyaretçi" butonunu kullanın.'
+            }
+          </p>
+          {hasFilters && (
+            <button className="btn btn-outline-secondary" onClick={handleResetFilters}>
+              <i className="bi bi-arrow-clockwise me-1"></i>
+              Filtreleri Temizle
+            </button>
+          )}
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
-      {/* Header with Actions - Empty state'de de göster */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          {/* Sol taraf boş veya başlık olabilir */}
+          <p className="text-muted mb-0 small">
+            {filterSummary && (
+              <span className="ms-2 text-info">
+                ({filterSummary})
+              </span>
+            )}
+          </p>
         </div>
         <div className="d-flex gap-2">
-          {/* Hızlı Tarih Filtreleri */}
-          <div className="btn-group">
-            <button 
-              className="btn btn-outline-secondary btn-sm dropdown-toggle"
-              data-bs-toggle="dropdown"
-            >
-              <i className="bi bi-calendar-range me-1"></i>
-              Hızlı Filtre
-            </button>
-            <ul className="dropdown-menu">
-              <li><button className="dropdown-item" onClick={() => onQuickDateFilter?.('today')}>Bugün</button></li>
-              <li><button className="dropdown-item" onClick={() => onQuickDateFilter?.('thisWeek')}>Bu Hafta</button></li>
-              <li><button className="dropdown-item" onClick={() => onQuickDateFilter?.('thisMonth')}>Bu Ay</button></li>
-              <li><button className="dropdown-item" onClick={() => onQuickDateFilter?.('last7Days')}>Son 7 Gün</button></li>
-              <li><button className="dropdown-item" onClick={() => onQuickDateFilter?.('last30Days')}>Son 30 Gün</button></li>
-            </ul>
-          </div>
-
-          <button
+          <button 
             className="btn btn-outline-secondary btn-sm"
             onClick={() => setShowFilters(!showFilters)}
           >
@@ -200,17 +358,14 @@ if (!loading && (!visitors || visitors.length === 0)) {
             Filtrele
             {hasFilters && <span className="badge bg-danger ms-1 rounded-pill">!</span>}
           </button>
-
-          <button
+          <button 
             className="btn btn-outline-secondary btn-sm"
             onClick={onExport}
-            disabled={true}
           >
             <i className="bi bi-download me-1"></i>
-            Excel İndir
+            Excel
           </button>
-
-          <button
+          <button 
             className="btn btn-danger btn-sm"
             onClick={onNewVisitor}
           >
@@ -220,7 +375,6 @@ if (!loading && (!visitors || visitors.length === 0)) {
         </div>
       </div>
 
-      {/* Filter Panel - Empty state'de de göster */}
       {showFilters && (
         <div className="card mb-4">
           <div className="card-body">
@@ -292,147 +446,6 @@ if (!loading && (!visitors || visitors.length === 0)) {
         </div>
       )}
 
-      {/* Empty State Message */}
-      <div className="text-center py-5">
-        <div className="mb-4">
-          <i className="bi bi-people display-1 text-muted"></i>
-        </div>
-        <h5 className="text-muted mb-3">
-          {hasFilters ? 'Filtrelere uygun ziyaretçi bulunamadı' : 'Henüz ziyaretçi kaydı bulunmuyor'}
-        </h5>
-        <p className="text-muted">
-          {hasFilters 
-            ? 'Filtre kriterlerinizi değiştirmeyi deneyin.' 
-            : 'İlk ziyaretçi kaydınızı oluşturmak için yukarıdaki "Yeni Ziyaretçi" butonunu kullanın.'
-          }
-        </p>
-        {hasFilters && (
-          <button className="btn btn-outline-secondary" onClick={handleResetFilters}>
-            <i className="bi bi-arrow-clockwise me-1"></i>
-            Filtreleri Temizle
-          </button>
-        )}
-      </div>
-    </>
-  );
-}
-  return (
-    <>
-      {/* Header with Actions */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          {/* <h5 className="card-title mb-0">Ziyaretçiler</h5> */}
-          <p className="text-muted mb-0 small">
-            
-            {filterSummary && (
-              <span className="ms-2 text-info">
-                ({filterSummary})
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="d-flex gap-2">
-          <button 
-            className="btn btn-outline-secondary btn-sm"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <i className="bi bi-funnel me-1"></i>
-            Filtrele
-            {hasFilters && <span className="badge bg-danger ms-1 rounded-pill">!</span>}
-          </button>
-          <button 
-            className="btn btn-outline-secondary btn-sm"
-            onClick={onExport}
-          >
-            <i className="bi bi-download me-1"></i>
-            Excel
-          </button>
-          <button 
-            className="btn btn-danger btn-sm"
-            onClick={onNewVisitor}
-          >
-            <i className="bi bi-plus-lg me-1"></i>
-            Yeni Ziyaretçi
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Panel */}
-      {showFilters && (
-        <div className="card mb-4">
-          <div className="card-body">
-            <div className="row">
-              <div className="col-md-3">
-                <label className="form-label small">Başlangıç Tarihi</label>
-                <input
-                  type="date"
-                  className="form-control form-control-sm"
-                  value={localFilters.fromDate}
-                  onChange={(e) => handleLocalFilterChange('fromDate', e.target.value)}
-                />
-              </div>
-              <div className="col-md-3">
-                <label className="form-label small">Bitiş Tarihi</label>
-                <input
-                  type="date"
-                  className="form-control form-control-sm"
-                  value={localFilters.toDate}
-                  onChange={(e) => handleLocalFilterChange('toDate', e.target.value)}
-                />
-              </div>
-              <div className="col-md-3">
-                <label className="form-label small">Şirket</label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Şirket adı ara..."
-                  value={localFilters.company}
-                  onChange={(e) => handleLocalFilterChange('company', e.target.value)}
-                />
-              </div>
-              <div className="col-md-3">
-                <label className="form-label small">Ziyaretçi</label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Ziyaretçi adı ara..."
-                  value={localFilters.visitor}
-                  onChange={(e) => handleLocalFilterChange('visitor', e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="row mt-3">
-              <div className="col-12">
-                <div className="d-flex gap-2">
-                  <button 
-                    className="btn btn-primary btn-sm"
-                    onClick={handleApplyFilters}
-                  >
-                    <i className="bi bi-search me-1"></i>
-                    Filtrele
-                  </button>
-                  <button 
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={handleResetFilters}
-                  >
-                    <i className="bi bi-arrow-clockwise me-1"></i>
-                    Temizle
-                  </button>
-                  <button 
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={() => setShowFilters(false)}
-                  >
-                    <i className="bi bi-x me-1"></i>
-                    Kapat
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Table Header Info */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="text-muted small">
           Toplam {pagination.totalCount || 0} ziyaretçi
@@ -462,7 +475,6 @@ if (!loading && (!visitors || visitors.length === 0)) {
         )}
       </div>
 
-      {/* ✅ DÜZELTME: Visitors Table - Aktif sıralama ile */}
       <div className="table-responsive">
         <table className="table table-hover">
           <thead>
@@ -545,37 +557,92 @@ if (!loading && (!visitors || visitors.length === 0)) {
                   </span>
                 </td>
                 <td>
-                  {/* ✅ İŞLEMLER DROPDOWN - Sonraki adımda bu bölüm güncellenecek */}
-                  <div className="dropdown">
+                  {/* ✅ TAMAMEN YENİ DROPDOWN - Bootstrap conflict yok */}
+                  <div 
+                    className="position-relative" 
+                    ref={el => dropdownRefs.current[visitor.id] = el}
+                    style={{ display: 'inline-block' }}
+                  >
                     <button 
-                      className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                      className="btn btn-sm btn-outline-secondary"
                       type="button"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
+                      onClick={(e) => toggleDropdown(visitor.id, e)}
+                      style={{ minWidth: '40px' }}
                     >
                       <i className="bi bi-three-dots-vertical"></i>
                     </button>
-                    <ul className="dropdown-menu">
-                      <li>
-                        <button className="dropdown-item" onClick={() => onViewVisitor(visitor)}>
-                          <i className="bi bi-eye me-2"></i>Detayları Gör
-                        </button>
-                      </li>
-                      <li>
-                        <button className="dropdown-item" onClick={() => onEditVisitor(visitor)}>
-                          <i className="bi bi-pencil me-2"></i>Düzenle
-                        </button>
-                      </li>
-                      <li><hr className="dropdown-divider" /></li>
-                      <li>
-                        <button 
-                          className="dropdown-item text-danger" 
-                          onClick={() => handleDeleteClick(visitor)}
-                        >
-                          <i className="bi bi-trash me-2"></i>Sil
-                        </button>
-                      </li>
-                    </ul>
+                    
+                    {/* ✅ Sadece ilgili dropdown açık ise göster */}
+                    {openDropdownId === visitor.id && (
+                      <div 
+                        className="position-absolute bg-white border rounded shadow-sm"
+                        style={{ 
+                          top: '100%', 
+                          right: 0, 
+                          zIndex: 1050,
+                          minWidth: '160px',
+                          marginTop: '4px'
+                        }}
+                      >
+                        <div className="py-1">
+                          <button 
+                            className="dropdown-item d-flex align-items-center px-3 py-2"
+                            onClick={() => {
+                              setOpenDropdownId(null);
+                              onViewVisitor(visitor);
+                            }}
+                            style={{ 
+                              border: 'none',
+                              background: 'transparent',
+                              cursor: 'pointer',
+                              transition: 'background-color 0.15s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <i className="bi bi-eye me-2"></i>
+                            Detayları Gör
+                          </button>
+                          
+                          <button 
+                            className="dropdown-item d-flex align-items-center px-3 py-2"
+                            onClick={() => {
+                              setOpenDropdownId(null);
+                              onEditVisitor(visitor);
+                            }}
+                            style={{ 
+                              border: 'none',
+                              background: 'transparent',
+                              cursor: 'pointer',
+                              transition: 'background-color 0.15s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <i className="bi bi-pencil me-2"></i>
+                            Düzenle
+                          </button>
+                          
+                          <div style={{ borderTop: '1px solid #dee2e6', margin: '4px 0' }}></div>
+                          
+                          <button 
+                            className="dropdown-item d-flex align-items-center px-3 py-2 text-danger"
+                            onClick={() => handleDeleteClick(visitor)}
+                            style={{ 
+                              border: 'none',
+                              background: 'transparent',
+                              cursor: 'pointer',
+                              transition: 'background-color 0.15s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8d7da'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <i className="bi bi-trash me-2"></i>
+                            Sil
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -584,7 +651,6 @@ if (!loading && (!visitors || visitors.length === 0)) {
         </table>
       </div>
 
-      {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
         <div className="d-flex justify-content-between align-items-center mt-4">
           <div className="text-muted small">
@@ -611,35 +677,38 @@ if (!loading && (!visitors || visitors.length === 0)) {
                   <i className="bi bi-chevron-left"></i>
                 </button>
               </li>
-              
-              {/* Page numbers */}
-              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, index) => {
-                let pageNumber;
-                if (pagination.totalPages <= 5) {
-                  pageNumber = index + 1;
-                } else {
-                  const current = pagination.currentPage;
-                  if (current <= 3) {
-                    pageNumber = index + 1;
-                  } else if (current > pagination.totalPages - 3) {
-                    pageNumber = pagination.totalPages - 4 + index;
-                  } else {
-                    pageNumber = current - 2 + index;
-                  }
-                }
-                
-                return (
-                  <li key={pageNumber} className={`page-item ${pagination.currentPage === pageNumber ? 'active' : ''}`}>
-                    <button 
-                      className="page-link"
-                      onClick={() => onPageChange(pageNumber)}
+              {[...Array(pagination.totalPages)].map((_, index) => {
+                const page = index + 1;
+                if (
+                  page === 1 ||
+                  page === pagination.totalPages ||
+                  (page >= pagination.currentPage - 2 && page <= pagination.currentPage + 2)
+                ) {
+                  return (
+                    <li 
+                      key={page} 
+                      className={`page-item ${pagination.currentPage === page ? 'active' : ''}`}
                     >
-                      {pageNumber}
-                    </button>
-                  </li>
-                );
+                      <button 
+                        className="page-link"
+                        onClick={() => onPageChange(page)}
+                      >
+                        {page}
+                      </button>
+                    </li>
+                  );
+                } else if (
+                  page === pagination.currentPage - 3 ||
+                  page === pagination.currentPage + 3
+                ) {
+                  return (
+                    <li key={page} className="page-item disabled">
+                      <span className="page-link">...</span>
+                    </li>
+                  );
+                }
+                return null;
               })}
-              
               <li className={`page-item ${pagination.currentPage >= pagination.totalPages ? 'disabled' : ''}`}>
                 <button 
                   className="page-link"

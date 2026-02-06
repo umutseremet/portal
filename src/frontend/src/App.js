@@ -54,6 +54,9 @@ import EditDocument from './pages/DocumentManagement/EditDocument';
 import CreateVersion from './pages/DocumentManagement/CreateVersion';
 import CategoryManagement from './pages/DocumentManagement/CategoryManagement';
 
+import BackgroundJobsPage from './pages/BackgroundJobsPage';
+import JobExecutionLogsPage from './pages/JobExecutionLogsPage';
+
 function App() {
   return (
     <div className="App">
@@ -70,6 +73,29 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <DashboardPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+
+            <Route
+              path="/background-jobs"
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <Layout>
+                    <BackgroundJobsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/background-jobs/:jobId/logs"
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <Layout>
+                    <JobExecutionLogsPage />
                   </Layout>
                 </ProtectedRoute>
               }

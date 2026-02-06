@@ -139,6 +139,24 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
         }
       ]
     },
+    // Admin Yönetim bölümü (en sonda)
+    {
+      id: 'admin',
+      label: 'Yönetim',
+      icon: 'bi-shield-lock-fill',
+      permission: null, 
+      requireAdmin: true, // ✅ Sadece admin
+      children: [
+        {
+          id: 'background-jobs',
+          label: 'Arka Plan Görevleri',
+          path: '/background-jobs',
+          icon: 'bi-gear-fill',
+          permission: null,  
+          requireAdmin: true // ✅ Sadece admin
+        }
+      ]
+    },
     {
       id: 'definitions',
       label: 'Tanımlamalar',

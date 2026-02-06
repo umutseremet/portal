@@ -1,8 +1,8 @@
 // src/frontend/src/hooks/useVisitors.js
+// ✅ SIRALAMA SORUNU DÜZELTİLDİ
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import visitorService from '../services/visitorService';
-import { debounce } from '../utils/helpers';
 
 export const useVisitors = (initialFilters = {}) => {
   // State
@@ -45,7 +45,7 @@ export const useVisitors = (initialFilters = {}) => {
     setError(null);
   }, []);
 
-  // ✅ Clear stats fonksiyonu
+  // Clear stats
   const clearStats = useCallback(() => {
     if (mountedRef.current) {
       setStats(null);
@@ -68,7 +68,7 @@ export const useVisitors = (initialFilters = {}) => {
         pageSize: pagination.pageSize
       };
 
-      // Remove empty values to avoid unnecessary API parameters
+      // Remove empty values
       Object.keys(params).forEach(key => {
         if (params[key] === '' || params[key] === null || params[key] === undefined) {
           delete params[key];
@@ -80,8 +80,6 @@ export const useVisitors = (initialFilters = {}) => {
       const response = await visitorService.getVisitors(params);
 
       console.log('API Response received:', {
-        response,
-        visitorsArray: response?.visitors,
         visitorsCount: response?.visitors?.length,
         totalCount: response?.totalCount
       });
@@ -91,13 +89,11 @@ export const useVisitors = (initialFilters = {}) => {
       if (resetData) {
         setVisitors(response.visitors || []);
       } else {
-        // For infinite scroll or load more functionality
         setVisitors(prev =>
           page === 1 ? response.visitors || [] : [...prev, ...(response.visitors || [])]
         );
       }
 
-      // Update pagination
       setPagination({
         page: response.page || page,
         pageSize: response.pageSize || pagination.pageSize,
@@ -129,21 +125,16 @@ export const useVisitors = (initialFilters = {}) => {
       const response = await visitorService.getVisitorStats();
 
       if (mountedRef.current) {
-        console.log('Stats loaded:', response);
         setStats(response);
       }
     } catch (err) {
       console.error('Error loading visitor stats:', err);
-      // Don't set main error for stats, just log it
       if (mountedRef.current) {
-        // Set mock stats for development
         setStats({
           totalVisitors: 0,
           todayVisitors: 0,
           thisWeekVisitors: 0,
-          thisMonthVisitors: 0,
-          visitorsByDate: [],
-          topCompanies: []
+          thisMonthVisitors: 0
         });
       }
     } finally {
@@ -153,11 +144,18 @@ export const useVisitors = (initialFilters = {}) => {
     }
   }, []);
 
-  // Update filters
+  // ✅ DÜZELTİLMİŞ: Update filters - loadVisitors'ı çağırır
   const updateFilters = useCallback((newFilters) => {
-    console.log('Updating filters from:', filters, 'to:', newFilters);
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  }, []);
+    console.log('🔄 Updating filters from:', filters, 'to:', newFilters);
+    const updatedFilters = { ...filters, ...newFilters };
+    setFilters(updatedFilters);
+    
+    // ✅ Filtreler değiştiğinde hemen yükle
+    console.log('📤 Calling loadVisitors with new filters');
+    setTimeout(() => {
+      loadVisitors(1, true, updatedFilters);
+    }, 50);
+  }, [filters, loadVisitors]);
 
   // Reset filters
   const resetFilters = useCallback(() => {
@@ -171,7 +169,11 @@ export const useVisitors = (initialFilters = {}) => {
       sortOrder: 'desc'
     };
     setFilters(defaultFilters);
-  }, []);
+    
+    setTimeout(() => {
+      loadVisitors(1, true, defaultFilters);
+    }, 50);
+  }, [loadVisitors]);
 
   // Quick date filters
   const setQuickDateFilter = useCallback((filterType) => {
@@ -215,7 +217,6 @@ export const useVisitors = (initialFilters = {}) => {
       const response = await visitorService.createVisitor(visitorData);
 
       if (mountedRef.current) {
-        // Reload visitors to get updated list
         await loadVisitors(1, true, filters);
       }
 
@@ -242,22 +243,18 @@ export const useVisitors = (initialFilters = {}) => {
 
       console.log('Updating visitor:', { id, visitorData });
 
-      // API çağrısı yap
       const response = await visitorService.updateVisitor(id, visitorData);
       console.log('Update API response:', response);
 
       if (!mountedRef.current) return;
 
-      // STATE GÜNCELLEMESİ: Sadece response'daki visitor objesini kullan
       if (response?.visitor) {
         setVisitors(prevVisitors => {
           return prevVisitors.map(visitor => {
             if (visitor.id === id) {
-              // GÜVENLI MERGE: Obje render hatası yapmamak için
               return {
                 ...visitor,
                 ...response.visitor,
-                // Tarih formatlarını kontrol et
                 date: response.visitor.date || response.visitor.Date,
                 company: response.visitor.company || response.visitor.Company,
                 visitor: response.visitor.visitor || response.visitor.Visitor || response.visitor.visitorName,
@@ -271,8 +268,6 @@ export const useVisitors = (initialFilters = {}) => {
         });
 
         console.log('✅ Visitor updated successfully in state');
-
-        // Statistics'i yenile
         loadStats();
 
         return { success: true, visitor: response.visitor };
@@ -305,10 +300,8 @@ export const useVisitors = (initialFilters = {}) => {
       await visitorService.deleteVisitor(id);
 
       if (mountedRef.current) {
-        // Remove visitor from the current list
         setVisitors(prev => prev.filter(visitor => visitor.id !== id));
 
-        // Update pagination
         setPagination(prev => ({
           ...prev,
           totalCount: prev.totalCount - 1
@@ -355,24 +348,20 @@ export const useVisitors = (initialFilters = {}) => {
       setLoading(true);
       clearError();
 
-      // Delete all selected visitors
       await Promise.all(
         selectedVisitors.map(id => visitorService.deleteVisitor(id))
       );
 
       if (mountedRef.current) {
-        // Remove deleted visitors from the current list
         setVisitors(prev =>
           prev.filter(visitor => !selectedVisitors.includes(visitor.id))
         );
 
-        // Update pagination
         setPagination(prev => ({
           ...prev,
           totalCount: prev.totalCount - selectedVisitors.length
         }));
 
-        // Clear selection
         setSelectedVisitors([]);
       }
     } catch (err) {
@@ -455,7 +444,7 @@ export const useVisitors = (initialFilters = {}) => {
     // Actions
     loadVisitors,
     loadStats,
-    clearStats, // ✅ YENİ EKLENEN
+    clearStats,
     createVisitor,
     updateVisitor,
     deleteVisitor,
