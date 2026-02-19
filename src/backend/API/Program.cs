@@ -270,8 +270,9 @@ app.UseSwaggerUI(c =>
 // MIDDLEWARE PIPELINE
 // ============================================================================
 
-app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
+app.UseHttpsRedirection();
+
 
 
 // ✅ YENİ: Hangfire Dashboard

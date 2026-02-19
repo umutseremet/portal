@@ -38,6 +38,26 @@ namespace API.Models
         public string? Description { get; set; }
     }
 
+    public class UpdateVisitorPostRequest
+    {
+        [Required]
+        public int Id { get; set; }
+
+        [Required]
+        public DateTime Date { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string Company { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(255)]
+        public string Visitor { get; set; } = string.Empty;
+
+        [MaxLength(500)]
+        public string? Description { get; set; }
+    }
+
     public class GetVisitorsRequest
     {
         public DateTime? FromDate { get; set; }

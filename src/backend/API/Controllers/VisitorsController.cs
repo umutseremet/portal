@@ -283,6 +283,68 @@ namespace API.Controllers
             }
         }
 
+        // src/backend/API/Controllers/VisitorsController.cs
+        // UpdateVisitor metodundan SONRA ekleyin
+
+        /// <summary>
+        /// Ziyaretçi bilgilerini günceller - POST versiyonu (IIS uyumlu)
+        /// </summary>
+        [HttpPost("Update")]
+        public async Task<IActionResult> UpdateVisitorPost([FromBody] UpdateVisitorPostRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                _logger.LogInformation("Updating visitor with ID: {Id} via POST", request.Id);
+
+                var visitor = await _context.Visitors.FindAsync(request.Id);
+
+                if (visitor == null)
+                {
+                    _logger.LogWarning("Visitor not found for update with ID: {Id}", request.Id);
+                    return NotFound(new ErrorResponse { Message = "Ziyaretçi bulunamadı" });
+                }
+
+                // Güncelleme
+                visitor.Date = request.Date.Date;
+                visitor.Company = request.Company;
+                visitor.VisitorName = request.Visitor;
+                visitor.Description = request.Description;
+                visitor.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                var response = new UpdateVisitorResponse
+                {
+                    Success = true,
+                    Message = "Ziyaretçi başarıyla güncellendi",
+                    Visitor = new VisitorResponse
+                    {
+                        Id = visitor.Id,
+                        Date = visitor.Date,
+                        Company = visitor.Company,
+                        Visitor = visitor.VisitorName,
+                        Description = visitor.Description,
+                        CreatedAt = visitor.CreatedAt,
+                        UpdatedAt = visitor.UpdatedAt
+                    }
+                };
+
+                _logger.LogInformation("Updated visitor successfully with ID: {Id}", visitor.Id);
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating visitor with ID: {Id}", request.Id);
+                return StatusCode(500, new ErrorResponse { Message = "Ziyaretçi güncellenirken hata oluştu" });
+            }
+        }
+
         /// <summary>
         /// Ziyaretçi siler
         /// </summary>

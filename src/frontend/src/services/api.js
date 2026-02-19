@@ -276,6 +276,9 @@ class ApiService {
     return this.post('/Visitors', visitorData);
   }
 
+  // src/frontend/src/services/api.js
+  // updateVisitor metodunu bulun ve bununla değiştirin
+
   async updateVisitor(id, visitorData) {
     if (!id) {
       throw new Error('Visitor ID is required');
@@ -284,15 +287,28 @@ class ApiService {
       throw new Error('Visitor data is required');
     }
 
-    console.log('API updateVisitor call:', { id, visitorData });
+    console.log('📝 API updateVisitor call:', { id, visitorData });
 
     try {
-      const response = await this.put(`/Visitors/${id}`, visitorData);
-      console.log('API updateVisitor raw response:', response);
+      // ✅ updateIssueRevisedDate mantığı - body'e tüm data
+      const requestBody = {
+        id: parseInt(id),
+        date: visitorData.date,
+        company: visitorData.company,
+        visitor: visitorData.visitor,
+        description: visitorData.description || null
+      };
+
+      console.log('📦 Request body:', requestBody);
+
+      // ✅ POST /api/Visitors/Update endpoint'ini kullan
+      const response = await this.post('/Visitors/Update', requestBody);
+
+      console.log('✅ API updateVisitor response:', response);
 
       return response;
     } catch (error) {
-      console.error('API updateVisitor error:', error);
+      console.error('❌ API updateVisitor error:', error);
       throw error;
     }
   }
