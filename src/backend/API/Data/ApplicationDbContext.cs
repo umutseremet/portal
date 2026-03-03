@@ -1,5 +1,6 @@
 ﻿using API.Controllers;
 using API.Data.Entities;
+using API.Models;
 using Microsoft.EntityFrameworkCore;
 using VervoPortal.Models.DocumentManagement;
 
@@ -50,6 +51,9 @@ namespace API.Data
 
         public DbSet<BackgroundJob> BackgroundJobs { get; set; } 
         public DbSet<BackgroundJobExecutionLog> BackgroundJobExecutionLogs { get; set; }
+
+        public DbSet<MonthlyProductionPlanEntry> MonthlyProductionPlanEntries { get; set; }
+        public DbSet<MonthlyProductionPlanIssue> MonthlyProductionPlanIssues { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -150,6 +154,49 @@ namespace API.Data
                 entity.HasIndex(e => e.JobKey).HasDatabaseName("IX_BackgroundJobExecutionLogs_JobKey");
                 entity.HasIndex(e => e.StartTime).HasDatabaseName("IX_BackgroundJobExecutionLogs_StartTime");
                 entity.HasIndex(e => e.Status).HasDatabaseName("IX_BackgroundJobExecutionLogs_Status");
+            });
+
+            modelBuilder.Entity<MonthlyProductionPlanEntry>(entity =>
+            {
+                entity.ToTable("MonthlyProductionPlanEntries");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                entity.Property(e => e.PlanDate).IsRequired();
+                entity.Property(e => e.ProjectId).IsRequired();
+                entity.Property(e => e.ProjectCode).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.ProjectName).HasMaxLength(255).IsRequired();
+                entity.Property(e => e.PlanType).HasMaxLength(20).IsRequired();
+                entity.Property(e => e.Color).HasMaxLength(10).HasDefaultValue("#3b82f6");
+                entity.Property(e => e.CreatedBy).HasMaxLength(100);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                // Aynı güne aynı proje+tip tekrar girilemez
+                entity.HasIndex(e => new { e.PlanDate, e.ProjectId, e.PlanType })
+                      .IsUnique()
+                      .HasDatabaseName("IX_MonthlyPlan_Date_Project_Type");
+
+                entity.HasIndex(e => e.PlanDate).HasDatabaseName("IX_MonthlyPlan_Date");
+            });
+
+            modelBuilder.Entity<MonthlyProductionPlanIssue>(entity =>
+            {
+                entity.ToTable("MonthlyProductionPlanIssues");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                entity.Property(e => e.PlanEntryId).IsRequired();
+                entity.Property(e => e.RedmineIssueId).IsRequired();
+
+                entity.HasOne(e => e.PlanEntry)
+                      .WithMany(p => p.PlanIssues)
+                      .HasForeignKey(e => e.PlanEntryId)
+                      .OnDelete(DeleteBehavior.Cascade)
+                      .HasConstraintName("FK_MonthlyPlanIssues_Entries");
+
+                entity.HasIndex(e => new { e.PlanEntryId, e.RedmineIssueId })
+                      .IsUnique()
+                      .HasDatabaseName("IX_MonthlyPlanIssues_Entry_Issue");
+
+                entity.HasIndex(e => e.RedmineIssueId).HasDatabaseName("IX_MonthlyPlanIssues_IssueId");
             });
 
 

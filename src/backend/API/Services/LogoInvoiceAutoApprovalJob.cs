@@ -151,7 +151,7 @@ namespace API.Services.BackgroundJobs
                                     LOGICALREF,
                                     FICHENO,
                                     DATE_
-                                FROM LG_225_01_INVOICE
+                                FROM LG_226_01_INVOICE
                                 WHERE FICHENO = @InvoiceNumber
                                 AND GRPCODE = 1
                                 AND TRCODE = 1

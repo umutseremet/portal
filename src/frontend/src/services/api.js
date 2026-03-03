@@ -3597,6 +3597,107 @@ class ApiService {
       throw error;
     }
   }
+
+
+  // ─── MONTHLY PRODUCTION PLAN V2 ──────────────────────────────────────────────
+
+  /**
+   * Aylık plan verisi çeker
+   * @param {number} year
+   * @param {number} month - 1-12
+   * @returns {Promise<Object>} MonthlyPlanResponse
+   */
+  async getMonthlyPlan(year, month) {
+    try {
+      console.log('📅 getMonthlyPlan:', { year, month });
+      const response = await this.get(`/MonthlyProductionPlan/GetMonthlyPlan?year=${year}&month=${month}`);
+      console.log('✅ getMonthlyPlan response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ getMonthlyPlan error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Plan girişi kaydeder (yeni veya günceller - tarih+proje+tip unique)
+   * @param {Object} data
+   * @param {string} data.planDate - "yyyy-MM-dd"
+   * @param {number} data.projectId
+   * @param {string} data.projectCode
+   * @param {string} data.projectName
+   * @param {string} data.planType - "Üretim" | "Montaj"
+   * @param {string} data.color - HEX renk
+   * @param {number[]} data.issueIds
+   * @returns {Promise<Object>} { id, message, isNew }
+   */
+  async saveMonthlyPlanEntry(data) {
+    try {
+      console.log('💾 saveMonthlyPlanEntry:', data);
+      const response = await this.post('/MonthlyProductionPlan/SavePlanEntry', data);
+      console.log('✅ saveMonthlyPlanEntry response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ saveMonthlyPlanEntry error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Plan girişini siler
+   * @param {number} id - Plan entry ID
+   * @returns {Promise<Object>}
+   */
+  async deleteMonthlyPlanEntry(id) {
+    try {
+      console.log('🗑️ deleteMonthlyPlanEntry:', id);
+      const response = await this.delete(`/MonthlyProductionPlan/DeletePlanEntry/${id}`);
+      console.log('✅ deleteMonthlyPlanEntry response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ deleteMonthlyPlanEntry error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Planlama modalı için proje listesi (proje kodu dahil, arama destekli)
+   * @param {string} [search] - Opsiyonel arama terimi
+   * @returns {Promise<Array>} PlanningProjectItem listesi
+   */
+  async getProjectsForPlanning(search = '') {
+    try {
+      const url = search
+        ? `/MonthlyProductionPlan/GetProjectsForPlanning?search=${encodeURIComponent(search)}`
+        : '/MonthlyProductionPlan/GetProjectsForPlanning';
+      const response = await this.get(url);
+      return Array.isArray(response) ? response : [];
+    } catch (error) {
+      console.error('❌ getProjectsForPlanning error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Planlama modalı için proje issue listesi (Üretim veya Montaj)
+   * @param {number} projectId
+   * @param {string} planType - "Üretim" | "Montaj"
+   * @returns {Promise<Object>} { projectId, planType, issues, totalCount }
+   */
+  async getProjectIssuesForPlanning(projectId, planType) {
+    try {
+      console.log('📋 getProjectIssuesForPlanning:', { projectId, planType });
+      const response = await this.post('/MonthlyProductionPlan/GetProjectIssuesForPlanning', {
+        projectId,
+        planType
+      });
+      console.log('✅ getProjectIssuesForPlanning response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ getProjectIssuesForPlanning error:', error);
+      throw error;
+    }
+  }
 }
 
 

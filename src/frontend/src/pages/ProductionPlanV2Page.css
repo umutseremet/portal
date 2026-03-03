@@ -1,0 +1,351 @@
+/* src/frontend/src/pages/ProductionPlanV2Page.css */
+
+/* ─── Sayfa wrapper ─────────────────────────────────────────────────────────── */
+.production-plan-v2-page {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* ─── Kart header — standart proje stili ────────────────────────────────────── */
+.production-plan-v2-page .card-header {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  padding: 12px 16px;
+}
+
+/* ─── Gün başlık satırı ────────────────────────────────────────────────────── */
+.pplan-day-headers {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid #dee2e6;
+}
+
+.pplan-day-header-cell {
+  padding: 8px 0;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  border-right: 1px solid #dee2e6;
+}
+
+.pplan-day-header-cell:last-child {
+  border-right: none;
+}
+
+.pplan-day-header-cell--weekend {
+  color: #dc3545;
+  background-color: #fff5f5;
+}
+
+/* ─── Grid ──────────────────────────────────────────────────────────────────── */
+.pplan-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+/* ─── Hücre ────────────────────────────────────────────────────────────────── */
+.pplan-cell {
+  min-height: 110px;
+  padding: 6px 5px 5px;
+  border-right: 1px solid #dee2e6;
+  border-bottom: 1px solid #dee2e6;
+  background-color: #ffffff;
+  transition: background-color 0.15s;
+  cursor: default;
+}
+
+.pplan-cell:nth-child(7n) {
+  border-right: none;
+}
+
+.pplan-cell:hover {
+  background-color: #f0f7ff;
+}
+
+.pplan-cell--today {
+  background-color: #e8f4fd !important;
+  border-bottom: 2px solid #3498db;
+}
+
+.pplan-cell--weekend {
+  background-color: #fefefe;
+}
+
+.pplan-cell--other-month {
+  opacity: 0.4;
+  background-color: #f8f9fa;
+}
+
+.pplan-cell--other-month:hover {
+  background-color: #f8f9fa;
+}
+
+/* ─── Gün numarası ──────────────────────────────────────────────────────────── */
+.pplan-cell-day-num {
+  text-align: right;
+  margin-bottom: 4px;
+}
+
+.pplan-cell-day-num span {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6c757d;
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  border-radius: 50%;
+}
+
+.pplan-cell--today .pplan-cell-day-num span,
+.pplan-today-badge {
+  background-color: #3498db !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.pplan-cell--weekend .pplan-cell-day-num span {
+  color: #dc3545;
+}
+
+/* ─── Plan chip ─────────────────────────────────────────────────────────────── */
+.pplan-cell-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pplan-entry-chip {
+  padding: 2px 7px;
+  border-radius: 4px;
+  border-left: 3px solid #ccc;
+  font-size: 0.72rem;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform 0.1s, filter 0.1s;
+  color: #212529;
+}
+
+.pplan-entry-chip:hover {
+  transform: translateX(2px);
+  filter: brightness(0.95);
+}
+
+/* ─── Context menü ──────────────────────────────────────────────────────────── */
+.pplan-context-menu {
+  position: fixed;
+  z-index: 9999;
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 4px 0;
+  min-width: 180px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  animation: pplan-ctx-in 0.1s ease;
+}
+
+@keyframes pplan-ctx-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.pplan-context-menu-header {
+  padding: 6px 14px 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #6c757d;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 3px;
+}
+
+.pplan-context-menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: #212529;
+  transition: background-color 0.1s;
+}
+
+.pplan-context-menu-item:hover {
+  background-color: #f0f0f0;
+}
+
+/* ─── Modal özel ayarlar ─────────────────────────────────────────────────────── */
+/* permissions.css'teki global .modal-header gradient'ını override et */
+.pplan-modal-header,
+.pplan-modal-header.modal-header,
+.modal-content .pplan-modal-header {
+  background: #f8f9fa !important;
+  background-image: none !important;
+  color: #212529 !important;
+  border-bottom: 2px solid #dee2e6 !important;
+  border-top-left-radius: 0.5rem !important;
+  border-top-right-radius: 0.5rem !important;
+  flex-shrink: 0;
+}
+
+/* Modal içindeki başlık ve metin renklerini de sıfırla */
+.pplan-modal-header .modal-title,
+.pplan-modal-header h5 {
+  color: #212529 !important;
+}
+
+/* btn-close: permissions.css filter:invert(1) override */
+.pplan-btn-close {
+  filter: none !important;
+  opacity: 0.7;
+}
+
+.pplan-btn-close:hover {
+  opacity: 1;
+}
+
+/* Sabit yükseklik — header ve footer sabit, body kalan alanı doldurur */
+.pplan-modal-content {
+  height: 700px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pplan-modal-content .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0; /* flex shrink için zorunlu */
+  /* Scrollbar her zaman yer kaplasın (layout kayması olmasın) ama step 1'de gizle */
+  scrollbar-gutter: stable;
+}
+
+/* Step 1: dropdown visible olsun, scrollbar gizlensin */
+.pplan-modal-content .modal-body.pplan-body-step1 {
+  overflow: visible;
+  scrollbar-gutter: auto;
+}
+
+/* Step 2: tablo scroll edilebilir */
+.pplan-modal-content .modal-body.pplan-body-step2 {
+  overflow-y: auto;
+}
+
+.pplan-modal-content .modal-footer {
+  flex-shrink: 0;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Sayfa body scroll'unu engelle (modal açıkken) */
+.production-plan-v2-page .modal-content:not(.pplan-modal-content) {
+  overflow: visible;
+}
+
+/* ─── Proje dropdown ─────────────────────────────────────────────────────────── */
+.pplan-dropdown {
+  position: relative;
+}
+
+.pplan-dropdown-trigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background: #fff;
+}
+
+.pplan-dropdown-trigger.active {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.pplan-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1060;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  animation: pplan-ctx-in 0.1s ease;
+}
+
+.pplan-dropdown-list {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.pplan-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 9px 14px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: #212529;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.1s;
+}
+
+.pplan-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.pplan-dropdown-item:hover,
+.pplan-dropdown-item.active {
+  background-color: #e8f4fd;
+  color: #0d6efd;
+}
+
+/* ─── Plan tipi kart ─────────────────────────────────────────────────────────── */
+.pplan-type-card {
+  border: 2px solid #dee2e6;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.pplan-type-card:hover {
+  border-color: #adb5bd;
+}
+
+.pplan-type-card--active {
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.15);
+  background-color: #f0f7ff;
+}
+
+/* ─── Özel badge (montaj için mor) ──────────────────────────────────────────── */
+.badge.bg-purple {
+  background-color: #6f42c1 !important;
+  color: #fff;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .production-plan-v2-page {
+    padding: 10px;
+  }
+
+  .pplan-cell {
+    min-height: 70px;
+  }
+
+  .pplan-entry-chip {
+    font-size: 0.65rem;
+  }
+}

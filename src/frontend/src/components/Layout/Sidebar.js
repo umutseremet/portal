@@ -41,6 +41,13 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           icon: 'bi-calendar3',
           path: '/production/weekly-calendar',
           permission: null // Herkes görebilir, sadece düzenleme yetkili
+        },
+        {
+          id: 'monthly-plan-v2',
+          label: 'Haftalık Üretim Planı v2',
+          icon: 'bi-calendar-month',
+          path: '/production/monthly-plan-v2',
+          permission: null
         }
       ]
     },
@@ -144,7 +151,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
       id: 'admin',
       label: 'Yönetim',
       icon: 'bi-shield-lock-fill',
-      permission: null, 
+      permission: null,
       requireAdmin: true, // ✅ Sadece admin
       children: [
         {
@@ -152,7 +159,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
           label: 'Arka Plan Görevleri',
           path: '/background-jobs',
           icon: 'bi-gear-fill',
-          permission: null,  
+          permission: null,
           requireAdmin: true // ✅ Sadece admin
         }
       ]

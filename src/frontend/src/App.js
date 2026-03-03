@@ -57,6 +57,8 @@ import CategoryManagement from './pages/DocumentManagement/CategoryManagement';
 import BackgroundJobsPage from './pages/BackgroundJobsPage';
 import JobExecutionLogsPage from './pages/JobExecutionLogsPage';
 
+import ProductionPlanV2Page from './pages/ProductionPlanV2Page';
+
 function App() {
   return (
     <div className="App">
@@ -449,6 +451,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route path="/production/monthly-plan-v2" element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProductionPlanV2Page />
+                </Layout>
+              </ProtectedRoute>
+            } />
 
             {/* ✅ YENİ ROUTE: Revize İşler Listesi */}
             <Route

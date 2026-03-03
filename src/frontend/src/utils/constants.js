@@ -169,6 +169,13 @@ export const API_ENDPOINTS = {
     CANCEL: '/PurchaseOrders', // /{id}/cancel
     UPDATE_DELIVERY: '/PurchaseOrders', // /{id}/update-delivery
     STATS: '/PurchaseOrders/stats'
+  },
+  MONTHLY_PLAN: {
+    GET_PLAN: '/MonthlyProductionPlan/GetMonthlyPlan',
+    SAVE_ENTRY: '/MonthlyProductionPlan/SavePlanEntry',
+    DELETE_ENTRY: '/MonthlyProductionPlan/DeletePlanEntry',
+    GET_PROJECTS: '/MonthlyProductionPlan/GetProjectsForPlanning',
+    GET_ISSUES: '/MonthlyProductionPlan/GetProjectIssuesForPlanning',
   }
 };
 
@@ -250,7 +257,7 @@ export const DATE_FORMATS = {
 // CHART COLORS
 // ==============================================
 export const CHART_COLORS = [
-  '#FF6B6B', '#FF8E53', '#4ECDC4', '#45B7D1', 
+  '#FF6B6B', '#FF8E53', '#4ECDC4', '#45B7D1',
   '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'
 ];
 
@@ -258,7 +265,7 @@ export const CHART_COLORS = [
 // AVATAR COLORS
 // ==============================================
 export const AVATAR_COLORS = [
-  'bg-primary', 'bg-success', 'bg-info', 
+  'bg-primary', 'bg-success', 'bg-info',
   'bg-warning', 'bg-danger', 'bg-secondary'
 ];
 
@@ -278,9 +285,9 @@ export const NOTIFICATION_TYPES = {
 export const FILE_UPLOAD = {
   MAX_SIZE: parseInt(process.env.REACT_APP_MAX_FILE_SIZE) || 5 * 1024 * 1024, // 5MB default
   ALLOWED_TYPES: process.env.REACT_APP_ALLOWED_FILE_TYPES?.split(',') || [
-    'image/jpeg', 
-    'image/png', 
-    'image/gif', 
+    'image/jpeg',
+    'image/png',
+    'image/gif',
     'application/pdf'
   ],
   ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.xlsx', '.xls', '.csv']
@@ -486,3 +493,4 @@ export const REQUEST_TYPE_LABELS = {
   [REQUEST_TYPE.EMERGENCY]: 'Acil',
   [REQUEST_TYPE.PROJECT]: 'Proje Bazlı'
 };
+
